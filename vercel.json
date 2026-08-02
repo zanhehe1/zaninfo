@@ -1,0 +1,9 @@
+{
+    "version": 2,
+    "builds": [
+        {"src": "api/zan.py", "use": "@vercel/python"}
+    ],
+    "routes": [
+        {"src": "/zan", "dest": "/api/zan"}
+    ]
+}
