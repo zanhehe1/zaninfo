@@ -1,9 +1,13 @@
 {
-    "version": 2,
-    "builds": [
-        {"src": "api/zan.py", "use": "@vercel/python"}
-    ],
-    "routes": [
-        {"src": "/zan", "dest": "/api/zan"}
-    ]
+  "version": 2,
+  "builds": [
+    {
+      "src": "api.py",
+      "use": "@vercel/python",
+      "config": {"maxLambdaSize": "25mb", "runtime":"python3.8"}
+    }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "api.py" }
+  ]
 }
