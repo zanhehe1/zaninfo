@@ -220,7 +220,60 @@ def login_history():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-
+@app.route('/chui', methods=['GET', 'POST'])
+def chui_ai():
+    if request.method == 'GET':
+        msg = request.args.get('msg')
+    else:
+        msg = request.json.get('msg') if request.json else request.form.get('msg')
+    
+    if not msg:
+        return jsonify({"error": "Mày nhập gì vô coi"}), 400
+    
+    try:
+        import requests
+        
+        # Prompt chửi
+        prompt = f"""Mày là AI chửi thề, chửi như dân chơi Free Fire, chửi như gamer thứ thiệt. Mày chửi câu này: "{msg}"
+        
+        Chửi bằng tiếng Việt, chửi ngắn gọn, chất, đừng dài dòng. Có thể dùng từ lóng, chửi như nói chuyện với bạn.
+        """
+        
+        url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyDZvi8G_tnMUx7loUu51XYBt3t9eAQQLYo"
+        payload = {
+            "contents": [{
+                "parts": [{"text": prompt}]
+            }]
+        }
+        headers = {"Content-Type": "application/json"}
+        response = requests.post(url, json=payload, headers=headers, timeout=30)
+        
+        if response.status_code == 200:
+            data = response.json()
+            reply = data["candidates"][0]["content"]["parts"][0]["text"]
+            return jsonify({
+                "success": True,
+                "may_chui": msg,
+                "ai_chui_lai": reply
+            })
+        
+        # Fallback chửi mặc định
+        fallback = [
+            "Mày hỏi ngu vãi! 😡",
+            "Địt mẹ mày, câu hỏi gì thế? 🤬",
+            "Đi chỗ khác chơi đi ku! 😤",
+            "Tao đang bận chửi đứa khác! 😒"
+        ]
+        import random
+        return jsonify({
+            "success": True,
+            "may_chui": msg,
+            "ai_chui_lai": random.choice(fallback)
+        })
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+        
 # ============================================
 # QUAN TRỌNG: Vercel/Render yêu cầu biến handler
 # ============================================
