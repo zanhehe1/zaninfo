@@ -222,6 +222,7 @@ def login_history():
 
 @app.route('/chui', methods=['GET', 'POST'])
 def chui_ai():
+    # Lấy msg từ request (GET, POST JSON, POST Form)
     if request.method == 'GET':
         msg = request.args.get('msg')
     else:
@@ -231,48 +232,42 @@ def chui_ai():
         return jsonify({"error": "Mày nhập gì vô coi"}), 400
     
     try:
-        import requests
+        # URL chứa danh sách các câu chửi
+        url_chui = "https://raw.githubusercontent.com/ehvuebe-png/Cailontaone/main/chui.txt"
         
-        # Prompt chửi
-        prompt = f"""Mày là AI chửi thề, chửi như dân chơi Free Fire, chửi như gamer thứ thiệt. Mày chửi câu này: "{msg}"
+        # Gửi request để lấy nội dung file
+        response_chui = requests.get(url_chui, timeout=15)
         
-        Chửi bằng tiếng Việt, chửi ngắn gọn, chất, đừng dài dòng. Có thể dùng từ lóng, chửi như nói chuyện với bạn.
-        """
-        
-        url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyDZvi8G_tnMUx7loUu51XYBt3t9eAQQLYo"
-        payload = {
-            "contents": [{
-                "parts": [{"text": prompt}]
-            }]
-        }
-        headers = {"Content-Type": "application/json"}
-        response = requests.post(url, json=payload, headers=headers, timeout=30)
-        
-        if response.status_code == 200:
-            data = response.json()
-            reply = data["candidates"][0]["content"]["parts"][0]["text"]
-            return jsonify({
-                "success": True,
-                "may_chui": msg,
-                "ai_chui_lai": reply
-            })
-        
-        # Fallback chửi mặc định
-        fallback = [
-            "Mày hỏi ngu vãi! 😡",
-            "Địt mẹ mày, câu hỏi gì thế? 🤬",
-            "Đi chỗ khác chơi đi ku! 😤",
-            "Tao đang bận chửi đứa khác! 😒"
-        ]
-        import random
+        # Kiểm tra xem tải thành công không
+        if response_chui.status_code == 200:
+            # Tách nội dung thành các dòng, bỏ qua dòng trống
+            danh_sach_chui = [line.strip() for line in response_chui.text.splitlines() if line.strip()]
+            
+            if danh_sach_chui:
+                # Chọn ngẫu nhiên 1 câu
+                ai_chui_lai = random.choice(danh_sach_chui)
+            else:
+                # Fallback nếu file rỗng
+                ai_chui_lai = "Mày hỏi ngu vãi! 😡"
+        else:
+            # Fallback nếu không tải được file
+            fallback = [
+                "Mày hỏi ngu vãi! 😡",
+                "Địt mẹ mày, câu hỏi gì thế? 🤬",
+                "Đi chỗ khác chơi đi ku! 😤",
+                "Tao đang bận chửi đứa khác! 😒"
+            ]
+            ai_chui_lai = random.choice(fallback)
+
+        # Trả về kết quả
         return jsonify({
             "success": True,
             "may_chui": msg,
-            "ai_chui_lai": random.choice(fallback)
+            "ai_chui_lai": ai_chui_lai
         })
         
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": f"Lỗi server: {str(e)}"}), 500
         
 # ============================================
 # QUAN TRỌNG: Vercel/Render yêu cầu biến handler
