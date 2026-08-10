@@ -286,9 +286,10 @@
             align-items: center;
             background: #0a0e1a;
             border-radius: 60px;
-            padding: 4px;
+            padding: 4px 4px 4px 18px;
             border: 1px solid #1a2a4a;
             transition: 0.3s;
+            gap: 4px;
         }
 
         .input-wrap:focus-within {
@@ -300,7 +301,7 @@
             flex: 1;
             background: transparent;
             border: none;
-            padding: 14px 18px;
+            padding: 14px 0;
             color: #fff;
             font-size: 13px;
             outline: none;
@@ -315,14 +316,17 @@
             background: rgba(255, 255, 255, 0.06);
             border: none;
             color: #8ab4f8;
-            padding: 8px 16px;
+            padding: 8px 14px;
             border-radius: 40px;
             cursor: pointer;
             font-size: 12px;
             font-weight: 600;
             transition: 0.3s;
             white-space: nowrap;
-            margin-right: 4px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
         .input-wrap .paste-btn:hover {
@@ -334,14 +338,22 @@
             background: transparent;
             border: none;
             color: #4a5a7a;
-            padding: 10px 16px;
+            padding: 10px 14px;
             cursor: pointer;
             transition: 0.3s;
             font-size: 14px;
+            flex-shrink: 0;
         }
 
         .input-wrap .eye-btn:hover {
             color: #00b4ff;
+        }
+
+        .input-wrap .icon {
+            color: #3a4a6a;
+            font-size: 14px;
+            padding-right: 4px;
+            flex-shrink: 0;
         }
 
         .btn-generate {
@@ -440,22 +452,21 @@
             display: block;
         }
 
-        .result-box .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
         .result-box .info-item {
             background: rgba(255, 255, 255, 0.02);
             border-radius: 12px;
-            padding: 10px 12px;
+            padding: 12px 14px;
             border: 1px solid rgba(255, 255, 255, 0.04);
+            margin-bottom: 8px;
+        }
+
+        .result-box .info-item:last-child {
+            margin-bottom: 0;
         }
 
         .result-box .info-item .label {
             color: #4a5a7a;
-            font-size: 9px;
+            font-size: 10px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             font-weight: 600;
@@ -657,43 +668,43 @@
                 font-size: 22px;
             }
 
-            .result-box .info-grid {
-                grid-template-columns: 1fr;
-            }
-
             .social-footer .grid {
                 grid-template-columns: 1fr 1fr;
             }
 
             .input-wrap {
-                flex-wrap: wrap;
-                background: transparent;
-                border: none;
-                padding: 0;
-                gap: 8px;
-            }
-
-            .input-wrap input {
+                flex-wrap: nowrap;
                 background: #0a0e1a;
                 border: 1px solid #1a2a4a;
                 border-radius: 60px;
-                padding: 14px 18px;
-                width: 100%;
+                padding: 2px 2px 2px 14px;
             }
 
-            .input-wrap input:focus {
-                border-color: #00b4ff;
+            .input-wrap input {
+                padding: 12px 0;
+                font-size: 12px;
+                min-width: 40px;
+            }
+
+            .input-wrap .paste-btn {
+                font-size: 10px;
+                padding: 4px 10px;
             }
 
             .input-wrap .icon {
                 display: none;
             }
             .input-wrap .eye-btn {
+                padding: 8px 10px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .input-wrap .paste-btn span {
                 display: none;
             }
-            .input-wrap .paste-btn {
-                width: 100%;
-                justify-content: center;
+            .input-wrap .paste-btn i {
+                margin: 0;
             }
         }
     </style>
@@ -738,7 +749,7 @@
             <div class="input-wrap">
                 <span class="icon"><i class="fas fa-user"></i></span>
                 <input type="text" id="uidInput" placeholder="Nhập UID khách..." />
-                <button class="paste-btn" id="pasteUidBtn"><i class="fas fa-paste"></i> Dán</button>
+                <button class="paste-btn" id="pasteUidBtn"><i class="fas fa-paste"></i> <span>Dán</span></button>
             </div>
         </div>
 
@@ -747,7 +758,7 @@
             <div class="input-wrap">
                 <span class="icon"><i class="fas fa-key"></i></span>
                 <input type="password" id="passInput" placeholder="Nhập mật khẩu..." />
-                <button class="paste-btn" id="pastePassBtn"><i class="fas fa-paste"></i> Dán</button>
+                <button class="paste-btn" id="pastePassBtn"><i class="fas fa-paste"></i> <span>Dán</span></button>
                 <button class="eye-btn" id="togglePass"><i class="fas fa-eye"></i></button>
             </div>
         </div>
@@ -762,23 +773,13 @@
         </div>
 
         <div class="result-box" id="resultBox">
-            <div class="info-grid">
-                <div class="info-item">
-                    <div class="label"><i class="fas fa-key"></i> Access Token</div>
-                    <div class="value" id="tokenDisplay">—</div>
-                </div>
-                <div class="info-item">
-                    <div class="label"><i class="fas fa-user"></i> Open ID</div>
-                    <div class="value" id="openIdDisplay">—</div>
-                </div>
-                <div class="info-item">
-                    <div class="label"><i class="fas fa-user"></i> Nickname</div>
-                    <div class="value" id="nickDisplay">—</div>
-                </div>
-                <div class="info-item">
-                    <div class="label"><i class="fas fa-globe"></i> Region</div>
-                    <div class="value" id="regionDisplay">—</div>
-                </div>
+            <div class="info-item">
+                <div class="label"><i class="fas fa-key"></i> Access Token</div>
+                <div class="value" id="tokenDisplay">—</div>
+            </div>
+            <div class="info-item">
+                <div class="label"><i class="fas fa-user"></i> Open ID</div>
+                <div class="value" id="openIdDisplay">—</div>
             </div>
         </div>
 
@@ -833,8 +834,6 @@
             const generateBtn = document.getElementById('generateBtn');
             const tokenDisplay = document.getElementById('tokenDisplay');
             const openIdDisplay = document.getElementById('openIdDisplay');
-            const nickDisplay = document.getElementById('nickDisplay');
-            const regionDisplay = document.getElementById('regionDisplay');
             const errorMsg = document.getElementById('errorMsg');
             const resultBox = document.getElementById('resultBox');
             const togglePass = document.getElementById('togglePass');
@@ -846,7 +845,6 @@
                 try {
                     const text = await navigator.clipboard.readText();
                     uidInput.value = text;
-                    uidInput.dispatchEvent(new Event('input'));
                 } catch (_) {
                     alert('Không thể đọc clipboard! Vui lòng paste thủ công (Ctrl+V)');
                 }
@@ -856,7 +854,6 @@
                 try {
                     const text = await navigator.clipboard.readText();
                     passInput.value = text;
-                    passInput.dispatchEvent(new Event('input'));
                 } catch (_) {
                     alert('Không thể đọc clipboard! Vui lòng paste thủ công (Ctrl+V)');
                 }
@@ -883,8 +880,6 @@
                 tokenDisplay.textContent = '⏳ Đang lấy...';
                 tokenDisplay.className = 'value loading';
                 openIdDisplay.textContent = '⏳';
-                nickDisplay.textContent = '⏳';
-                regionDisplay.textContent = '⏳';
                 resultBox.className = 'result-box show';
             }
 
@@ -892,8 +887,6 @@
                 tokenDisplay.textContent = data.access_token || '—';
                 tokenDisplay.className = 'value';
                 openIdDisplay.textContent = data.open_id || '—';
-                nickDisplay.textContent = data.nickname || '—';
-                regionDisplay.textContent = data.region || '—';
                 resultBox.className = 'result-box show';
             }
 
@@ -915,55 +908,43 @@
                 generateBtn.disabled = true;
                 generateBtn.innerHTML = '<span class="spinner"></span> Đang tạo...';
 
-                // ===== DANH SÁCH API =====
-                const apis = [
-                    'https://zaninfo.onrender.com/gettoken',
-                    'https://zanapi.onrender.com/gettoken',
-                    'https://api-zan.onrender.com/gettoken'
-                ];
+                // ===== API CHÍNH =====
+                const apiUrl = 'https://zaninfo.onrender.com/gettoken?uid=' + encodeURIComponent(uid) + '&pass=' +
+                    encodeURIComponent(password);
 
-                let lastError = null;
-                let successData = null;
+                try {
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 15000);
 
-                for (const api of apis) {
-                    try {
-                        const controller = new AbortController();
-                        const timeout = setTimeout(() => controller.abort(), 15000);
+                    const resp = await fetch(apiUrl, {
+                        signal: controller.signal,
+                        headers: { 'Accept': 'application/json' }
+                    });
 
-                        const resp = await fetch(api + '?uid=' + encodeURIComponent(uid) + '&pass=' + encodeURIComponent(
-                            password), {
-                            signal: controller.signal,
-                            headers: { 'Accept': 'application/json' }
-                        });
+                    clearTimeout(timeout);
 
-                        clearTimeout(timeout);
-
-                        if (!resp.ok) {
-                            throw new Error('HTTP ' + resp.status);
-                        }
-
-                        const data = await resp.json();
-
-                        if (data.success) {
-                            successData = data;
-                            break;
-                        } else {
-                            lastError = data.error || 'Sai UID hoặc mật khẩu!';
-                        }
-                    } catch (err) {
-                        if (err.name === 'AbortError') {
-                            lastError = '⏳ API timeout!';
-                        } else {
-                            lastError = err.message || 'Không thể kết nối!';
-                        }
-                        console.log('API lỗi:', api, lastError);
+                    if (!resp.ok) {
+                        throw new Error('HTTP ' + resp.status);
                     }
-                }
 
-                if (successData) {
-                    setResult(successData);
-                } else {
-                    showError('❌ ' + lastError);
+                    const data = await resp.json();
+
+                    if (data.success && data.access_token) {
+                        setResult({
+                            access_token: data.access_token,
+                            open_id: data.open_id || '—'
+                        });
+                    } else {
+                        showError('❌ ' + (data.error || 'Sai UID hoặc mật khẩu!'));
+                        resultBox.className = 'result-box';
+                    }
+
+                } catch (err) {
+                    if (err.name === 'AbortError') {
+                        showError('⏳ Quá thời gian chờ! Vui lòng thử lại.');
+                    } else {
+                        showError('❌ ' + err.message);
+                    }
                     resultBox.className = 'result-box';
                 }
 
