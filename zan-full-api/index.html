@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Zan Full API</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -274,6 +274,15 @@
         .btn-action.check { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
         .btn-action.check:hover { box-shadow: 0 4px 20px rgba(37, 99, 235, 0.3); transform: scale(1.02); }
 
+        .btn-action.eat { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+        .btn-action.eat:hover { box-shadow: 0 4px 20px rgba(6, 182, 212, 0.3); transform: scale(1.02); }
+
+        .btn-action.revoke { background: linear-gradient(135deg, #f43f5e, #e11d48); }
+        .btn-action.revoke:hover { box-shadow: 0 4px 20px rgba(244, 63, 94, 0.3); transform: scale(1.02); }
+
+        .btn-action.jwt { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+        .btn-action.jwt:hover { box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3); transform: scale(1.02); }
+
         .btn-action:active { transform: scale(0.97); }
 
         .result-box {
@@ -317,6 +326,11 @@
         .result-box .info-item .value.success { color: #22c55e; }
         .result-box .info-item .value.failed { color: #ef4444; }
         .result-box .info-item .value.loading { color: #f59e0b; }
+        .result-box .info-item .value.token { 
+            color: #7c3aed;
+            font-size: 11px;
+            word-break: break-all;
+        }
 
         .result-box .copy-btn {
             background: #e2e8f0;
@@ -506,6 +520,36 @@
                     <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
                 </div>
 
+                <!-- EAT → Token -->
+                <div class="menu-item" data-panel="eat" onclick="switchPanel('eat')">
+                    <div class="menu-icon"><i class="fas fa-exchange-alt"></i></div>
+                    <div class="menu-info">
+                        <div class="menu-title">EAT → Token</div>
+                        <div class="menu-desc">Chuyển EAT sang Access Token</div>
+                    </div>
+                    <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
+                </div>
+
+                <!-- Revoke Token -->
+                <div class="menu-item" data-panel="revoke" onclick="switchPanel('revoke')">
+                    <div class="menu-icon"><i class="fas fa-trash-alt"></i></div>
+                    <div class="menu-info">
+                        <div class="menu-title">Revoke Token</div>
+                        <div class="menu-desc">Thu hồi Access Token</div>
+                    </div>
+                    <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
+                </div>
+
+                <!-- Access → JWT -->
+                <div class="menu-item" data-panel="jwt" onclick="switchPanel('jwt')">
+                    <div class="menu-icon"><i class="fas fa-shield-alt"></i></div>
+                    <div class="menu-info">
+                        <div class="menu-title">Access → JWT</div>
+                        <div class="menu-desc">Chuyển Access Token sang JWT</div>
+                    </div>
+                    <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
+                </div>
+
             </div>
 
             <!-- ============================================================ -->
@@ -637,6 +681,71 @@
                 </div>
             </div>
 
+            <!-- ============================================================ -->
+            <!-- ===== PANEL 6: EAT → TOKEN ===== -->
+            <!-- ============================================================ -->
+            <div class="panel" id="panel-eat">
+                <div class="input-group">
+                    <label><i class="fas fa-exchange-alt"></i> EAT Token</label>
+                    <div class="input-wrap">
+                        <span class="icon"><i class="fas fa-key"></i></span>
+                        <input type="text" id="eatToken" placeholder="Nhập EAT Token hoặc URL..." />
+                        <button class="paste-btn" onclick="pasteTo('eatToken')"><i class="fas fa-paste"></i> Dán</button>
+                    </div>
+                </div>
+                <button class="btn-action eat" onclick="eatToToken()"><i class="fas fa-arrow-right"></i> CHUYỂN SANG ACCESS TOKEN</button>
+                <div class="err-msg" id="eatError"><i class="fas fa-triangle-exclamation"></i><span>Lỗi!</span></div>
+                <div class="result-box" id="eatResult">
+                    <div class="info-item"><div class="label"><i class="fas fa-user"></i> Nickname</div><div class="value" id="eatNickname">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-id-card"></i> Account ID</div><div class="value" id="eatAccountId">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-globe"></i> Region</div><div class="value" id="eatRegion">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-key"></i> Access Token</div><div class="value token" id="eatAccessToken">—</div></div>
+                </div>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- ===== PANEL 7: REVOKE TOKEN ===== -->
+            <!-- ============================================================ -->
+            <div class="panel" id="panel-revoke">
+                <div class="input-group">
+                    <label><i class="fas fa-trash-alt"></i> Access Token</label>
+                    <div class="input-wrap">
+                        <span class="icon"><i class="fas fa-key"></i></span>
+                        <input type="text" id="revokeToken" placeholder="Nhập Access Token cần thu hồi..." />
+                        <button class="paste-btn" onclick="pasteTo('revokeToken')"><i class="fas fa-paste"></i> Dán</button>
+                    </div>
+                </div>
+                <button class="btn-action revoke" onclick="revokeToken()"><i class="fas fa-power-off"></i> THU HỒI TOKEN</button>
+                <div class="err-msg" id="revokeError"><i class="fas fa-triangle-exclamation"></i><span>Lỗi!</span></div>
+                <div class="result-box" id="revokeResult">
+                    <div class="info-item"><div class="label"><i class="fas fa-user"></i> Nickname</div><div class="value" id="revokeNickname">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-id-card"></i> Account ID</div><div class="value" id="revokeAccountId">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-check-circle"></i> Trạng Thái</div><div class="value" id="revokeStatus">—</div></div>
+                </div>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- ===== PANEL 8: ACCESS → JWT ===== -->
+            <!-- ============================================================ -->
+            <div class="panel" id="panel-jwt">
+                <div class="input-group">
+                    <label><i class="fas fa-shield-alt"></i> Access Token</label>
+                    <div class="input-wrap">
+                        <span class="icon"><i class="fas fa-key"></i></span>
+                        <input type="text" id="jwtToken" placeholder="Nhập Access Token..." />
+                        <button class="paste-btn" onclick="pasteTo('jwtToken')"><i class="fas fa-paste"></i> Dán</button>
+                    </div>
+                </div>
+                <button class="btn-action jwt" onclick="accessToJwt()"><i class="fas fa-exchange-alt"></i> CHUYỂN SANG JWT</button>
+                <div class="err-msg" id="jwtError"><i class="fas fa-triangle-exclamation"></i><span>Lỗi!</span></div>
+                <div class="result-box" id="jwtResult">
+                    <div class="info-item"><div class="label"><i class="fas fa-user"></i> Nickname</div><div class="value" id="jwtNickname">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-id-card"></i> UID</div><div class="value" id="jwtUid">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-globe"></i> Region</div><div class="value" id="jwtRegion">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-shield-alt"></i> JWT Token</div><div class="value token" id="jwtTokenDisplay">—</div></div>
+                </div>
+            </div>
+
             <!-- ===== SOCIAL ===== -->
             <div class="social-footer">
                 <div class="title"><i class="fas fa-share-alt"></i> Kết nối</div>
@@ -669,7 +778,6 @@
     </div>
 
     <script>
-        // ===== API BASE URL =====
         const API_BASE = window.location.origin;
 
         // ===== SWITCH PANEL =====
@@ -688,7 +796,7 @@
         function pasteTo(id) {
             navigator.clipboard.readText().then(text => {
                 document.getElementById(id).value = text;
-            }).catch(() => alert('Không thể đọc clipboard! Vui lòng paste thủ công (Ctrl+V)'));
+            }).catch(() => alert('Không thể đọc clipboard!'));
         }
 
         // ===== ERROR =====
@@ -705,7 +813,7 @@
         }
 
         // ================================================================
-        // ===== 1. BAN ACCOUNT =====
+        // ===== 1. BAN =====
         // ================================================================
         async function banAccount() {
             const token = document.getElementById('banToken').value.trim();
@@ -717,7 +825,7 @@
             const tp = document.getElementById('banTypeDisplay');
             const st = document.getElementById('banStatusDisplay');
 
-            acc.textContent = '⏳ Đang xử lý...'; acc.className = 'value loading';
+            acc.textContent = '⏳'; acc.className = 'value loading';
             uid.textContent = '⏳'; tp.textContent = '⏳'; st.textContent = '⏳';
             showResult('banResult');
 
@@ -728,7 +836,7 @@
                     acc.textContent = data.nickname || 'N/A'; acc.className = 'value';
                     uid.textContent = data.uid || 'N/A';
                     tp.textContent = 'Ban 3 Ngày';
-                    st.textContent = '✅ Ban thành công!'; st.className = 'value success';
+                    st.textContent = '✅ ' + data.message; st.className = 'value success';
                 } else {
                     st.textContent = '❌ ' + (data.error || 'Thất bại!'); st.className = 'value failed';
                 }
@@ -738,7 +846,7 @@
         }
 
         // ================================================================
-        // ===== 2. CHANGE BIO =====
+        // ===== 2. BIO =====
         // ================================================================
         async function changeBio() {
             const token = document.getElementById('bioToken').value.trim();
@@ -752,7 +860,7 @@
             const b = document.getElementById('bioNewDisplay');
             const st = document.getElementById('bioStatusDisplay');
 
-            acc.textContent = '⏳ Đang xử lý...'; acc.className = 'value loading';
+            acc.textContent = '⏳'; acc.className = 'value loading';
             uid.textContent = '⏳'; b.textContent = '⏳'; st.textContent = '⏳';
             showResult('bioResult');
 
@@ -763,7 +871,7 @@
                     acc.textContent = data.nickname || 'N/A'; acc.className = 'value';
                     uid.textContent = data.uid || 'N/A';
                     b.textContent = bio;
-                    st.textContent = '✅ Đổi bio thành công!'; st.className = 'value success';
+                    st.textContent = '✅ ' + data.message; st.className = 'value success';
                 } else {
                     st.textContent = '❌ ' + (data.message || 'Thất bại!'); st.className = 'value failed';
                 }
@@ -773,7 +881,7 @@
         }
 
         // ================================================================
-        // ===== 3. CHECK BIND INFO =====
+        // ===== 3. BIND =====
         // ================================================================
         async function checkBind() {
             const token = document.getElementById('bindToken').value.trim();
@@ -786,7 +894,7 @@
             const pe = document.getElementById('bindPendingEmail');
             const cd = document.getElementById('bindCountdown');
 
-            acc.textContent = '⏳ Đang xử lý...'; acc.className = 'value loading';
+            acc.textContent = '⏳'; acc.className = 'value loading';
             uid.textContent = '⏳'; ce.textContent = '⏳'; pe.textContent = '⏳'; cd.textContent = '⏳';
             showResult('bindResult');
 
@@ -811,7 +919,7 @@
         }
 
         // ================================================================
-        // ===== 4. GET ACCESS TOKEN =====
+        // ===== 4. GET TOKEN =====
         // ================================================================
         async function getToken() {
             const uid = document.getElementById('tokenUid').value.trim();
@@ -825,7 +933,7 @@
             const ac = document.getElementById('tokenAccessDisplay');
             const op = document.getElementById('tokenOpenIdDisplay');
 
-            nm.textContent = '⏳ Đang lấy...'; nm.className = 'value loading';
+            nm.textContent = '⏳'; nm.className = 'value loading';
             ud.textContent = '⏳'; ac.textContent = '⏳'; op.textContent = '⏳';
             showResult('tokenResult');
 
@@ -838,14 +946,13 @@
                     ac.textContent = data.access_token || 'N/A';
                     op.textContent = data.open_id || 'N/A';
                     
-                    // Xóa copy cũ nếu có
                     const oldCopy = ac.parentNode.querySelector('.copy-btn');
                     if (oldCopy) oldCopy.remove();
                     
                     const copy = document.createElement('button');
                     copy.className = 'copy-btn';
                     copy.textContent = '📋 Copy';
-                    copy.onclick = () => navigator.clipboard.writeText(data.access_token).then(() => alert('✅ Đã copy Access Token!'));
+                    copy.onclick = () => navigator.clipboard.writeText(data.access_token).then(() => alert('✅ Đã copy!'));
                     ac.parentNode.appendChild(copy);
                 } else {
                     nm.textContent = '❌ Lỗi'; nm.className = 'value failed';
@@ -858,7 +965,7 @@
         }
 
         // ================================================================
-        // ===== 5. CHECK INFO UID =====
+        // ===== 5. CHECK INFO =====
         // ================================================================
         async function checkInfo() {
             const uid = document.getElementById('checkUid').value.trim();
@@ -873,7 +980,7 @@
             const cl = document.getElementById('checkClan');
             const st = document.getElementById('checkStatus');
 
-            nm.textContent = '⏳ Đang tra cứu...'; nm.className = 'value loading';
+            nm.textContent = '⏳'; nm.className = 'value loading';
             ud.textContent = '⏳'; lv.textContent = '⏳'; rk.textContent = '⏳'; cl.textContent = '⏳'; st.textContent = '⏳';
             showResult('checkResult');
 
@@ -895,8 +1002,129 @@
             }
         }
 
+        // ================================================================
+        // ===== 6. EAT → TOKEN =====
+        // ================================================================
+        async function eatToToken() {
+            const eat = document.getElementById('eatToken').value.trim();
+            if (!eat) { showError('eatError', 'Nhập EAT Token hoặc URL!'); return; }
+            hideError('eatError');
+
+            const nm = document.getElementById('eatNickname');
+            const aid = document.getElementById('eatAccountId');
+            const rg = document.getElementById('eatRegion');
+            const at = document.getElementById('eatAccessToken');
+
+            nm.textContent = '⏳'; nm.className = 'value loading';
+            aid.textContent = '⏳'; rg.textContent = '⏳'; at.textContent = '⏳';
+            showResult('eatResult');
+
+            try {
+                const resp = await fetch(`${API_BASE}/eat2token?eat=${encodeURIComponent(eat)}`);
+                const data = await resp.json();
+                if (data.success) {
+                    nm.textContent = data.nickname || 'N/A'; nm.className = 'value';
+                    aid.textContent = data.account_id || 'N/A';
+                    rg.textContent = data.region || 'N/A';
+                    at.textContent = data.access_token || 'N/A';
+                    
+                    const oldCopy = at.parentNode.querySelector('.copy-btn');
+                    if (oldCopy) oldCopy.remove();
+                    
+                    const copy = document.createElement('button');
+                    copy.className = 'copy-btn';
+                    copy.textContent = '📋 Copy';
+                    copy.onclick = () => navigator.clipboard.writeText(data.access_token).then(() => alert('✅ Đã copy!'));
+                    at.parentNode.appendChild(copy);
+                } else {
+                    nm.textContent = '❌ ' + (data.error || 'Thất bại!'); nm.className = 'value failed';
+                    aid.textContent = '—'; rg.textContent = '—'; at.textContent = '—';
+                }
+            } catch (e) {
+                nm.textContent = '❌ Lỗi kết nối!'; nm.className = 'value failed';
+                aid.textContent = '—'; rg.textContent = '—'; at.textContent = '—';
+            }
+        }
+
+        // ================================================================
+        // ===== 7. REVOKE TOKEN =====
+        // ================================================================
+        async function revokeToken() {
+            const token = document.getElementById('revokeToken').value.trim();
+            if (!token) { showError('revokeError', 'Nhập Access Token!'); return; }
+            hideError('revokeError');
+
+            const nm = document.getElementById('revokeNickname');
+            const aid = document.getElementById('revokeAccountId');
+            const st = document.getElementById('revokeStatus');
+
+            nm.textContent = '⏳'; nm.className = 'value loading';
+            aid.textContent = '⏳'; st.textContent = '⏳';
+            showResult('revokeResult');
+
+            try {
+                const resp = await fetch(`${API_BASE}/revoke?token=${encodeURIComponent(token)}`);
+                const data = await resp.json();
+                if (data.success) {
+                    nm.textContent = data.nickname || 'N/A'; nm.className = 'value';
+                    aid.textContent = data.account_id || 'N/A';
+                    st.textContent = '✅ ' + data.message; st.className = 'value success';
+                } else {
+                    st.textContent = '❌ ' + (data.error || 'Thất bại!'); st.className = 'value failed';
+                    nm.textContent = '—'; aid.textContent = '—';
+                }
+            } catch (e) {
+                st.textContent = '❌ Lỗi kết nối!'; st.className = 'value failed';
+                nm.textContent = '—'; aid.textContent = '—';
+            }
+        }
+
+        // ================================================================
+        // ===== 8. ACCESS → JWT =====
+        // ================================================================
+        async function accessToJwt() {
+            const token = document.getElementById('jwtToken').value.trim();
+            if (!token) { showError('jwtError', 'Nhập Access Token!'); return; }
+            hideError('jwtError');
+
+            const nm = document.getElementById('jwtNickname');
+            const ud = document.getElementById('jwtUid');
+            const rg = document.getElementById('jwtRegion');
+            const jwt = document.getElementById('jwtTokenDisplay');
+
+            nm.textContent = '⏳'; nm.className = 'value loading';
+            ud.textContent = '⏳'; rg.textContent = '⏳'; jwt.textContent = '⏳';
+            showResult('jwtResult');
+
+            try {
+                const resp = await fetch(`${API_BASE}/access2jwt?token=${encodeURIComponent(token)}`);
+                const data = await resp.json();
+                if (data.success) {
+                    nm.textContent = data.nickname || 'N/A'; nm.className = 'value';
+                    ud.textContent = data.uid || 'N/A';
+                    rg.textContent = data.region || 'N/A';
+                    jwt.textContent = data.jwt_token || 'N/A';
+                    
+                    const oldCopy = jwt.parentNode.querySelector('.copy-btn');
+                    if (oldCopy) oldCopy.remove();
+                    
+                    const copy = document.createElement('button');
+                    copy.className = 'copy-btn';
+                    copy.textContent = '📋 Copy';
+                    copy.onclick = () => navigator.clipboard.writeText(data.jwt_token).then(() => alert('✅ Đã copy!'));
+                    jwt.parentNode.appendChild(copy);
+                } else {
+                    nm.textContent = '❌ ' + (data.error || 'Thất bại!'); nm.className = 'value failed';
+                    ud.textContent = '—'; rg.textContent = '—'; jwt.textContent = '—';
+                }
+            } catch (e) {
+                nm.textContent = '❌ Lỗi kết nối!'; nm.className = 'value failed';
+                ud.textContent = '—'; rg.textContent = '—'; jwt.textContent = '—';
+            }
+        }
+
         console.log('✅ Zan Full API ready!');
     </script>
 
 </body>
-  </html>
+    </html>
