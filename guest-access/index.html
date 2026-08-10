@@ -4,9 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Access Token Generator</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
         body {
             min-height: 100vh;
             display: flex;
@@ -14,9 +19,9 @@
             justify-content: center;
             padding: 20px;
             background: #0a0e1a;
-            overflow: hidden;
             position: relative;
         }
+
         .bg-wrap {
             position: fixed;
             top: 0;
@@ -57,21 +62,14 @@
             animation-delay: -10s;
             opacity: 0.25;
         }
-        .bg-wrap .orb:nth-child(4) {
-            width: 200px;
-            height: 200px;
-            background: radial-gradient(circle, #ff6b6b, #ee5a24);
-            top: 20%;
-            right: 20%;
-            animation-delay: -3s;
-            opacity: 0.15;
-        }
+
         @keyframes floatOrb {
             0% { transform: translate(0,0) scale(1); }
             33% { transform: translate(60px,-40px) scale(1.1); }
             66% { transform: translate(-40px,50px) scale(0.9); }
             100% { transform: translate(30px,-60px) scale(1.05); }
         }
+
         .stars {
             position: fixed;
             top: 0;
@@ -91,6 +89,7 @@
             0% { opacity: 0.15; transform: scale(0.7); }
             100% { opacity: 1; transform: scale(1.2); }
         }
+
         .card {
             position: relative;
             z-index: 1;
@@ -105,16 +104,19 @@
             box-shadow: 0 50px 100px rgba(0,0,0,0.6);
             animation: cardFloat 8s ease-in-out infinite alternate;
         }
+
         @keyframes cardFloat {
             0% { transform: translateY(0); }
             100% { transform: translateY(-6px); }
         }
+
         .header {
             display: flex;
             align-items: center;
             justify-content: space-between;
             margin-bottom: 4px;
         }
+
         .badge {
             background: linear-gradient(135deg, #00b4ff, #0066ff);
             color: #fff;
@@ -126,11 +128,14 @@
             letter-spacing: 0.6px;
             animation: badgeGlow 3s ease-in-out infinite;
         }
+
         @keyframes badgeGlow {
             0%,100% { box-shadow: 0 0 0 0 rgba(0,180,255,0.2); }
             50% { box-shadow: 0 0 25px 5px rgba(0,180,255,0.08); }
         }
+
         .badge i { margin-right: 6px; }
+
         .version {
             color: #4a5a7a;
             font-size: 11px;
@@ -140,6 +145,7 @@
             border-radius: 40px;
             opacity: 0.7;
         }
+
         h1 {
             font-size: 30px;
             font-weight: 800;
@@ -147,6 +153,7 @@
             letter-spacing: -0.5px;
             margin: 10px 0 2px 0;
         }
+
         h1 span {
             background: linear-gradient(135deg, #00b4ff, #7c3aed, #00c853);
             background-size: 200% 200%;
@@ -155,11 +162,13 @@
             background-clip: text;
             animation: gradShift 5s ease-in-out infinite;
         }
+
         @keyframes gradShift {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
+
         .sub {
             color: #6a7a9a;
             font-size: 13px;
@@ -170,6 +179,7 @@
             padding-bottom: 16px;
             border-bottom: 1px solid rgba(255,255,255,0.04);
         }
+
         .sub i { color: #00b4ff; }
         .sub .status {
             margin-left: auto;
@@ -183,10 +193,12 @@
             margin-right: 4px;
             animation: pulseDot 2s ease-in-out infinite;
         }
+
         @keyframes pulseDot {
             0%,100% { opacity: 1; }
             50% { opacity: 0.2; }
         }
+
         .credit {
             background: rgba(255,255,255,0.02);
             border-radius: 16px;
@@ -195,24 +207,29 @@
             border: 1px solid rgba(255,255,255,0.04);
             text-align: center;
         }
+
         .credit .social {
             display: flex;
             justify-content: center;
             gap: 24px;
         }
+
         .credit .social a {
             color: #5a6a8a;
             font-size: 20px;
             transition: 0.3s;
             text-decoration: none;
         }
+
         .credit .social a:hover {
             color: #00b4ff;
             transform: translateY(-3px) scale(1.1);
         }
+
         .input-group {
             margin-bottom: 12px;
         }
+
         .input-group label {
             color: #7a8aaa;
             font-size: 13px;
@@ -220,10 +237,12 @@
             display: block;
             margin-bottom: 5px;
         }
+
         .input-group label i {
             color: #00b4ff;
             margin-right: 6px;
         }
+
         .input-wrap {
             display: flex;
             align-items: center;
@@ -233,14 +252,17 @@
             border: 1px solid #1a2a4a;
             transition: 0.3s;
         }
+
         .input-wrap:focus-within {
             border-color: #00b4ff;
             box-shadow: 0 0 0 4px rgba(0,180,255,0.08);
         }
+
         .input-wrap .icon {
             color: #3a4a6a;
             font-size: 14px;
         }
+
         .input-wrap input {
             flex: 1;
             background: transparent;
@@ -250,9 +272,11 @@
             font-size: 13px;
             outline: none;
         }
+
         .input-wrap input::placeholder {
             color: #3a4a6a;
         }
+
         .input-wrap .eye-btn {
             background: transparent;
             border: none;
@@ -262,9 +286,11 @@
             transition: 0.3s;
             font-size: 14px;
         }
+
         .input-wrap .eye-btn:hover {
             color: #00b4ff;
         }
+
         .btn-generate {
             width: 100%;
             padding: 15px;
@@ -284,6 +310,7 @@
             position: relative;
             overflow: hidden;
         }
+
         .btn-generate::before {
             content: '';
             position: absolute;
@@ -294,22 +321,27 @@
             background: linear-gradient(45deg, transparent, rgba(255,255,255,0.06), transparent);
             animation: btnShine 5s ease-in-out infinite;
         }
+
         @keyframes btnShine {
             0% { transform: translateX(-100%) rotate(25deg); }
             100% { transform: translateX(100%) rotate(25deg); }
         }
+
         .btn-generate:hover {
             transform: scale(1.02);
             box-shadow: 0 4px 40px rgba(0,180,255,0.3);
         }
+
         .btn-generate:active {
             transform: scale(0.97);
         }
+
         .btn-generate:disabled {
             opacity: 0.5;
             cursor: not-allowed;
             transform: none;
         }
+
         .spinner {
             display: inline-block;
             width: 20px;
@@ -319,9 +351,11 @@
             border-radius: 50%;
             animation: spin 0.7s linear infinite;
         }
+
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
         .result-box {
             margin-top: 16px;
             background: rgba(255,255,255,0.02);
@@ -331,22 +365,27 @@
             display: none;
             animation: resultPop 0.4s cubic-bezier(0.34,1.56,0.64,1);
         }
+
         @keyframes resultPop {
             0% { opacity: 0; transform: scale(0.92) translateY(8px); }
             100% { opacity: 1; transform: scale(1) translateY(0); }
         }
+
         .result-box.show { display: block; }
+
         .result-box .info-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
         }
+
         .result-box .info-item {
             background: rgba(255,255,255,0.02);
             border-radius: 12px;
             padding: 10px 12px;
             border: 1px solid rgba(255,255,255,0.04);
         }
+
         .result-box .info-item .label {
             color: #4a5a7a;
             font-size: 9px;
@@ -354,10 +393,12 @@
             letter-spacing: 0.5px;
             font-weight: 600;
         }
+
         .result-box .info-item .label i {
             color: #00b4ff;
             margin-right: 4px;
         }
+
         .result-box .info-item .value {
             color: #fff;
             font-weight: 600;
@@ -369,9 +410,11 @@
             gap: 6px;
             flex-wrap: wrap;
         }
+
         .result-box .info-item .value.loading {
             color: #00b4ff;
         }
+
         .result-box .copy-btn {
             background: rgba(255,255,255,0.06);
             border: none;
@@ -383,9 +426,11 @@
             font-weight: 500;
             transition: 0.2s;
         }
+
         .result-box .copy-btn:hover {
             background: rgba(255,255,255,0.12);
         }
+
         .err-msg {
             background: rgba(255,50,50,0.06);
             border-left: 3px solid #ff4444;
@@ -399,17 +444,21 @@
             gap: 10px;
             animation: shake 0.4s ease;
         }
+
         @keyframes shake {
             0%,100% { transform: translateX(0); }
             25% { transform: translateX(-4px); }
             75% { transform: translateX(4px); }
         }
+
         .err-msg.show { display: flex; }
+
         .social-footer {
             margin-top: 20px;
             padding-top: 16px;
             border-top: 1px solid rgba(255,255,255,0.04);
         }
+
         .social-footer .title {
             color: #4a5a7a;
             font-size: 10px;
@@ -418,11 +467,13 @@
             text-align: center;
             margin-bottom: 12px;
         }
+
         .social-footer .grid {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr 1fr;
             gap: 10px;
         }
+
         .social-footer .btn {
             padding: 10px 8px;
             border: none;
@@ -440,14 +491,18 @@
             background: rgba(255,255,255,0.03);
             border: 1px solid rgba(255,255,255,0.06);
         }
+
         .social-footer .btn i { font-size: 18px; transition: 0.3s; }
         .social-footer .btn .name { font-size: 9px; opacity: 0.6; font-weight: 400; }
+
         .social-footer .btn:hover {
             transform: translateY(-3px);
             box-shadow: 0 8px 30px rgba(0,0,0,0.4);
         }
+
         .social-footer .btn.telegram { background: linear-gradient(135deg, #0088cc, #005f8a); }
         .social-footer .btn.telegram:hover { box-shadow: 0 8px 30px rgba(0,136,204,0.3); }
+
         .social-footer .btn.tiktok {
             background: linear-gradient(135deg, #000000, #ff0050);
             position: relative;
@@ -470,10 +525,13 @@
         }
         .social-footer .btn.tiktok:hover { box-shadow: 0 8px 30px rgba(255,0,80,0.3); }
         .social-footer .btn.tiktok i, .social-footer .btn.tiktok .name { position: relative; z-index: 1; }
+
         .social-footer .btn.channel { background: linear-gradient(135deg, #f7971e, #ffd200); color: #0a0e1a; }
         .social-footer .btn.channel:hover { box-shadow: 0 8px 30px rgba(247,151,30,0.3); }
+
         .social-footer .btn.discord { background: linear-gradient(135deg, #5865F2, #4752C4); }
         .social-footer .btn.discord:hover { box-shadow: 0 8px 30px rgba(88,101,242,0.3); }
+
         .footer-text {
             color: #3a4a6a;
             font-size: 11px;
@@ -482,6 +540,7 @@
             padding-top: 12px;
             border-top: 1px solid rgba(255,255,255,0.03);
         }
+
         @media (max-width: 480px) {
             .card { padding: 22px 18px; border-radius: 24px; }
             h1 { font-size: 22px; }
@@ -495,12 +554,13 @@
     </style>
 </head>
 <body>
+
     <div class="bg-wrap">
         <div class="orb"></div>
         <div class="orb"></div>
         <div class="orb"></div>
-        <div class="orb"></div>
     </div>
+
     <div class="stars" id="stars"></div>
 
     <div class="card">
@@ -521,10 +581,10 @@
 
         <div class="credit">
             <div class="social">
-                <a href="https://t.me/zanbackj" target="_blank" title="Telegram"><i class="fab fa-telegram"></i></a>
-                <a href="https://www.tiktok.com/@nqbinhan_" target="_blank" title="TikTok"><i class="fab fa-tiktok"></i></a>
-                <a href="https://t.me/zancommunity" target="_blank" title="Channel"><i class="fas fa-hashtag"></i></a>
-                <a href="#" title="Discord: nqbinhan_"><i class="fab fa-discord"></i></a>
+                <a href="https://t.me/zanbackj" target="_blank"><i class="fab fa-telegram"></i></a>
+                <a href="https://www.tiktok.com/@nqbinhan_" target="_blank"><i class="fab fa-tiktok"></i></a>
+                <a href="https://t.me/zancommunity" target="_blank"><i class="fas fa-hashtag"></i></a>
+                <a href="#"><i class="fab fa-discord"></i></a>
             </div>
         </div>
 
@@ -605,7 +665,7 @@
 
     <script>
         (function() {
-            // Stars
+            // ===== STARS =====
             const stars = document.getElementById('stars');
             for (let i = 0; i < 80; i++) {
                 const star = document.createElement('div');
@@ -620,6 +680,7 @@
                 stars.appendChild(star);
             }
 
+            // ===== DOM =====
             const uidInput = document.getElementById('uidInput');
             const passInput = document.getElementById('passInput');
             const generateBtn = document.getElementById('generateBtn');
@@ -631,12 +692,14 @@
             const resultBox = document.getElementById('resultBox');
             const togglePass = document.getElementById('togglePass');
 
+            // ===== Toggle Password =====
             togglePass.addEventListener('click', function() {
                 const type = passInput.type === 'password' ? 'text' : 'password';
                 passInput.type = type;
                 this.querySelector('i').className = type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
             });
 
+            // ===== Functions =====
             function showError(msg) {
                 errorMsg.querySelector('span').textContent = msg;
                 errorMsg.className = 'err-msg show';
@@ -664,6 +727,7 @@
                 resultBox.className = 'result-box show';
             }
 
+            // ===== CODE CHÍNH - GỌI STRAIGHT API GARENA =====
             async function generateToken() {
                 const uid = uidInput.value.trim();
                 const password = passInput.value.trim();
@@ -682,54 +746,73 @@
                 generateBtn.disabled = true;
                 generateBtn.innerHTML = '<span class="spinner"></span> Đang tạo...';
 
-                const apis = [
-                    'https://zanapi.onrender.com/gettoken',
-                    'https://api-zan.onrender.com/gettoken',
-                    'https://gettoken-api.onrender.com/gettoken',
-                    'https://ff-token.vercel.app/gettoken'
-                ];
+                try {
+                    // ===== GỌI API GARENA TRỰC TIẾP =====
+                    const url = 'https://100067.connect.garena.com/oauth/guest/token/grant';
+                    const headers = {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 7.1.2)'
+                    };
+                    const body = new URLSearchParams({
+                        uid: uid,
+                        password: password,
+                        response_type: 'token',
+                        client_type: '2',
+                        client_secret: '2ee44819e9b4598845141067b281621874d0d5d7af9d8f7e00c1e54715b7d1e3',
+                        client_id: '100067'
+                    });
 
-                let lastError = null;
-                let successData = null;
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 15000);
 
-                for (const api of apis) {
-                    try {
-                        const controller = new AbortController();
-                        const timeout = setTimeout(() => controller.abort(), 15000);
+                    const resp = await fetch(url, {
+                        method: 'POST',
+                        headers: headers,
+                        body: body,
+                        signal: controller.signal
+                    });
 
-                        const resp = await fetch(api + '?uid=' + encodeURIComponent(uid) + '&pass=' + encodeURIComponent(password), {
-                            signal: controller.signal,
-                            headers: { 'Accept': 'application/json' }
-                        });
+                    clearTimeout(timeout);
 
-                        clearTimeout(timeout);
-
-                        if (!resp.ok) {
-                            throw new Error('HTTP ' + resp.status);
-                        }
-
-                        const data = await resp.json();
-
-                        if (data.success) {
-                            successData = data;
-                            break;
-                        } else {
-                            lastError = data.error || 'Sai UID hoặc mật khẩu!';
-                        }
-                    } catch (err) {
-                        if (err.name === 'AbortError') {
-                            lastError = '⏳ API timeout!';
-                        } else {
-                            lastError = err.message || 'Không thể kết nối!';
-                        }
-                        console.log('API lỗi:', api, lastError);
+                    if (!resp.ok) {
+                        throw new Error('HTTP ' + resp.status);
                     }
-                }
 
-                if (successData) {
-                    setResult(successData);
-                } else {
-                    showError('❌ ' + lastError);
+                    const data = await resp.json();
+
+                    if (data.access_token) {
+                        // ===== DECODE JWT LẤY NICKNAME =====
+                        let nickname = 'N/A';
+                        try {
+                            const parts = data.access_token.split('.');
+                            if (parts.length >= 2) {
+                                let payload = parts[1];
+                                while (payload.length % 4 !== 0) payload += '=';
+                                const decoded = JSON.parse(atob(payload));
+                                nickname = decoded.nickname || 'N/A';
+                                try {
+                                    nickname = atob(nickname);
+                                } catch (_) {}
+                            }
+                        } catch (_) {}
+
+                        setResult({
+                            access_token: data.access_token,
+                            open_id: data.open_id || '—',
+                            nickname: nickname || '—',
+                            region: data.region || 'VN'
+                        });
+                    } else {
+                        showError('❌ Sai UID hoặc mật khẩu!');
+                        resultBox.className = 'result-box';
+                    }
+
+                } catch (err) {
+                    if (err.name === 'AbortError') {
+                        showError('⏳ Quá thời gian chờ! Vui lòng thử lại.');
+                    } else {
+                        showError('❌ ' + err.message);
+                    }
                     resultBox.className = 'result-box';
                 }
 
@@ -737,10 +820,12 @@
                 generateBtn.innerHTML = '<i class="fas fa-rocket"></i> GENERATE ACCESS TOKEN';
             }
 
+            // ===== Events =====
             generateBtn.addEventListener('click', generateToken);
             uidInput.addEventListener('keydown', e => { if (e.key === 'Enter') passInput.focus(); });
             passInput.addEventListener('keydown', e => { if (e.key === 'Enter') generateBtn.click(); });
 
+            // ===== Copy Token =====
             const copyBtn = document.createElement('button');
             copyBtn.className = 'copy-btn';
             copyBtn.textContent = '📋 Copy';
@@ -764,5 +849,6 @@
             console.log('✅ Access Token Generator ready!');
         })();
     </script>
+
 </body>
-  </html>
+</html>>
