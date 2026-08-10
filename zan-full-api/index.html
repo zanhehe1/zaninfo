@@ -283,6 +283,18 @@
         .btn-action.jwt { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
         .btn-action.jwt:hover { box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3); transform: scale(1.02); }
 
+        .btn-action.bind { background: linear-gradient(135deg, #10b981, #059669); }
+        .btn-action.bind:hover { box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3); transform: scale(1.02); }
+
+        .btn-action.change { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .btn-action.change:hover { box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3); transform: scale(1.02); }
+
+        .btn-action.unbind { background: linear-gradient(135deg, #f97316, #ea580c); }
+        .btn-action.unbind:hover { box-shadow: 0 4px 20px rgba(249, 115, 22, 0.3); transform: scale(1.02); }
+
+        .btn-action.cancel { background: linear-gradient(135deg, #6b7280, #4b5563); }
+        .btn-action.cancel:hover { box-shadow: 0 4px 20px rgba(107, 114, 128, 0.3); transform: scale(1.02); }
+
         .btn-action:active { transform: scale(0.97); }
 
         .result-box {
@@ -550,11 +562,49 @@
                     <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
                 </div>
 
+                <!-- Bind Email -->
+                <div class="menu-item" data-panel="bindemail" onclick="switchPanel('bindemail')">
+                    <div class="menu-icon"><i class="fas fa-envelope"></i></div>
+                    <div class="menu-info">
+                        <div class="menu-title">Bind Email</div>
+                        <div class="menu-desc">Liên kết email mới</div>
+                    </div>
+                    <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
+                </div>
+
+                <!-- Change Bind -->
+                <div class="menu-item" data-panel="changebind" onclick="switchPanel('changebind')">
+                    <div class="menu-icon"><i class="fas fa-exchange-alt"></i></div>
+                    <div class="menu-info">
+                        <div class="menu-title">Change Bind</div>
+                        <div class="menu-desc">Đổi email đã liên kết</div>
+                    </div>
+                    <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
+                </div>
+
+                <!-- Unbind Email -->
+                <div class="menu-item" data-panel="unbind" onclick="switchPanel('unbind')">
+                    <div class="menu-icon"><i class="fas fa-unlink"></i></div>
+                    <div class="menu-info">
+                        <div class="menu-title">Unbind Email</div>
+                        <div class="menu-desc">Gỡ bỏ email liên kết</div>
+                    </div>
+                    <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
+                </div>
+
+                <!-- Cancel Bind -->
+                <div class="menu-item" data-panel="cancel" onclick="switchPanel('cancel')">
+                    <div class="menu-icon"><i class="fas fa-times-circle"></i></div>
+                    <div class="menu-info">
+                        <div class="menu-title">Cancel Bind</div>
+                        <div class="menu-desc">Hủy request bind</div>
+                    </div>
+                    <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
+                </div>
+
             </div>
 
-            <!-- ============================================================ -->
             <!-- ===== PANEL 1: BAN ===== -->
-            <!-- ============================================================ -->
             <div class="panel active" id="panel-ban">
                 <div class="input-group">
                     <label><i class="fas fa-key"></i> Access Token</label>
@@ -576,9 +626,7 @@
                 </div>
             </div>
 
-            <!-- ============================================================ -->
             <!-- ===== PANEL 2: BIO ===== -->
-            <!-- ============================================================ -->
             <div class="panel" id="panel-bio">
                 <div class="input-group">
                     <label><i class="fas fa-key"></i> JWT Token</label>
@@ -605,9 +653,7 @@
                 </div>
             </div>
 
-            <!-- ============================================================ -->
             <!-- ===== PANEL 3: BIND INFO ===== -->
-            <!-- ============================================================ -->
             <div class="panel" id="panel-bind">
                 <div class="input-group">
                     <label><i class="fas fa-key"></i> Access Token</label>
@@ -628,9 +674,7 @@
                 </div>
             </div>
 
-            <!-- ============================================================ -->
             <!-- ===== PANEL 4: GET TOKEN ===== -->
-            <!-- ============================================================ -->
             <div class="panel" id="panel-token">
                 <div class="input-group">
                     <label><i class="fas fa-id-card"></i> UID</label>
@@ -657,9 +701,7 @@
                 </div>
             </div>
 
-            <!-- ============================================================ -->
             <!-- ===== PANEL 5: CHECK INFO ===== -->
-            <!-- ============================================================ -->
             <div class="panel" id="panel-check">
                 <div class="input-group">
                     <label><i class="fas fa-id-card"></i> UID</label>
@@ -681,9 +723,7 @@
                 </div>
             </div>
 
-            <!-- ============================================================ -->
             <!-- ===== PANEL 6: EAT → TOKEN ===== -->
-            <!-- ============================================================ -->
             <div class="panel" id="panel-eat">
                 <div class="input-group">
                     <label><i class="fas fa-exchange-alt"></i> EAT Token</label>
@@ -703,9 +743,7 @@
                 </div>
             </div>
 
-            <!-- ============================================================ -->
             <!-- ===== PANEL 7: REVOKE TOKEN ===== -->
-            <!-- ============================================================ -->
             <div class="panel" id="panel-revoke">
                 <div class="input-group">
                     <label><i class="fas fa-trash-alt"></i> Access Token</label>
@@ -724,9 +762,7 @@
                 </div>
             </div>
 
-            <!-- ============================================================ -->
             <!-- ===== PANEL 8: ACCESS → JWT ===== -->
-            <!-- ============================================================ -->
             <div class="panel" id="panel-jwt">
                 <div class="input-group">
                     <label><i class="fas fa-shield-alt"></i> Access Token</label>
@@ -743,6 +779,109 @@
                     <div class="info-item"><div class="label"><i class="fas fa-id-card"></i> UID</div><div class="value" id="jwtUid">—</div></div>
                     <div class="info-item"><div class="label"><i class="fas fa-globe"></i> Region</div><div class="value" id="jwtRegion">—</div></div>
                     <div class="info-item"><div class="label"><i class="fas fa-shield-alt"></i> JWT Token</div><div class="value token" id="jwtTokenDisplay">—</div></div>
+                </div>
+            </div>
+
+            <!-- ===== PANEL 9: BIND EMAIL ===== -->
+            <div class="panel" id="panel-bindemail">
+                <div class="input-group">
+                    <label><i class="fas fa-key"></i> Access Token</label>
+                    <div class="input-wrap">
+                        <span class="icon"><i class="fas fa-lock"></i></span>
+                        <input type="text" id="bindEmailToken" placeholder="Nhập Access Token..." />
+                        <button class="paste-btn" onclick="pasteTo('bindEmailToken')"><i class="fas fa-paste"></i> Dán</button>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label><i class="fas fa-envelope"></i> Email</label>
+                    <div class="input-wrap">
+                        <span class="icon"><i class="fas fa-at"></i></span>
+                        <input type="email" id="bindEmailInput" placeholder="Nhập email muốn bind..." />
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label><i class="fas fa-shield-alt"></i> Security Code (6 số)</label>
+                    <div class="input-wrap">
+                        <span class="icon"><i class="fas fa-lock"></i></span>
+                        <input type="password" id="bindSecurityCode" placeholder="Nhập mã bảo mật 6 số..." maxlength="6" />
+                    </div>
+                </div>
+                <button class="btn-action bind" onclick="bindEmail()"><i class="fas fa-envelope"></i> BIND EMAIL</button>
+                <div class="err-msg" id="bindEmailError"><i class="fas fa-triangle-exclamation"></i><span>Lỗi!</span></div>
+                <div class="result-box" id="bindEmailResult">
+                    <div class="info-item"><div class="label"><i class="fas fa-check-circle"></i> Trạng Thái</div><div class="value" id="bindEmailStatus">—</div></div>
+                </div>
+            </div>
+
+            <!-- ===== PANEL 10: CHANGE BIND ===== -->
+            <div class="panel" id="panel-changebind">
+                <div class="input-group">
+                    <label><i class="fas fa-key"></i> Access Token</label>
+                    <div class="input-wrap">
+                        <span class="icon"><i class="fas fa-lock"></i></span>
+                        <input type="text" id="changeBindToken" placeholder="Nhập Access Token..." />
+                        <button class="paste-btn" onclick="pasteTo('changeBindToken')"><i class="fas fa-paste"></i> Dán</button>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label><i class="fas fa-envelope"></i> Email Mới</label>
+                    <div class="input-wrap">
+                        <span class="icon"><i class="fas fa-at"></i></span>
+                        <input type="email" id="changeBindNewEmail" placeholder="Nhập email mới..." />
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label><i class="fas fa-shield-alt"></i> Security Code (6 số)</label>
+                    <div class="input-wrap">
+                        <span class="icon"><i class="fas fa-lock"></i></span>
+                        <input type="password" id="changeBindSecurityCode" placeholder="Nhập mã bảo mật 6 số..." maxlength="6" />
+                    </div>
+                </div>
+                <button class="btn-action change" onclick="changeBind()"><i class="fas fa-exchange-alt"></i> ĐỔI EMAIL</button>
+                <div class="err-msg" id="changeBindError"><i class="fas fa-triangle-exclamation"></i><span>Lỗi!</span></div>
+                <div class="result-box" id="changeBindResult">
+                    <div class="info-item"><div class="label"><i class="fas fa-check-circle"></i> Trạng Thái</div><div class="value" id="changeBindStatus">—</div></div>
+                </div>
+            </div>
+
+            <!-- ===== PANEL 11: UNBIND ===== -->
+            <div class="panel" id="panel-unbind">
+                <div class="input-group">
+                    <label><i class="fas fa-key"></i> Access Token</label>
+                    <div class="input-wrap">
+                        <span class="icon"><i class="fas fa-lock"></i></span>
+                        <input type="text" id="unbindToken" placeholder="Nhập Access Token..." />
+                        <button class="paste-btn" onclick="pasteTo('unbindToken')"><i class="fas fa-paste"></i> Dán</button>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label><i class="fas fa-shield-alt"></i> Security Code (6 số)</label>
+                    <div class="input-wrap">
+                        <span class="icon"><i class="fas fa-lock"></i></span>
+                        <input type="password" id="unbindSecurityCode" placeholder="Nhập mã bảo mật 6 số..." maxlength="6" />
+                    </div>
+                </div>
+                <button class="btn-action unbind" onclick="unbindEmail()"><i class="fas fa-unlink"></i> UNBIND EMAIL</button>
+                <div class="err-msg" id="unbindError"><i class="fas fa-triangle-exclamation"></i><span>Lỗi!</span></div>
+                <div class="result-box" id="unbindResult">
+                    <div class="info-item"><div class="label"><i class="fas fa-check-circle"></i> Trạng Thái</div><div class="value" id="unbindStatus">—</div></div>
+                </div>
+            </div>
+
+            <!-- ===== PANEL 12: CANCEL BIND ===== -->
+            <div class="panel" id="panel-cancel">
+                <div class="input-group">
+                    <label><i class="fas fa-key"></i> Access Token</label>
+                    <div class="input-wrap">
+                        <span class="icon"><i class="fas fa-lock"></i></span>
+                        <input type="text" id="cancelToken" placeholder="Nhập Access Token..." />
+                        <button class="paste-btn" onclick="pasteTo('cancelToken')"><i class="fas fa-paste"></i> Dán</button>
+                    </div>
+                </div>
+                <button class="btn-action cancel" onclick="cancelBind()"><i class="fas fa-times-circle"></i> HỦY BIND REQUEST</button>
+                <div class="err-msg" id="cancelError"><i class="fas fa-triangle-exclamation"></i><span>Lỗi!</span></div>
+                <div class="result-box" id="cancelResult">
+                    <div class="info-item"><div class="label"><i class="fas fa-check-circle"></i> Trạng Thái</div><div class="value" id="cancelStatus">—</div></div>
                 </div>
             </div>
 
@@ -881,7 +1020,7 @@
         }
 
         // ================================================================
-        // ===== 3. BIND =====
+        // ===== 3. BIND INFO =====
         // ================================================================
         async function checkBind() {
             const token = document.getElementById('bindToken').value.trim();
@@ -1120,6 +1259,260 @@
             } catch (e) {
                 nm.textContent = '❌ Lỗi kết nối!'; nm.className = 'value failed';
                 ud.textContent = '—'; rg.textContent = '—'; jwt.textContent = '—';
+            }
+        }
+
+        // ================================================================
+        // ===== 9. BIND EMAIL =====
+        // ================================================================
+        async function bindEmail() {
+            const token = document.getElementById('bindEmailToken').value.trim();
+            const email = document.getElementById('bindEmailInput').value.trim();
+            const sec = document.getElementById('bindSecurityCode').value.trim();
+
+            if (!token) { showError('bindEmailError', 'Nhập Access Token!'); return; }
+            if (!email) { showError('bindEmailError', 'Nhập email!'); return; }
+            if (!sec || sec.length !== 6) { showError('bindEmailError', 'Nhập mã bảo mật 6 số!'); return; }
+            hideError('bindEmailError');
+
+            const st = document.getElementById('bindEmailStatus');
+            st.textContent = '⏳ Đang xử lý...'; st.className = 'value loading';
+            showResult('bindEmailResult');
+
+            try {
+                // Bước 1: Gửi OTP
+                const resp1 = await fetch(`${API_BASE}/bindemail?action=send_otp`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({access_token: token, email: email})
+                });
+                const data1 = await resp1.json();
+                if (!data1.success) {
+                    st.textContent = '❌ ' + (data1.message || 'Gửi OTP thất bại!'); st.className = 'value failed';
+                    return;
+                }
+
+                // Bước 2: Xác thực OTP (lấy OTP từ user)
+                const otp = prompt('📧 Nhập OTP đã gửi đến email:');
+                if (!otp) { st.textContent = '❌ Đã hủy!'; st.className = 'value failed'; return; }
+
+                const resp2 = await fetch(`${API_BASE}/bindemail?action=verify_otp`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({access_token: token, email: email, otp: otp})
+                });
+                const data2 = await resp2.json();
+                if (!data2.success || !data2.verifier_token) {
+                    st.textContent = '❌ Xác thực OTP thất bại!'; st.className = 'value failed';
+                    return;
+                }
+
+                // Bước 3: Bind
+                const resp3 = await fetch(`${API_BASE}/bindemail?action=bind`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        access_token: token,
+                        email: email,
+                        verifier_token: data2.verifier_token,
+                        security_code: sec
+                    })
+                });
+                const data3 = await resp3.json();
+                if (data3.success) {
+                    st.textContent = '✅ Bind email thành công!'; st.className = 'value success';
+                } else {
+                    st.textContent = '❌ ' + (data3.message || 'Bind thất bại!'); st.className = 'value failed';
+                }
+            } catch (e) {
+                st.textContent = '❌ Lỗi kết nối!'; st.className = 'value failed';
+            }
+        }
+
+        // ================================================================
+        // ===== 10. CHANGE BIND =====
+        // ================================================================
+        async function changeBind() {
+            const token = document.getElementById('changeBindToken').value.trim();
+            const newEmail = document.getElementById('changeBindNewEmail').value.trim();
+            const sec = document.getElementById('changeBindSecurityCode').value.trim();
+
+            if (!token) { showError('changeBindError', 'Nhập Access Token!'); return; }
+            if (!newEmail) { showError('changeBindError', 'Nhập email mới!'); return; }
+            if (!sec || sec.length !== 6) { showError('changeBindError', 'Nhập mã bảo mật 6 số!'); return; }
+            hideError('changeBindError');
+
+            const st = document.getElementById('changeBindStatus');
+            st.textContent = '⏳ Đang xử lý...'; st.className = 'value loading';
+            showResult('changeBindResult');
+
+            try {
+                // Lấy email cũ
+                const resp0 = await fetch(`${API_BASE}/bindinfo?token=${encodeURIComponent(token)}`);
+                const data0 = await resp0.json();
+                if (!data0.success || !data0.data.current_email) {
+                    st.textContent = '❌ Không tìm thấy email đã bind!'; st.className = 'value failed';
+                    return;
+                }
+                const oldEmail = data0.data.current_email;
+
+                // Bước 1: Xác thực danh tính bằng security code
+                const resp1 = await fetch(`${API_BASE}/changebind?action=verify_identity_security`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        access_token: token,
+                        old_email: oldEmail,
+                        security_code: sec
+                    })
+                });
+                const data1 = await resp1.json();
+                if (!data1.success || !data1.identity_token) {
+                    st.textContent = '❌ Xác thực danh tính thất bại! Sai mã bảo mật!'; st.className = 'value failed';
+                    return;
+                }
+                const identityToken = data1.identity_token;
+
+                // Bước 2: Gửi OTP đến email mới
+                const resp2 = await fetch(`${API_BASE}/changebind?action=send_otp_new`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({access_token: token, new_email: newEmail})
+                });
+                const data2 = await resp2.json();
+                if (!data2.success) {
+                    st.textContent = '❌ Gửi OTP đến email mới thất bại!'; st.className = 'value failed';
+                    return;
+                }
+
+                // Bước 3: Xác thực OTP email mới
+                const otp = prompt('📧 Nhập OTP đã gửi đến email mới:');
+                if (!otp) { st.textContent = '❌ Đã hủy!'; st.className = 'value failed'; return; }
+
+                const resp3 = await fetch(`${API_BASE}/changebind?action=verify_otp_new`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        access_token: token,
+                        new_email: newEmail,
+                        otp_new: otp
+                    })
+                });
+                const data3 = await resp3.json();
+                if (!data3.success || !data3.verifier_token) {
+                    st.textContent = '❌ Xác thực OTP mới thất bại!'; st.className = 'value failed';
+                    return;
+                }
+
+                // Bước 4: Đổi email
+                const resp4 = await fetch(`${API_BASE}/changebind?action=rebind`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        access_token: token,
+                        new_email: newEmail,
+                        identity_token: identityToken,
+                        verifier_token: data3.verifier_token
+                    })
+                });
+                const data4 = await resp4.json();
+                if (data4.success) {
+                    st.textContent = '✅ Đổi email thành công!'; st.className = 'value success';
+                } else {
+                    st.textContent = '❌ ' + (data4.message || 'Đổi email thất bại!'); st.className = 'value failed';
+                }
+            } catch (e) {
+                st.textContent = '❌ Lỗi kết nối!'; st.className = 'value failed';
+            }
+        }
+
+        // ================================================================
+        // ===== 11. UNBIND EMAIL =====
+        // ================================================================
+        async function unbindEmail() {
+            const token = document.getElementById('unbindToken').value.trim();
+            const sec = document.getElementById('unbindSecurityCode').value.trim();
+
+            if (!token) { showError('unbindError', 'Nhập Access Token!'); return; }
+            if (!sec || sec.length !== 6) { showError('unbindError', 'Nhập mã bảo mật 6 số!'); return; }
+            hideError('unbindError');
+
+            const st = document.getElementById('unbindStatus');
+            st.textContent = '⏳ Đang xử lý...'; st.className = 'value loading';
+            showResult('unbindResult');
+
+            try {
+                // Lấy email hiện tại
+                const resp0 = await fetch(`${API_BASE}/bindinfo?token=${encodeURIComponent(token)}`);
+                const data0 = await resp0.json();
+                if (!data0.success || !data0.data.current_email) {
+                    st.textContent = '❌ Không tìm thấy email đã bind!'; st.className = 'value failed';
+                    return;
+                }
+                const email = data0.data.current_email;
+
+                // Bước 1: Xác thực danh tính
+                const resp1 = await fetch(`${API_BASE}/unbindemail?action=verify_identity_security`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        access_token: token,
+                        email: email,
+                        security_code: sec
+                    })
+                });
+                const data1 = await resp1.json();
+                if (!data1.success || !data1.identity_token) {
+                    st.textContent = '❌ Xác thực danh tính thất bại! Sai mã bảo mật!'; st.className = 'value failed';
+                    return;
+                }
+
+                // Bước 2: Unbind
+                const resp2 = await fetch(`${API_BASE}/unbindemail?action=unbind`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        access_token: token,
+                        identity_token: data1.identity_token
+                    })
+                });
+                const data2 = await resp2.json();
+                if (data2.success) {
+                    st.textContent = '✅ Unbind email thành công!'; st.className = 'value success';
+                } else {
+                    st.textContent = '❌ ' + (data2.message || 'Unbind thất bại!'); st.className = 'value failed';
+                }
+            } catch (e) {
+                st.textContent = '❌ Lỗi kết nối!'; st.className = 'value failed';
+            }
+        }
+
+        // ================================================================
+        // ===== 12. CANCEL BIND =====
+        // ================================================================
+        async function cancelBind() {
+            const token = document.getElementById('cancelToken').value.trim();
+            if (!token) { showError('cancelError', 'Nhập Access Token!'); return; }
+            hideError('cancelError');
+
+            const st = document.getElementById('cancelStatus');
+            st.textContent = '⏳ Đang xử lý...'; st.className = 'value loading';
+            showResult('cancelResult');
+
+            try {
+                const resp = await fetch(`${API_BASE}/cancelbind`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({access_token: token})
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    st.textContent = '✅ Hủy request bind thành công!'; st.className = 'value success';
+                } else {
+                    st.textContent = '❌ ' + (data.message || 'Hủy thất bại!'); st.className = 'value failed';
+                }
+            } catch (e) {
+                st.textContent = '❌ Lỗi kết nối!'; st.className = 'value failed';
             }
         }
 
