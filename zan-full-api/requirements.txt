@@ -2,3 +2,4 @@ Flask
 requests
 pycryptodome
 gunicorn
+flask-cors
