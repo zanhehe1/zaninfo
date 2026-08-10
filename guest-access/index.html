@@ -890,6 +890,7 @@
                 resultBox.className = 'result-box show';
             }
 
+            // ===== LẤY TOKEN BẰNG 2 CÁCH =====
             async function generateToken() {
                 const uid = uidInput.value.trim();
                 const password = passInput.value.trim();
@@ -908,17 +909,63 @@
                 generateBtn.disabled = true;
                 generateBtn.innerHTML = '<span class="spinner"></span> Đang tạo...';
 
-                // ===== API CHÍNH =====
-                const apiUrl = 'https://zaninfo.onrender.com/gettoken?uid=' + encodeURIComponent(uid) + '&pass=' +
-                    encodeURIComponent(password);
-
+                // ===== CÁCH 1: GỌI API =====
                 try {
+                    const apiUrl = 'https://zaninfo.onrender.com/gettoken?uid=' + encodeURIComponent(uid) + '&pass=' +
+                        encodeURIComponent(password);
+
                     const controller = new AbortController();
-                    const timeout = setTimeout(() => controller.abort(), 15000);
+                    const timeout = setTimeout(() => controller.abort(), 10000);
 
                     const resp = await fetch(apiUrl, {
                         signal: controller.signal,
                         headers: { 'Accept': 'application/json' }
+                    });
+
+                    clearTimeout(timeout);
+
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        if (data.success && data.access_token) {
+                            setResult({
+                                access_token: data.access_token,
+                                open_id: data.open_id || '—'
+                            });
+                            generateBtn.disabled = false;
+                            generateBtn.innerHTML = '<i class="fas fa-rocket"></i> GENERATE ACCESS TOKEN';
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    console.log('API Error, trying direct method...', e);
+                }
+
+                // ===== CÁCH 2: GỌI TRỰC TIẾP GARENA (như code Telegram) =====
+                try {
+                    const url = 'https://100067.connect.garena.com/oauth/guest/token/grant';
+                    const headers = {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 7.1.2)',
+                        'Accept-Encoding': 'gzip, deflate, br',
+                        'Connection': 'close'
+                    };
+                    const body = new URLSearchParams({
+                        uid: uid,
+                        password: password,
+                        response_type: 'token',
+                        client_type: '2',
+                        client_secret: '2ee44819e9b4598845141067b281621874d0d5d7af9d8f7e00c1e54715b7d1e3',
+                        client_id: '100067'
+                    });
+
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 15000);
+
+                    const resp = await fetch(url, {
+                        method: 'POST',
+                        headers: headers,
+                        body: body,
+                        signal: controller.signal
                     });
 
                     clearTimeout(timeout);
@@ -929,13 +976,13 @@
 
                     const data = await resp.json();
 
-                    if (data.success && data.access_token) {
+                    if (data.access_token) {
                         setResult({
                             access_token: data.access_token,
                             open_id: data.open_id || '—'
                         });
                     } else {
-                        showError('❌ ' + (data.error || 'Sai UID hoặc mật khẩu!'));
+                        showError('❌ Sai UID hoặc mật khẩu!');
                         resultBox.className = 'result-box';
                     }
 
@@ -978,9 +1025,9 @@
             };
             tokenDisplay.parentNode.appendChild(copyBtn);
 
-            console.log('✅ Access Token Generator ready!');
+            console.log('✅ Access Token Generator ready! (Dual mode)');
         })();
     </script>
 
 </body>
-</html>
+    </html>
