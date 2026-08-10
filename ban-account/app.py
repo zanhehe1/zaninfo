@@ -8,6 +8,8 @@ import urllib.parse
 from datetime import datetime
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
+import MajorLogin_res_pb2
+from google.protobuf.timestamp_pb2 import Timestamp
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -471,7 +473,6 @@ def ban_api():
         return jsonify({"success": False, "error": "Missing access_token"})
     
     try:
-        # Lấy thông tin token
         inspect_url = f"https://100067.connect.garena.com/oauth/token/inspect?token={access_token}"
         inspect_headers = {
             "Accept-Encoding": "gzip, deflate, br",
@@ -486,7 +487,6 @@ def ban_api():
         if 'error' in data:
             return jsonify({"success": False, "error": data.get('error')})
         
-        # Lấy UID + Nickname
         account_id = 'N/A'
         nickname = 'Không xác định'
         try:
@@ -508,7 +508,6 @@ def ban_api():
         except:
             account_id = data.get('uid', 'N/A')
         
-        # Gọi hàm ban
         result = ban_account(access_token)
         
         if result:
