@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zan Full API</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #f0f2f5;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            padding: 20px;
+        }
+
+        .main-wrapper {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 28px 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e8ecf0;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .badge {
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 4px 14px;
+            border-radius: 40px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+        .badge i { margin-right: 6px; }
+
+        .version-tag {
+            color: #94a3b8;
+            font-size: 11px;
+            font-weight: 500;
+            background: #f1f5f9;
+            padding: 4px 12px;
+            border-radius: 40px;
+        }
+
+        .title-main {
+            font-size: 26px;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.5px;
+            margin: 4px 0 2px 0;
+            font-family: 'Outfit', sans-serif;
+        }
+        .title-main span {
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .sub-info {
+            color: #64748b;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #e8ecf0;
+        }
+        .sub-info i { color: #2563eb; }
+        .sub-info .status {
+            margin-left: auto;
+            color: #22c55e;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .sub-info .status i {
+            color: #22c55e;
+            font-size: 8px;
+            margin-right: 4px;
+            animation: pulseDot 2s ease-in-out infinite;
+        }
+        @keyframes pulseDot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.2; }
+        }
+
+        .menu-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .menu-item {
+            background: #f8fafc;
+            border: 2px solid #e8ecf0;
+            border-radius: 14px;
+            padding: 14px 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .menu-item:hover {
+            border-color: #2563eb;
+            background: #eff6ff;
+        }
+
+        .menu-item.active {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(37, 99, 235, 0.25);
+        }
+
+        .menu-item.active .menu-icon { color: #fff; }
+        .menu-item.active .menu-title { color: #fff; }
+        .menu-item.active .menu-desc { color: rgba(255, 255, 255, 0.7); }
+        .menu-item.active .menu-arrow { color: #fff; }
+
+        .menu-icon {
+            font-size: 20px;
+            color: #64748b;
+            width: 32px;
+            text-align: center;
+            transition: color 0.3s ease;
+        }
+        .menu-item:hover .menu-icon { color: #2563eb; }
+
+        .menu-info { flex: 1; }
+        .menu-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+            transition: color 0.3s ease;
+        }
+        .menu-desc {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+        .menu-arrow {
+            color: #94a3b8;
+            font-size: 12px;
+            transition: color 0.3s ease;
+        }
+        .menu-item:hover .menu-arrow { color: #2563eb; }
+
+        .panel {
+            display: none;
+            animation: fadeUp 0.3s ease;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e8ecf0;
+        }
+        .panel.active { display: block; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .input-group { margin-bottom: 10px; }
+        .input-group label {
+            color: #475569;
+            font-size: 12px;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .input-group label i { color: #2563eb; margin-right: 6px; }
+
+        .input-wrap {
+            display: flex;
+            align-items: center;
+            background: #f8fafc;
+            border-radius: 60px;
+            padding: 3px 3px 3px 16px;
+            border: 1px solid #e2e8f0;
+            transition: 0.3s;
+            gap: 4px;
+        }
+        .input-wrap:focus-within {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+        }
+        .input-wrap input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 12px 0;
+            color: #0f172a;
+            font-size: 13px;
+            outline: none;
+            min-width: 0;
+        }
+        .input-wrap input::placeholder { color: #94a3b8; }
+        .input-wrap .paste-btn {
+            background: #e2e8f0;
+            border: none;
+            color: #475569;
+            padding: 6px 12px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            transition: 0.3s;
+            white-space: nowrap;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .input-wrap .paste-btn:hover {
+            background: #2563eb;
+            color: #fff;
+        }
+        .input-wrap .icon {
+            color: #94a3b8;
+            font-size: 14px;
+            padding-right: 4px;
+            flex-shrink: 0;
+        }
+
+        .btn-action {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 60px;
+            font-weight: 700;
+            font-size: 13px;
+            color: #fff;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-action.ban { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .btn-action.ban:hover { box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3); transform: scale(1.02); }
+
+        .btn-action.bio { background: linear-gradient(135deg, #22c55e, #16a34a); }
+        .btn-action.bio:hover { box-shadow: 0 4px 20px rgba(34, 197, 94, 0.3); transform: scale(1.02); }
+
+        .btn-action.info { background: linear-gradient(135deg, #7c3aed, #6d28d9); }
+        .btn-action.info:hover { box-shadow: 0 4px 20px rgba(124, 58, 237, 0.3); transform: scale(1.02); }
+
+        .btn-action.token { background: linear-gradient(135deg, #f59e0b, #d97706); color: #0f172a; }
+        .btn-action.token:hover { box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3); transform: scale(1.02); }
+
+        .btn-action.check { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+        .btn-action.check:hover { box-shadow: 0 4px 20px rgba(37, 99, 235, 0.3); transform: scale(1.02); }
+
+        .btn-action:active { transform: scale(0.97); }
+
+        .result-box {
+            margin-top: 12px;
+            background: #f8fafc;
+            border-radius: 14px;
+            padding: 12px;
+            border: 1px solid #e8ecf0;
+            display: none;
+            animation: resultPop 0.3s ease;
+        }
+        .result-box.show { display: block; }
+        @keyframes resultPop {
+            from { opacity: 0; transform: scale(0.96); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .result-box .info-item {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 8px 12px;
+            border: 1px solid #e8ecf0;
+            margin-bottom: 4px;
+        }
+        .result-box .info-item:last-child { margin-bottom: 0; }
+        .result-box .info-item .label {
+            color: #94a3b8;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .result-box .info-item .label i { color: #2563eb; margin-right: 4px; }
+        .result-box .info-item .value {
+            color: #0f172a;
+            font-weight: 600;
+            font-size: 13px;
+            margin-top: 2px;
+            word-break: break-all;
+        }
+        .result-box .info-item .value.success { color: #22c55e; }
+        .result-box .info-item .value.failed { color: #ef4444; }
+        .result-box .info-item .value.loading { color: #f59e0b; }
+
+        .result-box .copy-btn {
+            background: #e2e8f0;
+            border: none;
+            color: #475569;
+            padding: 2px 10px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 500;
+            transition: 0.2s;
+            margin-left: 6px;
+        }
+        .result-box .copy-btn:hover {
+            background: #2563eb;
+            color: #fff;
+        }
+
+        .err-msg {
+            background: #fef2f2;
+            border-left: 3px solid #ef4444;
+            padding: 8px 14px;
+            border-radius: 10px;
+            color: #dc2626;
+            font-size: 12px;
+            margin: 6px 0 4px 0;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+        .err-msg.show { display: flex; }
+
+        .social-footer {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid #e8ecf0;
+        }
+        .social-footer .title {
+            color: #94a3b8;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        .social-footer .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 8px;
+        }
+        .social-footer .btn {
+            padding: 8px 6px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 10px;
+            transition: 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            color: #fff;
+            text-decoration: none;
+            background: #f1f5f9;
+            border: 1px solid #e8ecf0;
+        }
+        .social-footer .btn i {
+            font-size: 16px;
+            transition: 0.3s;
+            color: #64748b;
+        }
+        .social-footer .btn .name {
+            font-size: 8px;
+            opacity: 0.6;
+            color: #64748b;
+        }
+        .social-footer .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        .social-footer .btn.telegram:hover { background: #0088cc; }
+        .social-footer .btn.telegram:hover i,
+        .social-footer .btn.telegram:hover .name { color: #fff; }
+
+        .social-footer .btn.tiktok:hover { background: #000; }
+        .social-footer .btn.tiktok:hover i,
+        .social-footer .btn.tiktok:hover .name { color: #fff; }
+
+        .social-footer .btn.channel:hover { background: #f59e0b; }
+        .social-footer .btn.channel:hover i,
+        .social-footer .btn.channel:hover .name { color: #fff; }
+
+        .social-footer .btn.discord:hover { background: #5865F2; }
+        .social-footer .btn.discord:hover i,
+        .social-footer .btn.discord:hover .name { color: #fff; }
+
+        .footer-text {
+            color: #94a3b8;
+            font-size: 10px;
+            text-align: center;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid #e8ecf0;
+        }
+
+        @media (max-width: 480px) {
+            .card { padding: 18px 14px; border-radius: 20px; }
+            .title-main { font-size: 22px; }
+            .menu-item { padding: 12px 14px; }
+            .menu-title { font-size: 13px; }
+            .menu-desc { font-size: 10px; }
+            .social-footer .grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-wrapper">
+        <div class="card">
+
+            <!-- ===== HEADER ===== -->
+            <div class="card-header">
+                <span class="badge"><i class="fas fa-bolt"></i> Zan Full API</span>
+                <span class="version-tag"><i class="far fa-clock"></i> v3.0</span>
+            </div>
+
+            <h1 class="title-main"><span>ZAN FULL API</span></h1>
+            <div style="color: #64748b; font-size: 13px; margin-top: -2px; margin-bottom: 12px;">
+                <i class="fas fa-tools" style="color: #2563eb;"></i> Công cụ đa năng
+            </div>
+
+            <div class="sub-info">
+                <span class="status"><i class="fas fa-circle"></i> Online</span>
+            </div>
+
+            <!-- ===== MENU ===== -->
+            <div class="menu-list">
+
+                <!-- Ban Acc -->
+                <div class="menu-item active" data-panel="ban" onclick="switchPanel('ban')">
+                    <div class="menu-icon"><i class="fas fa-gavel"></i></div>
+                    <div class="menu-info">
+                        <div class="menu-title">Ban Acc</div>
+                        <div class="menu-desc">Ban 3 ngày</div>
+                    </div>
+                    <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
+                </div>
+
+                <!-- Đổi Bio -->
+                <div class="menu-item" data-panel="bio" onclick="switchPanel('bio')">
+                    <div class="menu-icon"><i class="fas fa-pen-fancy"></i></div>
+                    <div class="menu-info">
+                        <div class="menu-title">Đổi Bio</div>
+                        <div class="menu-desc">Đổi bio nhanh</div>
+                    </div>
+                    <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
+                </div>
+
+                <!-- Bind Info -->
+                <div class="menu-item" data-panel="bind" onclick="switchPanel('bind')">
+                    <div class="menu-icon"><i class="fas fa-link"></i></div>
+                    <div class="menu-info">
+                        <div class="menu-title">Bind Info</div>
+                        <div class="menu-desc">Kiểm tra bind email</div>
+                    </div>
+                    <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
+                </div>
+
+                <!-- Get Token -->
+                <div class="menu-item" data-panel="token" onclick="switchPanel('token')">
+                    <div class="menu-icon"><i class="fas fa-key"></i></div>
+                    <div class="menu-info">
+                        <div class="menu-title">Get Token</div>
+                        <div class="menu-desc">Lấy Access Token</div>
+                    </div>
+                    <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
+                </div>
+
+                <!-- Check Info -->
+                <div class="menu-item" data-panel="check" onclick="switchPanel('check')">
+                    <div class="menu-icon"><i class="fas fa-user-check"></i></div>
+                    <div class="menu-info">
+                        <div class="menu-title">Check Info</div>
+                        <div class="menu-desc">Tra cứu thông tin UID</div>
+                    </div>
+                    <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
+                </div>
+
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- ===== PANEL 1: BAN ===== -->
+            <!-- ============================================================ -->
+            <div class="panel active" id="panel-ban">
+                <div class="input-group">
+                    <label><i class="fas fa-key"></i> Access Token</label>
+                    <div class="input-wrap">
+                        <span class="icon"><i class="fas fa-lock"></i></span>
+                        <input type="text" id="banToken" placeholder="Nhập Access Token..." />
+                        <button class="paste-btn" onclick="pasteTo('banToken')"><i class="fas fa-paste"></i> Dán</button>
+                    </div>
+                </div>
+                <button class="btn-action ban" onclick="banAccount()">
+                    <i class="fas fa-calendar-day"></i> BAN 3 NGÀY
+                </button>
+                <div class="err-msg" id="banError"><i class="fas fa-triangle-exclamation"></i><span>Lỗi!</span></div>
+                <div class="result-box" id="banResult">
+                    <div class="info-item"><div class="label"><i class="fas fa-user"></i> Tài Khoản</div><div class="value" id="banAccountDisplay">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-id-card"></i> UID</div><div class="value" id="banUidDisplay">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-clock"></i> Loại Ban</div><div class="value" id="banTypeDisplay">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-check-circle"></i> Trạng Thái</div><div class="value" id="banStatusDisplay">—</div></div>
+                </div>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- ===== PANEL 2: BIO ===== -->
+            <!-- ============================================================ -->
+            <div class="panel" id="panel-bio">
+                <div class="input-group">
+                    <label><i class="fas fa-key"></i> JWT Token</label>
+                    <div class="input-wrap">
+                        <span class="icon"><i class="fas fa-lock"></i></span>
+                        <input type="text" id="bioToken" placeholder="Nhập JWT Token..." />
+                        <button class="paste-btn" onclick="pasteTo('bioToken')"><i class="fas fa-paste"></i> Dán</button>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label><i class="fas fa-pen"></i> Bio Mới</label>
+                    <div class="input-wrap">
+                        <span class="icon"><i class="fas fa-comment"></i></span>
+                        <input type="text" id="bioContent" placeholder="Nhập bio mới..." />
+                    </div>
+                </div>
+                <button class="btn-action bio" onclick="changeBio()"><i class="fas fa-pen-fancy"></i> ĐỔI BIO</button>
+                <div class="err-msg" id="bioError"><i class="fas fa-triangle-exclamation"></i><span>Lỗi!</span></div>
+                <div class="result-box" id="bioResult">
+                    <div class="info-item"><div class="label"><i class="fas fa-user"></i> Tài Khoản</div><div class="value" id="bioAccountDisplay">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-id-card"></i> UID</div><div class="value" id="bioUidDisplay">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-pen"></i> Bio Mới</div><div class="value" id="bioNewDisplay">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-check-circle"></i> Trạng Thái</div><div class="value" id="bioStatusDisplay">—</div></div>
+                </div>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- ===== PANEL 3: BIND INFO ===== -->
+            <!-- ============================================================ -->
+            <div class="panel" id="panel-bind">
+                <div class="input-group">
+                    <label><i class="fas fa-key"></i> Access Token</label>
+                    <div class="input-wrap">
+                        <span class="icon"><i class="fas fa-lock"></i></span>
+                        <input type="text" id="bindToken" placeholder="Nhập Access Token..." />
+                        <button class="paste-btn" onclick="pasteTo('bindToken')"><i class="fas fa-paste"></i> Dán</button>
+                    </div>
+                </div>
+                <button class="btn-action info" onclick="checkBind()"><i class="fas fa-search"></i> KIỂM TRA BIND</button>
+                <div class="err-msg" id="bindError"><i class="fas fa-triangle-exclamation"></i><span>Lỗi!</span></div>
+                <div class="result-box" id="bindResult">
+                    <div class="info-item"><div class="label"><i class="fas fa-user"></i> Tài Khoản</div><div class="value" id="bindAccountDisplay">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-id-card"></i> UID</div><div class="value" id="bindUidDisplay">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-envelope"></i> Email Hiện Tại</div><div class="value" id="bindCurrentEmail">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-clock"></i> Email Chờ</div><div class="value" id="bindPendingEmail">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-hourglass-half"></i> Countdown</div><div class="value" id="bindCountdown">—</div></div>
+                </div>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- ===== PANEL 4: GET TOKEN ===== -->
+            <!-- ============================================================ -->
+            <div class="panel" id="panel-token">
+                <div class="input-group">
+                    <label><i class="fas fa-id-card"></i> UID</label>
+                    <div class="input-wrap">
+                        <span class="icon"><i class="fas fa-user"></i></span>
+                        <input type="text" id="tokenUid" placeholder="Nhập UID..." />
+                        <button class="paste-btn" onclick="pasteTo('tokenUid')"><i class="fas fa-paste"></i> Dán</button>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label><i class="fas fa-lock"></i> Mật Khẩu</label>
+                    <div class="input-wrap">
+                        <span class="icon"><i class="fas fa-key"></i></span>
+                        <input type="password" id="tokenPass" placeholder="Nhập mật khẩu..." />
+                    </div>
+                </div>
+                <button class="btn-action token" onclick="getToken()"><i class="fas fa-rocket"></i> LẤY ACCESS TOKEN</button>
+                <div class="err-msg" id="tokenError"><i class="fas fa-triangle-exclamation"></i><span>Lỗi!</span></div>
+                <div class="result-box" id="tokenResult">
+                    <div class="info-item"><div class="label"><i class="fas fa-user"></i> Tài Khoản</div><div class="value" id="tokenNameDisplay">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-id-card"></i> UID</div><div class="value" id="tokenUidDisplay">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-key"></i> Access Token</div><div class="value" id="tokenAccessDisplay">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-user"></i> Open ID</div><div class="value" id="tokenOpenIdDisplay">—</div></div>
+                </div>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- ===== PANEL 5: CHECK INFO ===== -->
+            <!-- ============================================================ -->
+            <div class="panel" id="panel-check">
+                <div class="input-group">
+                    <label><i class="fas fa-id-card"></i> UID</label>
+                    <div class="input-wrap">
+                        <span class="icon"><i class="fas fa-user"></i></span>
+                        <input type="text" id="checkUid" placeholder="Nhập UID cần tra cứu..." />
+                        <button class="paste-btn" onclick="pasteTo('checkUid')"><i class="fas fa-paste"></i> Dán</button>
+                    </div>
+                </div>
+                <button class="btn-action check" onclick="checkInfo()"><i class="fas fa-search"></i> TRA CỨU</button>
+                <div class="err-msg" id="checkError"><i class="fas fa-triangle-exclamation"></i><span>Lỗi!</span></div>
+                <div class="result-box" id="checkResult">
+                    <div class="info-item"><div class="label"><i class="fas fa-user"></i> Nickname</div><div class="value" id="checkNick">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-id-card"></i> UID</div><div class="value" id="checkUidDisplay">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-level-up"></i> Level</div><div class="value" id="checkLevel">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-trophy"></i> Rank</div><div class="value" id="checkRank">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-flag"></i> Quân Đoàn</div><div class="value" id="checkClan">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-check-circle"></i> Trạng Thái</div><div class="value" id="checkStatus">—</div></div>
+                </div>
+            </div>
+
+            <!-- ===== SOCIAL ===== -->
+            <div class="social-footer">
+                <div class="title"><i class="fas fa-share-alt"></i> Kết nối</div>
+                <div class="grid">
+                    <a href="https://t.me/zanbackj" target="_blank" class="btn telegram">
+                        <i class="fab fa-telegram-plane"></i>
+                        <span class="name">Telegram</span>
+                    </a>
+                    <a href="https://www.tiktok.com/@nqbinhan_" target="_blank" class="btn tiktok">
+                        <i class="fab fa-tiktok"></i>
+                        <span class="name">TikTok</span>
+                    </a>
+                    <a href="https://t.me/zancommunity" target="_blank" class="btn channel">
+                        <i class="fas fa-hashtag"></i>
+                        <span class="name">Channel</span>
+                    </a>
+                    <a href="#" target="_blank" class="btn discord">
+                        <i class="fab fa-discord"></i>
+                        <span class="name">Discord</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="footer-text">
+                <i class="fas fa-shield-halved" style="color:#2563eb; opacity:0.3;"></i>
+                Zan Full API · 2026
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // ===== API BASE URL =====
+        const API_BASE = window.location.origin;
+
+        // ===== SWITCH PANEL =====
+        function switchPanel(name) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active'));
+            
+            const panel = document.getElementById('panel-' + name);
+            if (panel) panel.classList.add('active');
+            
+            const btn = document.querySelector(`.menu-item[data-panel="${name}"]`);
+            if (btn) btn.classList.add('active');
+        }
+
+        // ===== PASTE =====
+        function pasteTo(id) {
+            navigator.clipboard.readText().then(text => {
+                document.getElementById(id).value = text;
+            }).catch(() => alert('Không thể đọc clipboard! Vui lòng paste thủ công (Ctrl+V)'));
+        }
+
+        // ===== ERROR =====
+        function showError(id, msg) {
+            const el = document.getElementById(id);
+            el.querySelector('span').textContent = msg;
+            el.className = 'err-msg show';
+        }
+        function hideError(id) {
+            document.getElementById(id).className = 'err-msg';
+        }
+        function showResult(id) {
+            document.getElementById(id).className = 'result-box show';
+        }
+
+        // ================================================================
+        // ===== 1. BAN ACCOUNT =====
+        // ================================================================
+        async function banAccount() {
+            const token = document.getElementById('banToken').value.trim();
+            if (!token) { showError('banError', 'Nhập Access Token!'); return; }
+            hideError('banError');
+
+            const acc = document.getElementById('banAccountDisplay');
+            const uid = document.getElementById('banUidDisplay');
+            const tp = document.getElementById('banTypeDisplay');
+            const st = document.getElementById('banStatusDisplay');
+
+            acc.textContent = '⏳ Đang xử lý...'; acc.className = 'value loading';
+            uid.textContent = '⏳'; tp.textContent = '⏳'; st.textContent = '⏳';
+            showResult('banResult');
+
+            try {
+                const resp = await fetch(`${API_BASE}/ban?access_token=${encodeURIComponent(token)}&type=3day`);
+                const data = await resp.json();
+                if (data.success) {
+                    acc.textContent = data.nickname || 'N/A'; acc.className = 'value';
+                    uid.textContent = data.uid || 'N/A';
+                    tp.textContent = 'Ban 3 Ngày';
+                    st.textContent = '✅ Ban thành công!'; st.className = 'value success';
+                } else {
+                    st.textContent = '❌ ' + (data.error || 'Thất bại!'); st.className = 'value failed';
+                }
+            } catch (e) {
+                st.textContent = '❌ Lỗi kết nối!'; st.className = 'value failed';
+            }
+        }
+
+        // ================================================================
+        // ===== 2. CHANGE BIO =====
+        // ================================================================
+        async function changeBio() {
+            const token = document.getElementById('bioToken').value.trim();
+            const bio = document.getElementById('bioContent').value.trim();
+            if (!token) { showError('bioError', 'Nhập JWT Token!'); return; }
+            if (!bio) { showError('bioError', 'Nhập bio mới!'); return; }
+            hideError('bioError');
+
+            const acc = document.getElementById('bioAccountDisplay');
+            const uid = document.getElementById('bioUidDisplay');
+            const b = document.getElementById('bioNewDisplay');
+            const st = document.getElementById('bioStatusDisplay');
+
+            acc.textContent = '⏳ Đang xử lý...'; acc.className = 'value loading';
+            uid.textContent = '⏳'; b.textContent = '⏳'; st.textContent = '⏳';
+            showResult('bioResult');
+
+            try {
+                const resp = await fetch(`${API_BASE}/bio?jwt=${encodeURIComponent(token)}&bio=${encodeURIComponent(bio)}`);
+                const data = await resp.json();
+                if (data.success) {
+                    acc.textContent = data.nickname || 'N/A'; acc.className = 'value';
+                    uid.textContent = data.uid || 'N/A';
+                    b.textContent = bio;
+                    st.textContent = '✅ Đổi bio thành công!'; st.className = 'value success';
+                } else {
+                    st.textContent = '❌ ' + (data.message || 'Thất bại!'); st.className = 'value failed';
+                }
+            } catch (e) {
+                st.textContent = '❌ Lỗi kết nối!'; st.className = 'value failed';
+            }
+        }
+
+        // ================================================================
+        // ===== 3. CHECK BIND INFO =====
+        // ================================================================
+        async function checkBind() {
+            const token = document.getElementById('bindToken').value.trim();
+            if (!token) { showError('bindError', 'Nhập Access Token!'); return; }
+            hideError('bindError');
+
+            const acc = document.getElementById('bindAccountDisplay');
+            const uid = document.getElementById('bindUidDisplay');
+            const ce = document.getElementById('bindCurrentEmail');
+            const pe = document.getElementById('bindPendingEmail');
+            const cd = document.getElementById('bindCountdown');
+
+            acc.textContent = '⏳ Đang xử lý...'; acc.className = 'value loading';
+            uid.textContent = '⏳'; ce.textContent = '⏳'; pe.textContent = '⏳'; cd.textContent = '⏳';
+            showResult('bindResult');
+
+            try {
+                const resp = await fetch(`${API_BASE}/bindinfo?token=${encodeURIComponent(token)}`);
+                const data = await resp.json();
+                if (data.success) {
+                    const info = data.data || {};
+                    acc.textContent = data.nickname || 'N/A'; acc.className = 'value';
+                    uid.textContent = data.uid || 'N/A';
+                    ce.textContent = info.current_email || 'Chưa có';
+                    pe.textContent = info.pending_email || 'Chưa có';
+                    cd.textContent = info.countdown ? info.countdown + ' giây' : '0';
+                } else {
+                    acc.textContent = '❌ Lỗi'; acc.className = 'value failed';
+                    uid.textContent = '—'; ce.textContent = '—'; pe.textContent = '—'; cd.textContent = '—';
+                }
+            } catch (e) {
+                acc.textContent = '❌ Lỗi kết nối!'; acc.className = 'value failed';
+                uid.textContent = '—'; ce.textContent = '—'; pe.textContent = '—'; cd.textContent = '—';
+            }
+        }
+
+        // ================================================================
+        // ===== 4. GET ACCESS TOKEN =====
+        // ================================================================
+        async function getToken() {
+            const uid = document.getElementById('tokenUid').value.trim();
+            const pass = document.getElementById('tokenPass').value.trim();
+            if (!uid || !pass) { showError('tokenError', 'Nhập UID và mật khẩu!'); return; }
+            if (!uid.match(/^\d+$/)) { showError('tokenError', 'UID phải là số!'); return; }
+            hideError('tokenError');
+
+            const nm = document.getElementById('tokenNameDisplay');
+            const ud = document.getElementById('tokenUidDisplay');
+            const ac = document.getElementById('tokenAccessDisplay');
+            const op = document.getElementById('tokenOpenIdDisplay');
+
+            nm.textContent = '⏳ Đang lấy...'; nm.className = 'value loading';
+            ud.textContent = '⏳'; ac.textContent = '⏳'; op.textContent = '⏳';
+            showResult('tokenResult');
+
+            try {
+                const resp = await fetch(`${API_BASE}/gettoken?uid=${encodeURIComponent(uid)}&pass=${encodeURIComponent(pass)}`);
+                const data = await resp.json();
+                if (data.success) {
+                    nm.textContent = data.nickname || 'N/A'; nm.className = 'value';
+                    ud.textContent = data.uid || uid;
+                    ac.textContent = data.access_token || 'N/A';
+                    op.textContent = data.open_id || 'N/A';
+                    
+                    // Xóa copy cũ nếu có
+                    const oldCopy = ac.parentNode.querySelector('.copy-btn');
+                    if (oldCopy) oldCopy.remove();
+                    
+                    const copy = document.createElement('button');
+                    copy.className = 'copy-btn';
+                    copy.textContent = '📋 Copy';
+                    copy.onclick = () => navigator.clipboard.writeText(data.access_token).then(() => alert('✅ Đã copy Access Token!'));
+                    ac.parentNode.appendChild(copy);
+                } else {
+                    nm.textContent = '❌ Lỗi'; nm.className = 'value failed';
+                    ud.textContent = '—'; ac.textContent = '—'; op.textContent = '—';
+                }
+            } catch (e) {
+                nm.textContent = '❌ Lỗi kết nối!'; nm.className = 'value failed';
+                ud.textContent = '—'; ac.textContent = '—'; op.textContent = '—';
+            }
+        }
+
+        // ================================================================
+        // ===== 5. CHECK INFO UID =====
+        // ================================================================
+        async function checkInfo() {
+            const uid = document.getElementById('checkUid').value.trim();
+            if (!uid) { showError('checkError', 'Nhập UID!'); return; }
+            if (!uid.match(/^\d+$/)) { showError('checkError', 'UID phải là số!'); return; }
+            hideError('checkError');
+
+            const nm = document.getElementById('checkNick');
+            const ud = document.getElementById('checkUidDisplay');
+            const lv = document.getElementById('checkLevel');
+            const rk = document.getElementById('checkRank');
+            const cl = document.getElementById('checkClan');
+            const st = document.getElementById('checkStatus');
+
+            nm.textContent = '⏳ Đang tra cứu...'; nm.className = 'value loading';
+            ud.textContent = '⏳'; lv.textContent = '⏳'; rk.textContent = '⏳'; cl.textContent = '⏳'; st.textContent = '⏳';
+            showResult('checkResult');
+
+            try {
+                const resp = await fetch(`${API_BASE}/checkinfo?uid=${encodeURIComponent(uid)}`);
+                const data = await resp.json();
+                if (data.success) {
+                    nm.textContent = data.nickname || 'N/A'; nm.className = 'value';
+                    ud.textContent = data.uid || uid;
+                    lv.textContent = data.level || 'N/A';
+                    rk.textContent = data.rank || 'N/A';
+                    cl.textContent = data.clan || 'Chưa có';
+                    st.textContent = '✅ Tra cứu thành công!'; st.className = 'value success';
+                } else {
+                    st.textContent = '❌ ' + (data.error || 'Không tìm thấy!'); st.className = 'value failed';
+                }
+            } catch (e) {
+                st.textContent = '❌ Lỗi kết nối!'; st.className = 'value failed';
+            }
+        }
+
+        console.log('✅ Zan Full API ready!');
+    </script>
+
+</body>
+  </html>
