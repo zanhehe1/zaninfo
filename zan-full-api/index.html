@@ -714,11 +714,39 @@
                 <button class="btn-action check" onclick="checkInfo()"><i class="fas fa-search"></i> TRA CỨU</button>
                 <div class="err-msg" id="checkError"><i class="fas fa-triangle-exclamation"></i><span>Lỗi!</span></div>
                 <div class="result-box" id="checkResult">
+
+                    <!-- Thông tin cơ bản -->
                     <div class="info-item"><div class="label"><i class="fas fa-user"></i> Nickname</div><div class="value" id="checkNick">—</div></div>
                     <div class="info-item"><div class="label"><i class="fas fa-id-card"></i> UID</div><div class="value" id="checkUidDisplay">—</div></div>
                     <div class="info-item"><div class="label"><i class="fas fa-level-up"></i> Level</div><div class="value" id="checkLevel">—</div></div>
                     <div class="info-item"><div class="label"><i class="fas fa-trophy"></i> Rank</div><div class="value" id="checkRank">—</div></div>
                     <div class="info-item"><div class="label"><i class="fas fa-flag"></i> Quân Đoàn</div><div class="value" id="checkClan">—</div></div>
+
+                    <!-- Thông tin mới -->
+                    <div class="info-item"><div class="label"><i class="fas fa-heart"></i> Lượt thích</div><div class="value" id="checkLikes">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-shield-alt"></i> Điểm uy tín</div><div class="value" id="checkCredit">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-globe"></i> Khu vực</div><div class="value" id="checkRegion">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-quote-left"></i> Chữ ký</div><div class="value" id="checkSignature">—</div></div>
+
+                    <!-- Pet -->
+                    <div class="info-item"><div class="label"><i class="fas fa-paw"></i> Pet Name</div><div class="value" id="checkPetName">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-level-up"></i> Pet Level</div><div class="value" id="checkPetLevel">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-palette"></i> Pet Skin</div><div class="value" id="checkPetSkin">—</div></div>
+
+                    <!-- Clan chi tiết -->
+                    <div class="info-item"><div class="label"><i class="fas fa-user-tie"></i> Chủ Clan</div><div class="value" id="checkCaptain">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-users"></i> Thành viên Clan</div><div class="value" id="checkClanMembers">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-star"></i> Cấp Clan</div><div class="value" id="checkClanLevel">—</div></div>
+
+                    <!-- Thời gian -->
+                    <div class="info-item"><div class="label"><i class="fas fa-clock"></i> Lần cuối</div><div class="value" id="checkLastLogin">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-calendar-plus"></i> Ngày tạo</div><div class="value" id="checkCreateAt">—</div></div>
+
+                    <!-- Badge, Title -->
+                    <div class="info-item"><div class="label"><i class="fas fa-id-badge"></i> Badge</div><div class="value" id="checkBadge">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-crown"></i> Title</div><div class="value" id="checkTitle">—</div></div>
+                    <div class="info-item"><div class="label"><i class="fas fa-user-circle"></i> Head Pic</div><div class="value" id="checkHeadPic">—</div></div>
+
                     <div class="info-item"><div class="label"><i class="fas fa-check-circle"></i> Trạng Thái</div><div class="value" id="checkStatus">—</div></div>
                 </div>
             </div>
@@ -1112,26 +1140,82 @@
             if (!uid.match(/^\d+$/)) { showError('checkError', 'UID phải là số!'); return; }
             hideError('checkError');
 
+            // Các element cần hiển thị
             const nm = document.getElementById('checkNick');
             const ud = document.getElementById('checkUidDisplay');
             const lv = document.getElementById('checkLevel');
             const rk = document.getElementById('checkRank');
             const cl = document.getElementById('checkClan');
             const st = document.getElementById('checkStatus');
+            const likes = document.getElementById('checkLikes');
+            const credit = document.getElementById('checkCredit');
+            const region = document.getElementById('checkRegion');
+            const signature = document.getElementById('checkSignature');
+            const petName = document.getElementById('checkPetName');
+            const petLevel = document.getElementById('checkPetLevel');
+            const petSkin = document.getElementById('checkPetSkin');
+            const captain = document.getElementById('checkCaptain');
+            const clanMembers = document.getElementById('checkClanMembers');
+            const clanLevel = document.getElementById('checkClanLevel');
+            const lastLogin = document.getElementById('checkLastLogin');
+            const createAt = document.getElementById('checkCreateAt');
+            const badge = document.getElementById('checkBadge');
+            const title = document.getElementById('checkTitle');
+            const headPic = document.getElementById('checkHeadPic');
 
+            // Reset
             nm.textContent = '⏳'; nm.className = 'value loading';
             ud.textContent = '⏳'; lv.textContent = '⏳'; rk.textContent = '⏳'; cl.textContent = '⏳'; st.textContent = '⏳';
+            likes.textContent = '⏳'; credit.textContent = '⏳'; region.textContent = '⏳'; signature.textContent = '⏳';
+            petName.textContent = '⏳'; petLevel.textContent = '⏳'; petSkin.textContent = '⏳';
+            captain.textContent = '⏳'; clanMembers.textContent = '⏳'; clanLevel.textContent = '⏳';
+            lastLogin.textContent = '⏳'; createAt.textContent = '⏳'; badge.textContent = '⏳'; title.textContent = '⏳'; headPic.textContent = '⏳';
             showResult('checkResult');
 
             try {
                 const resp = await fetch(`${API_BASE}/checkinfo?uid=${encodeURIComponent(uid)}`);
                 const data = await resp.json();
+                
                 if (data.success) {
-                    nm.textContent = data.nickname || 'N/A'; nm.className = 'value';
-                    ud.textContent = data.uid || uid;
-                    lv.textContent = data.level || 'N/A';
-                    rk.textContent = data.rank || 'N/A';
-                    cl.textContent = data.clan || 'Chưa có';
+                    const result = data.result || {};
+                    const basic = result.basic_info || {};
+                    const clan = result.clan_basic_info || {};
+                    const captainInfo = result.captain_basic_info || {};
+                    const creditInfo = result.credit_score_info || {};
+                    const pet = result.pet_info || {};
+                    const social = result.social_info || {};
+                    const profile = result.profile_info || {};
+
+                    // Thông tin cơ bản
+                    nm.textContent = basic.nickname || 'N/A'; nm.className = 'value';
+                    ud.textContent = basic.account_id || uid;
+                    lv.textContent = basic.level || 'N/A';
+                    rk.textContent = basic.rank || 'N/A';
+                    likes.textContent = basic.liked || 0;
+                    credit.textContent = creditInfo.credit_score || 'N/A';
+                    region.textContent = basic.region || 'N/A';
+                    signature.textContent = social.signature || 'Không có';
+
+                    // Clan
+                    cl.textContent = clan.clan_name || 'Chưa có';
+                    clanLevel.textContent = clan.clan_level || 'N/A';
+                    clanMembers.textContent = clan.member_num ? `${clan.member_num}/${clan.capacity}` : 'N/A';
+                    captain.textContent = captainInfo.nickname || 'N/A';
+
+                    // Pet
+                    petName.textContent = pet.name || 'Không có';
+                    petLevel.textContent = pet.level || 'N/A';
+                    petSkin.textContent = pet.skin_id || 'N/A';
+
+                    // Thời gian
+                    lastLogin.textContent = basic.last_login_at ? new Date(basic.last_login_at * 1000).toLocaleString('vi-VN') : 'N/A';
+                    createAt.textContent = basic.create_at ? new Date(basic.create_at * 1000).toLocaleString('vi-VN') : 'N/A';
+
+                    // Trang bị
+                    badge.textContent = basic.badge_id || 'N/A';
+                    title.textContent = basic.title || 'N/A';
+                    headPic.textContent = basic.head_pic || 'N/A';
+
                     st.textContent = '✅ Tra cứu thành công!'; st.className = 'value success';
                 } else {
                     st.textContent = '❌ ' + (data.error || 'Không tìm thấy!'); st.className = 'value failed';
