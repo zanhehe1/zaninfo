@@ -758,13 +758,19 @@ def api_checkinfo():
         })
     
     try:
+        # ====== GỌI API ZANGAYINFO ======
         url = f"https://zangayinfo.onrender.com/info?uid={uid}"
         resp = requests.get(url, timeout=10)
         
         if resp.status_code == 200:
             data = resp.json()
+            
+            # ====== LẤY DỮ LIỆU ======
             basic = data.get('basicInfo', {})
             clan = data.get('clanBasicInfo', {})
+            social = data.get('socialInfo', {})
+            credit = data.get('creditScoreInfo', {})
+            pet = data.get('petInfo', {})
             
             return jsonify({
                 "success": True,
@@ -773,14 +779,33 @@ def api_checkinfo():
                 "level": basic.get('level', 'N/A'),
                 "rank": basic.get('rank', 'N/A'),
                 "clan": clan.get('clanName', 'Chưa có'),
+                "likes": basic.get('liked', 0),
+                "credit_score": credit.get('credit_score', 'N/A'),
+                "region": basic.get('region', 'N/A'),
+                "signature": social.get('signature', ''),
+                "pet": {
+                    "id": pet.get('id', 'N/A'),
+                    "level": pet.get('level', 'N/A'),
+                    "skin": pet.get('skin_id', 'N/A')
+                },
                 "data": data
             })
         else:
             return jsonify({
                 "success": False,
-                "error": "Không thể lấy thông tin"
+                "error": f"API zangayinfo lỗi: {resp.status_code}"
             })
             
+    except requests.exceptions.Timeout:
+        return jsonify({
+            "success": False,
+            "error": "API zangayinfo timeout!"
+        })
+    except requests.exceptions.ConnectionError:
+        return jsonify({
+            "success": False,
+            "error": "Không thể kết nối tới API zangayinfo!"
+        })
     except Exception as e:
         return jsonify({
             "success": False,
