@@ -758,7 +758,7 @@ def api_checkinfo():
         })
     
     try:
-        url = f"https://info-bb20.onrender.com/info?uid={uid}"
+        url = f"https://zangayinfo.onrender.com/info?uid={uid}"
         resp = requests.get(url, timeout=10)
         
         if resp.status_code == 200:
