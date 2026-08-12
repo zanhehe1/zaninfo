@@ -18,6 +18,7 @@
     --red-mid:#e60000;
     --red-bright:#ff1a1a;
     --orange:#ff3300;
+    --gold:#ffd700;
     --text-0:#ffffff;
     --text-1:#ffcccc;
     --line:rgba(255,0,0,0.3);
@@ -351,6 +352,91 @@
     letter-spacing: 0.5px;
   }
 
+  /* ===== ADMIN SECTION ===== */
+  .admin-section {
+    padding: 50px 0 30px;
+  }
+  .admin-box {
+    background: rgba(20,0,0,0.85);
+    border: 2px solid var(--red);
+    border-radius: 18px;
+    padding: 40px 35px;
+    text-align: center;
+    box-shadow: 0 0 60px rgba(255,0,0,0.1);
+    transition: .3s;
+  }
+  .admin-box:hover {
+    box-shadow: 0 0 80px rgba(255,0,0,0.2);
+    border-color: var(--gold);
+  }
+  .admin-header {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--gold);
+    letter-spacing: 2px;
+    margin-bottom: 18px;
+  }
+  .admin-header i {
+    color: var(--gold);
+    margin-right: 10px;
+  }
+  .admin-contact {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+  }
+  .admin-contact a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 10px 24px;
+    border: 1.5px solid var(--red);
+    border-radius: 30px;
+    transition: .3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255,0,0,0.05);
+  }
+  .admin-contact a:hover {
+    border-color: var(--gold);
+    box-shadow: 0 0 35px rgba(255,0,0,0.3);
+    transform: translateY(-3px);
+    background: rgba(255,0,0,0.1);
+  }
+  .admin-contact a i {
+    color: var(--red);
+    font-size: 18px;
+  }
+  .admin-contact a:hover i {
+    color: var(--gold);
+  }
+  .admin-divider {
+    width: 100px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--red), transparent);
+    margin: 10px auto 20px;
+  }
+  .admin-disclaimer p {
+    color: var(--text-1);
+    font-size: 14px;
+    line-height: 1.9;
+    margin: 6px 0;
+  }
+  .admin-disclaimer p strong {
+    color: #fff;
+  }
+  .admin-disclaimer p:first-child {
+    font-size: 16px;
+    color: var(--red);
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+  }
+
   /* ===== CTA ===== */
   .cta-band{
     text-align:center;padding:100px 24px;
@@ -400,6 +486,9 @@
     .payment-guide .step { font-size: 13px; }
     .notif-box { padding: 30px 20px; }
     .notif-box .notif-content { font-size: 13.5px; }
+    .admin-contact { gap: 14px; }
+    .admin-contact a { font-size: 13px; padding: 6px 14px; }
+    .admin-box { padding: 25px 18px; }
   }
 </style>
 </head>
@@ -534,7 +623,7 @@
     <div class="payment-guide reveal">
       <h3><i class="fa-solid fa-circle-info" style="color:var(--red);margin-right:10px;"></i>Hướng Dẫn Thuê Bot</h3>
       
-      <div class="step">1. Bạn có thể liên hệ Admin qua TikTok hoặc Zalo ở cuối website</div>
+      <div class="step">1. Bạn có thể liên hệ Admin qua TikTok hoặc Telegram ở cuối website</div>
       <div class="step">2. Khi đã liên hệ, vui lòng nhắn đúng yêu cầu của mình</div>
       <div class="step">3. Chuyển tiền và chụp bill gửi cho Admin</div>
       <div class="step">4. Sau khi gửi bill, Admin sẽ tự động cấp bot cho bạn</div>
@@ -558,6 +647,34 @@
   <h2 class="reveal">Đẳng Cấp Tạo Nên Thương Hiệu</h2>
   <p class="reveal">Liên hệ ngay để được tư vấn gói bot phù hợp nhất với bạn.</p>
   <a href="#lienHe" class="btn btn-primary reveal"><i class="fa-solid fa-fire"></i>Thuê Bot Ngay</a>
+</section>
+
+<!-- ===== ADMIN CHÍNH THỨC & TUYÊN BỐ TRÁCH NHIỆM ===== -->
+<section class="admin-section">
+  <div class="wrap">
+    <div class="admin-box reveal">
+      <div class="admin-header">
+        <i class="fa-solid fa-crown"></i>
+        <span>ADMIN CHÍNH THỨC CỦA WEBSITE</span>
+      </div>
+      <div class="admin-contact">
+        <a href="https://www.tiktok.com/@nqbinhan_" target="_blank">
+          <i class="fa-brands fa-tiktok"></i> @nqbinhan_
+        </a>
+        <a href="https://t.me/zanbackj" target="_blank">
+          <i class="fa-brands fa-telegram"></i> @zanbackj
+        </a>
+      </div>
+      <div class="admin-divider"></div>
+      <div class="admin-disclaimer">
+        <p><strong>TUYÊN BỐ TRÁCH NHIỆM</strong></p>
+        <p>Website này do tôi phát triển và vận hành, chỉ nhằm mục đích hỗ trợ người dùng khi cần thiết.</p>
+        <p>Chỉ giao dịch với kênh TikTok và Telegram này.</p>
+        <p>Mọi giao dịch phát sinh ngoài phạm vi hệ thống, không thông qua đội ngũ quản trị (admin) chính thức, sẽ không thuộc trách nhiệm của chúng tôi.</p>
+        <p>Đội ngũ quản trị và admin website hoàn toàn không chịu trách nhiệm đối với các rủi ro, tổn thất phát sinh từ những giao dịch này.</p>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- ===== FOOTER ===== -->
@@ -597,7 +714,6 @@
   window.addEventListener('load', function() {
     setTimeout(function() {
       document.getElementById('loading-screen').classList.add('hidden');
-      // Hiện thông báo ngay sau khi loading biến mất
       setTimeout(function() {
         document.getElementById('system-notification').classList.add('active');
       }, 400);
