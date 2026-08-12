@@ -422,6 +422,154 @@
   .cta-band h2{font-size:clamp(26px,4vw,42px);font-weight:900;margin-bottom:18px;text-transform:uppercase;}
   .cta-band p{color:var(--text-1);margin-bottom:34px;}
 
+  /* ===== CTV SECTION ===== */
+  .ctv-section {
+    padding: 60px 0 30px;
+  }
+  .ctv-banner {
+    background: linear-gradient(135deg, #ff0000, #cc0000);
+    border-radius: 12px;
+    padding: 18px 24px;
+    text-align: center;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    box-shadow: 0 0 40px rgba(255,0,0,0.3);
+    animation: pulseBanner 2s ease-in-out infinite;
+  }
+  @keyframes pulseBanner {
+    0%, 100% { box-shadow: 0 0 40px rgba(255,0,0,0.3); }
+    50% { box-shadow: 0 0 70px rgba(255,0,0,0.6); }
+  }
+  .ctv-banner i {
+    font-size: 22px;
+    color: #fff;
+    animation: shakeIcon 1.2s ease-in-out infinite;
+  }
+  @keyframes shakeIcon {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-8deg); }
+    75% { transform: rotate(8deg); }
+  }
+  .ctv-banner span {
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+  .ctv-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    margin-bottom: 40px;
+  }
+  .ctv-card {
+    background: rgba(20,0,0,0.7);
+    border: 2px solid var(--red);
+    border-radius: 16px;
+    padding: 28px 20px;
+    text-align: center;
+    transition: .3s;
+    position: relative;
+  }
+  .ctv-card:hover {
+    transform: translateY(-6px);
+    border-color: var(--gold);
+    box-shadow: 0 0 50px rgba(255,0,0,0.25);
+  }
+  .ctv-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #ff0000, #ff3300);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 18px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+    box-shadow: 0 0 20px rgba(255,0,0,0.4);
+  }
+  .ctv-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff0000, #330000);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 8px auto 14px;
+    border: 2px solid var(--red);
+  }
+  .ctv-avatar i {
+    font-size: 28px;
+    color: #fff;
+  }
+  .ctv-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 10px;
+  }
+  .ctv-social {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .ctv-link {
+    color: var(--text-1);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: .3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ctv-link:hover {
+    color: #fff;
+  }
+  .ctv-link i {
+    color: var(--red);
+    font-size: 18px;
+  }
+  .ctv-link:hover i {
+    color: var(--gold);
+  }
+  .ctv-disclaimer {
+    background: rgba(20,0,0,0.5);
+    border: 1px solid rgba(255,0,0,0.2);
+    border-radius: 12px;
+    padding: 24px 28px;
+    text-align: center;
+  }
+  .ctv-disclaimer p {
+    color: var(--text-1);
+    font-size: 13.5px;
+    line-height: 1.8;
+    margin: 4px 0;
+  }
+  .ctv-disclaimer p strong {
+    color: #fff;
+  }
+  .ctv-disclaimer p i {
+    color: var(--red);
+    margin-right: 6px;
+  }
+  .ctv-disclaimer p:first-child {
+    font-size: 15px;
+    color: var(--red);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
   footer{border-top:2px solid var(--red);padding:60px 0 24px;background:rgba(10,0,0,0.9);}
   .footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px;margin-bottom:40px;}
   .footer-title{
@@ -454,15 +602,18 @@
     .intro-grid,.pricing{grid-template-columns:1fr 1fr;}
     .benefit-grid{grid-template-columns:1fr 1fr;}
     .footer-grid{grid-template-columns:1fr 1fr;}
+    .ctv-grid { grid-template-columns: 1fr 1fr; }
   }
   @media(max-width:640px){
-    .intro-grid,.pricing,.benefit-grid,.footer-grid{grid-template-columns:1fr;}
+    .intro-grid,.pricing,.benefit-grid,.footer-grid,.ctv-grid{grid-template-columns:1fr;}
     .payment-guide .step { font-size: 13px; }
     .notif-box { padding: 30px 20px; }
     .notif-box .notif-content { font-size: 13.5px; }
     .admin-contact { gap: 14px; }
     .admin-contact a { font-size: 13px; padding: 6px 14px; }
     .admin-box { padding: 25px 18px; }
+    .ctv-banner span { font-size: 14px; }
+    .ctv-banner i { font-size: 18px; }
   }
 </style>
 </head>
@@ -499,7 +650,6 @@
 </header>
 
 <!-- ===== HERO ===== -->
-<!-- ===== HERO ===== --><!-- ===== HERO ===== -->
 <section class="hero">
   <div class="hero-tag">🔥 BOT FREE FIRE TEAM 5-6</div>
   <h1>CHÀO MỪNG BẠN ĐẾN VỚI<br><span>WEBSITE CỦA TÔI</span></h1>
@@ -598,8 +748,8 @@
 
       <div class="note-warning">
         <p><i class="fa-solid fa-triangle-exclamation" style="color:var(--red);margin-right:6px;"></i>
-          <span class="warning-text">Lưu ý quan trọng: Khi đã thuê bot, 
-          <span class="no-refund">sẽ không hoàn lại tiền dưới bất kỳ hình thức nào.
+          <span class="warning-text">Lưu ý quan trọng:</span> Khi đã thuê bot, 
+          <span class="no-refund">sẽ không hoàn lại tiền</span> dưới bất kỳ hình thức nào.
         </p>
         <p style="margin-top:6px;font-size:13px;color:var(--text-1);">
           <i class="fa-solid fa-check-circle" style="color:var(--red);margin-right:6px;"></i>
@@ -645,21 +795,15 @@
     <h2 class="sec-title reveal">ĐỘI NGŨ <span class="red">CTV CHÍNH THỨC</span></h2>
     <p class="sec-desc reveal">ZAN DEV chỉ công nhận các CTV có tên trong danh sách dưới đây.</p>
 
-    <!-- ===== BANNER CẢNH BÁO ĐỎ ===== -->
     <div class="ctv-banner reveal">
       <i class="fa-solid fa-triangle-exclamation"></i>
       <span>CHỈ GIAO DỊCH VỚI CTV TRONG DANH SÁCH</span>
     </div>
 
-    <!-- ===== DANH SÁCH CTV ===== -->
     <div class="ctv-grid">
-      
-      <!-- CỘNG TÁC VIÊN 1 -->
       <div class="ctv-card reveal">
         <div class="ctv-badge">🔥 CTV CHÍNH THỨC</div>
-        <div class="ctv-avatar">
-          <i class="fa-solid fa-user"></i>
-        </div>
+        <div class="ctv-avatar"><i class="fa-solid fa-user"></i></div>
         <h3 class="ctv-name">CTV 1</h3>
         <div class="ctv-social">
           <a href="https://www.tiktok.com/@_tranjanjan" target="_blank" class="ctv-link">
@@ -668,12 +812,9 @@
         </div>
       </div>
 
-      <!-- CỘNG TÁC VIÊN 2 -->
       <div class="ctv-card reveal">
         <div class="ctv-badge">🔥 CTV CHÍNH THỨC</div>
-        <div class="ctv-avatar">
-          <i class="fa-solid fa-user"></i>
-        </div>
+        <div class="ctv-avatar"><i class="fa-solid fa-user"></i></div>
         <h3 class="ctv-name">CTV 2</h3>
         <div class="ctv-social">
           <a href="https://www.tiktok.com/@ekietbelphi_" target="_blank" class="ctv-link">
@@ -682,12 +823,9 @@
         </div>
       </div>
 
-      <!-- CỘNG TÁC VIÊN 3 -->
       <div class="ctv-card reveal">
         <div class="ctv-badge">🔥 CTV CHÍNH THỨC</div>
-        <div class="ctv-avatar">
-          <i class="fa-solid fa-user"></i>
-        </div>
+        <div class="ctv-avatar"><i class="fa-solid fa-user"></i></div>
         <h3 class="ctv-name">CTV 3</h3>
         <div class="ctv-social">
           <a href="https://www.tiktok.com/@.wejx_09" target="_blank" class="ctv-link">
@@ -696,46 +834,23 @@
         </div>
       </div>
 
-      <!-- CTV 4 -->
       <div class="ctv-card reveal">
         <div class="ctv-badge">🔥 CTV CHÍNH THỨC</div>
-        <div class="ctv-avatar">
-          <i class="fa-solid fa-user"></i>
-        </div>
-        <h3 class="ctv-name">CỘNG TÁC VIÊN 4 4</h3>
+        <div class="ctv-avatar"><i class="fa-solid fa-user"></i></div>
+        <h3 class="ctv-name">CTV 4</h3>
         <div class="ctv-social">
-          <a href="https://www.tiktok.com/@nhatquang2309" target="_blank" class="ctv-link">
-            <i class="fa-brands fa-tiktok"></i> @nhatquang2309
+          <a href="https://www.tiktok.com/@nhatquang2308" target="_blank" class="ctv-link">
+            <i class="fa-brands fa-tiktok"></i> @nhatquang2308
           </a>
         </div>
       </div>
-
     </div>
 
-    <!-- ===== HƯỚNG DẪN NHẬN BIẾT CTV THẬT ===== -->
-    <div class="ctv-guide reveal">
-      <h3><i class="fa-solid fa-shield-halved"></i> CÁCH NHẬN BIẾT CTV CỦA ZAN</h3>
-      <div class="guide-grid">
-        <div class="guide-item">
-          <span class="guide-num">01</span>
-          <p><strong>Tên trong danh sách</strong><br>CTV thật có tên trong danh sách chính thức trên website này.</p>
-        </div>
-        <div class="guide-item">
-          <span class="guide-num">02</span>
-          <p><strong>Badge "CTV CHÍNH THỨC"</strong><br>Mọi CTV đều có badge xác nhận trên trang cá nhân và khi liên hệ.</p>
-        </div>
-        <div class="guide-item">
-        </div>
-      </div>
-    </div>
-
-    <!-- ===== TUYÊN BỐ TRÁCH NHIỆM ===== -->
     <div class="ctv-disclaimer reveal">
       <p><i class="fa-solid fa-triangle-exclamation"></i> <strong>TUYÊN BỐ TRÁCH NHIỆM:</strong></p>
-      <p>Zan chỉ chịu trách nhiệm với các giao dịch được thực hiện thông qua Admin hoặc CTV có tên trong danh sách chính thức trên website này.</p>
+      <p>ZAN DEV chỉ chịu trách nhiệm với các giao dịch được thực hiện thông qua Admin hoặc CTV có tên trong danh sách chính thức trên website này.</p>
       <p>Mọi giao dịch với CTV ngoài danh sách hoặc tự phát đều <strong>không thuộc trách nhiệm</strong> của ZAN DEV. Rủi ro phát sinh do giao dịch ngoài hệ thống sẽ do người dùng tự chịu.</p>
     </div>
-
   </div>
 </section>
 
@@ -772,7 +887,7 @@
         </ul>
       </div>
     </div>
-    <div class="footer-bottom">© 2026 ZAN DEV BOT FREE FIRE. All rights reserved.</div>
+    <div class="footer-bottom">© 2026 <span>ZAN DEV BOT FREEFIRE</span>. All rights reserved.</div>
   </div>
 </footer>
 
