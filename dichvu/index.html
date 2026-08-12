@@ -238,7 +238,7 @@
     font-size: 20px;
     font-weight: 800;
     color: var(--gold);
-    margin-bottom: 12px;
+    margin-bottom: 16px;
     text-transform: uppercase;
     letter-spacing: 1px;
     position: relative;
@@ -247,12 +247,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: 10px;
     flex-wrap: wrap;
     color: var(--text-1);
     font-size: 14.5px;
-    margin: 6px 0;
+    margin: 5px 0;
     position: relative;
+    padding: 4px 0;
   }
   .payment-guide .step i {
     color: var(--red);
@@ -269,7 +270,7 @@
     border: 1px solid rgba(255,215,0,0.25);
   }
   .payment-guide .admin-contact {
-    margin-top: 18px;
+    margin-top: 20px;
     display: flex;
     justify-content: center;
     gap: 24px;
@@ -281,7 +282,7 @@
     text-decoration: none;
     font-size: 14px;
     font-weight: 500;
-    padding: 6px 16px;
+    padding: 6px 18px;
     border: 1.5px solid var(--red);
     border-radius: 30px;
     transition: .3s;
@@ -300,6 +301,25 @@
   }
   .payment-guide .admin-contact a:hover i {
     color: var(--gold);
+  }
+  .payment-guide .note-warning {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255,0,0,0.2);
+    color: var(--text-1);
+    font-size: 14px;
+    line-height: 1.7;
+    position: relative;
+  }
+  .payment-guide .note-warning .warning-text {
+    color: var(--gold);
+    font-weight: 700;
+  }
+  .payment-guide .note-warning .no-refund {
+    color: #ff6b6b;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 
   /* ===== CTA ===== */
@@ -468,13 +488,14 @@
       <div class="benefit-card reveal"><i class="fa-solid fa-arrow-up-right-dots"></i><h4>Cập nhật tính năng liên tục</h4></div>
     </div>
 
-    <!-- ===== HƯỚNG DẪN THANH TOÁN & LIÊN HỆ ADMIN ===== -->
+    <!-- ===== HƯỚNG DẪN THUÊ BOT & LIÊN HỆ ADMIN ===== -->
     <div class="payment-guide reveal">
-      <h3><i class="fa-solid fa-circle-info" style="color:var(--red);margin-right:10px;"></i>Hướng Dẫn Đặt Thuê & Thanh Toán</h3>
-      <div class="step"><i class="fa-solid fa-1"></i> Chọn gói bot phù hợp, nhấn <span class="highlight">"Thuê ngay"</span></div>
-      <div class="step"><i class="fa-solid fa-2"></i> Chuyển khoản đúng số tiền theo gói đã chọn</div>
-      <div class="step"><i class="fa-solid fa-3"></i> Chụp màn hình <span class="highlight">biên lai (bill)</span> và gửi cho Admin</div>
-      <div class="step"><i class="fa-solid fa-4"></i> Admin xác nhận và cấp bot cho bạn trong vòng 5 phút</div>
+      <h3><i class="fa-solid fa-circle-info" style="color:var(--red);margin-right:10px;"></i>Hướng Dẫn Thuê Bot</h3>
+      
+      <div class="step"><i class="fa-solid fa-1"></i> Bạn có thể liên hệ Admin qua <span class="highlight">TikTok</span> hoặc <span class="highlight">Zalo</span></div>
+      <div class="step"><i class="fa-solid fa-2"></i> Khi đã liên hệ, vui lòng nhắn đúng <span class="highlight">yêu cầu</span> của mình</div>
+      <div class="step"><i class="fa-solid fa-3"></i> Chuyển tiền và <span class="highlight">chụp bill</span> gửi cho Admin</div>
+      <div class="step"><i class="fa-solid fa-4"></i> Sau khi gửi bill, Admin sẽ <span class="highlight">tự động cấp bot</span> cho bạn</div>
 
       <div class="admin-contact">
         <a href="https://www.tiktok.com/@nqbinhan_" target="_blank"><i class="fa-brands fa-tiktok"></i> TikTok</a>
@@ -482,10 +503,17 @@
         <a href="https://t.me/zanbackj" target="_blank"><i class="fa-brands fa-telegram"></i> Telegram</a>
         <a href="zalo://p?phone=0862457518" target="_blank"><i class="fa-solid fa-comment-dots"></i> Zalo</a>
       </div>
-      <p style="margin-top:16px;color:var(--text-1);font-size:13px;border-top:1px solid rgba(255,0,0,0.2);padding-top:16px;">
-        <i class="fa-solid fa-triangle-exclamation" style="color:var(--gold);margin-right:6px;"></i>
-        Lưu ý: Vui lòng <span style="color:var(--gold);font-weight:700;">cap bill</span> và gửi admin để được kích hoạt bot nhanh nhất.
-      </p>
+
+      <div class="note-warning">
+        <p><i class="fa-solid fa-triangle-exclamation" style="color:var(--gold);margin-right:6px;"></i>
+          <span class="warning-text">Lưu ý quan trọng:</span> Khi đã thuê bot, 
+          <span class="no-refund">sẽ không hoàn lại tiền</span> dưới bất kỳ hình thức nào.
+        </p>
+        <p style="margin-top:6px;font-size:13px;color:var(--text-1);">
+          <i class="fa-solid fa-check-circle" style="color:var(--gold);margin-right:6px;"></i>
+          Bot được cấp tự động ngay sau khi Admin xác nhận bill thành công.
+        </p>
+      </div>
     </div>
   </div>
 </section>
