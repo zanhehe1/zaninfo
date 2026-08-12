@@ -3,24 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ZAN DEV</title>
+<title>ZAN DEV — Bot Free Fire Team 5-6</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
   :root{
-    --black:#0a0a0a;
-    --black-2:#0d0d0d;
-    --black-3:#111111;
-    --red:#ff0000;
-    --red-dark:#cc0000;
+    --black:#08080a;
+    --black-2:#0c0c0e;
+    --black-3:#131315;
+    --panel:rgba(22,10,10,.55);
+    --panel-solid:#171012;
+    --red:#ff1a1a;
+    --red-dark:#b40000;
     --red-mid:#e60000;
-    --red-bright:#ff1a1a;
-    --orange:#ff3300;
+    --orange:#ff5722;
     --gold:#ffd700;
     --text-0:#ffffff;
-    --text-1:#ffcccc;
-    --line:rgba(255,0,0,0.3);
+    --text-1:#c9a8a4;
+    --text-2:#8f7570;
+    --line:rgba(255,30,30,.22);
+    --line-strong:rgba(255,30,30,.45);
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   html{scroll-behavior:smooth;}
@@ -36,414 +39,317 @@
   ::-webkit-scrollbar-track{background:var(--black);}
   ::-webkit-scrollbar-thumb{background:linear-gradient(var(--red),var(--orange));border-radius:10px;}
 
+  /* ===== Nền mesh glow tĩnh phía sau particle, tạo chiều sâu ===== */
+  .mesh-bg{
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(60% 40% at 15% 8%, rgba(255,20,20,.16), transparent 60%),
+      radial-gradient(45% 35% at 88% 18%, rgba(255,87,34,.12), transparent 60%),
+      radial-gradient(55% 40% at 50% 92%, rgba(255,20,20,.10), transparent 60%);
+  }
   #fireParticles{position:fixed;inset:0;z-index:0;pointer-events:none;}
+  .grain{
+    position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.035;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
   .wrap{max-width:1180px;margin:0 auto;padding:0 24px;position:relative;z-index:2;}
 
-  #loading-screen {
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    background: #0a0a0a;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    transition: opacity 0.8s ease, visibility 0.8s ease;
+  /* ===== LOADING SCREEN ===== */
+  #loading-screen{
+    position:fixed;inset:0;z-index:9999;background:var(--black);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    transition:opacity .8s ease, visibility .8s ease;
   }
-  #loading-screen.hidden {
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
+  #loading-screen.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+  #loading-screen .load-logo{
+    font-size:26px;font-weight:900;letter-spacing:3px;margin-bottom:26px;text-transform:uppercase;
+    background:linear-gradient(90deg,var(--red),var(--orange));-webkit-background-clip:text;background-clip:text;color:transparent;
+    animation:loadPulse 1.4s ease-in-out infinite;
   }
-  #loading-screen .loader-text {
-    font-size: 16px;
-    font-weight: 400;
-    color: var(--text-1);
-    margin-bottom: 18px;
-    letter-spacing: 2px;
+  @keyframes loadPulse{0%,100%{opacity:1;filter:drop-shadow(0 0 10px rgba(255,20,20,.4));}50%{opacity:.65;filter:drop-shadow(0 0 22px rgba(255,20,20,.7));}}
+  .loader-text{font-size:13.5px;font-weight:400;color:var(--text-1);margin-bottom:20px;letter-spacing:2.5px;text-transform:uppercase;}
+  .loader-ring{
+    width:56px;height:56px;border-radius:50%;
+    border:3px solid rgba(255,20,20,.12);border-top-color:var(--red);border-right-color:var(--orange);
+    animation:spinRing .9s linear infinite; box-shadow:0 0 40px rgba(255,20,20,.18);
   }
-  .loader-ring {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    border: 3px solid rgba(255,0,0,0.1);
-    border-top-color: var(--red);
-    border-right-color: var(--orange);
-    animation: spinRing 0.9s linear infinite;
-    box-shadow: 0 0 40px rgba(255,0,0,0.15);
-  }
-  @keyframes spinRing {
-    to { transform: rotate(360deg); }
-  }
-  .loader-progress {
-    margin-top: 18px;
-    width: 160px;
-    height: 2px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 10px;
-    overflow: hidden;
-  }
-  .loader-progress .bar {
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(90deg, var(--red), var(--orange));
-    border-radius: 10px;
-    animation: progressBar 3.6s ease-in-out forwards;
-  }
-  @keyframes progressBar {
-    0% { width: 0%; }
-    100% { width: 100%; }
-  }
+  @keyframes spinRing{to{transform:rotate(360deg);}}
+  .loader-progress{margin-top:22px;width:200px;height:2px;background:rgba(255,255,255,.06);border-radius:10px;overflow:hidden;}
+  .loader-progress .bar{height:100%;width:0%;background:linear-gradient(90deg,var(--red),var(--orange),var(--gold));border-radius:10px;animation:progressBar 3.6s ease-in-out forwards;}
+  @keyframes progressBar{0%{width:0%;}100%{width:100%;}}
 
-  #system-notification {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 9998;
-    background: rgba(0,0,0,0.85);
-    backdrop-filter: blur(8px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.5s ease, visibility 0.5s ease;
+  /* ===== THÔNG BÁO HỆ THỐNG ===== */
+  #system-notification{
+    position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.88);backdrop-filter:blur(10px);
+    display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;
+    transition:opacity .5s ease, visibility .5s ease; padding:20px;
   }
-  #system-notification.active {
-    opacity: 1;
-    visibility: visible;
+  #system-notification.active{opacity:1;visibility:visible;}
+  .notif-box{
+    background:linear-gradient(160deg,#1c0d0d,#120808);
+    border:1px solid var(--line-strong); border-radius:20px; padding:42px 36px;
+    max-width:520px;width:100%;text-align:center;position:relative;
+    box-shadow:0 0 90px rgba(255,20,20,.22), 0 30px 60px rgba(0,0,0,.5);
   }
-  .notif-box {
-    background: rgba(20,0,0,0.95);
-    border: 2px solid var(--red);
-    border-radius: 18px;
-    padding: 40px 35px;
-    max-width: 520px;
-    width: 90%;
-    text-align: center;
-    position: relative;
-    box-shadow: 0 0 80px rgba(255,0,0,0.2);
+  .notif-icon{
+    width:54px;height:54px;border-radius:50%;margin:0 auto 18px;
+    display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--red);
+    background:rgba(255,20,20,.1);border:1px solid var(--line-strong);
+    box-shadow:0 0 26px rgba(255,20,20,.35);
   }
-  .notif-box .notif-title {
-    font-size: 18px;
-    font-weight: 800;
-    color: var(--red);
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    margin-bottom: 18px;
-    text-shadow: 0 0 30px rgba(255,0,0,0.5);
+  .notif-box .notif-title{
+    font-size:17px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:2px;margin-bottom:16px;
   }
-  .notif-box .notif-content {
-    color: var(--text-1);
-    font-size: 14.5px;
-    line-height: 1.8;
-    margin-bottom: 22px;
+  .notif-box .notif-content{color:var(--text-1);font-size:14.5px;line-height:1.85;margin-bottom:26px;}
+  .notif-box .notif-content .highlight{color:#fff;font-weight:600;}
+  .notif-box .notif-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+  .notif-box .notif-btns button{
+    padding:12px 32px;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;
+    border:1px solid var(--line-strong);background:transparent;color:var(--text-0);transition:.3s;font-family:'Poppins',sans-serif;
   }
-  .notif-box .notif-content .highlight {
-    color: #fff;
-    font-weight: 600;
-  }
-  .notif-box .notif-btns {
-    display: flex;
-    gap: 14px;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-  .notif-box .notif-btns button {
-    padding: 10px 28px;
-    border-radius: 10px;
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    border: 2px solid var(--red);
-    background: transparent;
-    color: var(--text-0);
-    transition: .3s;
-    font-family: 'Poppins', sans-serif;
-  }
-  .notif-box .notif-btns button:hover {
-    background: var(--red);
-    box-shadow: 0 0 30px rgba(255,0,0,0.4);
-    transform: scale(1.02);
-  }
-  .notif-box .notif-btns .btn-close {
-    background: var(--red);
-    color: #fff;
-  }
-  .notif-box .notif-btns .btn-close:hover {
-    background: var(--red-dark);
-  }
+  .notif-box .notif-btns .btn-close{background:linear-gradient(135deg,var(--red),var(--orange));border-color:transparent;color:#fff;box-shadow:0 0 24px rgba(255,20,20,.4);}
+  .notif-box .notif-btns .btn-close:hover{transform:translateY(-2px);box-shadow:0 0 34px rgba(255,20,20,.6);}
 
+  /* ===== HEADER ===== */
   header{
     position:fixed;top:0;left:0;right:0;z-index:100;
-    background:rgba(10,10,10,0.85);backdrop-filter:blur(14px);
-    border-bottom:2px solid var(--red);
+    background:rgba(8,8,10,.7);backdrop-filter:blur(16px);
+    border-bottom:1px solid var(--line);
   }
   .nav{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;max-width:1180px;margin:0 auto;}
+  .logo{display:flex;align-items:center;gap:10px;font-weight:900;font-size:20px;letter-spacing:1px;}
+  .logo i{color:var(--red);text-shadow:0 0 16px rgba(255,20,20,.8);}
+  .logo span{color:var(--red);}
+  .nav-cta{
+    padding:10px 22px;border-radius:9px;font-weight:700;font-size:13.5px;color:#fff;text-decoration:none;
+    background:linear-gradient(135deg,var(--red),var(--orange));box-shadow:0 0 20px rgba(255,20,20,.4);
+    display:inline-flex;align-items:center;gap:8px;transition:.3s;
+  }
+  .nav-cta:hover{transform:translateY(-2px);box-shadow:0 0 30px rgba(255,20,20,.6);}
 
+  /* ===== HERO ===== */
   .hero{
     min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
     text-align:center;position:relative;padding:150px 24px 90px;
   }
   .hero-tag{
-    border:2px solid var(--red);color:var(--red);
-    padding:7px 18px;border-radius:30px;font-size:13px;letter-spacing:2px;text-transform:uppercase;
-    margin-bottom:26px;box-shadow:0 0 30px rgba(255,0,0,0.3) inset;
+    border:1px solid var(--line-strong);color:var(--red);
+    padding:8px 20px;border-radius:30px;font-size:12.5px;letter-spacing:2.5px;text-transform:uppercase;font-weight:600;
+    margin-bottom:28px;box-shadow:0 0 30px rgba(255,20,20,.18) inset;
     animation:pulseTag 2.2s ease-in-out infinite;
   }
-  @keyframes pulseTag{50%{box-shadow:0 0 50px rgba(255,0,0,0.5) inset;}}
+  @keyframes pulseTag{50%{box-shadow:0 0 46px rgba(255,20,20,.32) inset;}}
   .hero h1{
-    font-size:clamp(34px,6.5vw,72px);font-weight:900;line-height:1.12;letter-spacing:-1px;text-transform:uppercase;
+    font-size:clamp(36px,6.8vw,76px);font-weight:900;line-height:1.1;letter-spacing:-1.5px;text-transform:uppercase;
   }
   .hero h1 .glow{
-    background:linear-gradient(90deg,var(--red),var(--orange));
+    background:linear-gradient(90deg,var(--red),var(--orange),var(--gold));
     -webkit-background-clip:text;background-clip:text;color:transparent;
-    text-shadow:0 0 40px rgba(255,0,0,0.6);
+    text-shadow:0 0 46px rgba(255,20,20,.35);
     animation:flicker 3.6s infinite;
   }
-  @keyframes flicker{0%,19%,21%,23%,25%,54%,56%,100%{opacity:1;}20%,22%,24%,55%{opacity:.6;}}
-  .hero p.sub{max-width:640px;margin:26px auto 0;color:var(--text-1);font-size:16.5px;line-height:1.8;}
-  .hero-btns{display:flex;gap:18px;margin-top:42px;flex-wrap:wrap;justify-content:center;}
+  @keyframes flicker{0%,19%,21%,23%,25%,54%,56%,100%{opacity:1;}20%,22%,24%,55%{opacity:.68;}}
+  .hero p.sub{max-width:640px;margin:26px auto 0;color:var(--text-1);font-size:16.5px;line-height:1.85;}
+  .hero-btns{display:flex;gap:18px;margin-top:44px;flex-wrap:wrap;justify-content:center;}
   .btn{
-    padding:16px 34px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none;cursor:pointer;
-    border:none;display:inline-flex;align-items:center;gap:10px;transition:.3s;letter-spacing:.3px;
+    padding:16px 34px;border-radius:11px;font-weight:700;font-size:15px;text-decoration:none;cursor:pointer;
+    border:none;display:inline-flex;align-items:center;gap:10px;transition:.3s;letter-spacing:.3px;position:relative;
   }
   .btn-primary{
     background:linear-gradient(135deg,var(--red),var(--orange));color:#fff;
-    box-shadow:0 0 35px rgba(255,0,0,0.6);
+    box-shadow:0 0 34px rgba(255,20,20,.5), inset 0 1px 0 rgba(255,255,255,.15);
   }
-  .btn-primary:hover{transform:translateY(-3px);box-shadow:0 0 55px rgba(255,0,0,0.9);}
-  .btn-outline{background:transparent;border:2px solid var(--red);color:var(--text-0);}
-  .btn-outline:hover{border-color:var(--red);color:var(--red);box-shadow:0 0 30px rgba(255,0,0,0.3);transform:translateY(-3px);}
+  .btn-primary:hover{transform:translateY(-3px);box-shadow:0 0 50px rgba(255,20,20,.75), inset 0 1px 0 rgba(255,255,255,.2);}
+  .btn-outline{background:rgba(255,255,255,.02);border:1px solid var(--line-strong);color:var(--text-0);}
+  .btn-outline:hover{border-color:var(--red);color:#fff;background:rgba(255,20,20,.08);box-shadow:0 0 26px rgba(255,20,20,.25);transform:translateY(-3px);}
+
+  .hero-stats{display:flex;gap:44px;margin-top:64px;flex-wrap:wrap;justify-content:center;}
+  .hero-stat{text-align:center;}
+  .hero-stat .num{font-size:26px;font-weight:900;color:#fff;}
+  .hero-stat .num span{color:var(--red);}
+  .hero-stat .lbl{font-size:12px;color:var(--text-2);letter-spacing:1.5px;text-transform:uppercase;margin-top:4px;}
 
   section{position:relative;z-index:2;padding:110px 0;}
   .eyebrow{
-    color:var(--red);font-size:13px;letter-spacing:3px;text-transform:uppercase;font-weight:700;
-    display:block;text-align:center;margin-bottom:14px;text-shadow:0 0 20px rgba(255,0,0,0.7);
+    color:var(--red);font-size:12.5px;letter-spacing:3.5px;text-transform:uppercase;font-weight:700;
+    display:block;text-align:center;margin-bottom:16px;text-shadow:0 0 16px rgba(255,20,20,.5);
   }
-  .sec-title{text-align:center;font-size:clamp(26px,4vw,42px);font-weight:900;margin-bottom:16px;text-transform:uppercase;}
-  .sec-title .red{color:var(--red);text-shadow:0 0 30px rgba(255,0,0,0.5);}
-  .sec-desc{text-align:center;color:var(--text-1);max-width:600px;margin:0 auto 60px;font-size:15.5px;line-height:1.8;}
+  .sec-title{text-align:center;font-size:clamp(26px,4vw,42px);font-weight:900;margin-bottom:16px;text-transform:uppercase;letter-spacing:-.5px;}
+  .sec-title .red{
+    background:linear-gradient(90deg,var(--red),var(--orange));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .sec-desc{text-align:center;color:var(--text-1);max-width:600px;margin:0 auto 60px;font-size:15.5px;line-height:1.85;}
 
-  .intro-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;}
+  /* ===== GIỚI THIỆU DỊCH VỤ ===== */
+  .intro-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;}
   .intro-card{
-    background:rgba(20,0,0,0.6);
-    border:2px solid var(--red);
-    border-radius:14px;padding:26px 24px;
-    display:flex;align-items:flex-start;gap:16px;transition:.3s;position:relative;overflow:hidden;
+    background:linear-gradient(160deg,rgba(30,10,10,.55),rgba(15,6,6,.55));
+    border:1px solid var(--line);border-radius:16px;padding:26px 24px;
+    display:flex;align-items:flex-start;gap:18px;transition:.35s;position:relative;overflow:hidden;
   }
-  .intro-card:hover{border-color:var(--red);box-shadow:0 0 40px rgba(255,0,0,0.3);transform:translateY(-4px);}
-  .intro-card i{
-    font-size:24px;color:var(--red);text-shadow:0 0 20px rgba(255,0,0,0.8);min-width:30px;
+  .intro-card::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:1px;
+    background:linear-gradient(90deg,transparent,var(--red),transparent);opacity:0;transition:.35s;
   }
-  .intro-card p{color:#fff;font-size:15px;font-weight:500;line-height:1.6;}
+  .intro-card:hover{border-color:var(--line-strong);box-shadow:0 16px 40px rgba(255,20,20,.15);transform:translateY(-5px);}
+  .intro-card:hover::before{opacity:1;}
+  .intro-icon{
+    width:46px;height:46px;min-width:46px;border-radius:12px;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(255,20,20,.1);border:1px solid var(--line);
+    font-size:19px;color:var(--red);text-shadow:0 0 14px rgba(255,20,20,.7);
+  }
+  .intro-card p{color:var(--text-0);font-size:14.5px;font-weight:500;line-height:1.65;padding-top:4px;}
 
+  /* ===== BẢNG GIÁ ===== */
   .pricing{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;align-items:stretch;}
   .plan{
-    background:rgba(20,0,0,0.5);border:2px solid var(--red);border-radius:18px;
-    padding:34px 28px;display:flex;flex-direction:column;transition:.35s;position:relative;
+    background:linear-gradient(160deg,rgba(28,10,10,.6),rgba(12,6,6,.6));
+    border:1px solid var(--line);border-radius:20px;
+    padding:36px 30px;display:flex;flex-direction:column;transition:.35s;position:relative;
   }
-  .plan:hover{transform:translateY(-6px);border-color:var(--red);box-shadow:0 20px 60px rgba(255,0,0,0.25);}
+  .plan:hover{transform:translateY(-8px);border-color:var(--line-strong);box-shadow:0 24px 55px rgba(255,20,20,.2);}
   .plan.featured{
-    border:2px solid var(--red);box-shadow:0 0 60px rgba(255,0,0,0.35);
-    background:rgba(30,0,0,0.6);
+    border:1px solid var(--red);box-shadow:0 0 55px rgba(255,20,20,.3);
+    background:linear-gradient(160deg,rgba(45,8,8,.75),rgba(15,5,5,.75));
   }
   .plan.featured .badge{
-    position:absolute;top:-14px;left:50%;transform:translateX(-50%);
+    position:absolute;top:-15px;left:50%;transform:translateX(-50%);
     background:linear-gradient(135deg,var(--red),var(--orange));color:#fff;
-    font-size:12px;font-weight:800;padding:6px 18px;border-radius:20px;letter-spacing:1px;
+    font-size:12px;font-weight:800;padding:7px 20px;border-radius:20px;letter-spacing:1px;
+    box-shadow:0 6px 20px rgba(255,20,20,.4);
   }
-  .plan-icon{font-size:26px;color:var(--red);margin-bottom:14px;text-shadow:0 0 20px rgba(255,0,0,0.8);}
-  .plan-name{font-size:16px;letter-spacing:1px;color:#fff;text-transform:uppercase;font-weight:800;margin-bottom:18px;}
-  .tier-rows{list-style:none;margin-bottom:26px;flex:1;}
-  .tier-row{display:flex;align-items:baseline;justify-content:space-between;padding:13px 0;border-bottom:1px solid rgba(255,0,0,0.2);}
+  .plan-icon{
+    width:50px;height:50px;border-radius:13px;display:flex;align-items:center;justify-content:center;
+    background:rgba(255,20,20,.1);border:1px solid var(--line);margin-bottom:18px;
+    font-size:22px;color:var(--red);text-shadow:0 0 16px rgba(255,20,20,.7);
+  }
+  .plan-name{font-size:16.5px;letter-spacing:.5px;color:#fff;text-transform:uppercase;font-weight:800;margin-bottom:20px;}
+  .tier-rows{list-style:none;margin-bottom:28px;flex:1;}
+  .tier-row{display:flex;align-items:baseline;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--line);}
   .tier-row:last-child{border-bottom:none;}
   .tier-dur{color:var(--text-1);font-size:13.5px;}
-  .tier-price{font-size:19px;font-weight:800;color:#fff;}
-  .plan.featured .tier-price{color:var(--red);text-shadow:0 0 20px rgba(255,0,0,0.6);}
+  .tier-price{font-size:20px;font-weight:800;color:#fff;}
+  .plan.featured .tier-price{
+    background:linear-gradient(90deg,var(--red),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;
+  }
   .plan .btn{width:100%;justify-content:center;}
   .tier-note{
-    text-align:center;color:var(--text-1);font-size:14px;margin-top:44px;display:flex;flex-direction:column;gap:8px;
+    text-align:center;color:var(--text-1);font-size:13.5px;margin-top:46px;display:flex;flex-direction:column;gap:10px;
   }
   .tier-note i{color:var(--red);margin-right:6px;}
 
-  .benefit-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;}
+  /* ===== LỢI ÍCH ===== */
+  .benefit-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;}
   .benefit-card{
-    text-align:center;background:rgba(20,0,0,0.5);border:2px solid var(--red);border-radius:14px;
-    padding:30px 20px;transition:.3s;
+    text-align:center;
+    background:linear-gradient(160deg,rgba(28,10,10,.5),rgba(12,6,6,.5));
+    border:1px solid var(--line);border-radius:16px;padding:32px 20px;transition:.3s;
   }
-  .benefit-card:hover{border-color:var(--red);box-shadow:0 0 35px rgba(255,0,0,0.3);transform:translateY(-5px);}
-  .benefit-card i{font-size:30px;color:var(--red);margin-bottom:16px;text-shadow:0 0 25px rgba(255,0,0,0.7);}
-  .benefit-card h4{font-size:15px;font-weight:700;color:#fff;}
-  
-  .payment-guide {
-    margin-top: 50px;
-    background: rgba(20,0,0,0.6);
-    border: 2px solid var(--red);
-    border-radius: 18px;
-    padding: 40px 30px;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
+  .benefit-card:hover{border-color:var(--line-strong);box-shadow:0 16px 40px rgba(255,20,20,.18);transform:translateY(-6px);}
+  .benefit-icon{
+    width:52px;height:52px;border-radius:50%;margin:0 auto 16px;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(255,20,20,.1);border:1px solid var(--line);
+    font-size:22px;color:var(--red);text-shadow:0 0 16px rgba(255,20,20,.7);
   }
-  .payment-guide::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at 30% 50%, rgba(255,0,0,0.08), transparent 70%);
-    pointer-events: none;
-  }
-  .payment-guide h3 {
-    font-size: 20px;
-    font-weight: 800;
-    color: #fff;
-    margin-bottom: 16px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    position: relative;
-  }
-  .payment-guide .step {
-    color: var(--text-1);
-    font-size: 14.5px;
-    margin: 5px 0;
-    padding: 4px 0;
-    position: relative;
-  }
-  .payment-guide .note-warning {
-    margin-top: 18px;
-    padding-top: 16px;
-    border-top: 1px solid rgba(255,0,0,0.2);
-    color: var(--text-1);
-    font-size: 14px;
-    line-height: 1.7;
-    position: relative;
-  }
-  .payment-guide .note-warning .warning-text {
-    color: #fff;
-    font-weight: 700;
-  }
-  .payment-guide .note-warning .no-refund {
-    color: var(--red);
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
+  .benefit-card h4{font-size:14.5px;font-weight:700;color:#fff;}
 
-  .admin-section {
-    padding: 50px 0 30px;
+  /* ===== HƯỚNG DẪN THUÊ ===== */
+  .payment-guide{
+    margin-top:56px;
+    background:linear-gradient(160deg,rgba(28,10,10,.6),rgba(12,6,6,.6));
+    border:1px solid var(--line-strong);border-radius:20px;padding:44px 36px;position:relative;overflow:hidden;
   }
-  .admin-box {
-    background: rgba(20,0,0,0.85);
-    border: 2px solid var(--red);
-    border-radius: 18px;
-    padding: 40px 35px;
-    text-align: center;
-    box-shadow: 0 0 60px rgba(255,0,0,0.1);
-    transition: .3s;
+  .payment-guide::before{
+    content:'';position:absolute;inset:0;
+    background:radial-gradient(circle at 20% 40%,rgba(255,20,20,.1),transparent 65%);pointer-events:none;
   }
-  .admin-box:hover {
-    box-shadow: 0 0 80px rgba(255,0,0,0.2);
-    border-color: var(--gold);
+  .payment-guide h3{
+    font-size:19px;font-weight:800;color:#fff;margin-bottom:26px;text-transform:uppercase;letter-spacing:1px;
+    display:flex;align-items:center;justify-content:center;gap:10px;position:relative;
   }
-  .admin-header {
-    font-size: 18px;
-    font-weight: 800;
-    color: var(--gold);
-    letter-spacing: 2px;
-    margin-bottom: 18px;
+  .guide-steps{list-style:none;max-width:520px;margin:0 auto;position:relative;}
+  .guide-steps li{
+    display:flex;align-items:flex-start;gap:16px;padding:12px 0;color:var(--text-1);font-size:14.5px;line-height:1.6;
   }
-  .admin-header i {
-    color: var(--gold);
-    margin-right: 10px;
+  .guide-num{
+    min-width:30px;height:30px;border-radius:50%;background:rgba(255,20,20,.12);border:1px solid var(--line-strong);
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:var(--red);
   }
-  .admin-contact {
-    display: flex;
-    justify-content: center;
-    gap: 30px;
-    flex-wrap: wrap;
-    margin-bottom: 22px;
+  .payment-guide .note-warning{
+    margin-top:24px;padding-top:20px;border-top:1px solid var(--line);color:var(--text-1);font-size:13.5px;line-height:1.8;position:relative;
   }
-  .admin-contact a {
-    color: #fff;
-    text-decoration: none;
-    font-size: 16px;
-    font-weight: 600;
-    padding: 10px 24px;
-    border: 1.5px solid var(--red);
-    border-radius: 30px;
-    transition: .3s;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    background: rgba(255,0,0,0.05);
-  }
-  .admin-contact a:hover {
-    border-color: var(--gold);
-    box-shadow: 0 0 35px rgba(255,0,0,0.3);
-    transform: translateY(-3px);
-    background: rgba(255,0,0,0.1);
-  }
-  .admin-contact a i {
-    color: var(--red);
-    font-size: 18px;
-  }
-  .admin-contact a:hover i {
-    color: var(--gold);
-  }
-  .admin-divider {
-    width: 100px;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--red), transparent);
-    margin: 10px auto 20px;
-  }
-  .admin-disclaimer p {
-    color: var(--text-1);
-    font-size: 14px;
-    line-height: 1.9;
-    margin: 6px 0;
-  }
-  .admin-disclaimer p strong {
-    color: #fff;
-  }
-  .admin-disclaimer p:first-child {
-    font-size: 16px;
-    color: var(--red);
-    font-weight: 700;
-    letter-spacing: 1px;
-    margin-bottom: 12px;
-  }
+  .payment-guide .note-warning p{margin:6px 0;}
+  .payment-guide .note-warning .warning-text{color:#fff;font-weight:700;}
+  .payment-guide .note-warning .no-refund{color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
 
+  /* ===== ADMIN ===== */
+  .admin-section{padding:50px 0 30px;}
+  .admin-box{
+    background:linear-gradient(160deg,rgba(28,10,10,.7),rgba(10,5,5,.85));
+    border:1px solid var(--line-strong);border-radius:20px;padding:44px 36px;text-align:center;
+    box-shadow:0 0 60px rgba(255,20,20,.12);transition:.3s;
+  }
+  .admin-box:hover{box-shadow:0 0 80px rgba(255,215,0,.15);border-color:rgba(255,215,0,.4);}
+  .admin-header{
+    font-size:17px;font-weight:800;color:var(--gold);letter-spacing:2px;margin-bottom:22px;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+  }
+  .admin-header i{color:var(--gold);text-shadow:0 0 16px rgba(255,215,0,.5);}
+  .admin-contact{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;margin-bottom:26px;}
+  .admin-contact a{
+    color:#fff;text-decoration:none;font-size:15px;font-weight:600;padding:11px 26px;
+    border:1px solid var(--line-strong);border-radius:30px;transition:.3s;
+    display:inline-flex;align-items:center;gap:10px;background:rgba(255,20,20,.06);
+  }
+  .admin-contact a:hover{border-color:var(--gold);box-shadow:0 0 30px rgba(255,215,0,.25);transform:translateY(-3px);background:rgba(255,215,0,.08);}
+  .admin-contact a i{color:var(--red);font-size:17px;}
+  .admin-contact a:hover i{color:var(--gold);}
+  .admin-divider{width:90px;height:1px;background:linear-gradient(90deg,transparent,var(--red),transparent);margin:6px auto 22px;}
+  .admin-disclaimer p{color:var(--text-2);font-size:13.5px;line-height:1.9;margin:6px 0;}
+  .admin-disclaimer p strong{color:var(--text-1);}
+  .admin-disclaimer p:first-child{font-size:15px;color:var(--red);font-weight:700;letter-spacing:1px;margin-bottom:12px;}
+
+  /* ===== CTA ===== */
   .cta-band{
     text-align:center;padding:100px 24px;
-    background:radial-gradient(ellipse at center,rgba(255,0,0,0.15),transparent 70%);
+    background:radial-gradient(ellipse at center,rgba(255,20,20,.14),transparent 70%);
   }
   .cta-band h2{font-size:clamp(26px,4vw,42px);font-weight:900;margin-bottom:18px;text-transform:uppercase;}
-  .cta-band p{color:var(--text-1);margin-bottom:34px;}
+  .cta-band p{color:var(--text-1);}
 
-  footer{border-top:2px solid var(--red);padding:60px 0 24px;background:rgba(10,0,0,0.9);}
-  .footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px;margin-bottom:40px;}
-  .footer-title{
-    font-size:14px;
-    font-weight:600;
-    color:#fff;
-    margin-bottom:12px;
-    letter-spacing:1px;
-  }
-  .footer-col h4{font-size:14px;margin-bottom:16px;letter-spacing:1px;color:#fff;}
+  /* ===== FOOTER ===== */
+  footer{border-top:1px solid var(--line);padding:60px 0 26px;background:rgba(8,4,4,.9);}
+  .footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px;margin-bottom:44px;}
+  .footer-title{font-size:14px;font-weight:500;color:var(--text-1);margin-bottom:14px;line-height:1.7;}
+  .footer-col h4{font-size:13.5px;margin-bottom:16px;letter-spacing:1.5px;color:#fff;text-transform:uppercase;}
   .footer-col ul{list-style:none;}
-  .footer-col li{margin-bottom:10px;}
+  .footer-col li{margin-bottom:11px;}
   .footer-col a{color:var(--text-1);text-decoration:none;font-size:14px;transition:.25s;}
   .footer-col a:hover{color:var(--red);}
-  .socials{display:flex;gap:14px;margin-top:16px;flex-wrap:wrap;}
+  .socials{display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;}
   .socials a{
-    width:38px;height:38px;border:2px solid var(--red);border-radius:8px;
+    width:40px;height:40px;border:1px solid var(--line-strong);border-radius:10px;
     display:flex;align-items:center;justify-content:center;color:var(--text-1);text-decoration:none;transition:.25s;
   }
-  .socials a:hover{color:#fff;border-color:#fff;box-shadow:0 0 20px rgba(255,0,0,0.5);}
-  .footer-bottom{border-top:2px solid rgba(255,0,0,0.2);padding-top:22px;text-align:center;color:var(--text-1);font-size:13px;}
+  .socials a:hover{color:#fff;border-color:var(--red);background:rgba(255,20,20,.1);box-shadow:0 0 20px rgba(255,20,20,.35);}
+  .footer-bottom{border-top:1px solid var(--line);padding-top:24px;text-align:center;color:var(--text-2);font-size:12.5px;}
   .footer-bottom span{color:var(--red);font-weight:700;}
+
+  /* ===== NÚT VỀ ĐẦU TRANG ===== */
+  #backToTop{
+    position:fixed;bottom:26px;right:26px;z-index:60;
+    width:46px;height:46px;border-radius:50%;
+    background:linear-gradient(135deg,var(--red),var(--orange));color:#fff;border:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;font-size:16px;
+    box-shadow:0 0 26px rgba(255,20,20,.45);opacity:0;visibility:hidden;transform:translateY(10px);
+    transition:.3s;
+  }
+  #backToTop.show{opacity:1;visibility:visible;transform:translateY(0);}
+  #backToTop:hover{transform:translateY(-3px);box-shadow:0 0 36px rgba(255,20,20,.65);}
 
   .reveal{opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease;}
   .reveal.in{opacity:1;transform:translateY(0);}
@@ -454,15 +360,18 @@
     .intro-grid,.pricing{grid-template-columns:1fr 1fr;}
     .benefit-grid{grid-template-columns:1fr 1fr;}
     .footer-grid{grid-template-columns:1fr 1fr;}
+    .hero-stats{gap:30px;}
   }
   @media(max-width:640px){
     .intro-grid,.pricing,.benefit-grid,.footer-grid{grid-template-columns:1fr;}
-    .payment-guide .step { font-size: 13px; }
-    .notif-box { padding: 30px 20px; }
-    .notif-box .notif-content { font-size: 13.5px; }
-    .admin-contact { gap: 14px; }
-    .admin-contact a { font-size: 13px; padding: 6px 14px; }
-    .admin-box { padding: 25px 18px; }
+    .payment-guide{padding:32px 22px;}
+    .notif-box{padding:32px 22px;}
+    .notif-box .notif-content{font-size:13.5px;}
+    .admin-contact{gap:12px;}
+    .admin-contact a{font-size:13px;padding:9px 18px;}
+    .admin-box{padding:28px 20px;}
+    .nav-cta{padding:8px 16px;font-size:12.5px;}
+    #backToTop{width:42px;height:42px;bottom:18px;right:18px;}
   }
 </style>
 </head>
@@ -470,7 +379,8 @@
 
 <!-- ===== LOADING SCREEN ===== -->
 <div id="loading-screen">
-  <div class="loader-text">⏳ Vui lòng đợi 3.6s</div>
+  <div class="load-logo">ZAN DEV</div>
+  <div class="loader-text">Đang tải dữ liệu</div>
   <div class="loader-ring"></div>
   <div class="loader-progress"><div class="bar"></div></div>
 </div>
@@ -478,23 +388,26 @@
 <!-- ===== THÔNG BÁO HỆ THỐNG ===== -->
 <div id="system-notification">
   <div class="notif-box">
-    <div class="notif-title">📢 Thông báo hệ thống</div>
+    <div class="notif-icon"><i class="fa-solid fa-bullhorn"></i></div>
+    <div class="notif-title">Thông báo hệ thống</div>
     <div class="notif-content">
-      Xin chào, tôi là zan. Mọi người có nhu cầu thuê bot vui lòng đọc hướng dẫn thuê bot và ấn vô nút TikTok hoặc Telegram ở cuối website để thuê bot.
+      Xin chào, tôi là <span class="highlight">Zan</span>. Mọi người có nhu cầu thuê bot vui lòng đọc hướng dẫn thuê bot và ấn vào nút TikTok hoặc Telegram ở cuối website để thuê bot.
     </div>
     <div class="notif-btns">
-      <button class="btn-close" onclick="closeNotification()">Đóng</button>
+      <button class="btn-close" onclick="closeNotification()">Đã hiểu</button>
     </div>
   </div>
 </div>
 
-<!-- Canvas hiệu ứng particle lửa đỏ -->
+<div class="mesh-bg"></div>
 <canvas id="fireParticles"></canvas>
+<div class="grain"></div>
 
 <!-- ===== HEADER ===== -->
 <header>
   <nav class="nav">
-    <!-- Đã xóa hết -->
+    <div class="logo"><i class="fa-solid fa-fire"></i>ZAN<span>DEV</span></div>
+    <a href="#huongDan" class="nav-cta"><i class="fa-solid fa-bolt"></i>Thuê bot ngay</a>
   </nav>
 </header>
 
@@ -502,10 +415,15 @@
 <section class="hero">
   <div class="hero-tag">🔥 Bot Free Fire Team 5-6</div>
   <h1>DỊCH VỤ CHO THUÊ<br><span class="glow">BOT FREE FIRE</span></h1>
-  <p class="sub">Vượt giới hạn 4vs4, chơi team 5-6 người, múa full súng s7 phông bạt, vận hành — hỗ trợ 24/7.</p>
+  <p class="sub">Vượt giới hạn 4vs4, chơi team 5-6 người, múa full súng S7 phông bạt, vận hành ổn định — hỗ trợ 24/7.</p>
   <div class="hero-btns">
     <a href="#gioithieu" class="btn btn-primary"><i class="fa-solid fa-fire-flame-curved"></i>Xem giới thiệu</a>
     <a href="#bangGia" class="btn btn-outline"><i class="fa-solid fa-tags"></i>Xem bảng giá</a>
+  </div>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="num"><span>24</span>/7</div><div class="lbl">Hoạt động</div></div>
+    <div class="hero-stat"><div class="num">5-6</div><div class="lbl">Người / đội</div></div>
+    <div class="hero-stat"><div class="num">S<span>7</span></div><div class="lbl">Full súng level</div></div>
   </div>
 </section>
 
@@ -516,14 +434,14 @@
     <h2 class="sec-title reveal">Dịch Vụ Cho Thuê Bot Freefire <span class="red">Team 5-6</span></h2>
     <p class="sec-desc reveal">Đội hình bot mạnh mẽ, vận hành ổn định, phục vụ mọi nhu cầu chơi và trình diễn của bạn.</p>
     <div class="intro-grid">
-      <div class="intro-card reveal"><i class="fa-solid fa-users"></i><p>Vượt giới hạn 4vs4, chơi team 5-6 người thoải mái</p></div>
-      <div class="intro-card reveal"><i class="fa-solid fa-gun"></i><p>Múa full súng level 7 để phông bạt trong phòng chờ</p></div>
-      <div class="intro-card reveal"><i class="fa-solid fa-person-running"></i><p>Múa full tất cả hành động có trong game</p></div>
-      <div class="intro-card reveal"><i class="fa-solid fa-bolt"></i><p>Spam troll lag đối thủ khiến cho đội bị disconnect</p></div>
-      <div class="intro-card reveal"><i class="fa-solid fa-user-plus"></i><p>Spam kết bạn, spam lời mời vào đội tự động</p></div>
-      <div class="intro-card reveal"><i class="fa-solid fa-clock"></i><p>Vận hành 24/7, online trực tuyến liên tục không gián đoạn</p></div>
-      <div class="intro-card reveal"><i class="fa-solid fa-tag"></i><p>Giá cả tối ưu, càng thuê lâu càng ưu đãi</p></div>
-      <div class="intro-card reveal"><i class="fa-solid fa-gamepad"></i><p>Hỗ trợ tất cả các chế độ chơi trong Free Fire</p></div>
+      <div class="intro-card reveal"><div class="intro-icon"><i class="fa-solid fa-users"></i></div><p>Vượt giới hạn 4vs4, chơi team 5-6 người thoải mái</p></div>
+      <div class="intro-card reveal"><div class="intro-icon"><i class="fa-solid fa-gun"></i></div><p>Múa full súng level 7 để phông bạt trong phòng chờ</p></div>
+      <div class="intro-card reveal"><div class="intro-icon"><i class="fa-solid fa-person-running"></i></div><p>Múa full tất cả hành động có trong game</p></div>
+      <div class="intro-card reveal"><div class="intro-icon"><i class="fa-solid fa-bolt"></i></div><p>Spam troll lag đối thủ khiến đội bị disconnect</p></div>
+      <div class="intro-card reveal"><div class="intro-icon"><i class="fa-solid fa-user-plus"></i></div><p>Spam kết bạn, spam lời mời vào đội tự động</p></div>
+      <div class="intro-card reveal"><div class="intro-icon"><i class="fa-solid fa-clock"></i></div><p>Vận hành 24/7, online trực tuyến liên tục không gián đoạn</p></div>
+      <div class="intro-card reveal"><div class="intro-icon"><i class="fa-solid fa-tag"></i></div><p>Giá cả tối ưu, càng thuê lâu càng ưu đãi</p></div>
+      <div class="intro-card reveal"><div class="intro-icon"><i class="fa-solid fa-gamepad"></i></div><p>Hỗ trợ tất cả các chế độ chơi trong Free Fire</p></div>
     </div>
   </div>
 </section>
@@ -536,7 +454,7 @@
     <p class="sec-desc reveal">Nhiều gói linh hoạt, phù hợp mọi nhu cầu — thuê càng lâu, giá càng rẻ.</p>
     <div class="pricing">
       <div class="plan reveal">
-        <i class="fa-solid fa-fire plan-icon"></i>
+        <div class="plan-icon"><i class="fa-solid fa-fire"></i></div>
         <div class="plan-name">Bot Team 5-6 Múa S7</div>
         <ul class="tier-rows">
           <li class="tier-row"><span class="tier-dur">1 ngày</span><span class="tier-price">10.000đ</span></li>
@@ -547,7 +465,7 @@
       </div>
       <div class="plan featured reveal">
         <div class="badge">🔥 HOT</div>
-        <i class="fa-solid fa-signature plan-icon"></i>
+        <div class="plan-icon"><i class="fa-solid fa-signature"></i></div>
         <div class="plan-name">Bot Theo Tên Mong Muốn</div>
         <ul class="tier-rows">
           <li class="tier-row"><span class="tier-dur">1 tuần</span><span class="tier-price">70.000đ</span></li>
@@ -556,7 +474,7 @@
         <a href="#huongDan" class="btn btn-primary">Thuê ngay</a>
       </div>
       <div class="plan reveal">
-        <i class="fa-solid fa-shield-halved plan-icon"></i>
+        <div class="plan-icon"><i class="fa-solid fa-shield-halved"></i></div>
         <div class="plan-name">Bot Quân Đoàn</div>
         <ul class="tier-rows">
           <li class="tier-row"><span class="tier-dur">1 tuần</span><span class="tier-price">80.000đ</span></li>
@@ -580,28 +498,27 @@
     <h2 class="sec-title reveal">Lợi Ích Khi Thuê</h2>
     <p class="sec-desc reveal">Trải nghiệm dịch vụ chuyên nghiệp, uy tín, luôn đặt khách hàng lên hàng đầu.</p>
     <div class="benefit-grid">
-      <div class="benefit-card reveal"><i class="fa-solid fa-headset"></i><h4>Hỗ trợ 24/7</h4></div>
-      <div class="benefit-card reveal"><i class="fa-solid fa-lock"></i><h4>Bảo mật thông tin</h4></div>
-      <div class="benefit-card reveal"><i class="fa-solid fa-rotate-left"></i><h4>Hoàn bot nếu gặp lỗi</h4></div>
-      <div class="benefit-card reveal"><i class="fa-solid fa-arrow-up-right-dots"></i><h4>Cập nhật tính năng liên tục</h4></div>
+      <div class="benefit-card reveal"><div class="benefit-icon"><i class="fa-solid fa-headset"></i></div><h4>Hỗ trợ 24/7</h4></div>
+      <div class="benefit-card reveal"><div class="benefit-icon"><i class="fa-solid fa-lock"></i></div><h4>Bảo mật thông tin</h4></div>
+      <div class="benefit-card reveal"><div class="benefit-icon"><i class="fa-solid fa-rotate-left"></i></div><h4>Hoàn bot nếu gặp lỗi</h4></div>
+      <div class="benefit-card reveal"><div class="benefit-icon"><i class="fa-solid fa-arrow-up-right-dots"></i></div><h4>Cập nhật tính năng liên tục</h4></div>
     </div>
 
     <!-- ===== HƯỚNG DẪN THUÊ BOT ===== -->
     <div id="huongDan" class="payment-guide reveal">
-      <h3><i class="fa-solid fa-circle-info" style="color:var(--red);margin-right:10px;"></i>Hướng Dẫn Thuê Bot</h3>
-      
-      <div class="step">1. Bạn có thể liên hệ Admin qua TikTok hoặc Telegram ở cuối website</div>
-      <div class="step">2. Khi đã liên hệ, vui lòng nhắn đúng yêu cầu của mình</div>
-      <div class="step">3. Chuyển tiền và chụp bill gửi cho Admin</div>
-      <div class="step">4. Sau khi gửi bill, Admin sẽ tự động cấp bot cho bạn</div>
-
+      <h3><i class="fa-solid fa-circle-info" style="color:var(--red);"></i>Hướng Dẫn Thuê Bot</h3>
+      <ul class="guide-steps">
+        <li><div class="guide-num">1</div><div>Bạn có thể liên hệ Admin qua TikTok hoặc Telegram ở cuối website</div></li>
+        <li><div class="guide-num">2</div><div>Khi đã liên hệ, vui lòng nhắn đúng yêu cầu của mình</div></li>
+        <li><div class="guide-num">3</div><div>Chuyển tiền và chụp bill gửi cho Admin</div></li>
+        <li><div class="guide-num">4</div><div>Sau khi gửi bill, Admin sẽ tự động cấp bot cho bạn</div></li>
+      </ul>
       <div class="note-warning">
         <p><i class="fa-solid fa-triangle-exclamation" style="color:var(--red);margin-right:6px;"></i>
-          <span class="warning-text">Lưu ý quan trọng:</span> Khi đã thuê bot, 
+          <span class="warning-text">Lưu ý quan trọng:</span> Khi đã thuê bot,
           <span class="no-refund">sẽ không hoàn lại tiền</span> dưới bất kỳ hình thức nào.
         </p>
-        <p style="margin-top:6px;font-size:13px;color:var(--text-1);">
-          <i class="fa-solid fa-check-circle" style="color:var(--red);margin-right:6px;"></i>
+        <p><i class="fa-solid fa-check-circle" style="color:var(--red);margin-right:6px;"></i>
           Bot được cấp tự động ngay sau khi Admin xác nhận bill thành công.
         </p>
       </div>
@@ -613,17 +530,10 @@
 <section class="admin-section">
   <div class="wrap">
     <div class="admin-box reveal">
-      <div class="admin-header">
-        <i class="fa-solid fa-crown"></i>
-        <span>ADMIN CHÍNH THỨC CỦA WEBSITE</span>
-      </div>
+      <div class="admin-header"><i class="fa-solid fa-crown"></i><span>ADMIN CHÍNH THỨC CỦA WEBSITE</span></div>
       <div class="admin-contact">
-        <a href="https://www.tiktok.com/@nqbinhan_" target="_blank">
-          <i class="fa-brands fa-tiktok"></i> @nqbinhan_
-        </a>
-        <a href="https://t.me/zanbackj" target="_blank">
-          <i class="fa-brands fa-telegram"></i> @zanbackj
-        </a>
+        <a href="https://www.tiktok.com/@nqbinhan_" target="_blank"><i class="fa-brands fa-tiktok"></i> @nqbinhan_</a>
+        <a href="https://t.me/zanbackj" target="_blank"><i class="fa-brands fa-telegram"></i> @zanbackj</a>
       </div>
       <div class="admin-divider"></div>
       <div class="admin-disclaimer">
@@ -648,6 +558,7 @@
   <div class="wrap">
     <div class="footer-grid">
       <div>
+        <div class="logo" style="margin-bottom:14px;"><i class="fa-solid fa-fire"></i>ZAN<span>DEV</span></div>
         <div class="footer-title">Dịch vụ cho thuê bot Free Fire team 5-6, vận hành chuyên nghiệp, phục vụ 24/7.</div>
         <div class="socials">
           <a href="https://www.tiktok.com/@nqbinhan_" target="_blank" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
@@ -674,6 +585,8 @@
   </div>
 </footer>
 
+<button id="backToTop" title="Về đầu trang"><i class="fa-solid fa-arrow-up"></i></button>
+
 <script>
   window.addEventListener('load', function() {
     setTimeout(function() {
@@ -681,13 +594,14 @@
       setTimeout(function() {
         document.getElementById('system-notification').classList.add('active');
       }, 400);
-    }, 3600);
+    }, 2600);
   });
 
   function closeNotification() {
     document.getElementById('system-notification').classList.remove('active');
   }
 
+  /* ===== PARTICLE LỬA ĐỎ ===== */
   const canvas = document.getElementById('fireParticles');
   const ctx = canvas.getContext('2d');
   let w, h, particles = [];
@@ -707,7 +621,6 @@
         r: Math.random()*1.8+0.6,
         vy: Math.random()*0.6+0.25,
         vx: (Math.random()-0.5)*0.3,
-        life: Math.random()
       });
     }
   }
@@ -720,7 +633,7 @@
       if(p.y < -10){ p.y = h + 10; p.x = Math.random()*w; }
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
-      const grad = Math.random() > 0.5 ? '255,0,0' : '255,120,0';
+      const grad = Math.random() > 0.5 ? '255,20,20' : '255,120,0';
       ctx.fillStyle = `rgba(${grad},0.75)`;
       ctx.shadowBlur = 8;
       ctx.shadowColor = `rgba(${grad},0.9)`;
@@ -730,6 +643,7 @@
   }
   animate();
 
+  /* ===== SCROLL REVEAL ===== */
   const revealEls = document.querySelectorAll('.reveal');
   const io = new IntersectionObserver((entries)=>{
     entries.forEach(entry=>{
@@ -738,10 +652,14 @@
   },{threshold:0.15});
   revealEls.forEach(el=>io.observe(el));
 
+  /* ===== HEADER + BACK TO TOP KHI CUỘN ===== */
   const header = document.querySelector('header');
+  const backToTop = document.getElementById('backToTop');
   window.addEventListener('scroll', ()=>{
-    header.style.boxShadow = window.scrollY > 20 ? '0 4px 40px rgba(255,0,0,0.2)' : 'none';
+    header.style.boxShadow = window.scrollY > 20 ? '0 4px 40px rgba(255,20,20,.2)' : 'none';
+    backToTop.classList.toggle('show', window.scrollY > 500);
   });
+  backToTop.addEventListener('click', ()=> window.scrollTo({top:0, behavior:'smooth'}));
 </script>
 </body>
 </html>
