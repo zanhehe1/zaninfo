@@ -39,6 +39,7 @@
   #fireParticles{position:fixed;inset:0;z-index:0;pointer-events:none;}
   .wrap{max-width:1180px;margin:0 auto;padding:0 24px;position:relative;z-index:2;}
 
+  /* ===== LOADING SCREEN MỚI BẮT MẮT ===== */
   #loading-screen {
     position: fixed;
     inset: 0;
@@ -55,44 +56,100 @@
     visibility: hidden;
     pointer-events: none;
   }
-  #loading-screen .loader-text {
-    font-size: 16px;
-    font-weight: 400;
-    color: var(--text-1);
-    margin-bottom: 18px;
-    letter-spacing: 2px;
-  }
+
   .loader-ring {
-    width: 60px;
-    height: 60px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
-    border: 3px solid rgba(255,0,0,0.1);
-    border-top-color: var(--red);
-    border-right-color: var(--orange);
-    animation: spinRing 0.9s linear infinite;
-    box-shadow: 0 0 40px rgba(255,0,0,0.15);
+    border: 4px solid rgba(255,0,0,0.1);
+    border-top-color: #ff0000;
+    border-right-color: #ff3300;
+    border-bottom-color: #ffd700;
+    animation: spinRing 1s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+    box-shadow: 0 0 60px rgba(255,0,0,0.2), inset 0 0 60px rgba(255,0,0,0.05);
+    position: relative;
+  }
+  .loader-ring::after {
+    content: '🔥';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 24px;
+    animation: pulseFire 1.2s ease-in-out infinite;
   }
   @keyframes spinRing {
-    to { transform: rotate(360deg); }
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
   }
+  @keyframes pulseFire {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.3); }
+  }
+
+  #loading-screen .loader-text {
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffcccc;
+    margin-top: 28px;
+    margin-bottom: 18px;
+    letter-spacing: 3px;
+    text-shadow: 0 0 20px rgba(255,0,0,0.4);
+    animation: textPulse 1.8s ease-in-out infinite;
+  }
+  @keyframes textPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
   .loader-progress {
-    margin-top: 18px;
-    width: 160px;
-    height: 2px;
-    background: rgba(255,255,255,0.05);
+    width: 220px;
+    height: 4px;
+    background: rgba(255,255,255,0.06);
     border-radius: 10px;
     overflow: hidden;
+    box-shadow: 0 0 20px rgba(255,0,0,0.1);
+    position: relative;
   }
   .loader-progress .bar {
     height: 100%;
     width: 0%;
-    background: linear-gradient(90deg, var(--red), var(--orange));
+    background: linear-gradient(90deg, #ff0000, #ff3300, #ffd700, #ff3300, #ff0000);
+    background-size: 200% 100%;
     border-radius: 10px;
-    animation: progressBar 3.6s ease-in-out forwards;
+    animation: progressBar 3.6s ease-in-out forwards, shimmer 1.2s linear infinite;
+    box-shadow: 0 0 20px rgba(255,0,0,0.5);
   }
   @keyframes progressBar {
     0% { width: 0%; }
     100% { width: 100%; }
+  }
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  .loader-dots {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .loader-dots span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ff0000;
+    animation: dotBounce 1.4s ease-in-out infinite;
+    box-shadow: 0 0 10px rgba(255,0,0,0.4);
+  }
+  .loader-dots span:nth-child(1) { animation-delay: 0s; }
+  .loader-dots span:nth-child(2) { animation-delay: 0.15s; }
+  .loader-dots span:nth-child(3) { animation-delay: 0.3s; }
+  .loader-dots span:nth-child(4) { animation-delay: 0.45s; }
+  .loader-dots span:nth-child(5) { animation-delay: 0.6s; }
+  @keyframes dotBounce {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
+    40% { transform: scale(1.2); opacity: 1; }
   }
 
   #system-notification {
@@ -278,7 +335,7 @@
   .benefit-card i{font-size:30px;color:var(--red);margin-bottom:16px;text-shadow:0 0 25px rgba(255,0,0,0.7);}
   .benefit-card h4{font-size:15px;font-weight:700;color:#fff;}
   
-  .payment-guide {
+  #huongDan {
     margin-top: 50px;
     background: rgba(20,0,0,0.6);
     border: 2px solid var(--red);
@@ -288,14 +345,14 @@
     position: relative;
     overflow: hidden;
   }
-  .payment-guide::before {
+  #huongDan::before {
     content: '';
     position: absolute;
     inset: 0;
     background: radial-gradient(circle at 30% 50%, rgba(255,0,0,0.08), transparent 70%);
     pointer-events: none;
   }
-  .payment-guide h3 {
+  #huongDan h3 {
     font-size: 20px;
     font-weight: 800;
     color: #fff;
@@ -304,14 +361,14 @@
     letter-spacing: 1px;
     position: relative;
   }
-  .payment-guide .step {
+  #huongDan .step {
     color: var(--text-1);
     font-size: 14.5px;
     margin: 5px 0;
     padding: 4px 0;
     position: relative;
   }
-  .payment-guide .note-warning {
+  #huongDan .note-warning {
     margin-top: 18px;
     padding-top: 16px;
     border-top: 1px solid rgba(255,0,0,0.2);
@@ -320,11 +377,11 @@
     line-height: 1.7;
     position: relative;
   }
-  .payment-guide .note-warning .warning-text {
+  #huongDan .note-warning .warning-text {
     color: #fff;
     font-weight: 700;
   }
-  .payment-guide .note-warning .no-refund {
+  #huongDan .note-warning .no-refund {
     color: var(--red);
     font-weight: 700;
     text-transform: uppercase;
@@ -457,7 +514,7 @@
   }
   @media(max-width:640px){
     .intro-grid,.pricing,.benefit-grid,.footer-grid{grid-template-columns:1fr;}
-    .payment-guide .step { font-size: 13px; }
+    #huongDan .step { font-size: 13px; }
     .notif-box { padding: 30px 20px; }
     .notif-box .notif-content { font-size: 13.5px; }
     .admin-contact { gap: 14px; }
@@ -470,9 +527,12 @@
 
 <!-- ===== LOADING SCREEN ===== -->
 <div id="loading-screen">
-  <div class="loader-text">⏳ Vui lòng đợi 3.6s</div>
   <div class="loader-ring"></div>
+  <div class="loader-text">⏳ Vui lòng đợi 3.6s</div>
   <div class="loader-progress"><div class="bar"></div></div>
+  <div class="loader-dots">
+    <span></span><span></span><span></span><span></span><span></span>
+  </div>
 </div>
 
 <!-- ===== THÔNG BÁO HỆ THỐNG ===== -->
@@ -587,7 +647,7 @@
     </div>
 
     <!-- ===== HƯỚNG DẪN THUÊ BOT ===== -->
-    <div id="huongDan" class="payment-guide reveal">
+    <div id="huongDan" class="reveal">
       <h3><i class="fa-solid fa-circle-info" style="color:var(--red);margin-right:10px;"></i>Hướng Dẫn Thuê Bot</h3>
       
       <div class="step">1. Bạn có thể liên hệ Admin qua TikTok hoặc Telegram ở cuối website</div>
