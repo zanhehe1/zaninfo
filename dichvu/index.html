@@ -1,496 +1,958 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BINH AN DEV</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<style>
-  /* ===== FULL MÀU ĐỎ - ĐEN ===== */
-  :root{
-    --black:#0a0a0a;
-    --black-2:#0d0d0d;
-    --black-3:#111111;
-    --red:#ff0000;
-    --red-dark:#cc0000;
-    --red-mid:#e60000;
-    --red-bright:#ff1a1a;
-    --orange:#ff3300;
-    --gold:#ffd700;
-    --text-0:#ffffff;
-    --text-1:#ffcccc;
-    --line:rgba(255,0,0,0.3);
-  }
-  *{margin:0;padding:0;box-sizing:border-box;}
-  html{scroll-behavior:smooth;}
-  body{
-    background:var(--black);
-    color:var(--text-0);
-    font-family:'Poppins',sans-serif;
-    overflow-x:hidden;
-    position:relative;
-  }
-  ::selection{background:var(--red);color:#fff;}
-  ::-webkit-scrollbar{width:9px;}
-  ::-webkit-scrollbar-track{background:var(--black);}
-  ::-webkit-scrollbar-thumb{background:linear-gradient(var(--red),var(--orange));border-radius:10px;}
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZAN BOT — Thuê Bot Free Fire Team 5-6</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <style>
+        /* ===== RESET & BASE ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-  /* Canvas particle lửa đỏ */
-  #fireParticles{position:fixed;inset:0;z-index:0;pointer-events:none;}
+        body {
+            background: #0a0a0f;
+            color: #e8edf5;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
 
-  .wrap{max-width:1180px;margin:0 auto;padding:0 24px;position:relative;z-index:2;}
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0a0f;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #7c3aed, #f59e0b);
+            border-radius: 10px;
+        }
 
-  /* ===== LOADING SCREEN ===== */
-  #loading-screen {
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    background: #0a0a0a;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    transition: opacity 0.8s ease, visibility 0.8s ease;
-  }
-  #loading-screen.hidden {
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-  }
-  #loading-screen .loader-text {
-    font-size: 16px;
-    font-weight: 400;
-    color: var(--text-1);
-    margin-bottom: 18px;
-    letter-spacing: 2px;
-  }
-  .loader-ring {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    border: 3px solid rgba(255,0,0,0.1);
-    border-top-color: var(--red);
-    border-right-color: var(--orange);
-    animation: spinRing 0.9s linear infinite;
-    box-shadow: 0 0 40px rgba(255,0,0,0.15);
-  }
-  @keyframes spinRing {
-    to { transform: rotate(360deg); }
-  }
-  .loader-progress {
-    margin-top: 18px;
-    width: 160px;
-    height: 2px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 10px;
-    overflow: hidden;
-  }
-  .loader-progress .bar {
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(90deg, var(--red), var(--orange), var(--gold));
-    border-radius: 10px;
-    animation: progressBar 3.6s ease-in-out forwards;
-  }
-  @keyframes progressBar {
-    0% { width: 0%; }
-    100% { width: 100%; }
-  }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
 
-  /* ===== HEADER ===== */
-  header{
-    position:fixed;top:0;left:0;right:0;z-index:100;
-    background:rgba(10,10,10,0.85);backdrop-filter:blur(14px);
-    border-bottom:2px solid var(--red);
-  }
-  .nav{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;max-width:1180px;margin:0 auto;}
-  .logo{font-weight:900;font-size:22px;letter-spacing:1px;display:flex;align-items:center;gap:10px;}
-  .logo i{color:var(--red);text-shadow:0 0 20px var(--red);}
-  .logo span{color:var(--red);text-shadow:0 0 25px rgba(255,0,0,0.9);}
-  .nav-links{display:flex;gap:32px;list-style:none;}
-  .nav-links a{color:var(--text-1);text-decoration:none;font-size:14.5px;font-weight:500;position:relative;transition:.25s;}
-  .nav-links a::after{content:'';position:absolute;left:0;bottom:-6px;width:0;height:2px;background:var(--red);box-shadow:0 0 12px var(--red);transition:.3s;}
-  .nav-links a:hover{color:#fff;}
-  .nav-links a:hover::after{width:100%;}
-  .burger{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;}
-  .burger span{width:24px;height:2px;background:var(--text-0);}
+        /* ===== LOADING ===== */
+        #loading-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: #0a0a0f;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
+        }
+        #loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .loader-ring {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: 3px solid rgba(124, 58, 237, 0.1);
+            border-top-color: #7c3aed;
+            border-right-color: #f59e0b;
+            animation: spinRing 0.9s linear infinite;
+        }
+        @keyframes spinRing {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .loader-text {
+            margin-top: 18px;
+            color: #64748b;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
 
-  /* ===== HERO ===== */
-  .hero{
-    min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
-    text-align:center;position:relative;padding:150px 24px 90px;
-  }
-  .hero-tag{
-    border:2px solid var(--red);color:var(--red);
-    padding:7px 18px;border-radius:30px;font-size:13px;letter-spacing:2px;text-transform:uppercase;
-    margin-bottom:26px;box-shadow:0 0 30px rgba(255,0,0,0.3) inset;
-    animation:pulseTag 2.2s ease-in-out infinite;
-  }
-  @keyframes pulseTag{50%{box-shadow:0 0 50px rgba(255,0,0,0.5) inset;}}
-  .hero h1{
-    font-size:clamp(34px,6.5vw,72px);font-weight:900;line-height:1.12;letter-spacing:-1px;text-transform:uppercase;
-  }
-  .hero h1 .glow{
-    background:linear-gradient(90deg,var(--red),var(--orange),var(--gold));
-    -webkit-background-clip:text;background-clip:text;color:transparent;
-    text-shadow:0 0 40px rgba(255,0,0,0.6);
-    animation:flicker 3.6s infinite;
-  }
-  @keyframes flicker{0%,19%,21%,23%,25%,54%,56%,100%{opacity:1;}20%,22%,24%,55%{opacity:.6;}}
-  .hero p.sub{max-width:640px;margin:26px auto 0;color:var(--text-1);font-size:16.5px;line-height:1.8;}
-  .hero-btns{display:flex;gap:18px;margin-top:42px;flex-wrap:wrap;justify-content:center;}
-  .btn{
-    padding:16px 34px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none;cursor:pointer;
-    border:none;display:inline-flex;align-items:center;gap:10px;transition:.3s;letter-spacing:.3px;
-  }
-  .btn-primary{
-    background:linear-gradient(135deg,var(--red),var(--orange));color:#fff;
-    box-shadow:0 0 35px rgba(255,0,0,0.6);
-  }
-  .btn-primary:hover{transform:translateY(-3px);box-shadow:0 0 55px rgba(255,0,0,0.9);}
-  .btn-outline{background:transparent;border:2px solid var(--red);color:var(--text-0);}
-  .btn-outline:hover{border-color:var(--gold);color:var(--gold);box-shadow:0 0 30px rgba(255,215,0,0.3);transform:translateY(-3px);}
+        /* ===== HEADER ===== */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 16px 0;
+            background: rgba(10, 10, 15, 0.85);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
 
-  section{position:relative;z-index:2;padding:110px 0;}
-  .eyebrow{
-    color:var(--red);font-size:13px;letter-spacing:3px;text-transform:uppercase;font-weight:700;
-    display:block;text-align:center;margin-bottom:14px;text-shadow:0 0 20px rgba(255,0,0,0.7);
-  }
-  .sec-title{text-align:center;font-size:clamp(26px,4vw,42px);font-weight:900;margin-bottom:16px;text-transform:uppercase;}
-  .sec-title .red{color:var(--red);text-shadow:0 0 30px rgba(255,0,0,0.5);}
-  .sec-desc{text-align:center;color:var(--text-1);max-width:600px;margin:0 auto 60px;font-size:15.5px;line-height:1.8;}
+        .header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
 
-  /* ===== GIỚI THIỆU DỊCH VỤ ===== */
-  .intro-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;}
-  .intro-card{
-    background:rgba(20,0,0,0.6);
-    border:2px solid var(--red);
-    border-radius:14px;padding:26px 24px;
-    display:flex;align-items:flex-start;gap:16px;transition:.3s;position:relative;overflow:hidden;
-  }
-  .intro-card:hover{border-color:var(--gold);box-shadow:0 0 40px rgba(255,0,0,0.3);transform:translateY(-4px);}
-  .intro-card i{
-    font-size:24px;color:var(--red);text-shadow:0 0 20px rgba(255,0,0,0.8);min-width:30px;
-  }
-  .intro-card p{color:#fff;font-size:15px;font-weight:500;line-height:1.6;}
+        .logo {
+            font-family: 'Outfit', sans-serif;
+            font-size: 22px;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .logo i {
+            color: #f59e0b;
+            font-size: 20px;
+        }
+        .logo span {
+            background: linear-gradient(135deg, #7c3aed, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
 
-  /* ===== BẢNG GIÁ ===== */
-  .pricing{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;align-items:stretch;}
-  .plan{
-    background:rgba(20,0,0,0.5);border:2px solid var(--red);border-radius:18px;
-    padding:34px 28px;display:flex;flex-direction:column;transition:.35s;position:relative;
-  }
-  .plan:hover{transform:translateY(-6px);border-color:var(--gold);box-shadow:0 20px 60px rgba(255,0,0,0.25);}
-  .plan.featured{
-    border:2px solid var(--gold);box-shadow:0 0 60px rgba(255,0,0,0.35);
-    background:rgba(30,0,0,0.6);
-  }
-  .plan.featured .badge{
-    position:absolute;top:-14px;left:50%;transform:translateX(-50%);
-    background:linear-gradient(135deg,var(--red),var(--orange));color:#fff;
-    font-size:12px;font-weight:800;padding:6px 18px;border-radius:20px;letter-spacing:1px;
-  }
-  .plan-icon{font-size:26px;color:var(--red);margin-bottom:14px;text-shadow:0 0 20px rgba(255,0,0,0.8);}
-  .plan-name{font-size:16px;letter-spacing:1px;color:#fff;text-transform:uppercase;font-weight:800;margin-bottom:18px;}
-  .tier-rows{list-style:none;margin-bottom:26px;flex:1;}
-  .tier-row{display:flex;align-items:baseline;justify-content:space-between;padding:13px 0;border-bottom:1px solid rgba(255,0,0,0.2);}
-  .tier-row:last-child{border-bottom:none;}
-  .tier-dur{color:var(--text-1);font-size:13.5px;}
-  .tier-price{font-size:19px;font-weight:800;color:#fff;}
-  .plan.featured .tier-price{color:var(--gold);text-shadow:0 0 20px rgba(255,215,0,0.6);}
-  .plan .btn{width:100%;justify-content:center;}
-  .tier-note{
-    text-align:center;color:var(--text-1);font-size:14px;margin-top:44px;display:flex;flex-direction:column;gap:8px;
-  }
-  .tier-note i{color:var(--red);margin-right:6px;}
+        .nav-menu {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+            list-style: none;
+        }
+        .nav-menu a {
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: 0.3s;
+            position: relative;
+        }
+        .nav-menu a:hover {
+            color: #f59e0b;
+        }
+        .nav-menu a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #7c3aed, #f59e0b);
+            transition: 0.3s;
+        }
+        .nav-menu a:hover::after {
+            width: 100%;
+        }
 
-  /* ===== LỢI ÍCH ===== */
-  .benefit-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;}
-  .benefit-card{
-    text-align:center;background:rgba(20,0,0,0.5);border:2px solid var(--red);border-radius:14px;
-    padding:30px 20px;transition:.3s;
-  }
-  .benefit-card:hover{border-color:var(--gold);box-shadow:0 0 35px rgba(255,0,0,0.3);transform:translateY(-5px);}
-  .benefit-card i{font-size:30px;color:var(--red);margin-bottom:16px;text-shadow:0 0 25px rgba(255,0,0,0.7);}
-  .benefit-card h4{font-size:15px;font-weight:700;color:#fff;}
+        .btn-nav {
+            padding: 8px 24px;
+            border-radius: 30px;
+            background: linear-gradient(135deg, #7c3aed, #f59e0b);
+            color: #fff !important;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+        .btn-nav:hover {
+            transform: scale(1.04);
+            box-shadow: 0 0 30px rgba(124, 58, 237, 0.25);
+        }
+        .btn-nav::after {
+            display: none !important;
+        }
 
-  /* ===== CTA ===== */
-  .cta-band{
-    text-align:center;padding:100px 24px;
-    background:radial-gradient(ellipse at center,rgba(255,0,0,0.15),transparent 70%);
-  }
-  .cta-band h2{font-size:clamp(26px,4vw,42px);font-weight:900;margin-bottom:18px;text-transform:uppercase;}
-  .cta-band p{color:var(--text-1);margin-bottom:34px;}
+        .burger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+        .burger span {
+            width: 24px;
+            height: 2px;
+            background: #e8edf5;
+            transition: 0.3s;
+        }
 
-  /* ===== FOOTER ===== */
-  footer{border-top:2px solid var(--red);padding:60px 0 24px;background:rgba(10,0,0,0.9);}
-  .footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px;margin-bottom:40px;}
-  .footer-logo{font-weight:900;font-size:20px;margin-bottom:14px;}
-  .footer-grid p{color:var(--text-1);font-size:14px;line-height:1.7;}
-  .footer-col h4{font-size:14px;margin-bottom:16px;letter-spacing:1px;color:#fff;}
-  .footer-col ul{list-style:none;}
-  .footer-col li{margin-bottom:10px;}
-  .footer-col a{color:var(--text-1);text-decoration:none;font-size:14px;transition:.25s;}
-  .footer-col a:hover{color:var(--red);}
-  .socials{display:flex;gap:14px;margin-top:16px;flex-wrap:wrap;}
-  .socials a{
-    width:38px;height:38px;border:2px solid var(--red);border-radius:8px;
-    display:flex;align-items:center;justify-content:center;color:var(--text-1);text-decoration:none;transition:.25s;
-  }
-  .socials a:hover{color:#fff;border-color:var(--gold);box-shadow:0 0 20px rgba(255,0,0,0.5);}
-  .footer-bottom{border-top:2px solid rgba(255,0,0,0.2);padding-top:22px;text-align:center;color:var(--text-1);font-size:13px;}
-  .footer-bottom span{color:var(--red);font-weight:700;}
+        /* ===== HERO ===== */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 120px 0 60px;
+            position: relative;
+        }
 
-  .reveal{opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease;}
-  .reveal.in{opacity:1;transform:translateY(0);}
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+            align-items: center;
+        }
 
-  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+        .hero-badge {
+            display: inline-block;
+            background: rgba(124, 58, 237, 0.12);
+            border: 1px solid rgba(124, 58, 237, 0.2);
+            color: #7c3aed;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 18px;
+            border-radius: 40px;
+            margin-bottom: 16px;
+        }
 
-  @media(max-width:900px){
-    .intro-grid,.pricing{grid-template-columns:1fr 1fr;}
-    .benefit-grid{grid-template-columns:1fr 1fr;}
-    .footer-grid{grid-template-columns:1fr 1fr;}
-  }
-  @media(max-width:640px){
-    .nav-links{
-      position:fixed;top:64px;right:0;height:calc(100vh - 64px);width:70%;
-      background:rgba(10,0,0,0.98);flex-direction:column;padding:40px 30px;
-      transform:translateX(100%);transition:.35s;
-    }
-    .nav-links.open{transform:translateX(0);}
-    .burger{display:flex;}
-    .intro-grid,.pricing,.benefit-grid,.footer-grid{grid-template-columns:1fr;}
-  }
-</style>
+        .hero h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 48px;
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 16px;
+        }
+        .hero h1 span {
+            background: linear-gradient(135deg, #7c3aed, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            color: #94a3b8;
+            font-size: 17px;
+            max-width: 500px;
+            margin-bottom: 28px;
+            line-height: 1.8;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 40px;
+            margin-top: 20px;
+        }
+        .hero-stats .stat .number {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #7c3aed, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-stats .stat .label {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .hero-image {
+            display: flex;
+            justify-content: center;
+        }
+        .hero-image .mockup {
+            width: 100%;
+            max-width: 400px;
+            background: linear-gradient(145deg, #1a1a2e, #0f0f1a);
+            border-radius: 30px;
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            position: relative;
+        }
+        .mockup .screen {
+            background: #0a0a0f;
+            border-radius: 18px;
+            padding: 20px;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .screen .msg {
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            max-width: 85%;
+            animation: fadeUp 0.5s ease both;
+        }
+        .screen .msg-bot {
+            background: linear-gradient(135deg, #1a1a3e, #2a1a5e);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+            color: #ddd;
+        }
+        .screen .msg-user {
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+            color: #fff;
+        }
+        .screen .msg-system {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.15);
+            align-self: center;
+            color: #f59e0b;
+            font-size: 12px;
+            padding: 6px 16px;
+            border-radius: 20px;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .mockup .glow-line {
+            position: absolute;
+            top: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #7c3aed, #f59e0b, transparent);
+            border-radius: 4px;
+            filter: blur(2px);
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 32px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 14px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #7c3aed, #f59e0b);
+            color: #fff;
+            box-shadow: 0 0 30px rgba(124, 58, 237, 0.2);
+        }
+        .btn-primary:hover {
+            transform: scale(1.04);
+            box-shadow: 0 0 50px rgba(124, 58, 237, 0.35);
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #e8edf5;
+        }
+        .btn-outline:hover {
+            border-color: #7c3aed;
+            color: #7c3aed;
+            transform: translateY(-2px);
+        }
+        .btn-hero {
+            gap: 12px;
+        }
+
+        /* ===== SECTION ===== */
+        .section {
+            padding: 80px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .section-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 32px;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        .section-title span {
+            background: linear-gradient(135deg, #7c3aed, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .section-sub {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 15px;
+            max-width: 500px;
+            margin: 0 auto 50px;
+        }
+
+        /* ===== FEATURES ===== */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+        .feature-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 16px;
+            padding: 28px 20px;
+            text-align: center;
+            transition: 0.3s;
+        }
+        .feature-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(124, 58, 237, 0.15);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+        }
+        .feature-card .icon {
+            font-size: 32px;
+            color: #f59e0b;
+            margin-bottom: 12px;
+        }
+        .feature-card h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .feature-card p {
+            color: #94a3b8;
+            font-size: 13px;
+        }
+
+        /* ===== PRICING ===== */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+        .pricing-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 20px;
+            padding: 30px 24px;
+            text-align: center;
+            transition: 0.3s;
+            position: relative;
+        }
+        .pricing-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(124, 58, 237, 0.15);
+        }
+        .pricing-card.featured {
+            border-color: #7c3aed;
+            background: rgba(124, 58, 237, 0.03);
+        }
+        .pricing-card .badge {
+            position: absolute;
+            top: -10px;
+            right: 16px;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: #0a0a0f;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 14px;
+            border-radius: 20px;
+            text-transform: uppercase;
+        }
+        .pricing-card .name {
+            font-size: 16px;
+            font-weight: 700;
+        }
+        .pricing-card .price {
+            font-family: 'Outfit', sans-serif;
+            font-size: 36px;
+            font-weight: 800;
+            margin: 6px 0;
+            background: linear-gradient(135deg, #7c3aed, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .pricing-card .price small {
+            font-size: 14px;
+            font-weight: 400;
+            -webkit-text-fill-color: #94a3b8;
+        }
+        .pricing-card .desc {
+            color: #94a3b8;
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+        .pricing-card ul {
+            list-style: none;
+            font-size: 13px;
+            text-align: left;
+            margin: 12px 0 18px;
+        }
+        .pricing-card ul li {
+            padding: 4px 0;
+            color: #cbd5e1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .pricing-card ul li i {
+            color: #f59e0b;
+            font-size: 12px;
+        }
+        .pricing-card .btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        /* ===== BANK ===== */
+        .bank-box {
+            max-width: 500px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 20px;
+            padding: 30px 28px;
+            text-align: center;
+        }
+        .bank-box .bank-name {
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .bank-box .bank-detail {
+            color: #94a3b8;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+        .bank-box .copy-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            color: #e8edf5;
+            padding: 4px 16px;
+            border-radius: 30px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 6px;
+        }
+        .bank-box .copy-btn:hover {
+            background: rgba(124, 58, 237, 0.15);
+            border-color: #7c3aed;
+        }
+
+        /* ===== CTA BAND ===== */
+        .cta-band {
+            text-align: center;
+            padding: 80px 24px;
+            background: radial-gradient(ellipse at center, rgba(124, 58, 237, 0.08), transparent 70%);
+        }
+        .cta-band h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 12px;
+        }
+        .cta-band p {
+            color: #94a3b8;
+            margin-bottom: 28px;
+        }
+
+        /* ===== FOOTER ===== */
+        footer {
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            padding: 50px 0 24px;
+        }
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 30px;
+        }
+        .footer-logo {
+            font-family: 'Outfit', sans-serif;
+            font-size: 20px;
+            font-weight: 900;
+            margin-bottom: 12px;
+        }
+        .footer-logo span {
+            background: linear-gradient(135deg, #7c3aed, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .footer-grid p {
+            color: #94a3b8;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+        .footer-col h4 {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 14px;
+        }
+        .footer-col ul {
+            list-style: none;
+        }
+        .footer-col li {
+            margin-bottom: 8px;
+        }
+        .footer-col a {
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 14px;
+            transition: 0.3s;
+        }
+        .footer-col a:hover {
+            color: #f59e0b;
+        }
+        .socials {
+            display: flex;
+            gap: 12px;
+            margin-top: 14px;
+        }
+        .socials a {
+            width: 38px;
+            height: 38px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            transition: 0.3s;
+            text-decoration: none;
+        }
+        .socials a:hover {
+            border-color: #7c3aed;
+            color: #f59e0b;
+            transform: translateY(-3px);
+        }
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            padding-top: 20px;
+            text-align: center;
+            color: #64748b;
+            font-size: 13px;
+        }
+        .footer-bottom span {
+            color: #f59e0b;
+        }
+
+        /* ===== REVEAL ===== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+        .reveal.in {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 1024px) {
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .pricing-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+                flex-direction: column;
+                position: absolute;
+                top: 64px;
+                left: 0;
+                right: 0;
+                background: rgba(10, 10, 15, 0.98);
+                padding: 24px;
+                gap: 16px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            }
+            .nav-menu.open {
+                display: flex;
+            }
+            .burger {
+                display: flex;
+            }
+
+            .hero-grid {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+            .hero p {
+                margin-left: auto;
+                margin-right: auto;
+            }
+            .hero-stats {
+                justify-content: center;
+            }
+            .hero-image .mockup {
+                max-width: 300px;
+            }
+
+            .section-title {
+                font-size: 26px;
+            }
+            .features-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .pricing-grid {
+                grid-template-columns: 1fr;
+                max-width: 380px;
+                margin: 0 auto;
+            }
+            .footer-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero h1 {
+                font-size: 32px;
+            }
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            .hero-stats {
+                gap: 20px;
+            }
+            .hero-stats .stat .number {
+                font-size: 22px;
+            }
+            .mockup .screen {
+                min-height: 280px;
+                padding: 14px;
+            }
+            .screen .msg {
+                font-size: 11px;
+                padding: 8px 12px;
+            }
+            .btn {
+                padding: 12px 24px;
+                font-size: 13px;
+            }
+        }
+    </style>
 </head>
 <body>
 
-<!-- ===== LOADING SCREEN ===== -->
-<div id="loading-screen">
-  <div class="loader-text">⏳ Vui lòng đợi 3.6s</div>
-  <div class="loader-ring"></div>
-  <div class="loader-progress"><div class="bar"></div></div>
-</div>
-
-<!-- Canvas hiệu ứng particle lửa đỏ -->
-<canvas id="fireParticles"></canvas>
-
-<!-- ===== HEADER ===== -->
-<header>
-  <nav class="nav">
-    <div class="logo"><i class="fa-solid fa-fire"></i>ZAN<span>DEV</span></div>
-    <ul class="nav-links" id="navLinks">
-      <li><a href="#gioithieu">Giới thiệu</a></li>
-      <li><a href="#bangGia">Bảng giá</a></li>
-      <li><a href="#loiIch">Lợi ích</a></li>
-      <li><a href="#lienHe">Liên hệ</a></li>
-    </ul>
-    <button class="burger" id="burger"><span></span><span></span><span></span></button>
-  </nav>
-</header>
-
-<!-- ===== HERO ===== -->
-<section class="hero">
-  <div class="hero-tag">🔥 Bot Free Fire Team 5-6</div>
-  <h1>DỊCH VỤ CHO THUÊ<br><span class="glow">BOT FREE FIRE</span></h1>
-  <p class="sub">Vượt giới hạn 4vs4, chơi team 5-6 người, múa full súng s7 phông bạt, vận hành — hỗ trợ 24/7.</p>
-  <div class="hero-btns">
-    <a href="#gioithieu" class="btn btn-primary"><i class="fa-solid fa-fire-flame-curved"></i>Xem giới thiệu</a>
-    <a href="#bangGia" class="btn btn-outline"><i class="fa-solid fa-tags"></i>Xem bảng giá</a>
-  </div>
-</section>
-
-<!-- ===== GIỚI THIỆU DỊCH VỤ ===== -->
-<section id="gioithieu">
-  <div class="wrap">
-    <span class="eyebrow">Về chúng tôi</span>
-    <h2 class="sec-title reveal">Dịch Vụ Cho Thuê Bot Freefire <span class="red">Team 5-6</span></h2>
-    <p class="sec-desc reveal">Đội hình bot mạnh mẽ, vận hành ổn định, phục vụ mọi nhu cầu chơi và trình diễn của bạn.</p>
-    <div class="intro-grid">
-      <div class="intro-card reveal"><i class="fa-solid fa-users"></i><p>Vượt giới hạn 4vs4, chơi team 5-6 người thoải mái</p></div>
-      <div class="intro-card reveal"><i class="fa-solid fa-gun"></i><p>Múa full súng level 7 để phông bạt trong phòng chờ</p></div>
-      <div class="intro-card reveal"><i class="fa-solid fa-person-running"></i><p>Múa full tất cả hành động có trong game</p></div>
-      <div class="intro-card reveal"><i class="fa-solid fa-bolt"></i><p>Spam troll lag đối thủ khiến cho đội bị disconnect</p></div>
-      <div class="intro-card reveal"><i class="fa-solid fa-user-plus"></i><p>Spam kết bạn, spam lời mời vào đội tự động</p></div>
-      <div class="intro-card reveal"><i class="fa-solid fa-clock"></i><p>Vận hành 24/7, online trực tuyến liên tục không gián đoạn</p></div>
-      <div class="intro-card reveal"><i class="fa-solid fa-tag"></i><p>Giá cả tối ưu, càng thuê lâu càng ưu đãi</p></div>
-      <div class="intro-card reveal"><i class="fa-solid fa-gamepad"></i><p>Hỗ trợ tất cả các chế độ chơi trong Free Fire</p></div>
+    <!-- ===== LOADING ===== -->
+    <div id="loading-screen">
+        <div class="loader-ring"></div>
+        <div class="loader-text">⏳ Vui lòng đợi 3s...</div>
     </div>
-  </div>
-</section>
 
-<!-- ===== BẢNG GIÁ ===== -->
-<section id="bangGia">
-  <div class="wrap">
-    <span class="eyebrow">Chi phí</span>
-    <h2 class="sec-title reveal">💰 Bảng Giá Thuê Bot</h2>
-    <p class="sec-desc reveal">Nhiều gói linh hoạt, phù hợp mọi nhu cầu — thuê càng lâu, giá càng rẻ.</p>
-    <div class="pricing">
-      <div class="plan reveal">
-        <i class="fa-solid fa-fire plan-icon"></i>
-        <div class="plan-name">Bot Team 5-6 Múa S7</div>
-        <ul class="tier-rows">
-          <li class="tier-row"><span class="tier-dur">1 ngày</span><span class="tier-price">10.000đ</span></li>
-          <li class="tier-row"><span class="tier-dur">1 tuần</span><span class="tier-price">60.000đ</span></li>
-          <li class="tier-row"><span class="tier-dur">1 tháng</span><span class="tier-price">120.000đ</span></li>
-        </ul>
-        <a href="#lienHe" class="btn btn-outline">Thuê ngay</a>
-      </div>
-      <div class="plan featured reveal">
-        <div class="badge">🔥 HOT</div>
-        <i class="fa-solid fa-signature plan-icon"></i>
-        <div class="plan-name">Bot Theo Tên Mong Muốn</div>
-        <ul class="tier-rows">
-          <li class="tier-row"><span class="tier-dur">1 tuần</span><span class="tier-price">70.000đ</span></li>
-          <li class="tier-row"><span class="tier-dur">1 tháng</span><span class="tier-price">150.000đ</span></li>
-        </ul>
-        <a href="#lienHe" class="btn btn-primary">Thuê ngay</a>
-      </div>
-      <div class="plan reveal">
-        <i class="fa-solid fa-shield-halved plan-icon"></i>
-        <div class="plan-name">Bot Quân Đoàn</div>
-        <ul class="tier-rows">
-          <li class="tier-row"><span class="tier-dur">1 tuần</span><span class="tier-price">80.000đ</span></li>
-          <li class="tier-row"><span class="tier-dur">1 tháng</span><span class="tier-price">170.000đ</span></li>
-          <li class="tier-row"><span class="tier-dur">3 tháng</span><span class="tier-price">250.000đ</span></li>
-        </ul>
-        <a href="#lienHe" class="btn btn-outline">Thuê ngay</a>
-      </div>
-    </div>
-    <div class="tier-note">
-      <span><i class="fa-solid fa-gift"></i>Càng thuê lâu dài, giá càng ưu đãi</span>
-      <span><i class="fa-solid fa-clock"></i>Bot online/trực tuyến 24/7</span>
-    </div>
-  </div>
-</section>
-
-<!-- ===== LỢI ÍCH ===== -->
-<section id="loiIch">
-  <div class="wrap">
-    <span class="eyebrow">Cam kết</span>
-    <h2 class="sec-title reveal">Lợi Ích Khi Thuê</h2>
-    <p class="sec-desc reveal">Trải nghiệm dịch vụ chuyên nghiệp, uy tín, luôn đặt khách hàng lên hàng đầu.</p>
-    <div class="benefit-grid">
-      <div class="benefit-card reveal"><i class="fa-solid fa-headset"></i><h4>Hỗ trợ 24/7</h4></div>
-      <div class="benefit-card reveal"><i class="fa-solid fa-lock"></i><h4>Bảo mật thông tin</h4></div>
-      <div class="benefit-card reveal"><i class="fa-solid fa-rotate-left"></i><h4>Hoàn bot nếu gặp lỗi</h4></div>
-      <div class="benefit-card reveal"><i class="fa-solid fa-arrow-up-right-dots"></i><h4>Cập nhật tính năng liên tục</h4></div>
-    </div>
-  </div>
-</section>
-
-<!-- ===== CTA ===== -->
-<section class="cta-band">
-  <h2 class="reveal">Đẳng Cấp Tạo Nên Thương Hiệu</h2>
-  <p class="reveal">Liên hệ ngay để được tư vấn gói bot phù hợp nhất với bạn.</p>
-  <a href="#lienHe" class="btn btn-primary reveal"><i class="fa-solid fa-fire"></i>Thuê Bot Ngay</a>
-</section>
-
-<!-- ===== FOOTER ===== -->
-<footer id="lienHe">
-  <div class="wrap">
-    <div class="footer-grid">
-      <div>
-        <div class="footer-logo">ZAN<span style="color:var(--red)">DEV</span></div>
-        <p>Dịch vụ cho thuê bot Free Fire team 5-6, vận hành chuyên nghiệp, phục vụ cộng đồng game thủ 24/7.</p>
-        <div class="socials">
-          <a href="https://www.tiktok.com/@nqbinhan_" target="_blank" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
-          <a href="https://t.me/zancommunity" target="_blank" title="Group"><i class="fa-solid fa-users"></i></a>
-          <a href="https://t.me/zanbackj" target="_blank" title="Telegram"><i class="fa-brands fa-telegram"></i></a>
-          <a href="zalo://p?phone=0862457518" target="_blank" title="Zalo"><i class="fa-solid fa-comment-dots"></i></a>
+    <!-- ===== HEADER ===== -->
+    <header>
+        <div class="container header-inner">
+            <div class="logo"><i class="fas fa-robot"></i> ZAN<span>BOT</span></div>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="#features">Tính năng</a></li>
+                <li><a href="#pricing">Bảng giá</a></li>
+                <li><a href="#payment">Thanh toán</a></li>
+                <li><a href="#contact">Liên hệ</a></li>
+                <li><a href="#pricing" class="btn-nav">Thuê ngay</a></li>
+            </ul>
+            <button class="burger" id="burger"><span></span><span></span><span></span></button>
         </div>
-      </div>
-      <div class="footer-col">
-        <h4>Dịch vụ</h4>
-        <ul><li><a href="#gioithieu">Giới thiệu</a></li><li><a href="#bangGia">Bảng giá</a></li><li><a href="#loiIch">Lợi ích</a></li></ul>
-      </div>
-      <div class="footer-col">
-        <h4>Liên hệ</h4>
-        <ul>
-          <li><a href="https://www.tiktok.com/@nqbinhan_" target="_blank">TikTok</a></li>
-          <li><a href="https://t.me/zancommunity" target="_blank">Group</a></li>
-          <li><a href="https://t.me/zanbackj" target="_blank">Telegram</a></li>
-          <li><a href="zalo://p?phone=0862457518" target="_blank">Zalo</a></li>
-        </ul>
-      </div>
-    </div>
-    <div class="footer-bottom">© 2026 <span>ZAN DEV BOT FREEFIRE</span>. All rights reserved.</div>
-  </div>
-</footer>
+    </header>
 
-<script>
-  // ===== LOADING SCREEN =====
-  window.addEventListener('load', function() {
-    setTimeout(function() {
-      document.getElementById('loading-screen').classList.add('hidden');
-    }, 3600);
-  });
+    <!-- ===== HERO ===== -->
+    <section class="hero" id="home">
+        <div class="container hero-grid">
+            <div class="hero-text">
+                <div class="hero-badge">⚡ Auto Bot FF • Team 5/6 • Mod Emote Lv7</div>
+                <h1>DỊCH VỤ CHO THUÊ <br /><span>BOT FREEFIRE</span></h1>
+                <p>Mở Team 5/6 phá giới hạn 4vs4, mod emote Lv7 Súng Hề Ngồi Thiền, emote cổ Đá Lông Nheo Vỗ Tay, spam troll tạo highlight. Bot vào phòng sau 3s, vận hành auto 24/7.</p>
+                <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                    <a href="#pricing" class="btn btn-primary btn-hero"><i class="fas fa-fire"></i> Xem bảng giá</a>
+                    <a href="#features" class="btn btn-outline btn-hero"><i class="fas fa-play"></i> Tính năng</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat"><div class="number">24/7</div><div class="label">Hoạt động liên tục</div></div>
+                    <div class="stat"><div class="number">3s</div><div class="label">Vào phòng siêu tốc</div></div>
+                    <div class="stat"><div class="number">20K+</div><div class="label">Người dùng</div></div>
+                </div>
+            </div>
+            <div class="hero-image">
+                <div class="mockup">
+                    <div class="glow-line"></div>
+                    <div class="screen">
+                        <div class="msg msg-bot" style="animation-delay:0.2s;"><i class="fas fa-robot" style="margin-right:6px;"></i> Bot đã sẵn sàng!</div>
+                        <div class="msg msg-user" style="animation-delay:0.7s;"><i class="fas fa-user" style="margin-right:6px;"></i> /s7 1234567</div>
+                        <div class="msg msg-bot" style="animation-delay:1.2s;">✅ Đang join team 1234567...</div>
+                        <div class="msg msg-system" style="animation-delay:1.8s;">⚡ Đã vào phòng sau 3s</div>
+                        <div class="msg msg-bot" style="animation-delay:2.4s;">🎭 Đang múa full súng Lv7</div>
+                        <div class="msg msg-user" style="animation-delay:3.0s;"><i class="fas fa-user" style="margin-right:6px;"></i> /stop</div>
+                        <div class="msg msg-bot" style="animation-delay:3.6s;">⏹️ Đã dừng hành động</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-  /* ===== HIỆU ỨNG PARTICLE LỬA ĐỎ NỀN TOÀN TRANG ===== */
-  const canvas = document.getElementById('fireParticles');
-  const ctx = canvas.getContext('2d');
-  let w, h, particles = [];
-  const COUNT = window.innerWidth < 700 ? 45 : 90;
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    <!-- ===== FEATURES ===== -->
+    <section class="section" id="features">
+        <div class="container">
+            <div class="section-title reveal">🔥 <span>Tính năng nổi bật</span></div>
+            <div class="section-sub reveal">Bot Free Fire với đầy đủ tính năng hỗ trợ game thủ</div>
+            <div class="features-grid">
+                <div class="feature-card reveal"><div class="icon"><i class="fas fa-users"></i></div><h4>Team 5/6</h4><p>Phá giới hạn 4vs4, tự động mở team 5-6 người</p></div>
+                <div class="feature-card reveal"><div class="icon"><i class="fas fa-gun"></i></div><h4>Mod Emote Lv7</h4><p>Súng Hề, Ngồi Thiền, full hành động cấp 7</p></div>
+                <div class="feature-card reveal"><div class="icon"><i class="fas fa-theater-masks"></i></div><h4>Mod Emote Cổ</h4><p>Đá Lông Nheo, Vỗ Tay đã bị xóa khỏi game</p></div>
+                <div class="feature-card reveal"><div class="icon"><i class="fas fa-bolt"></i></div><h4>Spam Troll</h4><p>Tạo highlight TikTok, spam tin nhắn, lag đối thủ</p></div>
+            </div>
+        </div>
+    </section>
 
-  function resize(){ w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
-  window.addEventListener('resize', resize);
-  resize();
+    <!-- ===== PRICING ===== -->
+    <section class="section" id="pricing">
+        <div class="container">
+            <div class="section-title reveal">💰 <span>Bảng giá</span></div>
+            <div class="section-sub reveal">Nhiều gói linh hoạt, phù hợp mọi nhu cầu</div>
+            <div class="pricing-grid">
+                <div class="pricing-card reveal">
+                    <div class="name">Bot Team 5-6</div>
+                    <div class="price">15K <small>/ ngày</small></div>
+                    <div class="desc">Gói trải nghiệm nhanh</div>
+                    <ul>
+                        <li><i class="fas fa-check"></i> Mở Team 5-6</li>
+                        <li><i class="fas fa-check"></i> Múa full S7</li>
+                        <li><i class="fas fa-check"></i> Hỗ trợ 24/7</li>
+                    </ul>
+                    <a href="#payment" class="btn btn-primary">Mua ngay</a>
+                </div>
+                <div class="pricing-card featured reveal">
+                    <div class="badge">🔥 HOT</div>
+                    <div class="name">Bot Theo Tên</div>
+                    <div class="price">70K <small>/ tuần</small></div>
+                    <div class="desc">Đặt tên bot theo yêu cầu</div>
+                    <ul>
+                        <li><i class="fas fa-check"></i> Tên tùy chỉnh</li>
+                        <li><i class="fas fa-check"></i> Full tính năng</li>
+                        <li><i class="fas fa-check"></i> Ưu tiên hỗ trợ</li>
+                    </ul>
+                    <a href="#payment" class="btn btn-primary">Mua ngay</a>
+                </div>
+                <div class="pricing-card reveal">
+                    <div class="name">Bot Quân Đoàn</div>
+                    <div class="price">250K <small>/ tháng</small></div>
+                    <div class="desc">Dành cho nhóm/clan</div>
+                    <ul>
+                        <li><i class="fas fa-check"></i> Nhiều người dùng</li>
+                        <li><i class="fas fa-check"></i> Bảo mật cao</li>
+                        <li><i class="fas fa-check"></i> Hỗ trợ 24/7</li>
+                    </ul>
+                    <a href="#payment" class="btn btn-primary">Mua ngay</a>
+                </div>
+            </div>
+        </div>
+    </section>
 
-  function initParticles(){
-    particles = [];
-    for(let i=0;i<COUNT;i++){
-      particles.push({
-        x: Math.random()*w,
-        y: h + Math.random()*h,
-        r: Math.random()*1.8+0.6,
-        vy: Math.random()*0.6+0.25,
-        vx: (Math.random()-0.5)*0.3,
-        life: Math.random()
-      });
-    }
-  }
-  initParticles();
+    <!-- ===== PAYMENT ===== -->
+    <section class="section" id="payment">
+        <div class="container">
+            <div class="section-title reveal">💳 <span>Thanh toán</span></div>
+            <div class="section-sub reveal">Chuyển khoản nhanh chóng, kích hoạt tự động</div>
+            <div class="bank-box reveal">
+                <div class="bank-name">🏦 MB Bank</div>
+                <div class="bank-detail"><strong>Số tài khoản:</strong> 12102008654321</div>
+                <div class="bank-detail"><strong>Chủ tài khoản:</strong> CAI HOANG LUAN</div>
+                <div class="bank-detail" style="margin-bottom:6px;"><strong>Nội dung:</strong> BOTTEAM5</div>
+                <button class="copy-btn" onclick="copyBank()"><i class="fas fa-copy"></i> Sao chép thông tin</button>
+            </div>
+            <div style="margin-top:12px;text-align:center;color:#64748b;font-size:13px;">
+                <i class="fas fa-clock"></i> Kích hoạt sau 1-5 phút
+            </div>
+        </div>
+    </section>
 
-  function animate(){
-    ctx.clearRect(0,0,w,h);
-    for(const p of particles){
-      p.y -= p.vy; p.x += p.vx;
-      if(p.y < -10){ p.y = h + 10; p.x = Math.random()*w; }
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
-      const grad = Math.random() > 0.5 ? '255,0,0' : '255,120,0';
-      ctx.fillStyle = `rgba(${grad},0.75)`;
-      ctx.shadowBlur = 8;
-      ctx.shadowColor = `rgba(${grad},0.9)`;
-      ctx.fill();
-    }
-    if(!reduced) requestAnimationFrame(animate);
-  }
-  animate();
+    <!-- ===== CTA ===== -->
+    <section class="cta-band">
+        <div class="container">
+            <h2 class="reveal">🚀 Sẵn sàng bá đạo cùng ZAN BOT?</h2>
+            <p class="reveal">Liên hệ ngay để được tư vấn gói bot phù hợp nhất với bạn.</p>
+            <a href="#payment" class="btn btn-primary reveal"><i class="fas fa-fire"></i> Thuê bot ngay</a>
+        </div>
+    </section>
 
-  /* ===== MENU MOBILE ===== */
-  const burger = document.getElementById('burger');
-  const navLinks = document.getElementById('navLinks');
-  burger.addEventListener('click', ()=> navLinks.classList.toggle('open'));
-  navLinks.querySelectorAll('a').forEach(a=>a.addEventListener('click', ()=>navLinks.classList.remove('open')));
+    <!-- ===== FOOTER ===== -->
+    <footer id="contact">
+        <div class="container">
+            <div class="footer-grid">
+                <div>
+                    <div class="footer-logo">ZAN<span>BOT</span></div>
+                    <p>Dịch vụ cho thuê bot Free Fire team 5-6, vận hành chuyên nghiệp, phục vụ cộng đồng game thủ 24/7.</p>
+                    <div class="socials">
+                        <a href="https://t.me/zanbackj" target="_blank"><i class="fab fa-telegram"></i></a>
+                        <a href="https://www.tiktok.com/@nqbinhan_" target="_blank"><i class="fab fa-tiktok"></i></a>
+                        <a href="https://t.me/zancommunity" target="_blank"><i class="fas fa-hashtag"></i></a>
+                        <a href="zalo://p?phone=0862457518" target="_blank"><i class="fas fa-comment-dots"></i></a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h4>Dịch vụ</h4>
+                    <ul>
+                        <li><a href="#features">Tính năng</a></li>
+                        <li><a href="#pricing">Bảng giá</a></li>
+                        <li><a href="#payment">Thanh toán</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Liên hệ</h4>
+                    <ul>
+                        <li><a href="https://t.me/zanbackj" target="_blank">Telegram</a></li>
+                        <li><a href="https://www.tiktok.com/@nqbinhan_" target="_blank">TikTok</a></li>
+                        <li><a href="https://t.me/zancommunity" target="_blank">Group</a></li>
+                        <li><a href="zalo://p?phone=0862457518" target="_blank">Zalo</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">© 2026 <span>ZAN BOT FREEFIRE</span>. All rights reserved.</div>
+        </div>
+    </footer>
 
-  /* ===== HIỆU ỨNG XUẤT HIỆN KHI CUỘN (SCROLL REVEAL) ===== */
-  const revealEls = document.querySelectorAll('.reveal');
-  const io = new IntersectionObserver((entries)=>{
-    entries.forEach(entry=>{
-      if(entry.isIntersecting){ entry.target.classList.add('in'); io.unobserve(entry.target); }
-    });
-  },{threshold:0.15});
-  revealEls.forEach(el=>io.observe(el));
+    <script>
+        // ===== LOADING =====
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                document.getElementById('loading-screen').classList.add('hidden');
+            }, 3000);
+        });
 
-  /* ===== BÓNG HEADER KHI CUỘN ===== */
-  const header = document.querySelector('header');
-  window.addEventListener('scroll', ()=>{
-    header.style.boxShadow = window.scrollY > 20 ? '0 4px 40px rgba(255,0,0,0.2)' : 'none';
-  });
-</script>
+        // ===== MENU MOBILE =====
+        const burger = document.getElementById('burger');
+        const navMenu = document.getElementById('navMenu');
+        burger.addEventListener('click', () => navMenu.classList.toggle('open'));
+        navMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => navMenu.classList.remove('open')));
+
+        // ===== SCROLL REVEAL =====
+        const revealEls = document.querySelectorAll('.reveal');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('in');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.15 });
+        revealEls.forEach(el => observer.observe(el));
+
+        // ===== COPY BANK =====
+        function copyBank() {
+            const text = `MB Bank\nSTK: 12102008654321\nChủ TK: CAI HOANG LUAN\nND: BOTTEAM5`;
+            navigator.clipboard.writeText(text).then(() => alert('✅ Đã copy thông tin!')).catch(() => alert('⚠️ Copy thủ công nhé!'));
+        }
+
+        // ===== SMOOTH SCROLL =====
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    e.preventDefault();
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // ===== HEADER SHADOW =====
+        const header = document.querySelector('header');
+        window.addEventListener('scroll', () => {
+            header.style.boxShadow = window.scrollY > 20 ? '0 4px 40px rgba(0,0,0,0.4)' : 'none';
+        });
+    </script>
 </body>
 </html>
