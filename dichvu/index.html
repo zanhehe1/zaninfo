@@ -215,6 +215,92 @@
   .benefit-card:hover{border-color:var(--gold);box-shadow:0 0 35px rgba(255,0,0,0.3);transform:translateY(-5px);}
   .benefit-card i{font-size:30px;color:var(--red);margin-bottom:16px;text-shadow:0 0 25px rgba(255,0,0,0.7);}
   .benefit-card h4{font-size:15px;font-weight:700;color:#fff;}
+  
+  /* ===== HƯỚNG DẪN THANH TOÁN ===== */
+  .payment-guide {
+    margin-top: 50px;
+    background: rgba(20,0,0,0.6);
+    border: 2px solid var(--red);
+    border-radius: 18px;
+    padding: 40px 30px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .payment-guide::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 30% 50%, rgba(255,0,0,0.08), transparent 70%);
+    pointer-events: none;
+  }
+  .payment-guide h3 {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--gold);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: relative;
+  }
+  .payment-guide .step {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    color: var(--text-1);
+    font-size: 14.5px;
+    margin: 6px 0;
+    position: relative;
+  }
+  .payment-guide .step i {
+    color: var(--red);
+    font-size: 16px;
+    width: 22px;
+    text-align: center;
+  }
+  .payment-guide .highlight {
+    color: var(--gold);
+    font-weight: 700;
+    background: rgba(255,215,0,0.12);
+    padding: 2px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,215,0,0.25);
+  }
+  .payment-guide .admin-contact {
+    margin-top: 18px;
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    position: relative;
+  }
+  .payment-guide .admin-contact a {
+    color: var(--text-1);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 16px;
+    border: 1.5px solid var(--red);
+    border-radius: 30px;
+    transition: .3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .payment-guide .admin-contact a:hover {
+    color: #fff;
+    border-color: var(--gold);
+    box-shadow: 0 0 25px rgba(255,0,0,0.4);
+    transform: translateY(-2px);
+  }
+  .payment-guide .admin-contact a i {
+    color: var(--red);
+  }
+  .payment-guide .admin-contact a:hover i {
+    color: var(--gold);
+  }
 
   /* ===== CTA ===== */
   .cta-band{
@@ -262,6 +348,9 @@
     .nav-links.open{transform:translateX(0);}
     .burger{display:flex;}
     .intro-grid,.pricing,.benefit-grid,.footer-grid{grid-template-columns:1fr;}
+    .payment-guide .step { font-size: 13px; }
+    .payment-guide .admin-contact { gap: 14px; }
+    .payment-guide .admin-contact a { font-size: 13px; padding: 4px 12px; }
   }
 </style>
 </head>
@@ -336,7 +425,7 @@
           <li class="tier-row"><span class="tier-dur">1 tuần</span><span class="tier-price">60.000đ</span></li>
           <li class="tier-row"><span class="tier-dur">1 tháng</span><span class="tier-price">120.000đ</span></li>
         </ul>
-        <a href="#lienHe" class="btn btn-outline">Thuê ngay</a>
+        <a href="#loiIch" class="btn btn-outline">Thuê ngay</a>
       </div>
       <div class="plan featured reveal">
         <div class="badge">🔥 HOT</div>
@@ -346,7 +435,7 @@
           <li class="tier-row"><span class="tier-dur">1 tuần</span><span class="tier-price">70.000đ</span></li>
           <li class="tier-row"><span class="tier-dur">1 tháng</span><span class="tier-price">150.000đ</span></li>
         </ul>
-        <a href="#lienHe" class="btn btn-primary">Thuê ngay</a>
+        <a href="#loiIch" class="btn btn-primary">Thuê ngay</a>
       </div>
       <div class="plan reveal">
         <i class="fa-solid fa-shield-halved plan-icon"></i>
@@ -356,7 +445,7 @@
           <li class="tier-row"><span class="tier-dur">1 tháng</span><span class="tier-price">170.000đ</span></li>
           <li class="tier-row"><span class="tier-dur">3 tháng</span><span class="tier-price">250.000đ</span></li>
         </ul>
-        <a href="#lienHe" class="btn btn-outline">Thuê ngay</a>
+        <a href="#loiIch" class="btn btn-outline">Thuê ngay</a>
       </div>
     </div>
     <div class="tier-note">
@@ -378,6 +467,26 @@
       <div class="benefit-card reveal"><i class="fa-solid fa-rotate-left"></i><h4>Hoàn bot nếu gặp lỗi</h4></div>
       <div class="benefit-card reveal"><i class="fa-solid fa-arrow-up-right-dots"></i><h4>Cập nhật tính năng liên tục</h4></div>
     </div>
+
+    <!-- ===== HƯỚNG DẪN THANH TOÁN & LIÊN HỆ ADMIN ===== -->
+    <div class="payment-guide reveal">
+      <h3><i class="fa-solid fa-circle-info" style="color:var(--red);margin-right:10px;"></i>Hướng Dẫn Đặt Thuê & Thanh Toán</h3>
+      <div class="step"><i class="fa-solid fa-1"></i> Chọn gói bot phù hợp, nhấn <span class="highlight">"Thuê ngay"</span></div>
+      <div class="step"><i class="fa-solid fa-2"></i> Chuyển khoản đúng số tiền theo gói đã chọn</div>
+      <div class="step"><i class="fa-solid fa-3"></i> Chụp màn hình <span class="highlight">biên lai (bill)</span> và gửi cho Admin</div>
+      <div class="step"><i class="fa-solid fa-4"></i> Admin xác nhận và cấp bot cho bạn trong vòng 5 phút</div>
+
+      <div class="admin-contact">
+        <a href="https://www.tiktok.com/@nqbinhan_" target="_blank"><i class="fa-brands fa-tiktok"></i> TikTok</a>
+        <a href="https://t.me/zancommunity" target="_blank"><i class="fa-solid fa-users"></i> Group</a>
+        <a href="https://t.me/zanbackj" target="_blank"><i class="fa-brands fa-telegram"></i> Telegram</a>
+        <a href="zalo://p?phone=0862457518" target="_blank"><i class="fa-solid fa-comment-dots"></i> Zalo</a>
+      </div>
+      <p style="margin-top:16px;color:var(--text-1);font-size:13px;border-top:1px solid rgba(255,0,0,0.2);padding-top:16px;">
+        <i class="fa-solid fa-triangle-exclamation" style="color:var(--gold);margin-right:6px;"></i>
+        Lưu ý: Vui lòng <span style="color:var(--gold);font-weight:700;">cap bill</span> và gửi admin để được kích hoạt bot nhanh nhất.
+      </p>
+    </div>
   </div>
 </section>
 
@@ -385,7 +494,7 @@
 <section class="cta-band">
   <h2 class="reveal">Đẳng Cấp Tạo Nên Thương Hiệu</h2>
   <p class="reveal">Liên hệ ngay để được tư vấn gói bot phù hợp nhất với bạn.</p>
-  <a href="#lienHe" class="btn btn-primary reveal"><i class="fa-solid fa-fire"></i>Thuê Bot Ngay</a>
+  <a href="#loiIch" class="btn btn-primary reveal"><i class="fa-solid fa-fire"></i>Thuê Bot Ngay</a>
 </section>
 
 <!-- ===== FOOTER ===== -->
