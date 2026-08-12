@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BINH AN DEV</title>
+<title>ZAN DEV</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -18,7 +18,6 @@
     --red-mid:#e60000;
     --red-bright:#ff1a1a;
     --orange:#ff3300;
-    --gold:#ffd700;
     --text-0:#ffffff;
     --text-1:#ffcccc;
     --line:rgba(255,0,0,0.3);
@@ -90,7 +89,7 @@
   .loader-progress .bar {
     height: 100%;
     width: 0%;
-    background: linear-gradient(90deg, var(--red), var(--orange), var(--gold));
+    background: linear-gradient(90deg, var(--red), var(--orange));
     border-radius: 10px;
     animation: progressBar 3.6s ease-in-out forwards;
   }
@@ -133,7 +132,7 @@
     font-size:clamp(34px,6.5vw,72px);font-weight:900;line-height:1.12;letter-spacing:-1px;text-transform:uppercase;
   }
   .hero h1 .glow{
-    background:linear-gradient(90deg,var(--red),var(--orange),var(--gold));
+    background:linear-gradient(90deg,var(--red),var(--orange));
     -webkit-background-clip:text;background-clip:text;color:transparent;
     text-shadow:0 0 40px rgba(255,0,0,0.6);
     animation:flicker 3.6s infinite;
@@ -151,7 +150,7 @@
   }
   .btn-primary:hover{transform:translateY(-3px);box-shadow:0 0 55px rgba(255,0,0,0.9);}
   .btn-outline{background:transparent;border:2px solid var(--red);color:var(--text-0);}
-  .btn-outline:hover{border-color:var(--gold);color:var(--gold);box-shadow:0 0 30px rgba(255,215,0,0.3);transform:translateY(-3px);}
+  .btn-outline:hover{border-color:var(--red);color:var(--red);box-shadow:0 0 30px rgba(255,0,0,0.3);transform:translateY(-3px);}
 
   section{position:relative;z-index:2;padding:110px 0;}
   .eyebrow{
@@ -170,7 +169,7 @@
     border-radius:14px;padding:26px 24px;
     display:flex;align-items:flex-start;gap:16px;transition:.3s;position:relative;overflow:hidden;
   }
-  .intro-card:hover{border-color:var(--gold);box-shadow:0 0 40px rgba(255,0,0,0.3);transform:translateY(-4px);}
+  .intro-card:hover{border-color:var(--red);box-shadow:0 0 40px rgba(255,0,0,0.3);transform:translateY(-4px);}
   .intro-card i{
     font-size:24px;color:var(--red);text-shadow:0 0 20px rgba(255,0,0,0.8);min-width:30px;
   }
@@ -182,9 +181,9 @@
     background:rgba(20,0,0,0.5);border:2px solid var(--red);border-radius:18px;
     padding:34px 28px;display:flex;flex-direction:column;transition:.35s;position:relative;
   }
-  .plan:hover{transform:translateY(-6px);border-color:var(--gold);box-shadow:0 20px 60px rgba(255,0,0,0.25);}
+  .plan:hover{transform:translateY(-6px);border-color:var(--red);box-shadow:0 20px 60px rgba(255,0,0,0.25);}
   .plan.featured{
-    border:2px solid var(--gold);box-shadow:0 0 60px rgba(255,0,0,0.35);
+    border:2px solid var(--red);box-shadow:0 0 60px rgba(255,0,0,0.35);
     background:rgba(30,0,0,0.6);
   }
   .plan.featured .badge{
@@ -199,7 +198,7 @@
   .tier-row:last-child{border-bottom:none;}
   .tier-dur{color:var(--text-1);font-size:13.5px;}
   .tier-price{font-size:19px;font-weight:800;color:#fff;}
-  .plan.featured .tier-price{color:var(--gold);text-shadow:0 0 20px rgba(255,215,0,0.6);}
+  .plan.featured .tier-price{color:var(--red);text-shadow:0 0 20px rgba(255,0,0,0.6);}
   .plan .btn{width:100%;justify-content:center;}
   .tier-note{
     text-align:center;color:var(--text-1);font-size:14px;margin-top:44px;display:flex;flex-direction:column;gap:8px;
@@ -212,7 +211,7 @@
     text-align:center;background:rgba(20,0,0,0.5);border:2px solid var(--red);border-radius:14px;
     padding:30px 20px;transition:.3s;
   }
-  .benefit-card:hover{border-color:var(--gold);box-shadow:0 0 35px rgba(255,0,0,0.3);transform:translateY(-5px);}
+  .benefit-card:hover{border-color:var(--red);box-shadow:0 0 35px rgba(255,0,0,0.3);transform:translateY(-5px);}
   .benefit-card i{font-size:30px;color:var(--red);margin-bottom:16px;text-shadow:0 0 25px rgba(255,0,0,0.7);}
   .benefit-card h4{font-size:15px;font-weight:700;color:#fff;}
   
@@ -237,7 +236,7 @@
   .payment-guide h3 {
     font-size: 20px;
     font-weight: 800;
-    color: var(--gold);
+    color: #fff;
     margin-bottom: 16px;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -262,12 +261,12 @@
     text-align: center;
   }
   .payment-guide .highlight {
-    color: var(--gold);
+    color: #fff;
     font-weight: 700;
-    background: rgba(255,215,0,0.12);
+    background: rgba(255,0,0,0.15);
     padding: 2px 12px;
     border-radius: 6px;
-    border: 1px solid rgba(255,215,0,0.25);
+    border: 1px solid rgba(255,0,0,0.3);
   }
   .payment-guide .admin-contact {
     margin-top: 20px;
@@ -293,17 +292,17 @@
   }
   .payment-guide .admin-contact a:hover {
     color: #fff;
-    border-color: var(--gold);
+    border-color: #fff;
     box-shadow: 0 0 25px rgba(255,0,0,0.4);
     transform: translateY(-2px);
-    background: rgba(255,0,0,0.1);
+    background: rgba(255,0,0,0.15);
   }
   .payment-guide .admin-contact a i {
     color: var(--red);
     font-size: 16px;
   }
   .payment-guide .admin-contact a:hover i {
-    color: var(--gold);
+    color: #fff;
   }
   .payment-guide .note-warning {
     margin-top: 18px;
@@ -315,11 +314,11 @@
     position: relative;
   }
   .payment-guide .note-warning .warning-text {
-    color: var(--gold);
+    color: #fff;
     font-weight: 700;
   }
   .payment-guide .note-warning .no-refund {
-    color: #ff6b6b;
+    color: var(--red);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -348,7 +347,7 @@
     width:38px;height:38px;border:2px solid var(--red);border-radius:8px;
     display:flex;align-items:center;justify-content:center;color:var(--text-1);text-decoration:none;transition:.25s;
   }
-  .socials a:hover{color:#fff;border-color:var(--gold);box-shadow:0 0 20px rgba(255,0,0,0.5);}
+  .socials a:hover{color:#fff;border-color:#fff;box-shadow:0 0 20px rgba(255,0,0,0.5);}
   .footer-bottom{border-top:2px solid rgba(255,0,0,0.2);padding-top:22px;text-align:center;color:var(--text-1);font-size:13px;}
   .footer-bottom span{color:var(--red);font-weight:700;}
 
@@ -506,12 +505,12 @@
       </div>
 
       <div class="note-warning">
-        <p><i class="fa-solid fa-triangle-exclamation" style="color:var(--gold);margin-right:6px;"></i>
+        <p><i class="fa-solid fa-triangle-exclamation" style="color:var(--red);margin-right:6px;"></i>
           <span class="warning-text">Lưu ý quan trọng:</span> Khi đã thuê bot, 
           <span class="no-refund">sẽ không hoàn lại tiền</span> dưới bất kỳ hình thức nào.
         </p>
         <p style="margin-top:6px;font-size:13px;color:var(--text-1);">
-          <i class="fa-solid fa-check-circle" style="color:var(--gold);margin-right:6px;"></i>
+          <i class="fa-solid fa-check-circle" style="color:var(--red);margin-right:6px;"></i>
           Bot được cấp tự động ngay sau khi Admin xác nhận bill thành công.
         </p>
       </div>
