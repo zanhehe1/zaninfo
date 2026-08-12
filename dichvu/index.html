@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZAN DEV BOT FREEFIRE — Dịch Vụ Cho Thuê Bot Team 5-6</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+  /* ===== FULL MÀU ĐỎ - ĐEN ===== */
+  :root{
+    --black:#0a0a0a;
+    --black-2:#0d0d0d;
+    --black-3:#111111;
+    --red:#ff0000;
+    --red-dark:#cc0000;
+    --red-mid:#e60000;
+    --red-bright:#ff1a1a;
+    --orange:#ff3300;
+    --gold:#ffd700;
+    --text-0:#ffffff;
+    --text-1:#ffcccc;
+    --line:rgba(255,0,0,0.3);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--black);
+    color:var(--text-0);
+    font-family:'Poppins',sans-serif;
+    overflow-x:hidden;
+    position:relative;
+  }
+  ::selection{background:var(--red);color:#fff;}
+  ::-webkit-scrollbar{width:9px;}
+  ::-webkit-scrollbar-track{background:var(--black);}
+  ::-webkit-scrollbar-thumb{background:linear-gradient(var(--red),var(--orange));border-radius:10px;}
+
+  /* Canvas particle lửa đỏ */
+  #fireParticles{position:fixed;inset:0;z-index:0;pointer-events:none;}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px;position:relative;z-index:2;}
+
+  /* ===== LOADING SCREEN ===== */
+  #loading-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #0a0a0a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.8s ease, visibility 0.8s ease;
+  }
+  #loading-screen.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  #loading-screen .loader-text {
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--text-1);
+    margin-bottom: 18px;
+    letter-spacing: 2px;
+  }
+  .loader-ring {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 3px solid rgba(255,0,0,0.1);
+    border-top-color: var(--red);
+    border-right-color: var(--orange);
+    animation: spinRing 0.9s linear infinite;
+    box-shadow: 0 0 40px rgba(255,0,0,0.15);
+  }
+  @keyframes spinRing {
+    to { transform: rotate(360deg); }
+  }
+  .loader-progress {
+    margin-top: 18px;
+    width: 160px;
+    height: 2px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .loader-progress .bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--red), var(--orange), var(--gold));
+    border-radius: 10px;
+    animation: progressBar 3.6s ease-in-out forwards;
+  }
+  @keyframes progressBar {
+    0% { width: 0%; }
+    100% { width: 100%; }
+  }
+
+  /* ===== HEADER ===== */
+  header{
+    position:fixed;top:0;left:0;right:0;z-index:100;
+    background:rgba(10,10,10,0.85);backdrop-filter:blur(14px);
+    border-bottom:2px solid var(--red);
+  }
+  .nav{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;max-width:1180px;margin:0 auto;}
+  .logo{font-weight:900;font-size:22px;letter-spacing:1px;display:flex;align-items:center;gap:10px;}
+  .logo i{color:var(--red);text-shadow:0 0 20px var(--red);}
+  .logo span{color:var(--red);text-shadow:0 0 25px rgba(255,0,0,0.9);}
+  .nav-links{display:flex;gap:32px;list-style:none;}
+  .nav-links a{color:var(--text-1);text-decoration:none;font-size:14.5px;font-weight:500;position:relative;transition:.25s;}
+  .nav-links a::after{content:'';position:absolute;left:0;bottom:-6px;width:0;height:2px;background:var(--red);box-shadow:0 0 12px var(--red);transition:.3s;}
+  .nav-links a:hover{color:#fff;}
+  .nav-links a:hover::after{width:100%;}
+  .burger{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;}
+  .burger span{width:24px;height:2px;background:var(--text-0);}
+
+  /* ===== HERO ===== */
+  .hero{
+    min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;position:relative;padding:150px 24px 90px;
+  }
+  .hero-tag{
+    border:2px solid var(--red);color:var(--red);
+    padding:7px 18px;border-radius:30px;font-size:13px;letter-spacing:2px;text-transform:uppercase;
+    margin-bottom:26px;box-shadow:0 0 30px rgba(255,0,0,0.3) inset;
+    animation:pulseTag 2.2s ease-in-out infinite;
+  }
+  @keyframes pulseTag{50%{box-shadow:0 0 50px rgba(255,0,0,0.5) inset;}}
+  .hero h1{
+    font-size:clamp(34px,6.5vw,72px);font-weight:900;line-height:1.12;letter-spacing:-1px;text-transform:uppercase;
+  }
+  .hero h1 .glow{
+    background:linear-gradient(90deg,var(--red),var(--orange),var(--gold));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 40px rgba(255,0,0,0.6);
+    animation:flicker 3.6s infinite;
+  }
+  @keyframes flicker{0%,19%,21%,23%,25%,54%,56%,100%{opacity:1;}20%,22%,24%,55%{opacity:.6;}}
+  .hero p.sub{max-width:640px;margin:26px auto 0;color:var(--text-1);font-size:16.5px;line-height:1.8;}
+  .hero-btns{display:flex;gap:18px;margin-top:42px;flex-wrap:wrap;justify-content:center;}
+  .btn{
+    padding:16px 34px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none;cursor:pointer;
+    border:none;display:inline-flex;align-items:center;gap:10px;transition:.3s;letter-spacing:.3px;
+  }
+  .btn-primary{
+    background:linear-gradient(135deg,var(--red),var(--orange));color:#fff;
+    box-shadow:0 0 35px rgba(255,0,0,0.6);
+  }
+  .btn-primary:hover{transform:translateY(-3px);box-shadow:0 0 55px rgba(255,0,0,0.9);}
+  .btn-outline{background:transparent;border:2px solid var(--red);color:var(--text-0);}
+  .btn-outline:hover{border-color:var(--gold);color:var(--gold);box-shadow:0 0 30px rgba(255,215,0,0.3);transform:translateY(-3px);}
+
+  section{position:relative;z-index:2;padding:110px 0;}
+  .eyebrow{
+    color:var(--red);font-size:13px;letter-spacing:3px;text-transform:uppercase;font-weight:700;
+    display:block;text-align:center;margin-bottom:14px;text-shadow:0 0 20px rgba(255,0,0,0.7);
+  }
+  .sec-title{text-align:center;font-size:clamp(26px,4vw,42px);font-weight:900;margin-bottom:16px;text-transform:uppercase;}
+  .sec-title .red{color:var(--red);text-shadow:0 0 30px rgba(255,0,0,0.5);}
+  .sec-desc{text-align:center;color:var(--text-1);max-width:600px;margin:0 auto 60px;font-size:15.5px;line-height:1.8;}
+
+  /* ===== GIỚI THIỆU DỊCH VỤ ===== */
+  .intro-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;}
+  .intro-card{
+    background:rgba(20,0,0,0.6);
+    border:2px solid var(--red);
+    border-radius:14px;padding:26px 24px;
+    display:flex;align-items:flex-start;gap:16px;transition:.3s;position:relative;overflow:hidden;
+  }
+  .intro-card:hover{border-color:var(--gold);box-shadow:0 0 40px rgba(255,0,0,0.3);transform:translateY(-4px);}
+  .intro-card i{
+    font-size:24px;color:var(--red);text-shadow:0 0 20px rgba(255,0,0,0.8);min-width:30px;
+  }
+  .intro-card p{color:#fff;font-size:15px;font-weight:500;line-height:1.6;}
+
+  /* ===== BẢNG GIÁ ===== */
+  .pricing{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;align-items:stretch;}
+  .plan{
+    background:rgba(20,0,0,0.5);border:2px solid var(--red);border-radius:18px;
+    padding:34px 28px;display:flex;flex-direction:column;transition:.35s;position:relative;
+  }
+  .plan:hover{transform:translateY(-6px);border-color:var(--gold);box-shadow:0 20px 60px rgba(255,0,0,0.25);}
+  .plan.featured{
+    border:2px solid var(--gold);box-shadow:0 0 60px rgba(255,0,0,0.35);
+    background:rgba(30,0,0,0.6);
+  }
+  .plan.featured .badge{
+    position:absolute;top:-14px;left:50%;transform:translateX(-50%);
+    background:linear-gradient(135deg,var(--red),var(--orange));color:#fff;
+    font-size:12px;font-weight:800;padding:6px 18px;border-radius:20px;letter-spacing:1px;
+  }
+  .plan-icon{font-size:26px;color:var(--red);margin-bottom:14px;text-shadow:0 0 20px rgba(255,0,0,0.8);}
+  .plan-name{font-size:16px;letter-spacing:1px;color:#fff;text-transform:uppercase;font-weight:800;margin-bottom:18px;}
+  .tier-rows{list-style:none;margin-bottom:26px;flex:1;}
+  .tier-row{display:flex;align-items:baseline;justify-content:space-between;padding:13px 0;border-bottom:1px solid rgba(255,0,0,0.2);}
+  .tier-row:last-child{border-bottom:none;}
+  .tier-dur{color:var(--text-1);font-size:13.5px;}
+  .tier-price{font-size:19px;font-weight:800;color:#fff;}
+  .plan.featured .tier-price{color:var(--gold);text-shadow:0 0 20px rgba(255,215,0,0.6);}
+  .plan .btn{width:100%;justify-content:center;}
+  .tier-note{
+    text-align:center;color:var(--text-1);font-size:14px;margin-top:44px;display:flex;flex-direction:column;gap:8px;
+  }
+  .tier-note i{color:var(--red);margin-right:6px;}
+
+  /* ===== LỢI ÍCH ===== */
+  .benefit-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;}
+  .benefit-card{
+    text-align:center;background:rgba(20,0,0,0.5);border:2px solid var(--red);border-radius:14px;
+    padding:30px 20px;transition:.3s;
+  }
+  .benefit-card:hover{border-color:var(--gold);box-shadow:0 0 35px rgba(255,0,0,0.3);transform:translateY(-5px);}
+  .benefit-card i{font-size:30px;color:var(--red);margin-bottom:16px;text-shadow:0 0 25px rgba(255,0,0,0.7);}
+  .benefit-card h4{font-size:15px;font-weight:700;color:#fff;}
+
+  /* ===== CTA ===== */
+  .cta-band{
+    text-align:center;padding:100px 24px;
+    background:radial-gradient(ellipse at center,rgba(255,0,0,0.15),transparent 70%);
+  }
+  .cta-band h2{font-size:clamp(26px,4vw,42px);font-weight:900;margin-bottom:18px;text-transform:uppercase;}
+  .cta-band p{color:var(--text-1);margin-bottom:34px;}
+
+  /* ===== FOOTER ===== */
+  footer{border-top:2px solid var(--red);padding:60px 0 24px;background:rgba(10,0,0,0.9);}
+  .footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px;margin-bottom:40px;}
+  .footer-logo{font-weight:900;font-size:20px;margin-bottom:14px;}
+  .footer-grid p{color:var(--text-1);font-size:14px;line-height:1.7;}
+  .footer-col h4{font-size:14px;margin-bottom:16px;letter-spacing:1px;color:#fff;}
+  .footer-col ul{list-style:none;}
+  .footer-col li{margin-bottom:10px;}
+  .footer-col a{color:var(--text-1);text-decoration:none;font-size:14px;transition:.25s;}
+  .footer-col a:hover{color:var(--red);}
+  .socials{display:flex;gap:14px;margin-top:16px;flex-wrap:wrap;}
+  .socials a{
+    width:38px;height:38px;border:2px solid var(--red);border-radius:8px;
+    display:flex;align-items:center;justify-content:center;color:var(--text-1);text-decoration:none;transition:.25s;
+  }
+  .socials a:hover{color:#fff;border-color:var(--gold);box-shadow:0 0 20px rgba(255,0,0,0.5);}
+  .footer-bottom{border-top:2px solid rgba(255,0,0,0.2);padding-top:22px;text-align:center;color:var(--text-1);font-size:13px;}
+  .footer-bottom span{color:var(--red);font-weight:700;}
+
+  .reveal{opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease;}
+  .reveal.in{opacity:1;transform:translateY(0);}
+
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+
+  @media(max-width:900px){
+    .intro-grid,.pricing{grid-template-columns:1fr 1fr;}
+    .benefit-grid{grid-template-columns:1fr 1fr;}
+    .footer-grid{grid-template-columns:1fr 1fr;}
+  }
+  @media(max-width:640px){
+    .nav-links{
+      position:fixed;top:64px;right:0;height:calc(100vh - 64px);width:70%;
+      background:rgba(10,0,0,0.98);flex-direction:column;padding:40px 30px;
+      transform:translateX(100%);transition:.35s;
+    }
+    .nav-links.open{transform:translateX(0);}
+    .burger{display:flex;}
+    .intro-grid,.pricing,.benefit-grid,.footer-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== LOADING SCREEN ===== -->
+<div id="loading-screen">
+  <div class="loader-text">⏳ Vui lòng đợi 3.6s</div>
+  <div class="loader-ring"></div>
+  <div class="loader-progress"><div class="bar"></div></div>
+</div>
+
+<!-- Canvas hiệu ứng particle lửa đỏ -->
+<canvas id="fireParticles"></canvas>
+
+<!-- ===== HEADER ===== -->
+<header>
+  <nav class="nav">
+    <div class="logo"><i class="fa-solid fa-fire"></i>ZAN<span>DEV</span></div>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#gioithieu">Giới thiệu</a></li>
+      <li><a href="#bangGia">Bảng giá</a></li>
+      <li><a href="#loiIch">Lợi ích</a></li>
+      <li><a href="#lienHe">Liên hệ</a></li>
+    </ul>
+    <button class="burger" id="burger"><span></span><span></span><span></span></button>
+  </nav>
+</header>
+
+<!-- ===== HERO ===== -->
+<section class="hero">
+  <div class="hero-tag">🔥 Bot Free Fire Team 5-6</div>
+  <h1>DỊCH VỤ CHO THUÊ<br><span class="glow">BOT FREEFIRE</span></h1>
+  <p class="sub">Vượt giới hạn 4vs4, chơi team 5-6 người, múa full súng s7 phông bạt, vận hành — hỗ trợ 24/7.</p>
+  <div class="hero-btns">
+    <a href="#gioithieu" class="btn btn-primary"><i class="fa-solid fa-fire-flame-curved"></i>Xem giới thiệu</a>
+    <a href="#bangGia" class="btn btn-outline"><i class="fa-solid fa-tags"></i>Xem bảng giá</a>
+  </div>
+</section>
+
+<!-- ===== GIỚI THIỆU DỊCH VỤ ===== -->
+<section id="gioithieu">
+  <div class="wrap">
+    <span class="eyebrow">Về chúng tôi</span>
+    <h2 class="sec-title reveal">Dịch Vụ Cho Thuê Bot Freefire <span class="red">Team 5-6</span></h2>
+    <p class="sec-desc reveal">Đội hình bot mạnh mẽ, vận hành ổn định, phục vụ mọi nhu cầu chơi và trình diễn của bạn.</p>
+    <div class="intro-grid">
+      <div class="intro-card reveal"><i class="fa-solid fa-users"></i><p>Vượt giới hạn 4vs4, chơi team 5-6 người thoải mái</p></div>
+      <div class="intro-card reveal"><i class="fa-solid fa-gun"></i><p>Múa full súng level 7 để phông bạt trong phòng chờ</p></div>
+      <div class="intro-card reveal"><i class="fa-solid fa-person-running"></i><p>Múa full tất cả hành động có trong game</p></div>
+      <div class="intro-card reveal"><i class="fa-solid fa-bolt"></i><p>Spam troll lag đối thủ khiến cho đội bị disconnect</p></div>
+      <div class="intro-card reveal"><i class="fa-solid fa-user-plus"></i><p>Spam kết bạn, spam lời mời vào đội tự động</p></div>
+      <div class="intro-card reveal"><i class="fa-solid fa-clock"></i><p>Vận hành 24/7, online trực tuyến liên tục không gián đoạn</p></div>
+      <div class="intro-card reveal"><i class="fa-solid fa-tag"></i><p>Giá cả tối ưu, càng thuê lâu càng ưu đãi</p></div>
+      <div class="intro-card reveal"><i class="fa-solid fa-gamepad"></i><p>Hỗ trợ tất cả các chế độ chơi trong Free Fire</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== BẢNG GIÁ ===== -->
+<section id="bangGia">
+  <div class="wrap">
+    <span class="eyebrow">Chi phí</span>
+    <h2 class="sec-title reveal">💰 Bảng Giá Thuê Bot</h2>
+    <p class="sec-desc reveal">Nhiều gói linh hoạt, phù hợp mọi nhu cầu — thuê càng lâu, giá càng rẻ.</p>
+    <div class="pricing">
+      <div class="plan reveal">
+        <i class="fa-solid fa-fire plan-icon"></i>
+        <div class="plan-name">Bot Team 5-6 Múa S7</div>
+        <ul class="tier-rows">
+          <li class="tier-row"><span class="tier-dur">1 ngày</span><span class="tier-price">10.000đ</span></li>
+          <li class="tier-row"><span class="tier-dur">1 tuần</span><span class="tier-price">60.000đ</span></li>
+          <li class="tier-row"><span class="tier-dur">2 tuần</span><span class="tier-price">120.000đ</span></li>
+        </ul>
+        <a href="#lienHe" class="btn btn-outline">Thuê ngay</a>
+      </div>
+      <div class="plan featured reveal">
+        <div class="badge">🔥 HOT</div>
+        <i class="fa-solid fa-signature plan-icon"></i>
+        <div class="plan-name">Bot Theo Tên Mong Muốn</div>
+        <ul class="tier-rows">
+          <li class="tier-row"><span class="tier-dur">1 tuần</span><span class="tier-price">70.000đ</span></li>
+          <li class="tier-row"><span class="tier-dur">1 tháng</span><span class="tier-price">150.000đ</span></li>
+        </ul>
+        <a href="#lienHe" class="btn btn-primary">Thuê ngay</a>
+      </div>
+      <div class="plan reveal">
+        <i class="fa-solid fa-shield-halved plan-icon"></i>
+        <div class="plan-name">Bot Quân Đoàn</div>
+        <ul class="tier-rows">
+          <li class="tier-row"><span class="tier-dur">1 tuần</span><span class="tier-price">80.000đ</span></li>
+          <li class="tier-row"><span class="tier-dur">1 tháng</span><span class="tier-price">170.000đ</span></li>
+          <li class="tier-row"><span class="tier-dur">3 tháng</span><span class="tier-price">250.000đ</span></li>
+        </ul>
+        <a href="#lienHe" class="btn btn-outline">Thuê ngay</a>
+      </div>
+    </div>
+    <div class="tier-note">
+      <span><i class="fa-solid fa-gift"></i>Càng thuê lâu dài, giá càng ưu đãi</span>
+      <span><i class="fa-solid fa-clock"></i>Bot online/trực tuyến 24/7</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===== LỢI ÍCH ===== -->
+<section id="loiIch">
+  <div class="wrap">
+    <span class="eyebrow">Cam kết</span>
+    <h2 class="sec-title reveal">Lợi Ích Khi Thuê</h2>
+    <p class="sec-desc reveal">Trải nghiệm dịch vụ chuyên nghiệp, uy tín, luôn đặt khách hàng lên hàng đầu.</p>
+    <div class="benefit-grid">
+      <div class="benefit-card reveal"><i class="fa-solid fa-headset"></i><h4>Hỗ trợ 24/7</h4></div>
+      <div class="benefit-card reveal"><i class="fa-solid fa-lock"></i><h4>Bảo mật thông tin</h4></div>
+      <div class="benefit-card reveal"><i class="fa-solid fa-rotate-left"></i><h4>Hoàn bot nếu gặp lỗi</h4></div>
+      <div class="benefit-card reveal"><i class="fa-solid fa-arrow-up-right-dots"></i><h4>Cập nhật tính năng liên tục</h4></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CTA ===== -->
+<section class="cta-band">
+  <h2 class="reveal">Đẳng Cấp Tạo Nên Thương Hiệu</h2>
+  <p class="reveal">Liên hệ ngay để được tư vấn gói bot phù hợp nhất với bạn.</p>
+  <a href="#lienHe" class="btn btn-primary reveal"><i class="fa-solid fa-fire"></i>Thuê Bot Ngay</a>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer id="lienHe">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-logo">ZAN<span style="color:var(--red)">DEV</span></div>
+        <p>Dịch vụ cho thuê bot Free Fire team 5-6, vận hành chuyên nghiệp, phục vụ cộng đồng game thủ 24/7.</p>
+        <div class="socials">
+          <a href="https://www.tiktok.com/@nqbinhan_" target="_blank" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+          <a href="https://t.me/zancommunity" target="_blank" title="Group"><i class="fa-solid fa-users"></i></a>
+          <a href="https://t.me/zanbackj" target="_blank" title="Telegram"><i class="fa-brands fa-telegram"></i></a>
+          <a href="zalo://p?phone=0862457518" target="_blank" title="Zalo"><i class="fa-solid fa-comment-dots"></i></a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Dịch vụ</h4>
+        <ul><li><a href="#gioithieu">Giới thiệu</a></li><li><a href="#bangGia">Bảng giá</a></li><li><a href="#loiIch">Lợi ích</a></li></ul>
+      </div>
+      <div class="footer-col">
+        <h4>Liên hệ</h4>
+        <ul>
+          <li><a href="https://www.tiktok.com/@nqbinhan_" target="_blank">TikTok</a></li>
+          <li><a href="https://t.me/zancommunity" target="_blank">Group</a></li>
+          <li><a href="https://t.me/zanbackj" target="_blank">Telegram</a></li>
+          <li><a href="zalo://p?phone=0862457518" target="_blank">Zalo</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2026 <span>ZAN DEV BOT FREEFIRE</span>. All rights reserved.</div>
+  </div>
+</footer>
+
+<script>
+  // ===== LOADING SCREEN =====
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      document.getElementById('loading-screen').classList.add('hidden');
+    }, 3600);
+  });
+
+  /* ===== HIỆU ỨNG PARTICLE LỬA ĐỎ NỀN TOÀN TRANG ===== */
+  const canvas = document.getElementById('fireParticles');
+  const ctx = canvas.getContext('2d');
+  let w, h, particles = [];
+  const COUNT = window.innerWidth < 700 ? 45 : 90;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function resize(){ w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function initParticles(){
+    particles = [];
+    for(let i=0;i<COUNT;i++){
+      particles.push({
+        x: Math.random()*w,
+        y: h + Math.random()*h,
+        r: Math.random()*1.8+0.6,
+        vy: Math.random()*0.6+0.25,
+        vx: (Math.random()-0.5)*0.3,
+        life: Math.random()
+      });
+    }
+  }
+  initParticles();
+
+  function animate(){
+    ctx.clearRect(0,0,w,h);
+    for(const p of particles){
+      p.y -= p.vy; p.x += p.vx;
+      if(p.y < -10){ p.y = h + 10; p.x = Math.random()*w; }
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      const grad = Math.random() > 0.5 ? '255,0,0' : '255,120,0';
+      ctx.fillStyle = `rgba(${grad},0.75)`;
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = `rgba(${grad},0.9)`;
+      ctx.fill();
+    }
+    if(!reduced) requestAnimationFrame(animate);
+  }
+  animate();
+
+  /* ===== MENU MOBILE ===== */
+  const burger = document.getElementById('burger');
+  const navLinks = document.getElementById('navLinks');
+  burger.addEventListener('click', ()=> navLinks.classList.toggle('open'));
+  navLinks.querySelectorAll('a').forEach(a=>a.addEventListener('click', ()=>navLinks.classList.remove('open')));
+
+  /* ===== HIỆU ỨNG XUẤT HIỆN KHI CUỘN (SCROLL REVEAL) ===== */
+  const revealEls = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){ entry.target.classList.add('in'); io.unobserve(entry.target); }
+    });
+  },{threshold:0.15});
+  revealEls.forEach(el=>io.observe(el));
+
+  /* ===== BÓNG HEADER KHI CUỘN ===== */
+  const header = document.querySelector('header');
+  window.addEventListener('scroll', ()=>{
+    header.style.boxShadow = window.scrollY > 20 ? '0 4px 40px rgba(255,0,0,0.2)' : 'none';
+  });
+</script>
+</body>
+</html>
