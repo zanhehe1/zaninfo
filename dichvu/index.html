@@ -8,7 +8,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
-  /* ===== FULL MÀU ĐỎ - ĐEN ===== */
   :root{
     --black:#0a0a0a;
     --black-2:#0d0d0d;
@@ -37,12 +36,9 @@
   ::-webkit-scrollbar-track{background:var(--black);}
   ::-webkit-scrollbar-thumb{background:linear-gradient(var(--red),var(--orange));border-radius:10px;}
 
-  /* Canvas particle lửa đỏ */
   #fireParticles{position:fixed;inset:0;z-index:0;pointer-events:none;}
-
   .wrap{max-width:1180px;margin:0 auto;padding:0 24px;position:relative;z-index:2;}
 
-  /* ===== LOADING SCREEN ===== */
   #loading-screen {
     position: fixed;
     inset: 0;
@@ -99,7 +95,6 @@
     100% { width: 100%; }
   }
 
-  /* ===== THÔNG BÁO HỆ THỐNG ===== */
   #system-notification {
     position: fixed;
     top: 0;
@@ -181,25 +176,15 @@
     background: var(--red-dark);
   }
 
-  /* ===== HEADER ===== */
   header{
     position:fixed;top:0;left:0;right:0;z-index:100;
     background:rgba(10,10,10,0.85);backdrop-filter:blur(14px);
     border-bottom:2px solid var(--red);
   }
   .nav{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;max-width:1180px;margin:0 auto;}
-  .logo{font-weight:900;font-size:22px;letter-spacing:1px;display:flex;align-items:center;gap:10px;}
-  .logo i{color:var(--red);text-shadow:0 0 20px var(--red);}
-  .logo span{color:var(--red);text-shadow:0 0 25px rgba(255,0,0,0.9);}
-  .nav-links{display:flex;gap:32px;list-style:none;}
-  .nav-links a{color:var(--text-1);text-decoration:none;font-size:14.5px;font-weight:500;position:relative;transition:.25s;}
-  .nav-links a::after{content:'';position:absolute;left:0;bottom:-6px;width:0;height:2px;background:var(--red);box-shadow:0 0 12px var(--red);transition:.3s;}
-  .nav-links a:hover{color:#fff;}
-  .nav-links a:hover::after{width:100%;}
   .burger{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;}
   .burger span{width:24px;height:2px;background:var(--text-0);}
 
-  /* ===== HERO ===== */
   .hero{
     min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
     text-align:center;position:relative;padding:150px 24px 90px;
@@ -244,7 +229,6 @@
   .sec-title .red{color:var(--red);text-shadow:0 0 30px rgba(255,0,0,0.5);}
   .sec-desc{text-align:center;color:var(--text-1);max-width:600px;margin:0 auto 60px;font-size:15.5px;line-height:1.8;}
 
-  /* ===== GIỚI THIỆU DỊCH VỤ ===== */
   .intro-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;}
   .intro-card{
     background:rgba(20,0,0,0.6);
@@ -258,7 +242,6 @@
   }
   .intro-card p{color:#fff;font-size:15px;font-weight:500;line-height:1.6;}
 
-  /* ===== BẢNG GIÁ ===== */
   .pricing{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;align-items:stretch;}
   .plan{
     background:rgba(20,0,0,0.5);border:2px solid var(--red);border-radius:18px;
@@ -288,7 +271,6 @@
   }
   .tier-note i{color:var(--red);margin-right:6px;}
 
-  /* ===== LỢI ÍCH ===== */
   .benefit-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;}
   .benefit-card{
     text-align:center;background:rgba(20,0,0,0.5);border:2px solid var(--red);border-radius:14px;
@@ -298,7 +280,6 @@
   .benefit-card i{font-size:30px;color:var(--red);margin-bottom:16px;text-shadow:0 0 25px rgba(255,0,0,0.7);}
   .benefit-card h4{font-size:15px;font-weight:700;color:#fff;}
   
-  /* ===== HƯỚNG DẪN THANH TOÁN ===== */
   .payment-guide {
     margin-top: 50px;
     background: rgba(20,0,0,0.6);
@@ -352,7 +333,6 @@
     letter-spacing: 0.5px;
   }
 
-  /* ===== ADMIN SECTION ===== */
   .admin-section {
     padding: 50px 0 30px;
   }
@@ -437,7 +417,6 @@
     margin-bottom: 12px;
   }
 
-  /* ===== CTA ===== */
   .cta-band{
     text-align:center;padding:100px 24px;
     background:radial-gradient(ellipse at center,rgba(255,0,0,0.15),transparent 70%);
@@ -445,11 +424,8 @@
   .cta-band h2{font-size:clamp(26px,4vw,42px);font-weight:900;margin-bottom:18px;text-transform:uppercase;}
   .cta-band p{color:var(--text-1);margin-bottom:34px;}
 
-  /* ===== FOOTER ===== */
   footer{border-top:2px solid var(--red);padding:60px 0 24px;background:rgba(10,0,0,0.9);}
   .footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px;margin-bottom:40px;}
-  .footer-logo{font-weight:900;font-size:20px;margin-bottom:14px;}
-  .footer-grid p{color:var(--text-1);font-size:14px;line-height:1.7;}
   .footer-col h4{font-size:14px;margin-bottom:16px;letter-spacing:1px;color:#fff;}
   .footer-col ul{list-style:none;}
   .footer-col li{margin-bottom:10px;}
@@ -520,14 +496,7 @@
 <!-- ===== HEADER ===== -->
 <header>
   <nav class="nav">
-    <div class="logo"><i class="fa-solid fa-fire"></i>ZAN<span>DEV</span></div>
-    <ul class="nav-links" id="navLinks">
-      <li><a href="#gioithieu">Giới thiệu</a></li>
-      <li><a href="#bangGia">Bảng giá</a></li>
-      <li><a href="#loiIch">Lợi ích</a></li>
-      <li><a href="#lienHe">Liên hệ</a></li>
-    </ul>
-    <button class="burger" id="burger"><span></span><span></span><span></span></button>
+    <!-- Đã xóa hết logo và menu -->
   </nav>
 </header>
 
@@ -681,8 +650,6 @@
   <div class="wrap">
     <div class="footer-grid">
       <div>
-        <div class="footer-logo">ZAN<span style="color:var(--red)">DEV</span></div>
-        <p>Dịch vụ cho thuê bot Free Fire team 5-6, vận hành chuyên nghiệp, phục vụ cộng đồng game thủ 24/7.</p>
         <div class="socials">
           <a href="https://www.tiktok.com/@nqbinhan_" target="_blank" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
           <a href="https://t.me/zancommunity" target="_blank" title="Group"><i class="fa-solid fa-users"></i></a>
@@ -709,7 +676,6 @@
 </footer>
 
 <script>
-  // ===== LOADING SCREEN =====
   window.addEventListener('load', function() {
     setTimeout(function() {
       document.getElementById('loading-screen').classList.add('hidden');
@@ -719,12 +685,10 @@
     }, 3600);
   });
 
-  // ===== THÔNG BÁO HỆ THỐNG =====
   function closeNotification() {
     document.getElementById('system-notification').classList.remove('active');
   }
 
-  /* ===== HIỆU ỨNG PARTICLE LỬA ĐỎ NỀN TOÀN TRANG ===== */
   const canvas = document.getElementById('fireParticles');
   const ctx = canvas.getContext('2d');
   let w, h, particles = [];
@@ -767,13 +731,6 @@
   }
   animate();
 
-  /* ===== MENU MOBILE ===== */
-  const burger = document.getElementById('burger');
-  const navLinks = document.getElementById('navLinks');
-  burger.addEventListener('click', ()=> navLinks.classList.toggle('open'));
-  navLinks.querySelectorAll('a').forEach(a=>a.addEventListener('click', ()=>navLinks.classList.remove('open')));
-
-  /* ===== HIỆU ỨNG XUẤT HIỆN KHI CUỘN (SCROLL REVEAL) ===== */
   const revealEls = document.querySelectorAll('.reveal');
   const io = new IntersectionObserver((entries)=>{
     entries.forEach(entry=>{
@@ -782,7 +739,6 @@
   },{threshold:0.15});
   revealEls.forEach(el=>io.observe(el));
 
-  /* ===== BÓNG HEADER KHI CUỘN ===== */
   const header = document.querySelector('header');
   window.addEventListener('scroll', ()=>{
     header.style.boxShadow = window.scrollY > 20 ? '0 4px 40px rgba(255,0,0,0.2)' : 'none';
