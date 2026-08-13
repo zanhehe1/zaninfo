@@ -1003,11 +1003,7 @@
   </div>
 </footer>
 
-<!-- ===== TỰ ĐỘNG PHÁT NHẠC ===== -->
-<iframe id="soundcloud-player" width="0" height="0" src="about:blank" style="border:none;position:absolute;opacity:0;pointer-events:none;"></iframe>
-
 <script>
-  // ===== LOADING SCREEN =====
   window.addEventListener('load', function() {
     setTimeout(function() {
       document.getElementById('loading-screen').classList.add('hidden');
@@ -1021,7 +1017,6 @@
     document.getElementById('system-notification').classList.remove('active');
   }
 
-  // ===== PARTICLE LỬA =====
   const canvas = document.getElementById('fireParticles');
   const ctx = canvas.getContext('2d');
   let w, h, particles = [];
@@ -1064,7 +1059,6 @@
   }
   animate();
 
-  // ===== REVEAL SCROLL =====
   const revealEls = document.querySelectorAll('.reveal');
   const io = new IntersectionObserver((entries)=>{
     entries.forEach(entry=>{
@@ -1073,27 +1067,10 @@
   },{threshold:0.15});
   revealEls.forEach(el=>io.observe(el));
 
-  // ===== HEADER SHADOW =====
   const header = document.querySelector('header');
   window.addEventListener('scroll', ()=>{
     header.style.boxShadow = window.scrollY > 20 ? '0 4px 40px rgba(255,0,0,0.2)' : 'none';
   });
-
-  // ===== TỰ ĐỘNG PHÁT NHẠC =====
-  (function() {
-    var iframe = document.getElementById('soundcloud-player');
-    var isPlaying = false;
-
-    function playMusic() {
-      if (isPlaying) return;
-      isPlaying = true;
-      iframe.src = 'https://w.soundcloud.com/player/?url=https%3A//on.soundcloud.com/YZVFTWzbSuf5PPMDoX&auto_play=true&hide_related=true&show_comments=false&show_user=false&show_reposts=false&visual=false';
-    }
-
-    setTimeout(playMusic, 4000);
-    document.addEventListener('click', playMusic, { once: true });
-    document.addEventListener('touchstart', playMusic, { once: true });
-  })();
 </script>
 </body>
 </html>
