@@ -1,1427 +1,1076 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ZAN BOT - Dịch Vụ Cho Thuê Bot Free Fire Đỉnh Cao 2026</title>
-  <meta name="description" content="Thuê Bot Free Fire tự động 24/7, mở team 5/6, mod emote Lv7, spam troll siêu mượt. Kích hoạt nhanh chóng, uy tín và bảo mật tuyệt đối.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZAN DEV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+  :root{
+    --black:#0a0a0a;
+    --black-2:#0d0d0d;
+    --black-3:#111111;
+    --red:#ff0000;
+    --red-dark:#cc0000;
+    --red-mid:#e60000;
+    --red-bright:#ff1a1a;
+    --orange:#ff3300;
+    --gold:#ffd700;
+    --text-0:#ffffff;
+    --text-1:#ffcccc;
+    --line:rgba(255,0,0,0.3);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--black);
+    color:var(--text-0);
+    font-family:'Poppins',sans-serif;
+    overflow-x:hidden;
+    position:relative;
+  }
+  ::selection{background:var(--red);color:#fff;}
+  ::-webkit-scrollbar{width:9px;}
+  ::-webkit-scrollbar-track{background:var(--black);}
+  ::-webkit-scrollbar-thumb{background:linear-gradient(var(--red),var(--orange));border-radius:10px;}
+
+  #fireParticles{position:fixed;inset:0;z-index:0;pointer-events:none;}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px;position:relative;z-index:2;}
+
+  #loading-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #0a0a0a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.8s ease, visibility 0.8s ease;
+  }
+  #loading-screen.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  #loading-screen .loader-text {
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--text-1);
+    margin-bottom: 18px;
+    letter-spacing: 2px;
+  }
+  .loader-ring {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 3px solid rgba(255,0,0,0.1);
+    border-top-color: var(--red);
+    border-right-color: var(--orange);
+    animation: spinRing 0.9s linear infinite;
+    box-shadow: 0 0 40px rgba(255,0,0,0.15);
+  }
+  @keyframes spinRing {
+    to { transform: rotate(360deg); }
+  }
+  .loader-progress {
+    margin-top: 18px;
+    width: 160px;
+    height: 2px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .loader-progress .bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--red), var(--orange));
+    border-radius: 10px;
+    animation: progressBar 3.6s ease-in-out forwards;
+  }
+  @keyframes progressBar {
+    0% { width: 0%; }
+    100% { width: 100%; }
+  }
+
+  #system-notification {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9998;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+  }
+  #system-notification.active {
+    opacity: 1;
+    visibility: visible;
+  }
+  .notif-box {
+    background: rgba(20,0,0,0.95);
+    border: 2px solid var(--red);
+    border-radius: 18px;
+    padding: 40px 35px;
+    max-width: 520px;
+    width: 90%;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 0 80px rgba(255,0,0,0.2);
+  }
+  .notif-box .notif-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--red);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 18px;
+    text-shadow: 0 0 30px rgba(255,0,0,0.5);
+  }
+  .notif-box .notif-content {
+    color: var(--text-1);
+    font-size: 14.5px;
+    line-height: 1.8;
+    margin-bottom: 22px;
+  }
+  .notif-box .notif-content .highlight {
+    color: #fff;
+    font-weight: 600;
+  }
+  .notif-box .notif-btns {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .notif-box .notif-btns button {
+    padding: 10px 28px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    border: 2px solid var(--red);
+    background: transparent;
+    color: var(--text-0);
+    transition: .3s;
+    font-family: 'Poppins', sans-serif;
+  }
+  .notif-box .notif-btns button:hover {
+    background: var(--red);
+    box-shadow: 0 0 30px rgba(255,0,0,0.4);
+    transform: scale(1.02);
+  }
+  .notif-box .notif-btns .btn-close {
+    background: var(--red);
+    color: #fff;
+  }
+  .notif-box .notif-btns .btn-close:hover {
+    background: var(--red-dark);
+  }
+
+  header{
+    position:fixed;top:0;left:0;right:0;z-index:100;
+    background:rgba(10,10,10,0.85);backdrop-filter:blur(14px);
+    border-bottom:2px solid var(--red);
+  }
+  .nav{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;max-width:1180px;margin:0 auto;}
+
+  .hero{
+    min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;position:relative;padding:150px 24px 90px;
+  }
+  .hero-tag{
+    border:2px solid var(--red);color:var(--red);
+    padding:7px 18px;border-radius:30px;font-size:13px;letter-spacing:2px;text-transform:uppercase;
+    margin-bottom:26px;box-shadow:0 0 30px rgba(255,0,0,0.3) inset;
+    animation:pulseTag 2.2s ease-in-out infinite;
+  }
+  @keyframes pulseTag{50%{box-shadow:0 0 50px rgba(255,0,0,0.5) inset;}}
+  .hero h1{
+    font-size:clamp(34px,6.5vw,72px);font-weight:900;line-height:1.12;letter-spacing:-1px;text-transform:uppercase;
+  }
+  .hero h1 .glow{
+    background:linear-gradient(90deg,var(--red),var(--orange));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 40px rgba(255,0,0,0.6);
+    animation:flicker 3.6s infinite;
+  }
+  @keyframes flicker{0%,19%,21%,23%,25%,54%,56%,100%{opacity:1;}20%,22%,24%,55%{opacity:.6;}}
+  .hero p.sub{max-width:640px;margin:26px auto 0;color:var(--text-1);font-size:16.5px;line-height:1.8;}
+  .hero-btns{display:flex;gap:18px;margin-top:42px;flex-wrap:wrap;justify-content:center;}
+  .btn{
+    padding:16px 34px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none;cursor:pointer;
+    border:none;display:inline-flex;align-items:center;gap:10px;transition:.3s;letter-spacing:.3px;
+  }
+  .btn-primary{
+    background:linear-gradient(135deg,var(--red),var(--orange));color:#fff;
+    box-shadow:0 0 35px rgba(255,0,0,0.6);
+  }
+  .btn-primary:hover{transform:translateY(-3px);box-shadow:0 0 55px rgba(255,0,0,0.9);}
+  .btn-outline{background:transparent;border:2px solid var(--red);color:var(--text-0);}
+  .btn-outline:hover{border-color:var(--red);color:var(--red);box-shadow:0 0 30px rgba(255,0,0,0.3);transform:translateY(-3px);}
+
+  section{position:relative;z-index:2;padding:110px 0;}
+  .eyebrow{
+    color:var(--red);font-size:13px;letter-spacing:3px;text-transform:uppercase;font-weight:700;
+    display:block;text-align:center;margin-bottom:14px;text-shadow:0 0 20px rgba(255,0,0,0.7);
+  }
+  .sec-title{text-align:center;font-size:clamp(26px,4vw,42px);font-weight:900;margin-bottom:16px;text-transform:uppercase;}
+  .sec-title .red{color:var(--red);text-shadow:0 0 30px rgba(255,0,0,0.5);}
+  .sec-desc{text-align:center;color:var(--text-1);max-width:600px;margin:0 auto 60px;font-size:15.5px;line-height:1.8;}
+
+  .intro-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;}
+  .intro-card{
+    background:rgba(20,0,0,0.6);
+    border:2px solid var(--red);
+    border-radius:14px;padding:26px 24px;
+    display:flex;align-items:flex-start;gap:16px;transition:.3s;position:relative;overflow:hidden;
+  }
+  .intro-card:hover{border-color:var(--red);box-shadow:0 0 40px rgba(255,0,0,0.3);transform:translateY(-4px);}
+  .intro-card i{
+    font-size:24px;color:var(--red);text-shadow:0 0 20px rgba(255,0,0,0.8);min-width:30px;
+  }
+  .intro-card p{color:#fff;font-size:15px;font-weight:500;line-height:1.6;}
+
+  .pricing{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;align-items:stretch;}
+  .plan{
+    background:rgba(20,0,0,0.5);border:2px solid var(--red);border-radius:18px;
+    padding:34px 28px;display:flex;flex-direction:column;transition:.35s;position:relative;
+  }
+  .plan:hover{transform:translateY(-6px);border-color:var(--red);box-shadow:0 20px 60px rgba(255,0,0,0.25);}
+  .plan.featured{
+    border:2px solid var(--red);box-shadow:0 0 60px rgba(255,0,0,0.35);
+    background:rgba(30,0,0,0.6);
+  }
+  .plan.featured .badge{
+    position:absolute;top:-14px;left:50%;transform:translateX(-50%);
+    background:linear-gradient(135deg,var(--red),var(--orange));color:#fff;
+    font-size:12px;font-weight:800;padding:6px 18px;border-radius:20px;letter-spacing:1px;
+  }
+  .plan-icon{font-size:26px;color:var(--red);margin-bottom:14px;text-shadow:0 0 20px rgba(255,0,0,0.8);}
+  .plan-name{font-size:16px;letter-spacing:1px;color:#fff;text-transform:uppercase;font-weight:800;margin-bottom:18px;}
+  .tier-rows{list-style:none;margin-bottom:26px;flex:1;}
+  .tier-row{display:flex;align-items:baseline;justify-content:space-between;padding:13px 0;border-bottom:1px solid rgba(255,0,0,0.2);}
+  .tier-row:last-child{border-bottom:none;}
+  .tier-dur{color:var(--text-1);font-size:13.5px;}
+  .tier-price{font-size:19px;font-weight:800;color:#fff;}
+  .plan.featured .tier-price{color:var(--red);text-shadow:0 0 20px rgba(255,0,0,0.6);}
+  .plan .btn{width:100%;justify-content:center;}
+  .tier-note{
+    text-align:center;color:var(--text-1);font-size:14px;margin-top:44px;display:flex;flex-direction:column;gap:8px;
+  }
+  .tier-note i{color:var(--red);margin-right:6px;}
+
+  .benefit-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;}
+  .benefit-card{
+    text-align:center;background:rgba(20,0,0,0.5);border:2px solid var(--red);border-radius:14px;
+    padding:30px 20px;transition:.3s;
+  }
+  .benefit-card:hover{border-color:var(--red);box-shadow:0 0 35px rgba(255,0,0,0.3);transform:translateY(-5px);}
+  .benefit-card i{font-size:30px;color:var(--red);margin-bottom:16px;text-shadow:0 0 25px rgba(255,0,0,0.7);}
+  .benefit-card h4{font-size:15px;font-weight:700;color:#fff;}
   
-  <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-  <style>
-    /* ==================== VARIABLES ==================== */
-    :root {
-      --bg-main: #0a0a0f;
-      --bg-card: #13131a;
-      --bg-card-hover: #1a1a24;
-      --primary-purple: #7c3aed;
-      --primary-yellow: #f59e0b;
-      --accent-red: #ff0000;
-      --accent-orange: #ff4500;
-      --text-main: #ffffff;
-      --text-muted: #94a3b8;
-      --border-color: rgba(255, 255, 255, 0.08);
-      --gradient-main: linear-gradient(135deg, #7c3aed 0%, #f59e0b 100%);
-      --glow-purple: 0 0 25px rgba(124, 58, 237, 0.4);
-      --glow-yellow: 0 0 25px rgba(245, 158, 11, 0.4);
-      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    /* ==================== RESET & BASE ==================== */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    html {
-      scroll-behavior: smooth;
-      font-size: 16px;
-    }
-
-    body {
-      background-color: var(--bg-main);
-      color: var(--text-main);
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      overflow-x: hidden;
-      position: relative;
-      line-height: 1.6;
-    }
-
-    h1, h2, h3, h4, .brand-text {
-      font-family: 'Outfit', sans-serif;
-    }
-
-    a {
-      text-decoration: none;
-      color: inherit;
-    }
-
-    ul {
-      list-style: none;
-    }
-
-    /* Canvas Particle Background */
-    #particle-canvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 1;
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 20px;
-      position: relative;
-      z-index: 2;
-    }
-
-    /* Utility Classes */
-    .gradient-text {
-      background: var(--gradient-main);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      display: inline-block;
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      padding: 12px 28px;
-      border-radius: 50px;
-      font-weight: 700;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: var(--transition);
-      border: none;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .btn-primary {
-      background: var(--gradient-main);
-      color: #ffffff;
-      box-shadow: var(--glow-purple);
-    }
-
-    .btn-primary:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 0 35px rgba(124, 58, 237, 0.7);
-    }
-
-    .btn-outline {
-      background: transparent;
-      color: #ffffff;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-
-    .btn-outline:hover {
-      border-color: var(--primary-yellow);
-      color: var(--primary-yellow);
-      background: rgba(245, 158, 11, 0.05);
-    }
-
-    /* Scroll Reveal Animation Base */
-    .reveal {
-      opacity: 0;
-      transform: translateY(35px);
-      transition: opacity 0.8s ease, transform 0.8s ease;
-    }
-
-    .reveal.active {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    /* ==================== 1. LOADING SCREEN ==================== */
-    #loading-screen {
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
-      background: #0a0a0f;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      transition: opacity 0.8s ease, visibility 0.8s ease;
-    }
-
-    #loading-screen.fade-out {
-      opacity: 0;
-      visibility: hidden;
-    }
-
-    .loader-spinner {
-      width: 70px;
-      height: 70px;
-      border: 4px solid rgba(255, 255, 255, 0.1);
-      border-top: 4px solid var(--primary-purple);
-      border-right: 4px solid var(--primary-yellow);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      box-shadow: var(--glow-purple);
-      margin-bottom: 20px;
-    }
-
-    .loader-text {
-      font-family: 'Outfit', sans-serif;
-      font-size: 1.25rem;
-      font-weight: 700;
-      letter-spacing: 1px;
-      animation: pulse 1.5s ease-in-out infinite;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 0.6; }
-      50% { opacity: 1; }
-    }
-
-    /* ==================== 2. HEADER ==================== */
-    header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      z-index: 1000;
-      background: rgba(10, 10, 15, 0.85);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border-color);
-      transition: var(--transition);
-    }
-
-    .nav-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 20px;
-      height: 80px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 1.5rem;
-      font-weight: 900;
-      letter-spacing: 0.5px;
-    }
-
-    .logo i {
-      font-size: 1.8rem;
-      color: var(--primary-yellow);
-      filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.5));
-    }
-
-    .nav-menu {
-      display: flex;
-      align-items: center;
-      gap: 35px;
-    }
-
-    .nav-link {
-      font-weight: 600;
-      font-size: 0.95rem;
-      color: var(--text-muted);
-      transition: var(--transition);
-      position: relative;
-    }
-
-    .nav-link:hover, .nav-link.active {
-      color: var(--text-main);
-    }
-
-    .nav-link::after {
-      content: '';
-      position: absolute;
-      bottom: -5px;
-      left: 0;
-      width: 0;
-      height: 2px;
-      background: var(--gradient-main);
-      transition: var(--transition);
-      border-radius: 2px;
-    }
-
-    .nav-link:hover::after, .nav-link.active::after {
-      width: 100%;
-    }
-
-    .hamburger {
-      display: none;
-      cursor: pointer;
-      font-size: 1.5rem;
-      color: var(--text-main);
-    }
-
-    /* ==================== 3. HERO SECTION ==================== */
-    .hero-section {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      padding: 140px 0 80px;
-      position: relative;
-    }
-
-    .hero-grid {
-      display: grid;
-      grid-template-columns: 1.2fr 0.8fr;
-      gap: 50px;
-      align-items: center;
-    }
-
-    .hero-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      background: rgba(124, 58, 237, 0.1);
-      border: 1px solid rgba(124, 58, 237, 0.3);
-      border-radius: 30px;
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: #c084fc;
-      margin-bottom: 25px;
-      box-shadow: var(--glow-purple);
-    }
-
-    .hero-title {
-      font-size: clamp(2.5rem, 5vw, 4.2rem);
-      font-weight: 900;
-      line-height: 1.1;
-      margin-bottom: 20px;
-      letter-spacing: -1px;
-    }
-
-    .hero-desc {
-      font-size: 1.1rem;
-      color: var(--text-muted);
-      margin-bottom: 35px;
-      max-width: 560px;
-    }
-
-    .hero-buttons {
-      display: flex;
-      gap: 20px;
-      margin-bottom: 50px;
-      flex-wrap: wrap;
-    }
-
-    .hero-stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-      padding-top: 30px;
-      border-top: 1px solid var(--border-color);
-    }
-
-    .stat-item h4 {
-      font-size: 1.8rem;
-      font-weight: 800;
-      color: var(--text-main);
-      margin-bottom: 5px;
-    }
-
-    .stat-item p {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-
-    /* Mockup Phone Chat Bot */
-    .hero-mockup {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 24px;
-      padding: 25px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), var(--glow-purple);
-      position: relative;
-      max-width: 380px;
-      margin: 0 auto;
-      width: 100%;
-    }
-
-    .mockup-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding-bottom: 15px;
-      border-bottom: 1px solid var(--border-color);
-      margin-bottom: 20px;
-    }
-
-    .mockup-avatar {
-      width: 45px;
-      height: 45px;
-      border-radius: 50%;
-      background: var(--gradient-main);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.2rem;
-      font-weight: bold;
-      box-shadow: var(--glow-yellow);
-    }
-
-    .mockup-info h5 {
-      font-size: 1rem;
-      font-weight: 700;
-    }
-
-    .mockup-info span {
-      font-size: 0.75rem;
-      color: #22c55e;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .mockup-info span::before {
-      content: '';
-      width: 6px;
-      height: 6px;
-      background: #22c55e;
-      border-radius: 50%;
-      display: inline-block;
-      box-shadow: 0 0 8px #22c55e;
-    }
-
-    .chat-box {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      min-height: 260px;
-      justify-content: flex-end;
-    }
-
-    .chat-bubble {
-      padding: 12px 16px;
-      border-radius: 14px;
-      font-size: 0.85rem;
-      max-width: 85%;
-      animation: fadeInBubble 0.5s ease forwards;
-    }
-
-    .chat-bubble.bot {
-      background: rgba(124, 58, 237, 0.15);
-      border: 1px solid rgba(124, 58, 237, 0.3);
-      align-self: flex-start;
-      border-bottom-left-radius: 4px;
-    }
-
-    .chat-bubble.user {
-      background: rgba(245, 158, 11, 0.15);
-      border: 1px solid rgba(245, 158, 11, 0.3);
-      align-self: flex-end;
-      border-bottom-right-radius: 4px;
-    }
-
-    @keyframes fadeInBubble {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ==================== 4. FEATURES SECTION ==================== */
-    .section-padding {
-      padding: 100px 0;
-    }
-
-    .section-header {
-      text-align: center;
-      margin-bottom: 60px;
-    }
-
-    .section-title {
-      font-size: clamp(2rem, 3.5vw, 2.8rem);
-      font-weight: 900;
-      margin-bottom: 15px;
-      letter-spacing: -0.5px;
-    }
-
-    .section-desc {
-      font-size: 1.05rem;
-      color: var(--text-muted);
-      max-width: 600px;
-      margin: 0 auto;
-    }
-
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 25px;
-    }
-
-    .feature-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 20px;
-      padding: 35px 25px;
-      transition: var(--transition);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .feature-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 3px;
-      background: var(--gradient-main);
-      opacity: 0;
-      transition: var(--transition);
-    }
-
-    .feature-card:hover {
-      transform: translateY(-8px);
-      background: var(--bg-card-hover);
-      border-color: rgba(124, 58, 237, 0.4);
-      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5), var(--glow-purple);
-    }
-
-    .feature-card:hover::before {
-      opacity: 1;
-    }
-
-    .feature-icon {
-      width: 65px;
-      height: 65px;
-      background: rgba(245, 158, 11, 0.1);
-      border: 1px solid rgba(245, 158, 11, 0.3);
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.8rem;
-      color: var(--primary-yellow);
-      margin-bottom: 25px;
-      transition: var(--transition);
-    }
-
-    .feature-card:hover .feature-icon {
-      transform: scale(1.1) rotate(5deg);
-      box-shadow: var(--glow-yellow);
-    }
-
-    .feature-card h3 {
-      font-size: 1.15rem;
-      font-weight: 700;
-      margin-bottom: 12px;
-    }
-
-    .feature-card p {
-      font-size: 0.9rem;
-      color: var(--text-muted);
-      line-height: 1.5;
-    }
-
-    /* ==================== 5. PRICING SECTION ==================== */
-    .pricing-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 30px;
-      align-items: stretch;
-    }
-
-    .pricing-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 24px;
-      padding: 40px 30px;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      transition: var(--transition);
-    }
-
-    .pricing-card.featured {
-      background: linear-gradient(180deg, rgba(124, 58, 237, 0.12) 0%, var(--bg-card) 60%);
-      border-color: rgba(124, 58, 237, 0.5);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), var(--glow-purple);
-      transform: scale(1.03);
-    }
-
-    .pricing-card:hover {
-      transform: translateY(-8px);
-      border-color: rgba(245, 158, 11, 0.5);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), var(--glow-yellow);
-    }
-
-    .pricing-card.featured:hover {
-      transform: scale(1.03) translateY(-8px);
-    }
-
-    .pricing-badge {
-      position: absolute;
-      top: -14px;
-      right: 30px;
-      background: var(--gradient-main);
-      color: #fff;
-      font-size: 0.75rem;
-      font-weight: 800;
-      padding: 6px 16px;
-      border-radius: 30px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      box-shadow: var(--glow-purple);
-    }
-
-    .pricing-name {
-      font-size: 1.3rem;
-      font-weight: 800;
-      margin-bottom: 10px;
-    }
-
-    .pricing-desc {
-      font-size: 0.9rem;
-      color: var(--text-muted);
-      margin-bottom: 25px;
-      min-height: 40px;
-    }
-
-    .pricing-price {
-      font-size: 2.5rem;
-      font-weight: 900;
-      margin-bottom: 25px;
-      font-family: 'Outfit', sans-serif;
-    }
-
-    .pricing-features {
-      margin-bottom: 35px;
-      flex-grow: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-
-    .pricing-features li {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 0.95rem;
-      color: var(--text-muted);
-    }
-
-    .pricing-features li i {
-      color: #22c55e;
-      font-size: 1rem;
-    }
-
-    .pricing-card .btn {
-      width: 100%;
-    }
-
-    /* ==================== 6. PAYMENT SECTION ==================== */
-    .payment-box {
-      max-width: 700px;
-      margin: 0 auto;
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 24px;
-      padding: 40px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), var(--glow-purple);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .payment-box::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 4px;
-      background: var(--gradient-main);
-    }
-
-    .bank-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 30px;
-      padding-bottom: 20px;
-      border-bottom: 1px solid var(--border-color);
-      flex-wrap: wrap;
-      gap: 15px;
-    }
-
-    .bank-name {
-      font-size: 1.5rem;
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .bank-name i {
-      color: var(--primary-yellow);
-    }
-
-    .bank-badge {
-      background: rgba(34, 197, 94, 0.1);
-      border: 1px solid rgba(34, 197, 94, 0.3);
-      color: #22c55e;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      font-weight: 700;
-    }
-
-    .bank-info-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 20px;
-      margin-bottom: 30px;
-    }
-
-    .bank-info-item {
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid var(--border-color);
-      padding: 18px 20px;
-      border-radius: 14px;
-    }
-
-    .bank-info-item label {
-      display: block;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .bank-info-item .value {
-      font-size: 1.15rem;
-      font-weight: 700;
-      color: var(--text-main);
-      font-family: 'Outfit', sans-serif;
-    }
-
-    .bank-info-item .value.highlight {
-      color: var(--primary-yellow);
-    }
-
-    .payment-note {
-      text-align: center;
-      margin-bottom: 30px;
-      font-size: 0.95rem;
-      color: var(--text-muted);
-      background: rgba(245, 158, 11, 0.05);
-      border: 1px dashed rgba(245, 158, 11, 0.3);
-      padding: 12px;
-      border-radius: 12px;
-    }
-
-    .payment-note strong {
-      color: var(--primary-yellow);
-    }
-
-    .copy-btn {
-      width: 100%;
-      background: var(--gradient-main);
-      color: #fff;
-      border: none;
-      padding: 15px;
-      border-radius: 14px;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      transition: var(--transition);
-      box-shadow: var(--glow-purple);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .copy-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 0 30px rgba(124, 58, 237, 0.8);
-    }
-
-    /* Toast Notification */
-    .toast {
-      position: fixed;
-      bottom: 30px;
-      right: 30px;
-      background: #1e1e2d;
-      border: 1px solid #22c55e;
-      color: #fff;
-      padding: 15px 25px;
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      z-index: 2000;
-      transform: translateY(100px);
-      opacity: 0;
-      transition: var(--transition);
-    }
-
-    .toast.show {
-      transform: translateY(0);
-      opacity: 1;
-    }
-
-    .toast i {
-      color: #22c55e;
-      font-size: 1.2rem;
-    }
-
-    /* ==================== 7. CTA BAND ==================== */
-    .cta-band {
-      background: linear-gradient(135deg, rgba(124, 58, 237, 0.2) 0%, rgba(245, 158, 11, 0.2) 100%);
-      border-top: 1px solid rgba(124, 58, 237, 0.3);
-      border-bottom: 1px solid rgba(245, 158, 11, 0.3);
-      padding: 80px 0;
-      text-align: center;
-      position: relative;
-    }
-
-    .cta-band h2 {
-      font-size: clamp(2rem, 4vw, 3rem);
-      font-weight: 900;
-      margin-bottom: 15px;
-    }
-
-    .cta-band p {
-      font-size: 1.1rem;
-      color: var(--text-muted);
-      max-width: 600px;
-      margin: 0 auto 35px;
-    }
-
-    /* ==================== 8. FOOTER ==================== */
-    footer {
-      background: #07070a;
-      border-top: 1px solid var(--border-color);
-      padding: 80px 0 30px;
-    }
-
-    .footer-grid {
-      display: grid;
-      grid-template-columns: 1.2fr 1fr 1fr;
-      gap: 40px;
-      margin-bottom: 60px;
-    }
-
-    .footer-col h4 {
-      font-size: 1.15rem;
-      font-weight: 700;
-      margin-bottom: 20px;
-      color: var(--text-main);
-    }
-
-    .footer-col p {
-      font-size: 0.9rem;
-      color: var(--text-muted);
-      line-height: 1.6;
-      margin-bottom: 20px;
-    }
-
-    .footer-links {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .footer-links a {
-      font-size: 0.9rem;
-      color: var(--text-muted);
-      transition: var(--transition);
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .footer-links a:hover {
-      color: var(--primary-yellow);
-      transform: translateX(5px);
-    }
-
-    .social-icons {
-      display: flex;
-      gap: 15px;
-      margin-top: 20px;
-    }
-
-    .social-icon-link {
-      width: 40px;
-      height: 40px;
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-main);
-      font-size: 1rem;
-      transition: var(--transition);
-    }
-
-    .social-icon-link:hover {
-      background: var(--gradient-main);
-      border-color: transparent;
-      transform: translateY(-3px);
-      box-shadow: var(--glow-purple);
-    }
-
-    .footer-bottom {
-      text-align: center;
-      padding-top: 30px;
-      border-top: 1px solid var(--border-color);
-      font-size: 0.85rem;
-      color: var(--text-muted);
-    }
-
-    /* ==================== RESPONSIVE ==================== */
-    @media (max-width: 1024px) {
-      .hero-grid {
-        grid-template-columns: 1fr;
-        text-align: center;
-        gap: 50px;
-      }
-      .hero-desc, .hero-buttons, .hero-badge {
-        margin-left: auto;
-        margin-right: auto;
-      }
-      .hero-stats {
-        justify-content: center;
-      }
-      .footer-grid {
-        grid-template-columns: 1fr;
-        gap: 30px;
-      }
-    }
-
-    @media (max-width: 768px) {
-      .nav-menu {
-        position: fixed;
-        top: 80px;
-        left: -100%;
-        width: 100%;
-        height: calc(100vh - 80px);
-        background: rgba(10, 10, 15, 0.98);
-        backdrop-filter: blur(15px);
-        flex-direction: column;
-        justify-content: center;
-        gap: 25px;
-        transition: var(--transition);
-        border-bottom: 1px solid var(--border-color);
-      }
-      .nav-menu.open {
-        left: 0;
-      }
-      .hamburger {
-        display: block;
-      }
-      .pricing-card.featured {
-        transform: none;
-      }
-      .pricing-card.featured:hover {
-        transform: translateY(-8px);
-      }
-      .payment-box {
-        padding: 25px 20px;
-      }
-    }
-  </style>
+  .payment-guide {
+    margin-top: 50px;
+    background: rgba(20,0,0,0.6);
+    border: 2px solid var(--red);
+    border-radius: 18px;
+    padding: 40px 30px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .payment-guide::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 30% 50%, rgba(255,0,0,0.08), transparent 70%);
+    pointer-events: none;
+  }
+  .payment-guide h3 {
+    font-size: 20px;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: relative;
+  }
+  .payment-guide .step {
+    color: var(--text-1);
+    font-size: 14.5px;
+    margin: 5px 0;
+    padding: 4px 0;
+    position: relative;
+  }
+  .payment-guide .note-warning {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255,0,0,0.2);
+    color: var(--text-1);
+    font-size: 14px;
+    line-height: 1.7;
+    position: relative;
+  }
+  .payment-guide .note-warning .warning-text {
+    color: #fff;
+    font-weight: 700;
+  }
+  .payment-guide .note-warning .no-refund {
+    color: var(--red);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .admin-section {
+    padding: 50px 0 30px;
+  }
+  .admin-box {
+    background: rgba(20,0,0,0.85);
+    border: 2px solid var(--red);
+    border-radius: 18px;
+    padding: 40px 35px;
+    text-align: center;
+    box-shadow: 0 0 60px rgba(255,0,0,0.1);
+    transition: .3s;
+  }
+  .admin-box:hover {
+    box-shadow: 0 0 80px rgba(255,0,0,0.2);
+    border-color: var(--gold);
+  }
+  .admin-header {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--gold);
+    letter-spacing: 2px;
+    margin-bottom: 18px;
+  }
+  .admin-header i {
+    color: var(--gold);
+    margin-right: 10px;
+  }
+  .admin-contact {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+  }
+  .admin-contact a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 10px 24px;
+    border: 1.5px solid var(--red);
+    border-radius: 30px;
+    transition: .3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255,0,0,0.05);
+  }
+  .admin-contact a:hover {
+    border-color: var(--gold);
+    box-shadow: 0 0 35px rgba(255,0,0,0.3);
+    transform: translateY(-3px);
+    background: rgba(255,0,0,0.1);
+  }
+  .admin-contact a i {
+    color: var(--red);
+    font-size: 18px;
+  }
+  .admin-contact a:hover i {
+    color: var(--gold);
+  }
+  .admin-divider {
+    width: 100px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--red), transparent);
+    margin: 10px auto 20px;
+  }
+  .admin-disclaimer p {
+    color: var(--text-1);
+    font-size: 14px;
+    line-height: 1.9;
+    margin: 6px 0;
+  }
+  .admin-disclaimer p strong {
+    color: #fff;
+  }
+  .admin-disclaimer p:first-child {
+    font-size: 16px;
+    color: var(--red);
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+  }
+
+  .cta-band{
+    text-align:center;padding:100px 24px;
+    background:radial-gradient(ellipse at center,rgba(255,0,0,0.15),transparent 70%);
+  }
+  .cta-band h2{font-size:clamp(26px,4vw,42px);font-weight:900;margin-bottom:18px;text-transform:uppercase;}
+  .cta-band p{color:var(--text-1);margin-bottom:34px;}
+
+  /* ===== CTV SECTION ===== */
+  .ctv-section {
+    padding: 60px 0 30px;
+  }
+  .ctv-banner {
+    background: linear-gradient(135deg, #ff0000, #cc0000);
+    border-radius: 12px;
+    padding: 18px 24px;
+    text-align: center;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    box-shadow: 0 0 40px rgba(255,0,0,0.3);
+    animation: pulseBanner 2s ease-in-out infinite;
+  }
+  @keyframes pulseBanner {
+    0%, 100% { box-shadow: 0 0 40px rgba(255,0,0,0.3); }
+    50% { box-shadow: 0 0 70px rgba(255,0,0,0.6); }
+  }
+  .ctv-banner i {
+    font-size: 22px;
+    color: #fff;
+    animation: shakeIcon 1.2s ease-in-out infinite;
+  }
+  @keyframes shakeIcon {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-8deg); }
+    75% { transform: rotate(8deg); }
+  }
+  .ctv-banner span {
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+  .ctv-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    margin-bottom: 40px;
+  }
+  .ctv-card {
+    background: rgba(20,0,0,0.7);
+    border: 2px solid var(--red);
+    border-radius: 16px;
+    padding: 28px 20px;
+    text-align: center;
+    transition: .3s;
+    position: relative;
+  }
+  .ctv-card:hover {
+    transform: translateY(-6px);
+    border-color: var(--gold);
+    box-shadow: 0 0 50px rgba(255,0,0,0.25);
+  }
+  .ctv-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #ff0000, #ff3300);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 18px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+    box-shadow: 0 0 20px rgba(255,0,0,0.4);
+  }
+  .ctv-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff0000, #330000);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 8px auto 14px;
+    border: 2px solid var(--red);
+  }
+  .ctv-avatar i {
+    font-size: 28px;
+    color: #fff;
+  }
+  .ctv-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 10px;
+  }
+  .ctv-social {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .ctv-link {
+    color: var(--text-1);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: .3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ctv-link:hover {
+    color: #fff;
+  }
+  .ctv-link i {
+    color: var(--red);
+    font-size: 18px;
+  }
+  .ctv-link:hover i {
+    color: var(--gold);
+  }
+  .ctv-disclaimer {
+    background: rgba(20,0,0,0.5);
+    border: 1px solid rgba(255,0,0,0.2);
+    border-radius: 12px;
+    padding: 24px 28px;
+    text-align: center;
+  }
+  .ctv-disclaimer p {
+    color: var(--text-1);
+    font-size: 13.5px;
+    line-height: 1.8;
+    margin: 4px 0;
+  }
+  .ctv-disclaimer p strong {
+    color: #fff;
+  }
+  .ctv-disclaimer p i {
+    color: var(--red);
+    margin-right: 6px;
+  }
+  .ctv-disclaimer p:first-child {
+    font-size: 15px;
+    color: var(--red);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  /* ===== FAQ SECTION ===== */
+  .faq-section {
+    padding: 60px 0 30px;
+  }
+  .faq-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-top: 10px;
+  }
+  .faq-item {
+    background: rgba(20,0,0,0.6);
+    border: 1.5px solid var(--red);
+    border-radius: 14px;
+    padding: 22px 24px;
+    transition: .3s;
+  }
+  .faq-item:hover {
+    border-color: var(--gold);
+    box-shadow: 0 0 30px rgba(255,0,0,0.15);
+    transform: translateY(-3px);
+  }
+  .faq-question {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 10px;
+  }
+  .faq-question i {
+    color: var(--red);
+    font-size: 20px;
+    min-width: 24px;
+  }
+  .faq-answer p {
+    color: var(--text-1);
+    font-size: 14px;
+    line-height: 1.7;
+    padding-left: 36px;
+  }
+  .faq-answer p i {
+    margin-right: 8px;
+  }
+
+  footer{border-top:2px solid var(--red);padding:60px 0 24px;background:rgba(10,0,0,0.9);}
+  .footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px;margin-bottom:40px;}
+  .footer-title{
+    font-size:14px;
+    font-weight:600;
+    color:#fff;
+    margin-bottom:12px;
+    letter-spacing:1px;
+  }
+  .footer-col h4{font-size:14px;margin-bottom:16px;letter-spacing:1px;color:#fff;}
+  .footer-col ul{list-style:none;}
+  .footer-col li{margin-bottom:10px;}
+  .footer-col a{color:var(--text-1);text-decoration:none;font-size:14px;transition:.25s;}
+  .footer-col a:hover{color:var(--red);}
+  .socials{display:flex;gap:14px;margin-top:16px;flex-wrap:wrap;}
+  .socials a{
+    width:38px;height:38px;border:2px solid var(--red);border-radius:8px;
+    display:flex;align-items:center;justify-content:center;color:var(--text-1);text-decoration:none;transition:.25s;
+  }
+  .socials a:hover{color:#fff;border-color:#fff;box-shadow:0 0 20px rgba(255,0,0,0.5);}
+  .footer-bottom{border-top:2px solid rgba(255,0,0,0.2);padding-top:22px;text-align:center;color:var(--text-1);font-size:13px;}
+  .footer-bottom span{color:var(--red);font-weight:700;}
+
+  .reveal{opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease;}
+  .reveal.in{opacity:1;transform:translateY(0);}
+
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+
+  @media(max-width:900px){
+    .intro-grid,.pricing{grid-template-columns:1fr 1fr;}
+    .benefit-grid{grid-template-columns:1fr 1fr;}
+    .footer-grid{grid-template-columns:1fr 1fr;}
+    .ctv-grid { grid-template-columns: 1fr 1fr; }
+    .faq-grid { grid-template-columns: 1fr; }
+  }
+  @media(max-width:640px){
+    .intro-grid,.pricing,.benefit-grid,.footer-grid,.ctv-grid{grid-template-columns:1fr;}
+    .payment-guide .step { font-size: 13px; }
+    .notif-box { padding: 30px 20px; }
+    .notif-box .notif-content { font-size: 13.5px; }
+    .admin-contact { gap: 14px; }
+    .admin-contact a { font-size: 13px; padding: 6px 14px; }
+    .admin-box { padding: 25px 18px; }
+    .ctv-banner span { font-size: 14px; }
+    .ctv-banner i { font-size: 18px; }
+    .faq-item { padding: 18px 16px; }
+    .faq-question { font-size: 14px; }
+    .faq-answer p { font-size: 13px; padding-left: 0; }
+    .faq-answer p i { display: none; }
+  }
+</style>
 </head>
 <body>
 
-  <!-- LOADING SCREEN -->
-  <div id="loading-screen">
-    <div class="loader-spinner"></div>
-    <div class="loader-text gradient-text">🔥 Đang tải hệ thống ZAN BOT...</div>
+<!-- ===== LOADING SCREEN ===== -->
+<div id="loading-screen">
+  <div class="loader-text">⏳ Vui lòng đợi 3.6s</div>
+  <div class="loader-ring"></div>
+  <div class="loader-progress"><div class="bar"></div></div>
+</div>
+
+<!-- ===== THÔNG BÁO HỆ THỐNG ===== -->
+<div id="system-notification">
+  <div class="notif-box">
+    <div class="notif-title">📢 Thông báo hệ thống</div>
+    <div class="notif-content">
+      Xin chào, tôi là zan. Mọi người có nhu cầu thuê bot vui lòng đọc hướng dẫn thuê bot và ấn vô nút TikTok hoặc Telegram ở cuối website để thuê bot.
+    </div>
+    <div class="notif-btns">
+      <button class="btn-close" onclick="closeNotification()">Đóng</button>
+    </div>
   </div>
+</div>
 
-  <!-- PARTICLE CANVAS -->
-  <canvas id="particle-canvas"></canvas>
+<!-- Canvas hiệu ứng particle lửa đỏ -->
+<canvas id="fireParticles"></canvas>
 
-  <!-- HEADER -->
-  <header>
-    <div class="nav-container">
-      <a href="#home" class="logo">
-        <i class="fa-solid fa-robot"></i>
-        <span class="gradient-text">ZAN BOT</span> 🔥
-      </a>
-      <nav class="nav-menu" id="nav-menu">
-        <a href="#home" class="nav-link active">Home</a>
-        <a href="#features" class="nav-link">Tính năng</a>
-        <a href="#pricing" class="nav-link">Bảng giá</a>
-        <a href="#payment" class="nav-link">Thanh toán</a>
-        <a href="#contact" class="nav-link">Liên hệ</a>
-        <a href="#pricing" class="btn btn-primary" style="padding: 8px 20px; font-size: 0.85rem;">Thuê ngay</a>
-      </nav>
-      <div class="hamburger" id="hamburger">
-        <i class="fa-solid fa-bars"></i>
+<!-- ===== HEADER ===== -->
+<header>
+  <nav class="nav">
+    <!-- Đã xóa hết -->
+  </nav>
+</header>
+
+<!-- ===== HERO ===== -->
+<section class="hero">
+  <div class="hero-tag">🔥 BOT FREE FIRE TEAM 5-6</div>
+  <div class="hero-tag"> CHÀO MỪNG BẠN ĐẾN VỚI WEBSITE CỦA TÔI</div>
+  <p class="sub">Vui lòng cuộn xuống để xem dịch vụ, bảng giá và hướng dẫn thuê bot.<br>Mọi thắc mắc liên hệ admin bên dưới.</p>
+  <div class="hero-btns">
+    <a href="#gioithieu" class="btn btn-primary"><i class="fa-solid fa-arrow-down"></i>Xem giới thiệu</a>
+    <a href="#bangGia" class="btn btn-outline"><i class="fa-solid fa-tags"></i>Xem bảng giá</a>
+  </div>
+</section>
+
+<!-- ===== GIỚI THIỆU DỊCH VỤ ===== -->
+<section id="gioithieu">
+  <div class="wrap">
+    <span class="eyebrow">Về chúng tôi</span>
+    <h2 class="sec-title reveal">Dịch Vụ Cho Thuê Bot <span class="red"> Freefire Team 5-6</span></h2>
+    <p class="sec-desc reveal">Đội hình bot mạnh mẽ, vận hành ổn định, phục vụ mọi nhu cầu chơi và trình diễn của bạn.</p>
+    <div class="intro-grid">
+      <div class="intro-card reveal"><i class="fa-solid fa-users"></i><p>Tạo đội 5-6 người, chơi team 5-6 người thoải mái</p></div>
+      <div class="intro-card reveal"><i class="fa-solid fa-gun"></i><p>Múa full súng level 7 để phông bạt trong phòng chờ</p></div>
+      <div class="intro-card reveal"><i class="fa-solid fa-person-running"></i><p>Múa full tất cả hành động có trong game</p></div>
+      <div class="intro-card reveal"><i class="fa-solid fa-bolt"></i><p>Spam troll lag đối thủ khiến cho đội bị disconnect</p></div>
+      <div class="intro-card reveal"><i class="fa-solid fa-user-plus"></i><p>Spam kết bạn, spam lời mời vào đội tự động</p></div>
+      <div class="intro-card reveal"><i class="fa-solid fa-clock"></i><p>Vận hành 24/7, online trực tuyến liên tục không gián đoạn</p></div>
+      <div class="intro-card reveal"><i class="fa-solid fa-tag"></i><p>Giá cả tối ưu, càng thuê lâu càng ưu đãi</p></div>
+      <div class="intro-card reveal"><i class="fa-solid fa-gamepad"></i><p>Hỗ trợ tất cả các chế độ chơi trong Free Fire</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== BẢNG GIÁ ===== -->
+<section id="bangGia">
+  <div class="wrap">
+    <span class="eyebrow">Chi phí</span>
+    <h2 class="sec-title reveal">💰 Bảng Giá Thuê Bot</h2>
+    <p class="sec-desc reveal">Nhiều gói linh hoạt, phù hợp mọi nhu cầu — thuê càng lâu, giá càng rẻ.</p>
+    <div class="pricing">
+      <div class="plan reveal">
+        <i class="fa-solid fa-fire plan-icon"></i>
+        <div class="plan-name">Bot Team 5-6 Múa S7</div>
+        <ul class="tier-rows">
+          <li class="tier-row"><span class="tier-dur">1 ngày</span><span class="tier-price">10.000đ</span></li>
+          <li class="tier-row"><span class="tier-dur">1 tuần</span><span class="tier-price">60.000đ</span></li>
+          <li class="tier-row"><span class="tier-dur">1 tháng</span><span class="tier-price">120.000đ</span></li>
+        </ul>
+        <a href="#huongDan" class="btn btn-outline">Thuê ngay</a>
+      </div>
+      <div class="plan featured reveal">
+        <div class="badge">🔥 HOT</div>
+        <i class="fa-solid fa-signature plan-icon"></i>
+        <div class="plan-name">Bot Theo Tên Mong Muốn</div>
+        <ul class="tier-rows">
+          <li class="tier-row"><span class="tier-dur">1 tuần</span><span class="tier-price">70.000đ</span></li>
+          <li class="tier-row"><span class="tier-dur">1 tháng</span><span class="tier-price">150.000đ</span></li>
+        </ul>
+        <a href="#huongDan" class="btn btn-primary">Thuê ngay</a>
+      </div>
+      <div class="plan reveal">
+        <i class="fa-solid fa-shield-halved plan-icon"></i>
+        <div class="plan-name">Bot Quân Đoàn</div>
+        <ul class="tier-rows">
+          <li class="tier-row"><span class="tier-dur">1 tuần</span><span class="tier-price">80.000đ</span></li>
+          <li class="tier-row"><span class="tier-dur">1 tháng</span><span class="tier-price">170.000đ</span></li>
+          <li class="tier-row"><span class="tier-dur">3 tháng</span><span class="tier-price">250.000đ</span></li>
+        </ul>
+        <a href="#huongDan" class="btn btn-outline">Thuê ngay</a>
       </div>
     </div>
-  </header>
+    <div class="tier-note">
+      <span><i class="fa-solid fa-gift"></i>Càng thuê lâu dài, giá càng ưu đãi</span>
+      <span><i class="fa-solid fa-clock"></i>Bot online/trực tuyến 24/7</span>
+    </div>
+  </div>
+</section>
 
-  <!-- HERO SECTION -->
-  <section id="home" class="hero-section">
-    <div class="container">
-      <div class="hero-grid">
-        <div class="hero-content">
-          <div class="hero-badge">
-            <i class="fa-solid fa-bolt"></i> Bot Free Fire Team 5-6 Đỉnh Cao
-          </div>
-          <h1 class="hero-title">
-            DỊCH VỤ CHO THUÊ <span class="gradient-text">BOT FREEFIRE</span>
-          </h1>
-          <p class="hero-desc">
-            Bứt phá giới hạn với bot tự động 24/7: Mở team 5, team 6 cực độc, mod emote Lv7 đỉnh cao, spam troll tạo highlight TikTok mượt mà không giật lag!
-          </p>
-          <div class="hero-buttons">
-            <a href="#pricing" class="btn btn-primary">
-              <i class="fa-solid fa-cart-shopping"></i> Xem bảng giá
-            </a>
-            <a href="#features" class="btn btn-outline">
-              <i class="fa-solid fa-compass"></i> Tính năng
-            </a>
-          </div>
-          <div class="hero-stats">
-            <div class="stat-item">
-              <h4>24/7</h4>
-              <p>Hoạt động ổn định</p>
-            </div>
-            <div class="stat-item">
-              <h4>3s</h4>
-              <p>Vào phòng siêu tốc</p>
-            </div>
-            <div class="stat-item">
-              <h4>20K+</h4>
-              <p>Người dùng tin tưởng</p>
-            </div>
-          </div>
-        </div>
+<!-- ===== LỢI ÍCH ===== -->
+<section id="loiIch">
+  <div class="wrap">
+    <span class="eyebrow">Cam kết</span>
+    <h2 class="sec-title reveal">Lợi Ích Khi Thuê</h2>
+    <p class="sec-desc reveal">Trải nghiệm dịch vụ chuyên nghiệp, uy tín, luôn đặt khách hàng lên hàng đầu.</p>
+    <div class="benefit-grid">
+      <div class="benefit-card reveal"><i class="fa-solid fa-headset"></i><h4>Hỗ trợ 24/7</h4></div>
+      <div class="benefit-card reveal"><i class="fa-solid fa-lock"></i><h4>Bảo mật thông tin</h4></div>
+      <div class="benefit-card reveal"><i class="fa-solid fa-rotate-left"></i><h4>Hoàn bot nếu gặp lỗi</h4></div>
+      <div class="benefit-card reveal"><i class="fa-solid fa-arrow-up-right-dots"></i><h4>Cập nhật tính năng liên tục</h4></div>
+    </div>
 
-        <!-- Mockup Chat Bot -->
-        <div class="hero-mockup reveal">
-          <div class="mockup-header">
-            <div class="mockup-avatar">
-              <i class="fa-solid fa-robot" style="color: #fff;"></i>
-            </div>
-            <div class="mockup-info">
-              <h5>ZAN BOT AUTO</h5>
-              <span>Đang hoạt động trực tuyến</span>
-            </div>
-          </div>
-          <div class="chat-box" id="dynamic-chat">
-            <div class="chat-bubble bot">🔥 ZAN BOT đã sẵn sàng nhận lệnh!</div>
-            <div class="chat-bubble user">/team6 Mở phòng gấp ae ơi!</div>
-            <div class="chat-bubble bot">⚡ Đã tạo phòng Team 6 thành công! Vào chiến thôi!</div>
-          </div>
-        </div>
+    <!-- ===== HƯỚNG DẪN THUÊ BOT ===== -->
+    <div id="huongDan" class="payment-guide reveal">
+      <h3><i class="fa-solid fa-circle-info" style="color:var(--red);margin-right:10px;"></i>Hướng Dẫn Thuê Bot</h3>
+      
+      <div class="step">1. Bạn có thể liên hệ Admin qua TikTok hoặc Telegram ở cuối website</div>
+      <div class="step">2. Khi đã liên hệ, vui lòng nhắn đúng yêu cầu của mình</div>
+      <div class="step">3. Chuyển tiền và chụp bill gửi cho Admin</div>
+      <div class="step">4. Sau khi gửi bill, Admin sẽ tự động cấp bot cho bạn</div>
+
+      <div class="note-warning">
+        <p><i class="fa-solid fa-triangle-exclamation" style="color:var(--red);margin-right:6px;"></i>
+          <span class="warning-text">Lưu ý quan trọng:</span> Khi đã thuê bot, 
+          <span class="no-refund">sẽ không hoàn lại tiền</span> dưới bất kỳ hình thức nào.
+        </p>
+        <p style="margin-top:6px;font-size:13px;color:var(--text-1);">
+          <i class="fa-solid fa-check-circle" style="color:var(--red);margin-right:6px;"></i>
+          Bot được cấp tự động ngay sau khi Admin xác nhận bill thành công.
+        </p>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- FEATURES SECTION -->
-  <section id="features" class="section-padding">
-    <div class="container">
-      <div class="section-header reveal">
-        <h2 class="section-title">🔥 <span class="gradient-text">Tính năng nổi bật</span></h2>
-        <p class="section-desc">Trang bị những công nghệ tiên tiến nhất giúp bạn bá đạo trong mọi trận đấu Free Fire.</p>
+<!-- ===== ADMIN CHÍNH THỨC & TUYÊN BỐ TRÁCH NHIỆM ===== -->
+<section class="admin-section">
+  <div class="wrap">
+    <div class="admin-box reveal">
+      <div class="admin-header">
+        <i class="fa-solid fa-crown"></i>
+        <span>ADMIN CHÍNH THỨC CỦA WEBSITE</span>
       </div>
-
-      <div class="features-grid">
-        <!-- Feature 1 -->
-        <div class="feature-card reveal">
-          <div class="feature-icon">
-            <i class="fa-solid fa-users-rays"></i>
-          </div>
-          <h3>Team 5 / Team 6</h3>
-          <p>Phá vỡ giới hạn 4vs4 truyền thống. Thách thức mọi giới hạn phòng chơi cùng đồng đội cực khủng.</p>
-        </div>
-
-        <!-- Feature 2 -->
-        <div class="feature-card reveal">
-          <div class="feature-icon">
-            <i class="fa-solid fa-wand-magic-sparkles"></i>
-          </div>
-          <h3>Mod Emote Lv7</h3>
-          <p>Sở hữu ngay các hiệu ứng súng Hề, Ngồi Thiền cực chất mà không cần tốn nhiều kim cương.</p>
-        </div>
-
-        <!-- Feature 3 -->
-        <div class="feature-card reveal">
-          <div class="feature-icon">
-            <i class="fa-solid fa-star"></i>
-          </div>
-          <h3>Mod Emote Cổ</h3>
-          <p>Tái hiện các động tác huyền thoại như Đá Lông Nheo, Vỗ Tay làm cho trận đấu thêm phần sống động.</p>
-        </div>
-
-        <!-- Feature 4 -->
-        <div class="feature-card reveal">
-          <div class="feature-icon">
-            <i class="fa-solid fa-video"></i>
-          </div>
-          <h3>Spam Troll & Highlight</h3>
-          <p>Tạo ra các pha xử lý tấu hài, mãn nhãn phục vụ cho việc quay video TikTok triệu view.</p>
-        </div>
+      <div class="admin-contact">
+        <a href="https://www.tiktok.com/@nqbinhan_" target="_blank">
+          <i class="fa-brands fa-tiktok"></i> @nqbinhan_
+        </a>
+        <a href="https://t.me/zanbackj" target="_blank">
+          <i class="fa-brands fa-telegram"></i> @zanbackj
+        </a>
+      </div>
+      <div class="admin-divider"></div>
+      <div class="admin-disclaimer">
+        <p><strong>TUYÊN BỐ TRÁCH NHIỆM</strong></p>
+        <p>Website này do tôi phát triển và vận hành, chỉ nhằm mục đích hỗ trợ người dùng khi cần thiết.</p>
+        <p>Chỉ giao dịch với kênh TikTok và Telegram này.</p>
+        <p>Mọi giao dịch phát sinh ngoài phạm vi hệ thống, không thông qua đội ngũ quản trị (admin) chính thức, sẽ không thuộc trách nhiệm của chúng tôi.</p>
+        <p>Đội ngũ quản trị và admin website hoàn toàn không chịu trách nhiệm đối với các rủi ro, tổn thất phát sinh từ những giao dịch này.</p>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- PRICING SECTION -->
-  <section id="pricing" class="section-padding" style="background: rgba(255,255,255,0.01);">
-    <div class="container">
-      <div class="section-header reveal">
-        <h2 class="section-title">💰 <span class="gradient-text">Bảng giá dịch vụ</span></h2>
-        <p class="section-desc">Lựa chọn gói cước phù hợp với nhu cầu của bạn. Kích hoạt tự động chỉ sau 1 phút.</p>
-      </div>
+<!-- ===== PHẦN CỘNG TÁC VIÊN (CTV) ===== -->
+<section class="ctv-section">
+  <div class="wrap">
+    <span class="eyebrow">👥 CỘNG TÁC VIÊN</span>
+    <h2 class="sec-title reveal">ĐỘI NGŨ <span class="red">CTV CHÍNH THỨC</span></h2>
+    <p class="sec-desc reveal">Zan chỉ công nhận các CTV có tên trong danh sách dưới đây.</p>
 
-      <div class="pricing-grid">
-        <!-- Gói 1 -->
-        <div class="pricing-card reveal">
-          <h3 class="pricing-name">Gói Bot Team 5-6</h3>
-          <p class="pricing-desc">Phù hợp cho các bạn muốn trải nghiệm nhanh cùng nhóm bạn thân.</p>
-          <div class="pricing-price gradient-text">15K <span style="font-size: 1rem; color: var(--text-muted);">/ngày</span></div>
-          <ul class="pricing-features">
-            <li><i class="fa-solid fa-circle-check"></i> Bot hoạt động 24/7</li>
-            <li><i class="fa-solid fa-circle-check"></i> Hỗ trợ Team 5 & Team 6</li>
-            <li><i class="fa-solid fa-circle-check"></i> Vào phòng siêu tốc 3s</li>
-            <li><i class="fa-solid fa-circle-check"></i> Hỗ trợ kỹ thuật cơ bản</li>
-          </ul>
-          <a href="#payment" class="btn btn-outline">Thuê ngay</a>
-        </div>
-
-        <!-- Gói 2 (Featured) -->
-        <div class="pricing-card featured reveal">
-          <div class="pricing-badge">HOT DEAL 🔥</div>
-          <h3 class="pricing-name">Bot Theo Tên</h3>
-          <p class="pricing-desc">Đặt tên bot theo ý muốn, cá nhân hóa thương hiệu cá nhân hoặc quân đoàn.</p>
-          <div class="pricing-price gradient-text">70K <span style="font-size: 1rem; color: var(--text-muted);">/tuần</span></div>
-          <ul class="pricing-features">
-            <li><i class="fa-solid fa-circle-check"></i> Tùy chỉnh tên Bot độc quyền</li>
-            <li><i class="fa-solid fa-circle-check"></i> Mở khóa toàn bộ Emote Lv7</li>
-            <li><i class="fa-solid fa-circle-check"></i> Spam Troll & Lệnh nâng cao</li>
-            <li><i class="fa-solid fa-circle-check"></i> Ưu tiên hỗ trợ riêng 24/7</li>
-          </ul>
-          <a href="#payment" class="btn btn-primary">Thuê ngay</a>
-        </div>
-
-        <!-- Gói 3 -->
-        <div class="pricing-card reveal">
-          <div class="pricing-badge" style="background: linear-gradient(135deg, #f59e0b 0%, #ff4500 100%);">VIP 👑</div>
-          <h3 class="pricing-name">Bot Quân Đoàn</h3>
-          <p class="pricing-desc">Dành cho các Clan lớn, phục vụ đông đảo thành viên giao lưu mỗi ngày.</p>
-          <div class="pricing-price gradient-text">250K <span style="font-size: 1rem; color: var(--text-muted);">/tháng</span></div>
-          <ul class="pricing-features">
-            <li><i class="fa-solid fa-circle-check"></i> Bot riêng cho toàn quân đoàn</li>
-            <li><i class="fa-solid fa-circle-check"></i> Tự do đổi tên & icon độc lạ</li>
-            <li><i class="fa-solid fa-circle-check"></i> Tất cả tính năng cao cấp nhất</li>
-            <li><i class="fa-solid fa-circle-check"></i> Bảo hành suốt thời gian sử dụng</li>
-          </ul>
-          <a href="#payment" class="btn btn-outline">Thuê ngay</a>
-        </div>
-      </div>
+    <div class="ctv-banner reveal">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span>CHỈ GIAO DỊCH VỚI CTV TRONG DANH SÁCH</span>
     </div>
-  </section>
 
-  <!-- PAYMENT SECTION -->
-  <section id="payment" class="section-padding">
-    <div class="container">
-      <div class="section-header reveal">
-        <h2 class="section-title">💳 <span class="gradient-text">Thanh toán tự động</span></h2>
-        <p class="section-desc">Chuyển khoản chính xác nội dung để hệ thống tự động kích hoạt bot trong vòng 1-5 phút.</p>
-      </div>
-
-      <div class="payment-box reveal">
-        <div class="bank-header">
-          <div class="bank-name">
-            <i class="fa-solid fa-building-columns"></i> MB BANK (Quân Đội)
-          </div>
-          <div class="bank-badge">
-            <i class="fa-solid fa-shield-halved"></i> Uy tín 100%
-          </div>
-        </div>
-
-        <div class="bank-info-grid">
-          <div class="bank-info-item">
-            <label>Số tài khoản</label>
-            <div class="value highlight" id="stk">868688889999</div>
-          </div>
-          <div class="bank-info-item">
-            <label>Chủ tài khoản</label>
-            <div class="value">NGUYEN VAN ZAN</div>
-          </div>
-          <div class="bank-info-item">
-            <label>Nội dung chuyển khoản</label>
-            <div class="value highlight" id="syntax">THUEBOT [Tên của bạn]</div>
-          </div>
-          <div class="bank-info-item">
-            <label>Trạng thái</label>
-            <div class="value" style="color: #22c55e;">⏳ Kích hoạt sau 1-5 phút</div>
-          </div>
-        </div>
-
-        <div class="payment-note">
-          💡 Lưu ý: Vui lòng ghi đúng nội dung chuyển khoản để bot tự động cộng hạn sử dụng. Nếu gặp lỗi, hãy nhắn ngay cho Admin!
-        </div>
-
-        <button class="copy-btn" onclick="copyBankInfo()">
-          <i class="fa-solid fa-copy"></i> Sao chép thông tin thanh toán
-        </button>
-      </div>
-    </div>
-  </section>
-
-  <!-- CTA BAND -->
-  <section class="cta-band">
-    <div class="container reveal">
-      <h2>🚀 Sẵn sàng bá đạo cùng <span class="gradient-text">ZAN BOT</span>?</h2>
-      <p>Tham gia ngay cộng đồng hơn 20,000 game thủ Free Fire đang sử dụng dịch vụ của chúng tôi mỗi ngày.</p>
-      <a href="#pricing" class="btn btn-primary" style="font-size: 1.1rem; padding: 15px 35px;">
-        Thuê bot ngay lập tức <i class="fa-solid fa-arrow-right"></i>
-      </a>
-    </div>
-  </section>
-
-  <!-- FOOTER -->
-  <footer id="contact">
-    <div class="container">
-      <div class="footer-grid">
-        <div class="footer-col">
-          <a href="#home" class="logo" style="margin-bottom: 15px; display: inline-flex;">
-            <i class="fa-solid fa-robot"></i>
-            <span class="gradient-text">ZAN BOT</span> 🔥
+    <div class="ctv-grid">
+      <div class="ctv-card reveal">
+        <div class="ctv-badge">🔥 CTV CHÍNH THỨC</div>
+        <div class="ctv-avatar"><i class="fa-solid fa-user"></i></div>
+        <h3 class="ctv-name">CTV 1</h3>
+        <div class="ctv-social">
+          <a href="https://www.tiktok.com/@_tranjanjan" target="_blank" class="ctv-link">
+            <i class="fa-brands fa-tiktok"></i> @_tranjanjan
           </a>
-          <p>Hệ thống cho thuê Bot Free Fire tự động hàng đầu Việt Nam. Nhanh chóng, uy tín, hỗ trợ tận tâm 24/7.</p>
-          <div class="social-icons">
-            <a href="#" class="social-icon-link" title="Telegram"><i class="fa-brands fa-telegram"></i></a>
-            <a href="#" class="social-icon-link" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
-            <a href="#" class="social-icon-link" title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
-            <a href="#" class="social-icon-link" title="Zalo"><i class="fa-solid fa-comment-sms"></i></a>
-          </div>
-        </div>
-
-        <div class="footer-col">
-          <h4>Dịch vụ</h4>
-          <div class="footer-links">
-            <a href="#features"><i class="fa-solid fa-angle-right"></i> Bot Team 5-6</a>
-            <a href="#features"><i class="fa-solid fa-angle-right"></i> Mod Emote Lv7</a>
-            <a href="#features"><i class="fa-solid fa-angle-right"></i> Spam Troll TikTok</a>
-            <a href="#pricing"><i class="fa-solid fa-angle-right"></i> Thuê Bot Theo Tên</a>
-          </div>
-        </div>
-
-        <div class="footer-col">
-          <h4>Hỗ trợ & Liên hệ</h4>
-          <div class="footer-links">
-            <a href="#"><i class="fa-solid fa-headset"></i> CSKH Telegram: @ZanBotSupport</a>
-            <a href="#"><i class="fa-solid fa-users"></i> Group Cổng Game FF</a>
-            <a href="#"><i class="fa-solid fa-shield"></i> Chính sách bảo mật</a>
-            <a href="#"><i class="fa-solid fa-file-contract"></i> Điều khoản dịch vụ</a>
-          </div>
         </div>
       </div>
 
-      <div class="footer-bottom">
-        <p>© 2026 ZAN BOT. All rights reserved. Designed with 🔥 for Free Fire Community.</p>
+      <div class="ctv-card reveal">
+        <div class="ctv-badge">🔥 CTV CHÍNH THỨC</div>
+        <div class="ctv-avatar"><i class="fa-solid fa-user"></i></div>
+        <h3 class="ctv-name">CTV 2</h3>
+        <div class="ctv-social">
+          <a href="https://www.tiktok.com/@ekietbelphi_" target="_blank" class="ctv-link">
+            <i class="fa-brands fa-tiktok"></i> @ekietbelphi_
+          </a>
+        </div>
+      </div>
+
+      <div class="ctv-card reveal">
+        <div class="ctv-badge">🔥 CTV CHÍNH THỨC</div>
+        <div class="ctv-avatar"><i class="fa-solid fa-user"></i></div>
+        <h3 class="ctv-name">CTV 3</h3>
+        <div class="ctv-social">
+          <a href="https://www.tiktok.com/@.wejx_09" target="_blank" class="ctv-link">
+            <i class="fa-brands fa-tiktok"></i> @.wejx_09
+          </a>
+        </div>
+      </div>
+
+      <div class="ctv-card reveal">
+        <div class="ctv-badge">🔥 CTV CHÍNH THỨC</div>
+        <div class="ctv-avatar"><i class="fa-solid fa-user"></i></div>
+        <h3 class="ctv-name">CTV 4</h3>
+        <div class="ctv-social">
+          <a href="https://www.tiktok.com/@nhatquang2309" target="_blank" class="ctv-link">
+            <i class="fa-brands fa-tiktok"></i> @nhatquang2309
+          </a>
+        </div>
       </div>
     </div>
-  </footer>
 
-  <!-- TOAST NOTIFICATION -->
-  <div class="toast" id="toast">
-    <i class="fa-solid fa-circle-check"></i>
-    <span>Đã sao chép thông tin thanh toán thành công!</span>
+    <div class="ctv-disclaimer reveal">
+      <p><i class="fa-solid fa-triangle-exclamation"></i> <strong>TUYÊN BỐ TRÁCH NHIỆM:</strong></p>
+      <p>Zan chỉ chịu trách nhiệm với các giao dịch được thực hiện thông qua Admin hoặc CTV có tên trong danh sách chính thức trên website này.</p>
+      <p>Mọi giao dịch với CTV ngoài danh sách hoặc tự phát đều <strong>không thuộc trách nhiệm</strong> của zan. Rủi ro phát sinh do giao dịch ngoài hệ thống sẽ do người dùng tự chịu.</p>
+    </div>
   </div>
+</section>
 
-  <!-- JAVASCRIPT -->
-  <script>
-    /* ==================== 1. LOADING SCREEN ==================== */
-    window.addEventListener('load', () => {
-      const loadingScreen = document.getElementById('loading-screen');
-      setTimeout(() => {
-        loadingScreen.classList.add('fade-out');
-      }, 800); // 0.8s sau khi load xong hoàn toàn ẩn đi
-    });
+<!-- ===== FAQ - CÂU HỎI THƯỜNG GẶP ===== -->
+<section class="faq-section">
+  <div class="wrap">
+    <span class="eyebrow">❓ HỎI ĐÁP</span>
+    <h2 class="sec-title reveal">CÂU HỎI <span class="red">THƯỜNG GẶP</span></h2>
+    <p class="sec-desc reveal">Những thắc mắc phổ biến của khách hàng về dịch vụ thuê bot.</p>
 
-    /* ==================== 2. PARTICLE BACKGROUND (CANVAS) ==================== */
-    const canvas = document.getElementById('particle-canvas');
-    const ctx = canvas.getContext('2d');
+    <div class="faq-grid">
+      <div class="faq-item reveal">
+        <div class="faq-question">
+          <i class="fa-solid fa-circle-question"></i>
+          <span>Bot có bị khóa tài khoản Free Fire không?</span>
+        </div>
+        <div class="faq-answer">
+          <p><i class="fa-solid fa-check-circle" style="color:var(--red);"></i> Không. Bot của zan hoạt động hoàn toàn an toàn, không can thiệp vào game, không sử dụng hack hay phần mềm trái phép. Tài khoản của bạn vẫn an toàn 100%.</p>
+        </div>
+      </div>
 
-    let particlesArray = [];
-    const numberOfParticles = 45;
+      <div class="faq-item reveal">
+        <div class="faq-question">
+          <i class="fa-solid fa-circle-question"></i>
+          <span>Sau khi thuê, bao lâu thì có bot?</span>
+        </div>
+        <div class="faq-answer">
+          <p><i class="fa-solid fa-check-circle" style="color:var(--red);"></i> Sau khi bạn chuyển tiền và gửi bill xác nhận, bot sẽ được cấp ngay lập tức trong vòng 5-10 phút (thời gian xử lý nhanh nhất có thể).</p>
+        </div>
+      </div>
 
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
+      <div class="faq-item reveal">
+        <div class="faq-question">
+          <i class="fa-solid fa-circle-question"></i>
+          <span>Hết hạn thuê có báo trước không?</span>
+        </div>
+        <div class="faq-answer">
+          <p><i class="fa-solid fa-check-circle" style="color:var(--red);"></i> Có. Admin sẽ nhắn tin nhắc nhở trước 1 ngày khi gói thuê của bạn sắp hết hạn để bạn gia hạn kịp thời.</p>
+        </div>
+      </div>
 
-    class Particle {
-      constructor() {
-        this.x = Math.random() * canvas.width;
-        this.y = Math.random() * canvas.height + canvas.height;
-        this.size = Math.random() * 3 + 1;
-        this.speedY = Math.random() * 1.5 + 0.5;
-        this.speedX = (Math.random() - 0.5) * 0.8;
-        // Màu sắc pha trộn tím, vàng, đỏ
-        const colors = ['#7c3aed', '#f59e0b', '#ff4500'];
-        this.color = colors[Math.floor(Math.random() * colors.length)];
-      }
-      update() {
-        this.y -= this.speedY;
-        this.x += this.speedX;
-        if (this.y < 0) {
-          this.y = canvas.height + 10;
-          this.x = Math.random() * canvas.width;
-        }
-      }
-      draw() {
-        ctx.fillStyle = this.color;
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = this.color;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowBlur = 0; // reset shadow
-      }
-    }
+      <div class="faq-item reveal">
+        <div class="faq-question">
+          <i class="fa-solid fa-circle-question"></i>
+          <span>Tôi có thể gia hạn gói thuê không?</span>
+        </div>
+        <div class="faq-answer">
+          <p><i class="fa-solid fa-check-circle" style="color:var(--red);"></i> Có. Bạn có thể gia hạn bất kỳ lúc nào trước hoặc sau khi hết hạn. Chỉ cần liên hệ Admin để được hỗ trợ gia hạn nhanh chóng.</p>
+        </div>
+      </div>
 
-    function initParticles() {
-      particlesArray = [];
-      for (let i = 0; i < numberOfParticles; i++) {
-        particlesArray.push(new Particle());
-      }
-    }
-    initParticles();
+      <div class="faq-item reveal">
+        <div class="faq-question">
+          <i class="fa-solid fa-circle-question"></i>
+          <span>Tôi có thể hủy thuê và lấy lại tiền không?</span>
+        </div>
+        <div class="faq-answer">
+          <p><i class="fa-solid fa-check-circle" style="color:var(--red);"></i> Theo chính sách, sẽ không hoàn lại tiền sau khi đã xác nhận thuê. Vui lòng cân nhắc kỹ trước khi đặt gói.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
-    function animateParticles() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      for (let i = 0; i < particlesArray.length; i++) {
-        particlesArray[i].update();
-        particlesArray[i].draw();
-      }
+<!-- ===== CTA ===== -->
+<section class="cta-band">
+  <h2 class="reveal">Đẳng Cấp Tạo Nên Thương Hiệu</h2>
+  <p class="reveal">Liên hệ ngay để được tư vấn gói bot phù hợp nhất với bạn.</p>
+</section>
 
-      // Kết nối các hạt gần nhau bằng đường thẳng mờ
-      for (let i = 0; i < particlesArray.length; i++) {
-        for (let j = i + 1; j < particlesArray.length; j++) {
-          const dx = particlesArray[i].x - particlesArray[j].x;
-          const dy = particlesArray[i].y - particlesArray[j].y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          if (distance < 110) {
-            ctx.strokeStyle = `rgba(124, 58, 237, ${0.12 * (1 - distance / 110)})`;
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(particlesArray[i].x, particlesArray[i].y);
-            ctx.lineTo(particlesArray[j].x, particlesArray[j].y);
-            ctx.stroke();
-          }
-        }
-      }
-      requestAnimationFrame(animateParticles);
-    }
-    animateParticles();
+<!-- ===== FOOTER ===== -->
+<footer id="lienHe">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-title">Dịch vụ cho thuê bot Free Fire team 5-6, vận hành chuyên nghiệp, phục vụ 24/7.</div>
+        <div class="socials">
+          <a href="https://www.tiktok.com/@nqbinhan_" target="_blank" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+          <a href="https://t.me/zancommunity" target="_blank" title="Group"><i class="fa-solid fa-users"></i></a>
+          <a href="https://t.me/zanbackj" target="_blank" title="Telegram"><i class="fa-brands fa-telegram"></i></a>
+          <a href="zalo://p?phone=0862457518" target="_blank" title="Zalo"><i class="fa-solid fa-comment-dots"></i></a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Dịch vụ</h4>
+        <ul><li><a href="#gioithieu">Giới thiệu</a></li><li><a href="#bangGia">Bảng giá</a></li><li><a href="#loiIch">Lợi ích</a></li></ul>
+      </div>
+      <div class="footer-col">
+        <h4>Liên hệ</h4>
+        <ul>
+          <li><a href="https://www.tiktok.com/@nqbinhan_" target="_blank">TikTok</a></li>
+          <li><a href="https://t.me/zancommunity" target="_blank">Group</a></li>
+          <li><a href="https://t.me/zanbackj" target="_blank">Telegram</a></li>
+          <li><a href="zalo://p?phone=0862457518" target="_blank">Zalo</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2026 ZAN DEV BOT FREE FIRE. All rights reserved.</div>
+  </div>
+</footer>
 
-    /* ==================== 3. MOBILE MENU TOGGLE ==================== */
-    const hamburger = document.getElementById('hamburger');
-    const navMenu = document.getElementById('nav-menu');
-    const navLinks = document.querySelectorAll('.nav-link');
+<script>
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      document.getElementById('loading-screen').classList.add('hidden');
+      setTimeout(function() {
+        document.getElementById('system-notification').classList.add('active');
+      }, 400);
+    }, 3600);
+  });
 
-    hamburger.addEventListener('click', () => {
-      navMenu.classList.toggle('open');
-      const icon = hamburger.querySelector('i');
-      if (navMenu.classList.contains('open')) {
-        icon.classList.remove('fa-bars');
-        icon.classList.add('fa-xmark');
-      } else {
-        icon.classList.remove('fa-xmark');
-        icon.classList.add('fa-bars');
-      }
-    });
+  function closeNotification() {
+    document.getElementById('system-notification').classList.remove('active');
+  }
 
-    navLinks.forEach(link => {
-      link.addEventListener('click', () => {
-        navMenu.classList.remove('open');
-        const icon = hamburger.querySelector('i');
-        icon.classList.remove('fa-xmark');
-        icon.classList.add('fa-bars');
-      });
-    });
+  const canvas = document.getElementById('fireParticles');
+  const ctx = canvas.getContext('2d');
+  let w, h, particles = [];
+  const COUNT = window.innerWidth < 700 ? 45 : 90;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    /* ==================== 4. SCROLL REVEAL (INTERSECTION OBSERVER) ==================== */
-    const revealElements = document.querySelectorAll('.reveal');
+  function resize(){ w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+  window.addEventListener('resize', resize);
+  resize();
 
-    const revealObserver = new IntersectionObserver((entries, observer) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('active');
-          observer.unobserve(entry.target);
-        }
-      });
-    }, {
-      threshold: 0.15
-    });
-
-    revealElements.forEach(el => {
-      revealObserver.observe(el);
-    });
-
-    /* ==================== 5. COPY BANK INFO ==================== */
-    function copyBankInfo() {
-      const stk = document.getElementById('stk').innerText;
-      const content = "THUEBOT [Tên của bạn]";
-      const fullText = `STK: ${stk} - MB Bank - NGUYEN VAN ZAN - Noi dung: ${content}`;
-
-      navigator.clipboard.writeText(fullText).then(() => {
-        const toast = document.getElementById('toast');
-        toast.classList.add('show');
-        setTimeout(() => {
-          toast.classList.remove('show');
-        }, 3000);
-      }).catch(err => {
-        alert('Không thể sao chép tự động, vui lòng copy thủ công!');
+  function initParticles(){
+    particles = [];
+    for(let i=0;i<COUNT;i++){
+      particles.push({
+        x: Math.random()*w,
+        y: h + Math.random()*h,
+        r: Math.random()*1.8+0.6,
+        vy: Math.random()*0.6+0.25,
+        vx: (Math.random()-0.5)*0.3,
+        life: Math.random()
       });
     }
+  }
+  initParticles();
 
-    /* ==================== 6. ACTIVE MENU ON SCROLL ==================== */
-    window.addEventListener('scroll', () => {
-      let scrollPos = window.scrollY;
-      sections = document.querySelectorAll('section');
-      sections.forEach(section => {
-        const top = section.offsetTop - 120;
-        const height = section.offsetHeight;
-        const id = section.getAttribute('id');
-        if (scrollPos >= top && scrollPos < top + height) {
-          navLinks.forEach(link => {
-            link.classList.remove('active');
-            if (link.getAttribute('href') === `#${id}`) {
-              link.classList.add('active');
-            }
-          });
-        }
-      });
+  function animate(){
+    ctx.clearRect(0,0,w,h);
+    for(const p of particles){
+      p.y -= p.vy; p.x += p.vx;
+      if(p.y < -10){ p.y = h + 10; p.x = Math.random()*w; }
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      const grad = Math.random() > 0.5 ? '255,0,0' : '255,120,0';
+      ctx.fillStyle = `rgba(${grad},0.75)`;
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = `rgba(${grad},0.9)`;
+      ctx.fill();
+    }
+    if(!reduced) requestAnimationFrame(animate);
+  }
+  animate();
+
+  const revealEls = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){ entry.target.classList.add('in'); io.unobserve(entry.target); }
     });
-  </script>
+  },{threshold:0.15});
+  revealEls.forEach(el=>io.observe(el));
+
+  const header = document.querySelector('header');
+  window.addEventListener('scroll', ()=>{
+    header.style.boxShadow = window.scrollY > 20 ? '0 4px 40px rgba(255,0,0,0.2)' : 'none';
+  });
+</script>
 </body>
 </html>
