@@ -6670,20 +6670,41 @@ def api_info():
             "error": str(e)
         }), 500
                   
-@app.route("/info1")
-def InfoApi():
- uid=request.args.get("uid")
- if not uid:
-  return "Invalid Uid",400
- if not TCPbot.bots:
-  return "No Info Bot",400
+@app.route("/info1", methods=["GET"])
+def api_info1():
+    uid = request.args.get("uid")
 
- _,bot=next(iter(TCPbot.bots.items()))
+    if not uid or not uid.isdigit():
+        return jsonify({
+            "success": False,
+            "error": "Invalid uid"
+        }), 400
+    uid = int(uid)
+    bot = None
+    for b in TCPbot.bots.values():
+        if b.running_event.is_set():
+            bot = b
+            break
+    if not bot:
+        return jsonify({
+            "success": False,
+            "error": "No active bot"
+        }), 500
+    try:
+        result = send_info1(uid, bot.token, bot.base_url)
 
- try:
-  return jsonify(send_info(uid,bot.token,bot.base_url))
- except Exception as e:
-  return str(e),500
+        return jsonify({
+            "success": True,
+            "uid": uid,
+            "result": result
+        })
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
   
 @app.route("/info", methods=["GET"])
 def api_info1():
