@@ -1,0 +1,26 @@
+2026-08-08 18:25:23,286 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): api.telegram.org:443
+2026-08-08 18:25:23,325 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): play.google.com:443
+2026-08-08 18:25:23,328 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): play.google.com:443
+2026-08-08 18:25:23,354 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): play.google.com:443
+2026-08-08 18:25:23,362 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): play.google.com:443
+2026-08-08 18:25:23,377 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): play.google.com:443
+2026-08-08 18:25:23,444 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): play.google.com:443
+2026-08-08 18:25:23,456 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): play.google.com:443
+2026-08-08 18:25:23,511 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): play.google.com:443
+2026-08-08 18:25:23,514 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): play.google.com:443
+2026-08-08 18:25:23,542 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): play.google.com:443
+2026-08-08 18:25:23,577 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): play.google.com:443
+2026-08-08 18:25:23,597 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): play.google.com:443
+2026-08-08 18:25:23,600 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:2011
+ * Running on http://192.168.1.208:2011
+2026-08-08 18:25:23,605 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-08-08 18:25:23,617 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): play.google.com:443
+2026-08-08 18:25:23,640 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): play.google.com:443
+2026-08-08 18:25:23,650 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): play.google.com:443
+2026-08-08 18:25:27,262 - urllib3.connectionpool - DEBUG - https://api.telegram.org:443 "GET /bot8643765731:AAGIXmguLbAS0xmifYUXUAki2faa5EpyYfA/deleteWebhook HTTP/1.1" 200 68
+2026-08-08 18:25:28,481 - urllib3.connectionpool - DEBUG - https://api.telegram.org:443 "GET /bot8643765731:AAGIXmguLbAS0xmifYUXUAki2faa5EpyYfA/getMe HTTP/1.1" 200 407
+2026-08-08 18:25:59,908 - urllib3.connectionpool - DEBUG - https://api.telegram.org:443 "GET /bot8643765731:AAGIXmguLbAS0xmifYUXUAki2faa5EpyYfA/getUpdates?offset=1&allowed_updates=%5B%22message%22%2C+%22callback_query%22%5D&timeout=30 HTTP/1.1" 200 23
+2026-08-08 18:26:32,349 - urllib3.connectionpool - DEBUG - https://api.telegram.org:443 "GET /bot8643765731:AAGIXmguLbAS0xmifYUXUAki2faa5EpyYfA/getUpdates?offset=1&allowed_updates=%5B%22message%22%2C+%22callback_query%22%5D&timeout=30 HTTP/1.1" 200 23
+2026-08-08 18:27:03,260 - urllib3.connectionpool - DEBUG - https://api.telegram.org:443 "GET /bot8643765731:AAGIXmguLbAS0xmifYUXUAki2faa5EpyYfA/getUpdates?offset=1&allowed_updates=%5B%22message%22%2C+%22callback_query%22%5D&timeout=30 HTTP/1.1" 200 23
