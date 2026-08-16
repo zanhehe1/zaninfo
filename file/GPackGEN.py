@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from typing import Dict, Any, Optional, List
 import time, random, datetime
-from zandev.ReQAPI import *
-from zandev.lib import *
+from ReQAPI import *
+from lib import *
 
 class TAO_PACKET:
  def __init__(self, logindata, jsdata):
