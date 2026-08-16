@@ -1,5 +1,5 @@
 import threading, json, requests, time, random, datetime, string
-from zandev.ReQAPI import *
+from ReQAPI import *
 import json, os, datetime
 
 
