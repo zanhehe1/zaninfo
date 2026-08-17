@@ -3837,7 +3837,7 @@ Developer: @zanbackj
         recruit_code = data.get("5", {}).get("17")
         self.sock39801.send(self._bot.join_channel(uid, recruit_code, None))
         time.sleep(1.2)
-        self._bot.reply(uid, None, "[B][C][00FF00]đị[c]t m[c]ẹ gar[b]ena\n[00FF00]TikTok: [FF69B4]zanbackj\n[00FF00]Tele[c]gr[c]am: [87CEEB]@zanbackj\n[00FF00]Group: [FFD700]ht[c]tps://t.[b]me/zancommunity")
+        self._bot.reply(uid, None, "[B][C][00FF00]đị[c]t m[c]ẹ gar[b]ena\n[00FF00]TikTok: [FF69B4]nqbinhan_\n[00FF00]Tele[c]gr[c]am: [87CEEB]@zanbackj\n[00FF00]Group: [FFD700]ht[c]tps://t.[b]me/zancommunity")
         self.rstatus = (10, '')
         self.ids.extend(extract_uid_fields(data))
     except Exception as e:
