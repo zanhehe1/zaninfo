@@ -1,0 +1,224 @@
+{
+  "Bots": [
+    {
+      "id": 1,
+      "botid": 16573657064,
+      "name": "ae roblox.",
+      "token": "5738629534:8999DE7BF93B95285A7D21CAB393FE55142EB85A5D9ADAF9FAF6BFC738D9A242",
+      "online": true,
+      "users": [
+        {
+          "uid": 16104663154,
+          "expire": "2053-12-21 09:48:26"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "botid": 16605684245,
+      "name": "cha dân w",
+      "token": "5779500700:512FBE5916E8B680FDFF295BDB1DEB5365E575E8F9C6303694470409D4B3C20F",
+      "online": true,
+      "users": [
+        {
+          "uid": 2007451048,
+          "expire": "2026-08-31 07:14:51"
+        },
+        {
+          "uid": 16104663154,
+          "expire": "2053-12-21 09:48:21"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "botid": 16811218930,
+      "name": "come my way’",
+      "token": "a00559d90da54504bc989c4353ea3a69eff8c862d673472ba52f6e503d4aba3d",
+      "online": true,
+      "users": [
+        {
+          "uid": 16104663154,
+          "expire": "2053-12-21 09:48:23"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "botid": 16848222965,
+      "name": "đ biết giỡn;",
+      "token": "6b85078e50051c0c144f17eec63a7755faeef342c09d44c519ac33d942de8f99",
+      "online": true,
+      "users": [
+        {
+          "uid": 16104663154,
+          "expire": "2053-12-22 11:41:50"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "botid": 16877200400,
+      "name": "bocutehihi;",
+      "token": "6283656413:95DA6A6D2CCD9B3B79FA33FE8D79EF94E1045220E86644A4B9F7487BE303D6E9",
+      "online": true,
+      "users": [
+        {
+          "uid": 1869813434,
+          "expire": "2026-09-02 20:13:16"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "botid": 16901557297,
+      "name": "ít biết sợ;",
+      "token": "7d9390669d00d9603918c713f725b22dc07b3eb2601e578bc4ad49a9496b83e1",
+      "online": true,
+      "users": [
+        {
+          "uid": 47383739,
+          "expire": "2026-09-03 19:03:19"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "botid": 16949441263,
+      "name": "uwu؝؝",
+      "token": "4fc4f79b05e42b2850b10201124510b811ce21ddc7b4c335ecea78463d134fb4",
+      "online": true,
+      "users": [
+        {
+          "uid": 343418226,
+          "expire": "2026-09-25 16:52:00"
+        },
+        {
+          "uid": 509485248,
+          "expire": "2026-09-26 22:05:09"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "botid": 17078872908,
+      "name": "love؝؝؝",
+      "token": "6644123891:25C2EC69E8F5B1DEE2F038159D405C7C82DD187124323B0FF997736D2F30791B",
+      "online": true,
+      "users": [
+        {
+          "uid": 343418226,
+          "expire": "2026-09-29 18:51:17"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "botid": 17083091136,
+      "name": "phuc wibu.",
+      "token": "f51767fb31ccf68bc57c66fe47a5eb40283eb19d55b32d85e994d21f361c9e9a",
+      "online": true,
+      "users": []
+    },
+    {
+      "id": 11,
+      "botid": 17117455507,
+      "name": "em cún;",
+      "token": "5a7eaf445915d1dfac5f97f20aff5f69138400717577ea04917f757697a7ca66",
+      "online": true,
+      "users": [
+        {
+          "uid": 241716704,
+          "expire": "2054-01-01 08:13:34"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "botid": 17155073187,
+      "name": "qthy iuu",
+      "token": "6758307474:74A585AF7EDB5341DD3611801DA3ACEAC77C25F9B6E2CE4913C772A016B86F35",
+      "online": true,
+      "users": [
+        {
+          "uid": 3743376181,
+          "expire": "2026-09-16 21:39:16"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "botid": 17155845982,
+      "name": "mihhuy⁸⁵⁹³⁰³",
+      "token": "e1ca1efd3aa29a006da156e15d3be1a011d52c62e315086465d7a90d91a223fd",
+      "online": true,
+      "users": [
+        {
+          "uid": 16683910964,
+          "expire": "2054-01-01 21:52:15"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "botid": 17183301970,
+      "name": "kietwibu²⁰⁹⁶",
+      "token": "18985238bc20d73e0bc2f9b87afbebaf39f67bf1c8774ed88cc4b8ddc0548b81",
+      "online": true,
+      "users": []
+    },
+    {
+      "id": 16,
+      "botid": 17172912129,
+      "name": "bodethuong⁷⁸",
+      "token": "98249cc6ab92db239300f52c06f19d382ef36588c3edbc26abce82a3bf84cbe5",
+      "online": true,
+      "users": []
+    },
+    {
+      "id": 17,
+      "botid": 17184304411,
+      "name": "giết lũ dkn؝",
+      "token": "6797831984:08EEF50EAC7194BE8C0E84EE51DC7845320249B3512F2DF53F05549A8854B170",
+      "online": true,
+      "users": []
+    },
+    {
+      "id": 18,
+      "botid": 17193759647,
+      "name": "ngkhang²¹⁴⁶⁴",
+      "token": "8ca7389b7afb04e1daf2eb4b21ffd82dea5da18e4182555cdbc8ba40e40ecabb",
+      "online": true,
+      "users": []
+    },
+    {
+      "id": 19,
+      "botid": 17188937571,
+      "name": "máy xả",
+      "token": "a96e0302d193b96f358273f638f7a47e15054a29301139aa36182a6c6bd571cc",
+      "online": true,
+      "users": []
+    },
+    {
+      "id": 20,
+      "botid": 17194508884,
+      "name": "zanx⁰⁵³⁹⁴³⁶⁸",
+      "token": "013b2ba9365bb17d97feddde9357c6647e1a168961e7af107d2b9834bf1557b0",
+      "online": true,
+      "users": []
+    },
+    {
+      "id": 21,
+      "botid": 17194959608,
+      "name": "bodethuong⁶⁷",
+      "token": "d77261f8733326a5e3277351db5e691b28221c6f9719ff8e9abe3ee061c0fe58",
+      "online": true,
+      "users": [
+        {
+          "uid": 16033527397,
+          "expire": "2054-01-02 22:00:36"
+        }
+      ]
+    }
+  ]
+}
