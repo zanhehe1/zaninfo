@@ -4393,23 +4393,75 @@ def telegram_add_bot(message):
     try:
         parts = message.text.split()
         if len(parts) < 2:
-            telegram_bot.reply_to(message, "❌ Sai cú pháp!\nSử dụng: /addbot <token>")
+            telegram_bot.reply_to(message, "❌ Sai cú pháp!\n\n📌 Dùng token:\n`/addbot <token>`\n\n📌 Dùng uid:pass:\n`/addbot <uid>:<password>`")
             return
         
-        token = parts[1]
-        result = TCPbot.add_bot(token)
+        input_str = parts[1]
         
-        if result["status"]:
-            bot_id = result["bot_id"]
-            TCPbot.bots[bot_id].start()
-            response = f"✅ Thêm bot thành công!\nBot ID: {bot_id}\nToken: {token[:20]}..."
+        # ====== KIỂM TRA ĐỊNH DẠNG ======
+        if ":" in input_str:
+            # ====== ĐỊNH DẠNG UID:PASSWORD ======
+            uid_pass = input_str.split(":", 1)
+            if len(uid_pass) != 2:
+                telegram_bot.reply_to(message, "❌ Sai định dạng! Dùng: `/addbot uid:password`")
+                return
+            
+            uid, password = uid_pass[0].strip(), uid_pass[1].strip()
+            
+            if not uid.isdigit():
+                telegram_bot.reply_to(message, "❌ UID phải là số!")
+                return
+            
+            telegram_bot.reply_to(message, f"⏳ Đang lấy token cho UID: {uid}...")
+            
+            # Lấy token từ UID + Password
+            try:
+                from ReQAPI import FreeFireAPI
+                api = FreeFireAPI()
+                result = api.get(f"{uid}:{password}")
+                
+                if isinstance(result, str) and "account not found" in result.lower():
+                    telegram_bot.reply_to(message, "❌ Sai UID hoặc mật khẩu!")
+                    return
+                
+                if result and "UserAuthToken" in result:
+                    token = result["UserAuthToken"]
+                    nickname = result.get("UserNickName", "Unknown")
+                    
+                    # Thêm bot
+                    add_result = TCPbot.add_bot(token)
+                    
+                    if add_result["status"]:
+                        bot_id = add_result["bot_id"]
+                        TCPbot.bots[bot_id].start()
+                        response = f"✅ Thêm bot thành công!\n🤖 Bot ID: {bot_id}\n👤 Tên: {nickname}\n🆔 UID: {uid}\n🔑 Token: {token[:20]}..."
+                    else:
+                        response = f"❌ Thêm bot thất bại!\nLý do: {add_result['message']}"
+                    
+                    telegram_bot.reply_to(message, response)
+                else:
+                    telegram_bot.reply_to(message, "❌ Sai UID hoặc mật khẩu!")
+                    
+            except Exception as e:
+                telegram_bot.reply_to(message, f"❌ Lỗi đăng nhập: {str(e)[:50]}")
+                
         else:
-            response = f"❌ Thêm bot thất bại!\nLý do: {result['message']}"
-        
-        telegram_bot.reply_to(message, response)
+            # ====== ĐỊNH DẠNG TOKEN ======
+            token = input_str
+            result = TCPbot.add_bot(token)
+            
+            if result["status"]:
+                bot_id = result["bot_id"]
+                TCPbot.bots[bot_id].start()
+                response = f"✅ Thêm bot thành công!\nBot ID: {bot_id}\nToken: {token[:20]}..."
+            else:
+                response = f"❌ Thêm bot thất bại!\nLý do: {result['message']}"
+            
+            telegram_bot.reply_to(message, response)
+            
     except Exception as e:
-        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
-
+        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)[:50]}")
+        
 # ====== LỆNH TELEGRAM: /clearfriends ======
 @telegram_bot.message_handler(commands=['clearfriends'])
 def telegram_clear_friends(message):
