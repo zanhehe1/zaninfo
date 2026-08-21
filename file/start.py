@@ -957,13 +957,6 @@ def telegram_start_help_menu(message):
 ├ /autolist ➜ Xem danh sách auto like (Admin)
 └ /delauto {uid} ➜ Xóa khỏi danh sách auto like (Admin)
 
-[ QUYỀN HẠN QUẢN TRỊ ]
-├ /addbot {token} ➜ Thêm bot mới
-├ /kb {botid} {id} ➜ Gửi yêu cầu kết bạn
-├ /xkb {botid} {id} ➜ Hủy yêu cầu kết bạn
-├ /delbot {botid} ➜ Xóa bot khỏi hệ thống
-└ /checkbot ➜ Kiểm tra danh sách bot online
-
 ⚠️ LƯU Ý QUAN TRỌNG:
 • Chỉ quản trị viên mới có thể nhắn tin riêng với bot
 • Người dùng thường vui lòng sử dụng lệnh trong nhóm
