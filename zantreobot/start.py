@@ -4336,25 +4336,26 @@ class BOTMNG:
 TCPbot = BOTMNG()
 app = Flask(__name__)
 
-# ====== LỆNH /START - MENU QUẢN LÝ BOT ======
 @telegram_bot.message_handler(commands=['start', 'help', 'menu'])
-def start_cmd(message):
+def telegram_start_help_menu(message):
     menu_text = """
-<blockquote>
-<b>🤖 BOT MANAGER - QUẢN LÝ BOT</b>
+<blockquote>🤖 BOT MANAGER - QUẢN LÝ BOT
 ━━━━━━━━━━━━━━━━━━━━
 
-<b>👑 ADMIN - QUẢN LÝ BOT</b>
-├ /addbot [token] → Thêm bot mới
+👑 ADMIN - QUẢN LÝ BOT
+├ /addbot [token/uid:pass] → Thêm bot mới
 ├ /delbot [botid/all] → Xóa bot
 ├ /online [botid/all] → Bật bot
 ├ /offline [botid/all] → Tắt bot
 ├ /resetbot [botid/all] → Reset bot
-└ /checkbot → Xem trạng thái
+├ /checkbot → Xem trạng thái
+├ /backup → Backup file bot.json
+├ /uptime → Xem thời gian bot đã chạy
+└ /server → Xem thông tin server
 
 ━━━━━━━━━━━━━━━━━━━━
 
-<b>🤝 KẾT BẠN</b>
+🤝 KẾT BẠN
 ├ /kb [botid] [uid] → kb 1 bot
 ├ /kball [uid] → KB all bot
 ├ /xkb [botid] [uid] → Hủy kb 1 bot
@@ -4362,14 +4363,14 @@ def start_cmd(message):
 
 ━━━━━━━━━━━━━━━━━━━━
 
-<b>📝 BIO</b>
+📝 BIO
 ├ /bio [botid] [bio] → Đổi bio 1 bot
 ├ /bioid [uid] [bio] → Đổi bio theo uid
 └ /bioall [bio] → Đổi bio all bot
 
 ━━━━━━━━━━━━━━━━━━━━
 
-<b>🏠 QD (CLAN)</b>
+🏠 QD (CLAN)
 ├ /voqd [botid] [idqd] → Xin vào clan 1 bot
 ├ /roiqd [botid] [clanid] → Rời clan 1 bot
 ├ /voqdall [idqd] → Xin vào clan all bot
@@ -4377,13 +4378,14 @@ def start_cmd(message):
 
 ━━━━━━━━━━━━━━━━━━━━
 
-<b>🗑️ XÓA BẠN BÈ</b>
+🗑️ XÓA BẠN BÈ
 └ /clearfriends [botid] → Xóa ALL bạn bè
 
 ━━━━━━━━━━━━━━━━━━━━
-📩 <b>Liên hệ:</b> @zanbackj
+📩 Liên hệ: @zanbackj
 </blockquote>
 """
+    
     telegram_bot.reply_to(message, menu_text, parse_mode="HTML")
 
 @telegram_bot.message_handler(commands=['addbot'])
