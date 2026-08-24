@@ -11,53 +11,205 @@ HTML = '''
 <head>
     <meta charset="UTF-8">
     <title>Bot Treo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { background:#0d0d1a; color:#c8d0e0; font-family: Arial; padding:20px; }
-        .container { max-width:900px; margin:0 auto; }
-        .card { background:#14142a; border:1px solid #2a2a4a; border-radius:12px; padding:25px; margin-bottom:20px; }
-        .upload-area { border:2px dashed #3a3a5a; border-radius:10px; padding:40px; text-align:center; cursor:pointer; }
-        .upload-area:hover { border-color:#5a7aff; background:#1a1a3a; }
-        .upload-area input[type="file"] { display:none; }
-        .btn { padding:10px 25px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; margin:5px; }
-        .btn-success { background:#22c55e; color:#fff; }
-        .btn-danger { background:#ef4444; color:#fff; }
-        .btn-gray { background:#2a2a4a; color:#aaa; }
-        .btn-primary { background:#3b5eff; color:#fff; }
-        .log-box { background:#0a0a18; border-radius:8px; padding:15px; max-height:300px; overflow-y:auto; font-family:monospace; font-size:12px; white-space:pre-wrap; color:#7a8aaa; }
-        .status { display:inline-block; padding:5px 15px; border-radius:20px; font-weight:bold; }
-        .online { background:#22c55e33; color:#4ade80; }
-        .offline { background:#ef444433; color:#f87171; }
-        .file-item { display:flex; justify-content:space-between; padding:5px 10px; background:#0a0a18; border-radius:4px; margin:3px 0; }
-        a { color:#5a7aff; cursor:pointer; text-decoration:none; margin:0 10px; }
-        a:hover { text-decoration:underline; }
+        body {
+            background: #0d0d1a;
+            color: #c8d0e0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            padding: 30px 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .card {
+            background: #14142a;
+            border: 1px solid #2a2a4a;
+            border-radius: 16px;
+            padding: 35px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .card h2 {
+            font-size: 32px;
+            font-weight: 600;
+            color: #e0e8f0;
+        }
+        .card h3 {
+            font-size: 20px;
+            font-weight: 500;
+            color: #8a9aba;
+            margin-bottom: 15px;
+        }
+        .upload-area {
+            border: 2px dashed #3a3a5a;
+            border-radius: 14px;
+            padding: 60px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .upload-area:hover {
+            border-color: #5a7aff;
+            background: #1a1a3a;
+        }
+        .upload-area .icon {
+            font-size: 56px;
+            color: #3a3a5a;
+        }
+        .upload-area .title {
+            font-size: 22px;
+            color: #5a7aaa;
+            margin: 15px 0 5px;
+        }
+        .upload-area .file-name {
+            color: #7a8aaa;
+            font-size: 18px;
+            margin-top: 10px;
+        }
+        .upload-area input[type="file"] { display: none; }
+        .status-box {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 20px 25px;
+            background: #0a0a18;
+            border-radius: 12px;
+            margin-top: 15px;
+        }
+        .status-box .dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .dot.online { background: #4ade80; box-shadow: 0 0 20px #4ade8055; }
+        .dot.offline { background: #f87171; box-shadow: 0 0 20px #f8717155; }
+        .status-box .label {
+            font-size: 18px;
+            color: #8a9aba;
+        }
+        .status-box .value {
+            font-size: 20px;
+            color: #e0e8f0;
+            font-weight: 600;
+        }
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .btn {
+            padding: 14px 35px;
+            border: none;
+            border-radius: 10px;
+            font-size: 17px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+        .btn:hover { transform: scale(1.03); }
+        .btn-success { background: #22c55e; color: #fff; }
+        .btn-success:hover { background: #16a34a; }
+        .btn-danger { background: #ef4444; color: #fff; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-gray { background: #2a2a4a; color: #aaa; }
+        .btn-gray:hover { background: #3a3a5a; }
+        .btn-primary { background: #3b5eff; color: #fff; }
+        .btn-primary:hover { background: #2a4aee; }
+        .link-group {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        .link-group a {
+            color: #5a7aff;
+            cursor: pointer;
+            font-size: 16px;
+            text-decoration: none;
+        }
+        .link-group a:hover { text-decoration: underline; }
+        .log-box {
+            background: #0a0a18;
+            border-radius: 12px;
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 15px;
+            white-space: pre-wrap;
+            color: #7a8aaa;
+            line-height: 1.8;
+        }
+        .log-box::-webkit-scrollbar { width: 6px; }
+        .log-box::-webkit-scrollbar-thumb { background: #3a3a5a; border-radius: 3px; }
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 18px;
+            background: #0a0a18;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            font-size: 16px;
+        }
+        .file-item .name { color: #a0b0d0; }
+        .file-item .size { color: #6a7a9a; }
+        #uploadStatus {
+            color: #4ade80;
+            font-size: 17px;
+            margin-top: 12px;
+        }
+        @media (max-width: 600px) {
+            .card { padding: 20px; }
+            .card h2 { font-size: 24px; }
+            .btn { padding: 12px 20px; font-size: 15px; width: 100%; }
+            .btn-group { flex-direction: column; }
+            .upload-area { padding: 40px 15px; }
+        }
     </style>
 </head>
 <body>
 <div class="container">
+
     <div class="card">
-        <h2>🤖 Treo Bot</h2>
-        <span class="status {{ 'online' if status=='online' else 'offline' }}">{{ status }}</span>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+            <h2>🤖 Treo Bot</h2>
+            <div style="display:flex; align-items:center; gap:15px;">
+                <span class="status-box" style="margin:0; padding:10px 20px;">
+                    <span class="dot {{ 'online' if status=='online' else 'offline' }}"></span>
+                    <span class="value">{{ status }}</span>
+                </span>
+            </div>
+        </div>
     </div>
 
     <div class="card">
         <h3>📤 Upload ZIP</h3>
         <div class="upload-area" onclick="document.getElementById('fileInput').click()">
-            <div style="font-size:40px;">📁</div>
-            <div>Chọn file ZIP</div>
-            <div id="fileName" style="color:#6a7a9a;">Chưa chọn file</div>
+            <div class="icon">📁</div>
+            <div class="title">Chọn file ZIP</div>
+            <div class="file-name" id="fileName">Chưa chọn file</div>
             <input type="file" id="fileInput" accept=".zip" onchange="uploadFile(this)">
         </div>
-        <div id="uploadStatus" style="color:#4ade80; margin-top:10px;"></div>
+        <div id="uploadStatus"></div>
     </div>
 
     <div class="card">
-        <button class="btn btn-success" onclick="runBot()">▶ Run</button>
-        <button class="btn btn-danger" onclick="stopBot()">⏹ Stop</button>
-        <button class="btn btn-gray" onclick="viewLogs()">📄 Logs</button>
-        <button class="btn btn-gray" onclick="viewFiles()">📂 Files</button>
-        <a onclick="downloadBot()">⬇ Download</a>
-        <a onclick="deleteBot()">🗑 Delete</a>
+        <div class="btn-group">
+            <button class="btn btn-success" onclick="runBot()">▶ Run</button>
+            <button class="btn btn-danger" onclick="stopBot()">⏹ Stop</button>
+            <button class="btn btn-gray" onclick="viewLogs()">📄 Logs</button>
+            <button class="btn btn-gray" onclick="viewFiles()">📂 Files</button>
+        </div>
+        <div class="link-group">
+            <a onclick="downloadBot()">⬇ Download</a>
+            <a onclick="deleteBot()">🗑 Delete</a>
+        </div>
     </div>
 
     <div class="card">
@@ -69,6 +221,7 @@ HTML = '''
         <h3>📂 Files</h3>
         <div id="fileList"></div>
     </div>
+
 </div>
 
 <script>
@@ -93,7 +246,7 @@ function viewFiles() {
     if (card.style.display === 'block') { card.style.display = 'none'; return; }
     fetch('/files').then(r=>r.json()).then(data => {
         let html = '';
-        data.forEach(f => html += `<div class="file-item"><span>📄 ${f.name}</span><span>${(f.size/1024).toFixed(1)} KB</span></div>`);
+        data.forEach(f => html += `<div class="file-item"><span class="name">📄 ${f.name}</span><span class="size">${(f.size/1024).toFixed(1)} KB</span></div>`);
         document.getElementById('fileList').innerHTML = html || '📭 Trống';
         card.style.display = 'block';
     });
