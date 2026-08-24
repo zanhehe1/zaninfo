@@ -49,7 +49,6 @@ HTML = '''
             flex: 1 1 200px;
         }
         .file-item-upload .name { color:#a0b0d0; font-weight:500; }
-        .file-item-upload .size { color:#6a7a9a; font-size:13px; }
         .file-item-upload .remove { color:#f87171; cursor:pointer; margin-left:auto; }
         .file-item-upload .remove:hover { color:#ef4444; }
         .status-box {
@@ -146,11 +145,11 @@ HTML = '''
 
     <div class="card">
         <h3>📤 Upload file</h3>
-        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+        <div class="upload-area" id="uploadArea">
             <div class="icon">📄</div>
-            <div class="title">Chọn file (start.py, requirements.txt, bot.json...)</div>
+            <div class="title">Nhấn để chọn file</div>
             <div class="file-name" id="fileName">Chưa chọn file</div>
-            <input type="file" id="fileInput" multiple onchange="uploadFiles(this)">
+            <input type="file" id="fileInput" multiple style="display:block; margin:10px auto; width:100%; max-width:300px; padding:10px; background:#0a0a18; border:1px solid #2a2a4a; border-radius:8px; color:#c8d0e0; cursor:pointer;">
         </div>
         <div id="uploadStatus" style="color:#4ade80; margin-top:12px;"></div>
         <div id="uploadError" style="color:#f87171; margin-top:12px;"></div>
@@ -191,8 +190,8 @@ function showToast(msg, type) {
     setTimeout(() => { toast.style.display = 'none'; }, 4000);
 }
 
-function uploadFiles(input) {
-    const files = input.files;
+document.getElementById('fileInput').addEventListener('change', function(e) {
+    const files = this.files;
     if (!files.length) return;
     const formData = new FormData();
     let names = [];
@@ -212,7 +211,6 @@ function uploadFiles(input) {
                 showToast('✅ Upload thành công!', 'success');
                 updateStatus();
                 viewFiles();
-                // Hiển thị danh sách file đã upload
                 let html = '';
                 data.files.forEach(f => {
                     html += `<div class="file-item-upload">
@@ -230,7 +228,7 @@ function uploadFiles(input) {
             document.getElementById('uploadError').textContent = '❌ Lỗi: ' + err;
             showToast('❌ Lỗi kết nối!', 'error');
         });
-}
+});
 
 function deleteFile(filename) {
     if(!confirm('Xóa file ' + filename + '?')) return;
@@ -240,7 +238,6 @@ function deleteFile(filename) {
             if(data.status === 'success') {
                 showToast('🗑 Đã xóa ' + filename, 'success');
                 viewFiles();
-                // Cập nhật danh sách hiển thị
                 const items = document.querySelectorAll('.file-item-upload');
                 for(let item of items) {
                     if(item.querySelector('.name').textContent.includes(filename)) {
@@ -349,7 +346,6 @@ def run():
         return 'Bot đang chạy!'
     os.makedirs(BOT_DIR, exist_ok=True)
     
-    # Tìm start.py
     start_file = None
     for root, dirs, files in os.walk(BOT_DIR):
         if 'start.py' in files:
