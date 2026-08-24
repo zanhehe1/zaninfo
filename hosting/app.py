@@ -200,7 +200,7 @@ function uploadFile(input) {
     fetch('/upload', {method:'POST', body:formData})
         .then(res => res.text())
         .then(msg => {
-            if (msg.includes('thành công')) {
+            if (msg.includes('thành công') || msg.includes('success')) {
                 document.getElementById('uploadStatus').textContent = '✅ ' + msg;
                 document.getElementById('fileName').textContent = file.name + ' ✅';
                 showToast('✅ Upload thành công!', 'success');
@@ -316,20 +316,32 @@ def run():
     if get_status() == 'online':
         return 'Bot đang chạy!'
     os.makedirs(BOT_DIR, exist_ok=True)
+    
+    # ====== TÌM start.py TRONG TẤT CẢ THƯ MỤC CON (KHÔNG GIỚI HẠN ĐỘ SÂU) ======
     start_file = None
     for root, dirs, files in os.walk(BOT_DIR):
         if 'start.py' in files:
             start_file = os.path.join(root, 'start.py')
             break
+    
     if not start_file:
         return '❌ Không tìm thấy start.py trong file ZIP'
+    
+    # ====== CHẠY BOT TỪ ĐÚNG THƯ MỤC CHỨA start.py ======
     log_path = os.path.join(BOT_DIR, 'bot.log')
     with open(log_path, 'w') as f:
         f.write(f'✅ Bot started at {time.ctime()}\n')
-    proc = subprocess.Popen(['python', start_file], cwd=os.path.dirname(start_file),
-                            stdout=open(log_path, 'a'), stderr=subprocess.STDOUT)
+        f.write(f'📁 File path: {start_file}\n')
+        f.write(f'📁 Working dir: {os.path.dirname(start_file)}\n')
+    
+    proc = subprocess.Popen(
+        ['python', start_file], 
+        cwd=os.path.dirname(start_file),  # 👈 CHẠY TỪ THƯ MỤC CHỨA start.py
+        stdout=open(log_path, 'a'), 
+        stderr=subprocess.STDOUT
+    )
     BOT_PID = proc.pid
-    return '✅ Bot started!'
+    return f'✅ Bot started! (found: {start_file})'
 
 @app.route('/stop')
 def stop():
