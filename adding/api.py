@@ -3,11 +3,26 @@ import requests
 import json
 import time
 import base64
+import threading
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 
 app = Flask(__name__)
 
+# ====== KEEP ALIVE ======
+def keep_alive():
+    url = "https://zankb.onrender.com/"
+    while True:
+        try:
+            response = requests.get(url, timeout=10)
+            print(f"[KEEP ALIVE] ✅ Ping thành công - Status: {response.status_code}")
+        except Exception as e:
+            print(f"[KEEP ALIVE] ❌ Lỗi: {e}")
+        time.sleep(600)  # 10 phút
+
+threading.Thread(target=keep_alive, daemon=True).start()
+
+# ====== CODE API ======
 KEY = bytes([89, 103, 38, 116, 99, 37, 68, 69, 117, 104, 54, 37, 90, 99, 94, 56])
 IV = bytes([54, 111, 121, 90, 68, 114, 50, 50, 69, 51, 121, 99, 104, 106, 77, 37])
 
@@ -208,9 +223,6 @@ def api_token():
         
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
-
-# Vercel cần biến app
-app = app
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=2010)
