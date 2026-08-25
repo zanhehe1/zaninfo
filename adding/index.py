@@ -8,11 +8,9 @@ from Crypto.Util.Padding import pad
 
 app = Flask(__name__)
 
-# ====== KEY AES ======
 KEY = bytes([89, 103, 38, 116, 99, 37, 68, 69, 117, 104, 54, 37, 90, 99, 94, 56])
 IV = bytes([54, 111, 121, 90, 68, 114, 50, 50, 69, 51, 121, 99, 104, 106, 77, 37])
 
-# ====== MÃ HÓA ======
 def aes_encrypt(data):
     cipher = AES.new(KEY, AES.MODE_CBC, IV)
     return cipher.encrypt(pad(data, 16))
@@ -50,7 +48,6 @@ def encrypt_payload(plain_text):
     cipher = AES.new(KEY, AES.MODE_CBC, IV)
     return cipher.encrypt(pad(plain_text, 16))
 
-# ====== LẤY TOKEN ======
 def get_access_token(uid, password):
     try:
         url = "https://100067.connect.garena.com/oauth/guest/token/grant"
@@ -75,7 +72,6 @@ def get_access_token(uid, password):
     except:
         return None
 
-# ====== GỬI KẾT BẠN ======
 def send_friend_request(token, target_uid):
     encrypted_id = encrypt_id(target_uid)
     if not encrypted_id:
@@ -110,7 +106,6 @@ def send_friend_request(token, target_uid):
     else:
         return {'status': 'error', 'message': f'Lỗi: {response.status_code}'}
 
-# ====== XÓA KẾT BẠN ======
 def remove_friend_request(token, target_uid):
     encrypted_id = encrypt_id(target_uid)
     if not encrypted_id:
@@ -143,23 +138,19 @@ def remove_friend_request(token, target_uid):
     else:
         return {'status': 'error', 'message': f'Lỗi: {response.status_code}'}
 
-# ====== HOME ======
 @app.route('/')
 def home():
     return jsonify({
         'status': 'online',
-        'name': 'Zan FF API',
-        'version': '2.0.0',
+        'name': 'Zan KB API',
+        'version': '1.0.0',
         'endpoints': {
             '/kb': 'Gửi kết bạn (uid+pass)',
             '/xkb': 'Xóa kết bạn (uid+pass)',
-            '/token': 'Lấy token (uid+pass)',
-            '/add': 'Gửi kết bạn (token)',
-            '/remove': 'Xóa kết bạn (token)'
+            '/token': 'Lấy token (uid+pass)'
         }
     })
 
-# ====== API: GỬI KẾT BẠN ======
 @app.route('/kb', methods=['GET'])
 def api_kb():
     try:
@@ -180,7 +171,6 @@ def api_kb():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-# ====== API: XÓA KẾT BẠN ======
 @app.route('/xkb', methods=['GET'])
 def api_xkb():
     try:
@@ -201,7 +191,6 @@ def api_xkb():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-# ====== API: LẤY TOKEN ======
 @app.route('/token', methods=['GET'])
 def api_token():
     try:
@@ -220,37 +209,8 @@ def api_token():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-# ====== API: GỬI KẾT BẠN BẰNG TOKEN ======
-@app.route('/add', methods=['GET'])
-def api_add():
-    try:
-        token = request.args.get('token')
-        target = request.args.get('target')
-        
-        if not token or not target:
-            return jsonify({'status': 'error', 'message': 'Thiếu token hoặc target'}), 400
-        
-        result = send_friend_request(token, target)
-        return jsonify(result)
-        
-    except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
-
-# ====== API: XÓA KẾT BẠN BẰNG TOKEN ======
-@app.route('/remove', methods=['GET'])
-def api_remove():
-    try:
-        token = request.args.get('token')
-        target = request.args.get('target')
-        
-        if not token or not target:
-            return jsonify({'status': 'error', 'message': 'Thiếu token hoặc target'}), 400
-        
-        result = remove_friend_request(token, target)
-        return jsonify(result)
-        
-    except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+# Vercel cần biến app
+app = app
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=2010)
