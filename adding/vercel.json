@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "adding/index.py": {
+      "runtime": "python3.11"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/adding/index.py"
+    }
+  ]
+}
