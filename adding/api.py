@@ -3,29 +3,23 @@ import requests
 import json
 import time
 import base64
+import random
+import os
 import threading
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 
 app = Flask(__name__)
 
-# ====== KEEP ALIVE ======
-def keep_alive():
-    url = "https://zankb.onrender.com/"
-    while True:
-        try:
-            response = requests.get(url, timeout=10)
-            print(f"[KEEP ALIVE] ✅ Ping thành công - Status: {response.status_code}")
-        except Exception as e:
-            print(f"[KEEP ALIVE] ❌ Lỗi: {e}")
-        time.sleep(600)  # 10 phút
-
-threading.Thread(target=keep_alive, daemon=True).start()
-
-# ====== CODE API ======
+# ====== KEY AES ======
 KEY = bytes([89, 103, 38, 116, 99, 37, 68, 69, 117, 104, 54, 37, 90, 99, 94, 56])
 IV = bytes([54, 111, 121, 90, 68, 114, 50, 50, 69, 51, 121, 99, 104, 106, 77, 37])
 
+# ====== CẤU HÌNH KEEP ALIVE ======
+KEEP_ALIVE_URL = "https://zankb.onrender.com/"
+KEEP_ALIVE_INTERVAL = 600  # 10 phút
+
+# ====== MÃ HÓA ======
 def aes_encrypt(data):
     cipher = AES.new(KEY, AES.MODE_CBC, IV)
     return cipher.encrypt(pad(data, 16))
@@ -63,6 +57,7 @@ def encrypt_payload(plain_text):
     cipher = AES.new(KEY, AES.MODE_CBC, IV)
     return cipher.encrypt(pad(plain_text, 16))
 
+# ====== LẤY TOKEN ======
 def get_access_token(uid, password):
     try:
         url = "https://100067.connect.garena.com/oauth/guest/token/grant"
@@ -82,11 +77,13 @@ def get_access_token(uid, password):
         }
         resp = requests.post(url, headers=headers, data=data, timeout=15, verify=False)
         if resp.status_code == 200:
-            return resp.json().get('access_token')
-        return None
+            result = resp.json()
+            return result.get('access_token'), result.get('open_id')
+        return None, None
     except:
-        return None
+        return None, None
 
+# ====== GỬI KẾT BẠN ======
 def send_friend_request(token, target_uid):
     encrypted_id = encrypt_id(target_uid)
     if not encrypted_id:
@@ -104,55 +101,45 @@ def send_friend_request(token, target_uid):
         "User-Agent": "Dalvik/2.1.0"
     }
     
-    response = requests.post(
+    domains = [
         "https://clientbp.ggpolarbear.com/RequestAddingFriend",
-        data=encrypted_payload,
-        headers=headers,
-        timeout=10,
-        verify=False
-    )
+        "https://clientbp.ggwhitehawk.com/RequestAddingFriend",
+        "https://clientbp.ggpbn.com/RequestAddingFriend",
+    ]
     
-    if response.status_code == 200:
-        return {'status': 'success', 'message': 'Gửi kết bạn thành công!'}
-    elif "already friends" in response.text.lower():
-        return {'status': 'error', 'message': 'Đã là bạn bè!'}
-    elif "blocked" in response.text.lower():
-        return {'status': 'error', 'message': 'Bạn đã bị chặn!'}
-    else:
-        return {'status': 'error', 'message': f'Lỗi: {response.status_code}'}
+    for url in domains:
+        try:
+            response = requests.post(url, data=encrypted_payload, headers=headers, timeout=10, verify=False)
+            if response.status_code == 200:
+                return {'status': 'success', 'message': 'Gửi kết bạn thành công!'}
+            text = response.text
+            if "already friends" in text.lower():
+                return {'status': 'error', 'message': 'Đã là bạn bè!'}
+            if "blocked" in text.lower():
+                return {'status': 'error', 'message': 'Bạn đã bị chặn!'}
+        except:
+            continue
+    
+    return {'status': 'error', 'message': 'Không kết nối được server'}
 
-def remove_friend_request(token, target_uid):
-    encrypted_id = encrypt_id(target_uid)
-    if not encrypted_id:
-        return {'status': 'error', 'message': 'Mã hóa UID thất bại'}
-    
-    payload = f"08a7c4839f1e10{encrypted_id}1802"
-    encrypted_payload = encrypt_payload(payload)
-    
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "X-Unity-Version": "2018.4.11f1",
-        "X-GA": "v1 1",
-        "ReleaseVersion": "OB54",
-        "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": "Dalvik/2.1.0"
-    }
-    
-    response = requests.post(
-        "https://clientbp.ggpolarbear.com/RemoveFriend",
-        data=encrypted_payload,
-        headers=headers,
-        timeout=10,
-        verify=False
-    )
-    
-    if response.status_code == 200:
-        return {'status': 'success', 'message': 'Xóa kết bạn thành công!'}
-    elif "not friend" in response.text.lower():
-        return {'status': 'error', 'message': 'Không phải bạn bè!'}
-    else:
-        return {'status': 'error', 'message': f'Lỗi: {response.status_code}'}
+# ====== KEEP ALIVE FUNCTION ======
+def keep_alive():
+    """Gọi API mỗi 10 phút để giữ server hoạt động"""
+    while True:
+        try:
+            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Đang gọi keep-alive: {KEEP_ALIVE_URL}")
+            response = requests.get(KEEP_ALIVE_URL, timeout=10)
+            if response.status_code == 200:
+                print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] ✓ Keep-alive thành công")
+            else:
+                print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] ✗ Keep-alive thất bại (status: {response.status_code})")
+        except Exception as e:
+            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] ✗ Lỗi keep-alive: {str(e)}")
+        
+        # Đợi 10 phút
+        time.sleep(KEEP_ALIVE_INTERVAL)
 
+# ====== API HOME ======
 @app.route('/')
 def home():
     return jsonify({
@@ -166,6 +153,7 @@ def home():
         }
     })
 
+# ====== API: GỬI KẾT BẠN ======
 @app.route('/kb', methods=['GET'])
 def api_kb():
     try:
@@ -176,7 +164,7 @@ def api_kb():
         if not uid or not password or not target:
             return jsonify({'status': 'error', 'message': 'Thiếu uid, password hoặc target'}), 400
         
-        token = get_access_token(uid, password)
+        token, open_id = get_access_token(uid, password)
         if not token:
             return jsonify({'status': 'error', 'message': 'Sai UID hoặc mật khẩu'}), 400
         
@@ -186,6 +174,7 @@ def api_kb():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
+# ====== API: XÓA KẾT BẠN ======
 @app.route('/xkb', methods=['GET'])
 def api_xkb():
     try:
@@ -196,16 +185,44 @@ def api_xkb():
         if not uid or not password or not target:
             return jsonify({'status': 'error', 'message': 'Thiếu uid, password hoặc target'}), 400
         
-        token = get_access_token(uid, password)
+        token, open_id = get_access_token(uid, password)
         if not token:
             return jsonify({'status': 'error', 'message': 'Sai UID hoặc mật khẩu'}), 400
         
-        result = remove_friend_request(token, target)
-        return jsonify(result)
+        # Xóa kết bạn
+        encrypted_id = encrypt_id(target)
+        if not encrypted_id:
+            return jsonify({'status': 'error', 'message': 'Mã hóa UID thất bại'}), 400
+        
+        payload = f"08a7c4839f1e10{encrypted_id}1802"
+        encrypted_payload = encrypt_payload(payload)
+        
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "X-Unity-Version": "2018.4.11f1",
+            "X-GA": "v1 1",
+            "ReleaseVersion": "OB54",
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": "Dalvik/2.1.0"
+        }
+        
+        response = requests.post(
+            "https://clientbp.ggpolarbear.com/RemoveFriend",
+            data=encrypted_payload,
+            headers=headers,
+            timeout=10,
+            verify=False
+        )
+        
+        if response.status_code == 200:
+            return jsonify({'status': 'success', 'message': 'Xóa kết bạn thành công!'})
+        else:
+            return jsonify({'status': 'error', 'message': f'Lỗi: {response.status_code}'})
         
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
+# ====== API: LẤY TOKEN ======
 @app.route('/token', methods=['GET'])
 def api_token():
     try:
@@ -215,14 +232,26 @@ def api_token():
         if not uid or not password:
             return jsonify({'status': 'error', 'message': 'Thiếu uid hoặc password'}), 400
         
-        token = get_access_token(uid, password)
+        token, open_id = get_access_token(uid, password)
         if not token:
             return jsonify({'status': 'error', 'message': 'Sai UID hoặc mật khẩu'}), 400
         
-        return jsonify({'status': 'success', 'access_token': token})
+        return jsonify({
+            'status': 'success',
+            'access_token': token,
+            'open_id': open_id,
+            'uid': uid
+        })
         
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
+# ====== KHỞI CHẠY ======
 if __name__ == '__main__':
+    # Khởi chạy thread keep-alive
+    keep_alive_thread = threading.Thread(target=keep_alive, daemon=True)
+    keep_alive_thread.start()
+    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] ✓ Đã khởi tạo keep-alive (mỗi {KEEP_ALIVE_INTERVAL//60} phút)")
+    
+    # Chạy Flask server
     app.run(host='0.0.0.0', port=2010)
