@@ -7,173 +7,41 @@ import ssl
 import gzip
 import http.client
 import threading
-import random
 from io import BytesIO
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 from datetime import datetime
 from protobuf_decoder.protobuf_decoder import Parser
 from google.protobuf.timestamp_pb2 import Timestamp
+from my_message_pb2 import MyMessage
+
+# Import từ byte
+from byte import Ua, CrEaTe_ProTo, Fix_PackEt, Encrypt_ID, Key, Iv
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 app = Flask(__name__)
 
-# ====== MÀU SẮC ======
-RED = "\033[91m"
-GREEN = "\033[92m"
-YELLOW = "\033[93m"
-CYAN = "\033[96m"
-WHITE = "\033[97m"
-RESET = "\033[0m"
-
-# ====== KEY AES ======
-Key = bytes([89, 103, 38, 116, 99, 37, 68, 69, 117, 104, 54, 37, 90, 99, 94, 56])
-Iv = bytes([54, 111, 121, 90, 68, 114, 50, 50, 69, 51, 121, 99, 104, 106, 77, 37])
-
-# ====== VERSION CỐ ĐỊNH ======
 VERSION = "1.130.1"
 RELEASE_VERSION = "OB54"
 
-# Cache token
 token_cache = {}
-
-def Ua():
-    models = [
-        'SM-A125F', 'SM-A225F', 'SM-A325M', 'SM-A515F', 'SM-A725F', 
-        'Redmi 9A', 'Redmi 9C', 'POCO M3', 'RMX2185', 'RMX3085',
-        'SM-S908E', 'SM-S918B', 'ASUS_Z01QD', 'SM-G998B'
-    ]
-    android = random.choice(['11', '12', '13'])
-    model = random.choice(models)
-    return f"GarenaMSDK/5.8.0P1({model};Android {android};en-US;USA);"
 
 def EnC_AEs(HeX):
     cipher = AES.new(Key, AES.MODE_CBC, Iv)
     return cipher.encrypt(pad(bytes.fromhex(HeX), AES.block_size)).hex()
 
-def EnC_Vr(N):
-    if N < 0:
-        return ''
-    H = []
-    while True:
-        BesTo = N & 0x7F
-        N >>= 7
-        if N:
-            BesTo |= 0x80
-        H.append(BesTo)
-        if not N:
-            break
-    return bytes(H)
-
-def CrEaTe_VarianT(field_number, value):
-    field_header = (field_number << 3) | 0
-    return EnC_Vr(field_header) + EnC_Vr(value)
-
-def CrEaTe_LenGTh(field_number, value):
-    field_header = (field_number << 3) | 2
-    encoded_value = value.encode() if isinstance(value, str) else value
-    return EnC_Vr(field_header) + EnC_Vr(len(encoded_value)) + encoded_value
-
-def CrEaTe_ProTo(fields):
-    packet = bytearray()
-    for field, value in fields.items():
-        if isinstance(value, dict):
-            nested_packet = CrEaTe_ProTo(value)
-            packet.extend(CrEaTe_LenGTh(field, nested_packet))
-        elif isinstance(value, int):
-            packet.extend(CrEaTe_VarianT(field, value))
-        elif isinstance(value, str) or isinstance(value, bytes):
-            packet.extend(CrEaTe_LenGTh(field, value))
-    return packet
-
-def DecodE_HeX(H):
-    R = hex(H)
-    F = str(R)[2:]
-    if len(F) == 1:
-        F = "0" + F
-        return F
-    else:
-        return F
-
-def Fix_PackEt(parsed_results):
-    result_dict = {}
-    for result in parsed_results:
-        field_data = {}
-        field_data['wire_type'] = result.wire_type
-        if result.wire_type == "varint":
-            field_data['data'] = result.data
-        if result.wire_type == "string":
-            field_data['data'] = result.data
-        if result.wire_type == "bytes":
-            field_data['data'] = result.data
-        elif result.wire_type == 'length_delimited':
-            field_data["data"] = Fix_PackEt(result.data.results)
-        result_dict[result.field] = field_data
-    return result_dict
-
 def DeCode_PackEt(input_text):
     try:
-        parsed_results = Parser().parse(input_text)
-        parsed_results_objects = parsed_results
-        parsed_results_dict = Fix_PackEt(parsed_results_objects)
-        json_data = json.dumps(parsed_results_dict)
-        return json_data
+        parsed = Parser().parse(input_text)
+        return json.dumps(Fix_PackEt(parsed))
     except Exception as e:
-        print(f"error {e}")
         return None
 
-def EnC_PacKeT(HeX, K, V):
-    return AES.new(K, AES.MODE_CBC, V).encrypt(pad(bytes.fromhex(HeX), 16)).hex()
-
-def GeneRaTePk(Pk, N, K, V):
-    PkEnc = EnC_PacKeT(Pk, K, V)
-    _ = DecodE_HeX(int(len(PkEnc) // 2))
-    if len(_) == 2:
-        HeadEr = N + "000000"
-    elif len(_) == 3:
-        HeadEr = N + "00000"
-    elif len(_) == 4:
-        HeadEr = N + "0000"
-    elif len(_) == 5:
-        HeadEr = N + "000"
-    return bytes.fromhex(HeadEr + _ + PkEnc)
-
-def Encrypt_ID(x):
-    dec = ['80','81','82','83','84','85','86','87','88','89','8a','8b','8c','8d','8e','8f','90','91','92','93','94','95','96','97','98','99','9a','9b','9c','9d','9e','9f','a0','a1','a2','a3','a4','a5','a6','a7','a8','a9','aa','ab','ac','ad','ae','af','b0','b1','b2','b3','b4','b5','b6','b7','b8','b9','ba','bb','bc','bd','be','bf','c0','c1','c2','c3','c4','c5','c6','c7','c8','c9','ca','cb','cc','cd','ce','cf','d0','d1','d2','d3','d4','d5','d6','d7','d8','d9','da','db','dc','dd','de','df','e0','e1','e2','e3','e4','e5','e6','e7','e8','e9','ea','eb','ec','ed','ee','ef','f0','f1','f2','f3','f4','f5','f6','f7','f8','f9','fa','fb','fc','fd','fe','ff']
-    xxx = ['1','01','02','03','04','05','06','07','08','09','0a','0b','0c','0d','0e','0f','10','11','12','13','14','15','16','17','18','19','1a','1b','1c','1d','1e','1f','20','21','22','23','24','25','26','27','28','29','2a','2b','2c','2d','2e','2f','30','31','32','33','34','35','36','37','38','39','3a','3b','3c','3d','3e','3f','40','41','42','43','44','45','46','47','48','49','4a','4b','4c','4d','4e','4f','50','51','52','53','54','55','56','57','58','59','5a','5b','5c','5d','5e','5f','60','61','62','63','64','65','66','67','68','69','6a','6b','6c','6d','6e','6f','70','71','72','73','74','75','76','77','78','79','7a','7b','7c','7d','7e','7f']
-    try:
-        x = int(x)
-        x_float = float(x) / 128
-        if x_float > 128:
-            x_float /= 128
-            if x_float > 128:
-                x_float /= 128
-                if x_float > 128:
-                    x_float /= 128
-                    strx = int(x_float)
-                    y = (x_float - strx) * 128
-                    z = (y - int(y)) * 128
-                    n = (z - int(z)) * 128
-                    m = (n - int(n)) * 128
-                    return dec[int(m)] + dec[int(n)] + dec[int(z)] + dec[int(y)] + xxx[int(x_float)] 
-                else:
-                    strx = int(x_float)
-                    y = (x_float - strx) * 128
-                    z = (y - int(y)) * 128
-                    n = (z - int(z)) * 128
-                    return dec[int(n)] + dec[int(z)] + dec[int(y)] + xxx[int(x_float)] 
-        return None 
-    except Exception: 
-        return None
-
-# ====== LẤY ACCESS TOKEN ======
 def get_access_token(uid, password):
     cache_key = f"{uid}:{password}"
-    
-    if cache_key in token_cache:
-        if time.time() - token_cache[cache_key]['timestamp'] < 1800:
-            return token_cache[cache_key]['access_token'], token_cache[cache_key]['open_id']
+    if cache_key in token_cache and time.time() - token_cache[cache_key]['timestamp'] < 1800:
+        return token_cache[cache_key]['access_token'], token_cache[cache_key]['open_id']
     
     url = "https://100067.connect.garena.com/oauth/guest/token/grant"
     headers = {
@@ -185,8 +53,8 @@ def get_access_token(uid, password):
         "X-Client-Version": VERSION,
     }
     data = {
-        "uid": f"{uid}",
-        "password": f"{password}",
+        "uid": str(uid),
+        "password": str(password),
         "response_type": "token",
         "client_type": "2",
         "client_secret": "2ee44819e9b4598845141067b281621874d0d5d7af9d8f7e00c1e54715b7d1e3",
@@ -196,20 +64,16 @@ def get_access_token(uid, password):
         response = requests.post(url, headers=headers, data=data, verify=False, timeout=15)
         if response.status_code == 200:
             result = response.json()
-            access_token = result.get("access_token")
-            open_id = result.get("open_id")
-            
             token_cache[cache_key] = {
-                'access_token': access_token,
-                'open_id': open_id,
+                'access_token': result['access_token'],
+                'open_id': result['open_id'],
                 'timestamp': time.time()
             }
-            return access_token, open_id
+            return result['access_token'], result['open_id']
     except Exception as e:
         print(f"Lỗi: {e}")
     return None, None
 
-# ====== DO MAJOR LOGIN ======
 def do_major_login(payload):
     context = ssl._create_unverified_context()
     conn = http.client.HTTPSConnection("loginbp.ggpolarbear.com", context=context)
@@ -238,18 +102,13 @@ def do_major_login(payload):
     finally:
         conn.close()
 
-# ====== EXTRACT KEY IV ======
 def extract_key_iv(raw_data):
-    class MyMessage:
-        def ParseFromString(self, data):
-            parsed = json.loads(DeCode_PackEt(data.hex()))
-            self.field21 = int(parsed.get("21", {}).get("data", 0))
-            self.field22 = bytes.fromhex(parsed.get("22", {}).get("data", ""))
-            self.field23 = bytes.fromhex(parsed.get("23", {}).get("data", ""))
-    
     my_message = MyMessage()
     my_message.ParseFromString(raw_data)
-    timestamp, key, iv = my_message.field21, my_message.field22, my_message.field23
+    timestamp = my_message.field21
+    key = my_message.field22
+    iv = my_message.field23
+    
     timestamp_obj = Timestamp()
     timestamp_obj.FromNanoseconds(timestamp)
     timestamp_seconds = timestamp_obj.seconds
@@ -257,37 +116,6 @@ def extract_key_iv(raw_data):
     combined_timestamp = timestamp_seconds * 1_000_000_000 + timestamp_nanos
     return combined_timestamp, key, iv
 
-# ====== GET GAME SERVERS ======
-def get_game_servers(jwt_token, payload):
-    url = "https://clientbp.ggpolarbear.com/GetLoginData"
-    headers = {
-        "Expect": "100-continue",
-        "Authorization": f"Bearer {jwt_token}",
-        "X-Unity-Version": "2018.4.11f1",
-        "X-GA": "v1 1",
-        "ReleaseVersion": RELEASE_VERSION,
-        "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": "Dalvik/2.1.0 (Linux; Android 9; G011A Build/PI)",
-        "Host": "clientbp.ggpolarbear.com",
-        "Connection": "close",
-        "Accept-Encoding": "gzip, deflate, br",
-        "X-Client-Version": VERSION,
-    }
-    try:
-        response = requests.post(url, headers=headers, data=payload, verify=False, timeout=10)
-        parsed_data = json.loads(DeCode_PackEt(response.content.hex()))
-        chat_addr = parsed_data["32"]["data"]
-        online_addr = parsed_data["14"]["data"]
-        chat_ip = chat_addr[: len(chat_addr) - 6]
-        online_ip = online_addr[: len(online_addr) - 6]
-        chat_port = chat_addr[len(chat_addr) - 5 :]
-        online_port = online_addr[len(online_addr) - 5 :]
-        return chat_ip, chat_port, online_ip, online_port
-    except Exception as e:
-        print(f"Lỗi: {e}")
-        return None, None, None, None
-
-# ====== GENERATE LOGIN TOKEN ======
 def generate_login_token(uid, password):
     try:
         access_token, open_id = get_access_token(uid, password)
@@ -326,13 +154,11 @@ def generate_login_token(uid, password):
             bot_uid = parsed["1"]["data"]
             jwt_token = parsed["8"]["data"]
             combined_timestamp, key, iv = extract_key_iv(bytes.fromhex(response))
-            chat_ip, chat_port, online_ip, online_port = get_game_servers(jwt_token, encrypted)
-            return jwt_token, key, iv, combined_timestamp, chat_ip, chat_port, online_ip, online_port, bot_uid
+            return jwt_token, key, iv, combined_timestamp, bot_uid
     except Exception as e:
         print(f"Lỗi: {e}")
     return None
 
-# ====== GỬI KẾT BẠN ======
 def SendFriendRequest_HTTP(target_uid, uid, password):
     access_token, open_id = get_access_token(uid, password)
     if not access_token:
@@ -386,7 +212,6 @@ def SendFriendRequest_HTTP(target_uid, uid, password):
     
     return False, "Không kết nối được server"
 
-# ====== API ======
 @app.route('/')
 def home():
     return jsonify({
@@ -397,7 +222,6 @@ def home():
         'endpoints': {
             '/kb': 'Gửi kết bạn (uid, password, target)',
             '/token': 'Lấy token (uid, password)',
-            '/info': 'Thông tin (uid, password)'
         }
     })
 
@@ -415,27 +239,13 @@ def api_kb():
             target = data.get('target')
         
         if not uid or not password or not target:
-            return jsonify({
-                'status': 'error',
-                'message': 'Thiếu uid, password hoặc target'
-            }), 400
+            return jsonify({'status': 'error', 'message': 'Thiếu uid, password hoặc target'}), 400
         
         success, message = SendFriendRequest_HTTP(target, uid, password)
-        
-        return jsonify({
-            'status': 'success' if success else 'error',
-            'message': message,
-            'uid': uid,
-            'target': target,
-            'version': VERSION,
-            'release': RELEASE_VERSION
-        })
+        return jsonify({'status': 'success' if success else 'error', 'message': message})
         
     except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'message': str(e)
-        }), 500
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @app.route('/token', methods=['GET', 'POST'])
 def api_token():
@@ -449,101 +259,26 @@ def api_token():
             password = data.get('password')
         
         if not uid or not password:
-            return jsonify({
-                'status': 'error',
-                'message': 'Thiếu uid hoặc password'
-            }), 400
+            return jsonify({'status': 'error', 'message': 'Thiếu uid hoặc password'}), 400
         
         access_token, open_id = get_access_token(uid, password)
         if not access_token:
-            return jsonify({
-                'status': 'error',
-                'message': 'Sai UID hoặc mật khẩu'
-            }), 400
+            return jsonify({'status': 'error', 'message': 'Sai UID hoặc mật khẩu'}), 400
         
-        return jsonify({
-            'status': 'success',
-            'access_token': access_token,
-            'open_id': open_id,
-            'uid': uid,
-            'version': VERSION,
-            'release': RELEASE_VERSION
-        })
+        return jsonify({'status': 'success', 'access_token': access_token, 'open_id': open_id})
         
     except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'message': str(e)
-        }), 500
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
-@app.route('/info', methods=['GET', 'POST'])
-def api_info():
-    try:
-        if request.method == 'GET':
-            uid = request.args.get('uid')
-            password = request.args.get('password')
-        else:
-            data = request.get_json() or {}
-            uid = data.get('uid')
-            password = data.get('password')
-        
-        if not uid or not password:
-            return jsonify({
-                'status': 'error',
-                'message': 'Thiếu uid hoặc password'
-            }), 400
-        
-        login_data = generate_login_token(uid, password)
-        if not login_data:
-            return jsonify({
-                'status': 'error',
-                'message': 'Login thất bại'
-            }), 400
-        
-        jwt_token, key, iv, timestamp, chat_ip, chat_port, online_ip, online_port, bot_uid = login_data
-        
-        return jsonify({
-            'status': 'success',
-            'uid': uid,
-            'bot_uid': bot_uid,
-            'jwt_token': jwt_token,
-            'chat_server': f"{chat_ip}:{chat_port}",
-            'online_server': f"{online_ip}:{online_port}",
-            'version': VERSION,
-            'release': RELEASE_VERSION
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'message': str(e)
-        }), 500
-
-# ====== KEEP ALIVE ======
 def keep_alive():
-    url = "https://zankb.onrender.com/"
     while True:
         try:
-            response = requests.get(url, timeout=10)
-            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Keep-alive: {response.status_code}")
-        except Exception as e:
-            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Keep-alive error: {e}")
+            requests.get("https://zankb.onrender.com/", timeout=10)
+        except: pass
         time.sleep(600)
 
-# ====== KHỞI CHẠY ======
 if __name__ == '__main__':
     threading.Thread(target=keep_alive, daemon=True).start()
-    
-    print(f"{CYAN}╔═══════════════════════════════════════════════╗{RESET}")
-    print(f"{CYAN}║  {WHITE}ZAN KB API - FREE FIRE{RESET}{CYAN}                  ║{RESET}")
-    print(f"{CYAN}║  {WHITE}Version: {VERSION} | {RELEASE_VERSION}{RESET}{CYAN}          ║{RESET}")
-    print(f"{CYAN}╚═══════════════════════════════════════════════╝{RESET}")
-    print(f"\n{GREEN}✓ Server đang chạy tại http://0.0.0.0:2010{RESET}")
-    print(f"{GREEN}✓ Version: {VERSION} - {RELEASE_VERSION}{RESET}")
-    print(f"\n{CYAN}Endpoints:{RESET}")
-    print(f"  • GET /kb?uid=...&password=...&target=...")
-    print(f"  • GET /token?uid=...&password=...")
-    print(f"  • GET /info?uid=...&password=...")
-    print(f"\n{CYAN}DEV: @zanbackj | TIKTOK: @zanbackj{RESET}\n")
-    
+    print(f"✅ Server chạy tại http://0.0.0.0:2010")
+    print(f"✅ Version: {VERSION} - {RELEASE_VERSION}")
     app.run(host='0.0.0.0', port=2010, debug=False)
