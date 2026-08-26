@@ -1,596 +1,650 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Trợ Lý</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --bg: #0b0c10;
-    --panel: #131519;
-    --panel-2: #1a1d23;
-    --line: #262a32;
-    --text: #eef0f3;
-    --muted: #8a8f9a;
-    --accent: #a78bfa;
-    --accent-2: #34d399;
-    --accent-grad-a: #7c6ef2;
-    --accent-grad-b: #a78bfa;
-    --user-bubble: #262038;
-    --ai-bubble: #16181d;
-    --danger: #f37272;
-    --radius: 16px;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  }
-  .display{ font-family: 'Sora', 'Inter', sans-serif; }
-  * { box-sizing: border-box; }
-  html, body { height: 100%; }
-  body{
-    margin:0;
-    background:
-      radial-gradient(900px 500px at 15% -5%, rgba(124,110,242,0.16) 0%, transparent 60%),
-      radial-gradient(800px 460px at 100% 10%, rgba(52,211,153,0.10) 0%, transparent 55%),
-      radial-gradient(1000px 700px at 50% 120%, rgba(167,139,250,0.08) 0%, transparent 60%),
-      var(--bg);
-    color: var(--text);
-    display:flex;
-    flex-direction:column;
-    height:100vh;
-    overflow:hidden;
-  }
-
-  header{
-    padding: 16px 22px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    border-bottom: 1px solid var(--line);
-    background: rgba(11,12,16,0.7);
-    backdrop-filter: blur(10px);
-    flex-shrink:0;
-  }
-  .brand{
-    display:flex;
-    align-items:center;
-    gap:11px;
-  }
-  .brand .mark{
-    width:32px;height:32px;border-radius:10px;
-    background: linear-gradient(135deg, var(--accent-grad-a), var(--accent-grad-b));
-    display:flex;align-items:center;justify-content:center;
-    box-shadow: 0 0 18px rgba(167,139,250,0.35);
-    flex-shrink:0;
-  }
-  .brand .mark svg{ width:17px; height:17px; }
-  .brand h1{
-    font-size: 15.5px;
-    font-weight: 600;
-    margin:0;
-    letter-spacing: 0.1px;
-  }
-  .brand .status-line{
-    display:flex;
-    align-items:center;
-    gap:5px;
-    font-size: 11.5px;
-    color: var(--muted);
-  }
-  .brand .status-line .pulse{
-    width:6px;height:6px;border-radius:50%;
-    background: var(--accent-2);
-    box-shadow: 0 0 6px var(--accent-2);
-    animation: pulse 2s infinite ease-in-out;
-  }
-  @keyframes pulse{
-    0%,100%{ opacity:1; }
-    50%{ opacity:.4; }
-  }
-  #settingsBtn{
-    background: var(--panel-2);
-    border: 1px solid var(--line);
-    color: var(--text);
-    border-radius: 12px;
-    padding: 9px 15px;
-    font-size: 13px;
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    gap:6px;
-    transition: border-color .15s ease, background .15s ease, transform .1s ease;
-  }
-  #settingsBtn:hover{ border-color: var(--accent); background: #1f222a; transform: translateY(-1px); }
-
-  #chat{
-    flex:1;
-    overflow-y:auto;
-    padding: 24px 16px 12px;
-    display:flex;
-    flex-direction:column;
-    gap: 14px;
-    scroll-behavior:smooth;
-  }
-  #chat::-webkit-scrollbar{ width:8px; }
-  #chat::-webkit-scrollbar-thumb{ background: var(--line); border-radius: 8px; }
-
-  .empty{
-    margin:auto;
-    text-align:center;
-    color: var(--muted);
-    max-width: 380px;
-    animation: fadeUp .5s ease;
-  }
-  @keyframes fadeUp{
-    from{ opacity:0; transform: translateY(10px); }
-    to{ opacity:1; transform: translateY(0); }
-  }
-  .empty .icon{
-    width: 56px; height:56px;
-    margin: 0 auto 16px;
-    border-radius: 18px;
-    background: linear-gradient(135deg, var(--accent-grad-a), var(--accent-grad-b));
-    display:flex; align-items:center; justify-content:center;
-    box-shadow: 0 8px 30px rgba(124,110,242,0.35);
-    font-size: 26px;
-  }
-  .empty h2{
-    color: var(--text);
-    font-size: 19px;
-    margin: 0 0 6px;
-    font-family: 'Sora', sans-serif;
-    font-weight: 600;
-  }
-  .empty p{
-    font-size: 13.5px;
-    line-height:1.5;
-    margin:0;
-  }
-
-  .row{
-    display:flex;
-    max-width: 780px;
-    width:100%;
-    margin: 0 auto;
-    gap: 10px;
-    animation: msgIn .28s cubic-bezier(.2,.8,.2,1);
-  }
-  @keyframes msgIn{
-    from{ opacity:0; transform: translateY(8px); }
-    to{ opacity:1; transform: translateY(0); }
-  }
-  .row.user{ justify-content:flex-end; }
-  .row.ai{ justify-content:flex-start; }
-
-  .bubble{
-    padding: 12px 16px;
-    border-radius: var(--radius);
-    font-size: 14.5px;
-    line-height: 1.6;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    max-width: 78%;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-  }
-  .row.user .bubble{
-    background: linear-gradient(160deg, #2c2547, #221d38);
-    border: 1px solid #3a3160;
-    border-bottom-right-radius: 5px;
-  }
-  .row.ai .bubble{
-    background: var(--ai-bubble);
-    border: 1px solid var(--line);
-    border-bottom-left-radius: 5px;
-  }
-  .row.ai .bubble.error{
-    border-color: var(--danger);
-    color: #ffb3b3;
-    background: rgba(243,114,114,0.06);
-  }
-  .avatar{
-    width: 30px; height:30px;
-    border-radius: 10px;
-    flex-shrink:0;
-    display:flex;align-items:center;justify-content:center;
-    font-size:14px;
-    font-weight:700;
-    margin-top:2px;
-  }
-  .row.ai .avatar{
-    background: linear-gradient(135deg, var(--accent-grad-a), var(--accent-grad-b));
-    color:#fff;
-    box-shadow: 0 4px 14px rgba(124,110,242,0.3);
-  }
-  .row.user .avatar{
-    background: var(--panel-2);
-    border: 1px solid var(--line);
-    color: var(--text);
-  }
-
-  .typing{
-    display:flex; gap:4px; align-items:center; padding: 4px 0;
-  }
-  .typing span{
-    width:6px;height:6px;border-radius:50%;
-    background: var(--muted);
-    animation: bounce 1.2s infinite ease-in-out;
-  }
-  .typing span:nth-child(2){ animation-delay: .15s; }
-  .typing span:nth-child(3){ animation-delay: .3s; }
-  @keyframes bounce{
-    0%, 80%, 100% { transform: translateY(0); opacity:.4; }
-    40% { transform: translateY(-4px); opacity:1; }
-  }
-
-  footer{
-    flex-shrink:0;
-    padding: 14px 16px 20px;
-    border-top: 1px solid var(--line);
-    background: rgba(11,12,16,0.75);
-    backdrop-filter: blur(10px);
-  }
-  #inputBar{
-    max-width: 780px;
-    margin: 0 auto;
-    display:flex;
-    align-items:flex-end;
-    gap: 10px;
-    background: var(--panel-2);
-    border: 1px solid var(--line);
-    border-radius: 20px;
-    padding: 9px 9px 9px 18px;
-    transition: border-color .15s ease, box-shadow .15s ease;
-  }
-  #inputBar:focus-within{
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(167,139,250,0.12);
-  }
-  #msgInput{
-    flex:1;
-    background:transparent;
-    border:none;
-    outline:none;
-    color: var(--text);
-    font-size: 14.5px;
-    resize:none;
-    max-height: 140px;
-    line-height:1.5;
-    padding: 9px 0;
-    font-family: inherit;
-  }
-  #msgInput::placeholder{ color: var(--muted); }
-  #sendBtn{
-    background: linear-gradient(135deg, var(--accent-grad-a), var(--accent-grad-b));
-    border:none;
-    color:white;
-    width:40px;height:40px;
-    border-radius: 14px;
-    cursor:pointer;
-    display:flex;align-items:center;justify-content:center;
-    flex-shrink:0;
-    box-shadow: 0 4px 14px rgba(124,110,242,0.35);
-    transition: transform .12s ease, opacity .15s ease, box-shadow .15s ease;
-  }
-  #sendBtn:hover{ transform: scale(1.06); box-shadow: 0 6px 18px rgba(124,110,242,0.45); }
-  #sendBtn:disabled{ opacity:.35; cursor:not-allowed; transform:none; box-shadow:none; }
-  .hint{
-    max-width:780px;
-    margin: 8px auto 0;
-    font-size: 11.5px;
-    color: var(--muted);
-    text-align:center;
-  }
-
-  /* Settings modal */
-  .overlay{
-    position:fixed; inset:0;
-    background: rgba(5,6,9,0.65);
-    display:none;
-    align-items:center;
-    justify-content:center;
-    z-index: 50;
-    padding: 20px;
-  }
-  .overlay.open{ display:flex; }
-  .modal{
-    background: linear-gradient(160deg, var(--panel), #101216);
-    border: 1px solid var(--line);
-    border-radius: 20px;
-    width: 100%;
-    max-width: 420px;
-    padding: 24px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-  }
-  .modal h3{
-    margin: 0 0 4px;
-    font-size: 16px;
-  }
-  .modal p.sub{
-    margin: 0 0 18px;
-    font-size: 12.5px;
-    color: var(--muted);
-    line-height: 1.5;
-  }
-  .field{ margin-bottom: 14px; }
-  .field label{
-    display:block;
-    font-size: 12.5px;
-    color: var(--muted);
-    margin-bottom: 6px;
-  }
-  .field input, .field select{
-    width:100%;
-    background: var(--panel-2);
-    border: 1px solid var(--line);
-    color: var(--text);
-    padding: 11px 13px;
-    border-radius: 12px;
-    font-size: 13.5px;
-    outline:none;
-    font-family: inherit;
-    transition: border-color .15s ease;
-  }
-  .field input:focus, .field select:focus{ border-color: var(--accent); }
-  .modal-actions{
-    display:flex;
-    gap:10px;
-    margin-top: 18px;
-  }
-  .btn{
-    flex:1;
-    padding: 11px 14px;
-    border-radius: 12px;
-    border:1px solid var(--line);
-    background: var(--panel-2);
-    color: var(--text);
-    font-size: 13.5px;
-    cursor:pointer;
-    font-weight:600;
-    transition: transform .1s ease, filter .15s ease;
-  }
-  .btn.primary{
-    background: linear-gradient(135deg, var(--accent-grad-a), var(--accent-grad-b));
-    border:none;
-    color:white;
-    box-shadow: 0 4px 14px rgba(124,110,242,0.3);
-  }
-  .btn:hover{ filter: brightness(1.1); transform: translateY(-1px); }
-  .status{
-    font-size: 11.5px;
-    margin-top: 10px;
-    color: var(--muted);
-  }
-  .status.ok{ color: var(--accent-2); }
-  .status.err{ color: var(--danger); }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔫 Bắn Súng Online</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a0a;
+            color: #fff;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+        }
+        #gameContainer {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            background: #1a1a2e;
+            position: relative;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+        /* MENU */
+        #menu {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #0a0a0a, #1a0000, #2a0000);
+            position: relative;
+        }
+        #menu h1 {
+            font-size: 64px;
+            color: #ff0000;
+            text-shadow: 0 0 50px rgba(255,0,0,0.6);
+            margin-bottom: 10px;
+            letter-spacing: 4px;
+        }
+        #menu .sub {
+            color: #ff8888;
+            font-size: 18px;
+            margin-bottom: 40px;
+        }
+        .menu-btn {
+            background: linear-gradient(135deg, #ff0000, #cc0000);
+            color: #fff;
+            border: none;
+            padding: 16px 50px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            margin: 8px;
+            transition: 0.3s;
+            min-width: 220px;
+            box-shadow: 0 0 30px rgba(255,0,0,0.3);
+        }
+        .menu-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 60px rgba(255,0,0,0.6);
+        }
+        .menu-btn.outline {
+            background: transparent;
+            border: 2px solid #ff0000;
+            box-shadow: none;
+        }
+        .menu-btn.outline:hover {
+            background: #ff0000;
+        }
+        #inviteLink {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            color: #aaa;
+            font-size: 14px;
+            width: 400px;
+            text-align: center;
+        }
+        #inviteLink span {
+            color: #ff0000;
+            cursor: pointer;
+        }
+        #inviteLink span:hover {
+            text-decoration: underline;
+        }
+        /* HUD */
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: none;
+            justify-content: space-between;
+            z-index: 10;
+            pointer-events: none;
+        }
+        #hud.active { display: flex; }
+        .hud-left, .hud-right {
+            background: rgba(0,0,0,0.7);
+            padding: 12px 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,0,0,0.3);
+            backdrop-filter: blur(4px);
+        }
+        .hud-left { font-size: 16px; }
+        .hud-right { font-size: 20px; font-weight: bold; text-align: right; }
+        .hp-bar {
+            width: 200px;
+            height: 20px;
+            background: #333;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 4px;
+            border: 1px solid #ff000055;
+        }
+        .hp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0000, #ff4444);
+            width: 100%;
+            transition: width 0.1s;
+            border-radius: 10px;
+        }
+        .hp-label { color: #ff6666; font-weight: bold; }
+        .score-label { color: #ffd700; }
+        /* DEATH OVERLAY */
+        #deathOverlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 20;
+        }
+        #deathOverlay.active { display: flex; }
+        #deathOverlay h2 { color: #ff0000; font-size: 48px; text-shadow: 0 0 40px rgba(255,0,0,0.8); }
+        #deathOverlay p { color: #ff8888; font-size: 20px; margin: 20px 0; }
+        #deathOverlay .menu-btn { margin: 5px; }
+        /* RESPONSIVE */
+        @media(max-width:700px){
+            #menu h1 { font-size: 36px; }
+            .menu-btn { padding: 12px 30px; font-size: 16px; min-width: 160px; }
+            #inviteLink { width: 90%; font-size: 12px; }
+            .hud-left, .hud-right { padding: 8px 14px; font-size: 14px; }
+            .hp-bar { width: 120px; height: 16px; }
+        }
+    </style>
 </head>
 <body>
 
-<header>
-  <div class="brand">
-    <div class="mark">
-      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 2L14.2 9.2L21 12L14.2 14.8L12 22L9.8 14.8L3 12L9.8 9.2L12 2Z" fill="white"/>
-      </svg>
-    </div>
-    <div>
-      <h1 class="display">Trợ Lý</h1>
-      <div class="status-line"><span class="pulse"></span><span>Đang hoạt động</span></div>
-    </div>
-  </div>
-  <button id="settingsBtn">⚙ Cài đặt</button>
-</header>
-
-<div id="chat">
-  <div class="empty" id="emptyState">
-    <div class="icon">✨</div>
-    <h2 class="display">Bắt đầu trò chuyện</h2>
-    <p>Nhập tin nhắn bên dưới để bắt đầu trò chuyện với trợ lý.</p>
-  </div>
+<!-- MENU -->
+<div id="menu">
+    <h1>🔫 BẮN SÚNG</h1>
+    <p class="sub">⚔️ Online - Mời bạn bè cùng chơi</p>
+    <button class="menu-btn" onclick="startGame()">🎯 BẮT ĐẦU</button>
+    <button class="menu-btn outline" onclick="createRoom()">📤 TẠO PHÒNG</button>
+    <div id="inviteLink">🔗 Link mời: <span onclick="copyInvite()">click để copy</span></div>
+    <p style="color:#666;font-size:13px;margin-top:30px;">🔥 Bắn hạ kẻ thù - Máu 200 - Sống sót đến cuối</p>
 </div>
 
-<footer>
-  <div id="inputBar">
-    <textarea id="msgInput" placeholder="Nhắn gì đó..." rows="1"></textarea>
-    <button id="sendBtn" title="Gửi">➤</button>
-  </div>
-  <div class="hint">Cuộc trò chuyện chỉ lưu tạm trong phiên này.</div>
-</footer>
-
-<div class="overlay" id="settingsOverlay">
-  <div class="modal">
-    <h3 class="display">Cài đặt</h3>
-    <p class="sub">Tuỳ chỉnh cách trợ lý phản hồi.</p>
-
-    <div class="field">
-      <label for="systemPrompt">Trợ lý nên trả lời như thế nào?</label>
-      <input type="text" id="systemPrompt" placeholder="VD: Trả lời ngắn gọn, thân thiện...">
+<!-- GAME -->
+<div id="gameContainer">
+    <canvas id="gameCanvas"></canvas>
+    
+    <!-- HUD -->
+    <div id="hud">
+        <div class="hud-left">
+            <div class="hp-label">❤️ MÁU</div>
+            <div class="hp-bar"><div class="hp-fill" id="hpFill"></div></div>
+            <div style="margin-top:6px;color:#aaa;font-size:14px;">🔫 Đạn: <span id="ammoCount">∞</span></div>
+        </div>
+        <div class="hud-right">
+            <div class="score-label">🏆 <span id="scoreCount">0</span></div>
+            <div style="color:#ff6666;font-size:16px;margin-top:4px;">👥 <span id="playerCount">1</span></div>
+        </div>
     </div>
 
-    <input type="hidden" id="apiKeyInput">
-    <input type="hidden" id="modelSelect" value="gemini-3.6-flash">
-
-    <div id="statusMsg" class="status"></div>
-
-    <div class="modal-actions">
-      <button class="btn" id="closeSettings">Đóng</button>
-      <button class="btn primary" id="saveSettings">Lưu</button>
+    <!-- DEATH -->
+    <div id="deathOverlay">
+        <h2>💀 BỊ HẠ GỤC</h2>
+        <p>Điểm: <span id="deathScore">0</span></p>
+        <button class="menu-btn" onclick="respawn()">🔄 HỒI SINH</button>
+        <button class="menu-btn outline" onclick="backToMenu()">🏠 VỀ MENU</button>
     </div>
-  </div>
 </div>
 
 <script>
-(function(){
-  // 👉 Dán API key Gemini của mày vào giữa hai dấu ngoặc kép bên dưới rồi lưu file lại
-  const HARDCODED_API_KEY = "DÁN_KEY_CỦA_MÀY_VÀO_ĐÂY";
+    // ==================== CONFIG ====================
+    const CONFIG = {
+        maxHP: 200,
+        damage: 25,
+        bulletSpeed: 12,
+        reloadTime: 500,
+        shootCooldown: 200,
+        playerSpeed: 3.5,
+        bulletRange: 600,
+        respawnTime: 3000,
+    };
 
-  let apiKey = HARDCODED_API_KEY;
-  let model = "gemini-3.6-flash";
-  let systemPrompt = "";
-  let history = []; // { role: 'user'|'model', text }
+    // ==================== STATE ====================
+    let gameState = {
+        players: {},
+        bullets: [],
+        myId: null,
+        hp: CONFIG.maxHP,
+        score: 0,
+        isDead: false,
+        gameStarted: false,
+        roomId: Math.random().toString(36).substring(2, 8).toUpperCase(),
+        isHost: false,
+    };
 
-  const chatEl = document.getElementById('chat');
-  const emptyState = document.getElementById('emptyState');
-  const msgInput = document.getElementById('msgInput');
-  const sendBtn = document.getElementById('sendBtn');
-  const settingsBtn = document.getElementById('settingsBtn');
-  const settingsOverlay = document.getElementById('settingsOverlay');
-  const closeSettings = document.getElementById('closeSettings');
-  const saveSettings = document.getElementById('saveSettings');
-  const apiKeyInput = document.getElementById('apiKeyInput');
-  const modelSelect = document.getElementById('modelSelect');
-  const systemPromptInput = document.getElementById('systemPrompt');
-  const statusMsg = document.getElementById('statusMsg');
-  const modelLabel = document.getElementById('modelLabel');
+    // ==================== CANVAS ====================
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    let W, H;
 
-  function openSettings(){ settingsOverlay.classList.add('open'); }
-  function closeSettingsFn(){ settingsOverlay.classList.remove('open'); }
-
-  settingsBtn.addEventListener('click', openSettings);
-  closeSettings.addEventListener('click', closeSettingsFn);
-  settingsOverlay.addEventListener('click', (e) => {
-    if(e.target === settingsOverlay) closeSettingsFn();
-  });
-
-  saveSettings.addEventListener('click', () => {
-    systemPrompt = systemPromptInput.value.trim();
-    statusMsg.textContent = "Đã lưu.";
-    statusMsg.className = "status ok";
-    setTimeout(closeSettingsFn, 500);
-  });
-
-  msgInput.addEventListener('input', () => {
-    msgInput.style.height = 'auto';
-    msgInput.style.height = Math.min(msgInput.scrollHeight, 140) + 'px';
-  });
-
-  msgInput.addEventListener('keydown', (e) => {
-    if(e.key === 'Enter' && !e.shiftKey){
-      e.preventDefault();
-      sendMessage();
+    function resizeCanvas() {
+        W = canvas.width = window.innerWidth;
+        H = canvas.height = window.innerHeight;
     }
-  });
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
 
-  sendBtn.addEventListener('click', sendMessage);
+    // ==================== INPUT ====================
+    const keys = {};
+    let mouseX = 0, mouseY = 0;
+    let isShooting = false;
 
-  function addBubble(role, text, isError){
-    if(emptyState) emptyState.remove();
-    const row = document.createElement('div');
-    row.className = 'row ' + (role === 'user' ? 'user' : 'ai');
-
-    const bubble = document.createElement('div');
-    bubble.className = 'bubble' + (isError ? ' error' : '');
-    bubble.textContent = text;
-
-    if(role === 'user'){
-      row.appendChild(bubble);
-      const avatar = document.createElement('div');
-      avatar.className = 'avatar';
-      avatar.textContent = 'B';
-      row.appendChild(avatar);
-    } else {
-      const avatar = document.createElement('div');
-      avatar.className = 'avatar';
-      avatar.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2L14.2 9.2L21 12L14.2 14.8L12 22L9.8 14.8L3 12L9.8 9.2L12 2Z" fill="white"/></svg>';
-      row.appendChild(avatar);
-      row.appendChild(bubble);
-    }
-    chatEl.appendChild(row);
-    chatEl.scrollTop = chatEl.scrollHeight;
-    return bubble;
-  }
-
-  function addTyping(){
-    const row = document.createElement('div');
-    row.className = 'row ai';
-    row.id = 'typingRow';
-    const avatar = document.createElement('div');
-    avatar.className = 'avatar';
-    avatar.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2L14.2 9.2L21 12L14.2 14.8L12 22L9.8 14.8L3 12L9.8 9.2L12 2Z" fill="white"/></svg>';
-    const bubble = document.createElement('div');
-    bubble.className = 'bubble';
-    bubble.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
-    row.appendChild(avatar);
-    row.appendChild(bubble);
-    chatEl.appendChild(row);
-    chatEl.scrollTop = chatEl.scrollHeight;
-  }
-
-  function removeTyping(){
-    const row = document.getElementById('typingRow');
-    if(row) row.remove();
-  }
-
-  async function sendMessage(){
-    const text = msgInput.value.trim();
-    if(!text) return;
-
-    if(!apiKey || apiKey === "DÁN_KEY_CỦA_MÀY_VÀO_ĐÂY"){
-      addBubble('ai', 'Chưa cấu hình được kết nối. Vui lòng thử lại sau.', true);
-      return;
-    }
-
-    addBubble('user', text);
-    history.push({ role: 'user', text });
-    msgInput.value = '';
-    msgInput.style.height = 'auto';
-    sendBtn.disabled = true;
-    addTyping();
-
-    try{
-      const reply = await callGemini();
-      removeTyping();
-      addBubble('ai', reply);
-      history.push({ role: 'model', text: reply });
-    } catch(err){
-      removeTyping();
-      addBubble('ai', 'Lỗi: ' + err.message, true);
-    } finally {
-      sendBtn.disabled = false;
-      msgInput.focus();
-    }
-  }
-
-  async function callGemini(){
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
-
-    const contents = history.map(h => ({
-      role: h.role,
-      parts: [{ text: h.text }]
-    }));
-
-    const body = { contents };
-    if(systemPrompt){
-      body.systemInstruction = { parts: [{ text: systemPrompt }] };
-    }
-
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+    document.addEventListener('keydown', e => { keys[e.key] = true; });
+    document.addEventListener('keyup', e => { keys[e.key] = false; });
+    canvas.addEventListener('mousemove', e => {
+        const rect = canvas.getBoundingClientRect();
+        mouseX = (e.clientX - rect.left) * (W / rect.width);
+        mouseY = (e.clientY - rect.top) * (H / rect.height);
     });
+    canvas.addEventListener('mousedown', e => { if(e.button === 0) isShooting = true; });
+    canvas.addEventListener('mouseup', e => { if(e.button === 0) isShooting = false; });
+    canvas.addEventListener('contextmenu', e => e.preventDefault());
 
-    if(!res.ok){
-      let detail = '';
-      try{
-        const errJson = await res.json();
-        detail = errJson.error && errJson.error.message ? errJson.error.message : JSON.stringify(errJson);
-      } catch(e){
-        detail = await res.text();
-      }
-      throw new Error(`${res.status} - ${detail}`);
+    // ==================== PLAYER ====================
+    class Player {
+        constructor(id, x, y, name = '') {
+            this.id = id;
+            this.x = x;
+            this.y = y;
+            this.radius = 18;
+            this.angle = 0;
+            this.hp = CONFIG.maxHP;
+            this.maxHP = CONFIG.maxHP;
+            this.name = name || `P${id.slice(0,4)}`;
+            this.alive = true;
+            this.score = 0;
+            this.lastShot = 0;
+        }
     }
 
-    const data = await res.json();
-    const candidate = data.candidates && data.candidates[0];
-    if(!candidate || !candidate.content || !candidate.content.parts){
-      throw new Error('Không nhận được phản hồi hợp lệ từ Gemini.');
+    // ==================== BULLET ====================
+    class Bullet {
+        constructor(x, y, angle, ownerId) {
+            this.x = x;
+            this.y = y;
+            this.vx = Math.cos(angle) * CONFIG.bulletSpeed;
+            this.vy = Math.sin(angle) * CONFIG.bulletSpeed;
+            this.radius = 4;
+            this.ownerId = ownerId;
+            this.distance = 0;
+            this.maxDist = CONFIG.bulletRange;
+            this.alive = true;
+        }
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.distance += CONFIG.bulletSpeed;
+            if(this.distance > this.maxDist) this.alive = false;
+            // out of bounds
+            if(this.x < -50 || this.x > W+50 || this.y < -50 || this.y > H+50) this.alive = false;
+        }
     }
-    return candidate.content.parts.map(p => p.text || '').join('').trim();
-  }
 
-})();
+    // ==================== GAME LOGIC ====================
+    let players = {};
+    let bullets = [];
+    let myPlayer = null;
+    let shootCooldown = 0;
+    let lastTime = 0;
+
+    function initGame() {
+        players = {};
+        bullets = [];
+        gameState.hp = CONFIG.maxHP;
+        gameState.score = 0;
+        gameState.isDead = false;
+        gameState.gameStarted = true;
+        
+        const myId = gameState.myId || 'player1';
+        gameState.myId = myId;
+        
+        myPlayer = new Player(myId, W/2, H/2, 'Bạn');
+        myPlayer.hp = CONFIG.maxHP;
+        players[myId] = myPlayer;
+        
+        // Thêm bot để bắn
+        addBot('bot1', 150, 150);
+        addBot('bot2', W-150, 150);
+        addBot('bot3', 150, H-150);
+        addBot('bot4', W-150, H-150);
+        
+        document.getElementById('hud').classList.add('active');
+        document.getElementById('deathOverlay').classList.remove('active');
+        document.getElementById('gameContainer').style.display = 'block';
+        document.getElementById('menu').style.display = 'none';
+        
+        gameLoop();
+    }
+
+    function addBot(id, x, y) {
+        const bot = new Player(id, x, y, `Bot ${id.slice(-1)}`);
+        bot.isBot = true;
+        players[id] = bot;
+    }
+
+    function getRandomBotName() {
+        const names = ['Sniper', 'Shotgun', 'Rambo', 'Terminator', 'Ghost', 'Viper', 'Phoenix', 'Shadow'];
+        return names[Math.floor(Math.random() * names.length)];
+    }
+
+    // ==================== UPDATE ====================
+    function update() {
+        if(!myPlayer || gameState.isDead) return;
+        
+        // Move player
+        let dx = 0, dy = 0;
+        if(keys['w'] || keys['W'] || keys['ArrowUp']) dy = -CONFIG.playerSpeed;
+        if(keys['s'] || keys['S'] || keys['ArrowDown']) dy = CONFIG.playerSpeed;
+        if(keys['a'] || keys['A'] || keys['ArrowLeft']) dx = -CONFIG.playerSpeed;
+        if(keys['d'] || keys['D'] || keys['ArrowRight']) dx = CONFIG.playerSpeed;
+        
+        if(dx && dy) { dx *= 0.707; dy *= 0.707; }
+        
+        let newX = myPlayer.x + dx;
+        let newY = myPlayer.y + dy;
+        // Bounds
+        newX = Math.max(myPlayer.radius, Math.min(W - myPlayer.radius, newX));
+        newY = Math.max(myPlayer.radius, Math.min(H - myPlayer.radius, newY));
+        myPlayer.x = newX;
+        myPlayer.y = newY;
+        
+        // Angle
+        const angleToMouse = Math.atan2(mouseY - myPlayer.y, mouseX - myPlayer.x);
+        myPlayer.angle = angleToMouse;
+        
+        // Shoot
+        if(isShooting && shootCooldown <= 0 && myPlayer.alive) {
+            shootBullet(myPlayer.id);
+            shootCooldown = CONFIG.shootCooldown;
+        }
+        if(shootCooldown > 0) shootCooldown -= 16.67;
+        
+        // Update bullets
+        for(let i = bullets.length - 1; i >= 0; i--) {
+            const b = bullets[i];
+            b.update();
+            if(!b.alive) { bullets.splice(i, 1); continue; }
+            
+            // Hit detection
+            for(const pid in players) {
+                const p = players[pid];
+                if(!p.alive || pid === b.ownerId) continue;
+                const dist = Math.hypot(b.x - p.x, b.y - p.y);
+                if(dist < p.radius + b.radius) {
+                    p.hp -= CONFIG.damage;
+                    b.alive = false;
+                    if(p.hp <= 0) {
+                        p.alive = false;
+                        // Bot respawn
+                        if(p.isBot) {
+                            setTimeout(() => {
+                                p.alive = true;
+                                p.hp = CONFIG.maxHP;
+                                p.x = Math.random() * (W - 60) + 30;
+                                p.y = Math.random() * (H - 60) + 30;
+                            }, 2000);
+                        } else {
+                            // Player died
+                            if(pid === myPlayer.id) {
+                                gameState.isDead = true;
+                                document.getElementById('deathScore').textContent = gameState.score;
+                                document.getElementById('deathOverlay').classList.add('active');
+                                // Update HUD
+                                document.getElementById('hpFill').style.width = '0%';
+                            }
+                        }
+                        // Score for shooter
+                        const shooter = players[b.ownerId];
+                        if(shooter && shooter.alive && shooter.id !== pid) {
+                            shooter.score += 10;
+                            if(shooter.id === myPlayer.id) {
+                                gameState.score += 10;
+                                document.getElementById('scoreCount').textContent = gameState.score;
+                            }
+                        }
+                    }
+                    bullets.splice(i, 1);
+                    break;
+                }
+            }
+        }
+        
+        // Update bots AI
+        for(const pid in players) {
+            const p = players[pid];
+            if(!p.isBot || !p.alive) continue;
+            // Bot di chuyển ngẫu nhiên
+            if(Math.random() < 0.02) {
+                p.targetX = Math.random() * (W - 60) + 30;
+                p.targetY = Math.random() * (H - 60) + 30;
+            }
+            if(p.targetX !== undefined) {
+                const dx2 = p.targetX - p.x;
+                const dy2 = p.targetY - p.y;
+                const dist2 = Math.hypot(dx2, dy2);
+                if(dist2 > 2) {
+                    p.x += (dx2 / dist2) * CONFIG.playerSpeed * 0.7;
+                    p.y += (dy2 / dist2) * CONFIG.playerSpeed * 0.7;
+                }
+            }
+            // Bot bắn về phía player
+            if(myPlayer && myPlayer.alive) {
+                const angleToPlayer = Math.atan2(myPlayer.y - p.y, myPlayer.x - p.x);
+                p.angle = angleToPlayer;
+                if(Math.random() < 0.03) {
+                    shootBullet(p.id);
+                }
+            }
+        }
+        
+        // Update HUD
+        if(myPlayer) {
+            const hpPercent = Math.max(0, (myPlayer.hp / CONFIG.maxHP) * 100);
+            document.getElementById('hpFill').style.width = hpPercent + '%';
+            document.getElementById('playerCount').textContent = Object.keys(players).filter(id => players[id].alive).length;
+        }
+    }
+
+    function shootBullet(ownerId) {
+        const owner = players[ownerId];
+        if(!owner || !owner.alive) return;
+        const b = new Bullet(
+            owner.x + Math.cos(owner.angle) * 22,
+            owner.y + Math.sin(owner.angle) * 22,
+            owner.angle,
+            ownerId
+        );
+        bullets.push(b);
+    }
+
+    // ==================== RENDER ====================
+    function render() {
+        ctx.clearRect(0, 0, W, H);
+        
+        // Background grid
+        ctx.strokeStyle = '#22224433';
+        ctx.lineWidth = 1;
+        for(let x = 0; x < W; x += 60) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, H);
+            ctx.stroke();
+        }
+        for(let y = 0; y < H; y += 60) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(W, y);
+            ctx.stroke();
+        }
+        
+        // Draw bullets
+        for(const b of bullets) {
+            ctx.beginPath();
+            ctx.arc(b.x, b.y, b.radius, 0, Math.PI*2);
+            ctx.fillStyle = '#ffaa00';
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#ffaa0066';
+            ctx.fill();
+            // Trail
+            ctx.beginPath();
+            ctx.arc(b.x - b.vx * 0.5, b.y - b.vy * 0.5, b.radius * 0.5, 0, Math.PI*2);
+            ctx.fillStyle = '#ffaa0044';
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+        
+        // Draw players
+        for(const pid in players) {
+            const p = players[pid];
+            if(!p.alive) continue;
+            
+            const isMe = pid === myPlayer?.id;
+            const isBot = p.isBot;
+            
+            // Shadow
+            ctx.shadowBlur = 30;
+            ctx.shadowColor = isMe ? '#ff000055' : '#ff440033';
+            
+            // Body
+            const grad = ctx.createRadialGradient(p.x-6, p.y-6, 0, p.x, p.y, p.radius+4);
+            if(isMe) {
+                grad.addColorStop(0, '#ff4444');
+                grad.addColorStop(1, '#990000');
+            } else if(isBot) {
+                grad.addColorStop(0, '#ff8844');
+                grad.addColorStop(1, '#993300');
+            } else {
+                grad.addColorStop(0, '#44aaff');
+                grad.addColorStop(1, '#004499');
+            }
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2);
+            ctx.fillStyle = grad;
+            ctx.fill();
+            ctx.strokeStyle = isMe ? '#ff0000' : '#ffffff44';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+            
+            // Gun
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.angle);
+            ctx.fillStyle = isMe ? '#ffaa00' : '#999';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#ffaa0044';
+            ctx.fillRect(12, -3, 25, 6);
+            ctx.restore();
+            
+            // HP bar above
+            if(p.hp < p.maxHP) {
+                const barW = 40;
+                const barH = 4;
+                const hpP = p.hp / p.maxHP;
+                ctx.fillStyle = '#333';
+                ctx.fillRect(p.x - barW/2, p.y - p.radius - 12, barW, barH);
+                ctx.fillStyle = hpP > 0.5 ? '#44ff44' : hpP > 0.25 ? '#ffaa00' : '#ff0000';
+                ctx.fillRect(p.x - barW/2, p.y - p.radius - 12, barW * hpP, barH);
+            }
+            
+            // Name
+            ctx.fillStyle = isMe ? '#ff8888' : '#aaaaaa';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(p.name, p.x, p.y - p.radius - 18);
+            if(isMe) {
+                ctx.fillStyle = '#ff0000';
+                ctx.font = '10px Arial';
+                ctx.fillText('⭐ BẠN', p.x, p.y - p.radius - 32);
+            }
+        }
+        
+        // Crosshair
+        ctx.strokeStyle = '#ff0000';
+        ctx.lineWidth = 2;
+        const cs = 16;
+        ctx.beginPath();
+        ctx.moveTo(mouseX - cs, mouseY);
+        ctx.lineTo(mouseX - 6, mouseY);
+        ctx.moveTo(mouseX + 6, mouseY);
+        ctx.lineTo(mouseX + cs, mouseY);
+        ctx.moveTo(mouseX, mouseY - cs);
+        ctx.lineTo(mouseX, mouseY - 6);
+        ctx.moveTo(mouseX, mouseY + 6);
+        ctx.lineTo(mouseX, mouseY + cs);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(mouseX, mouseY, 2, 0, Math.PI*2);
+        ctx.fillStyle = '#ff000088';
+        ctx.fill();
+    }
+
+    // ==================== GAME LOOP ====================
+    function gameLoop() {
+        if(!gameState.gameStarted) return;
+        update();
+        render();
+        requestAnimationFrame(gameLoop);
+    }
+
+    // ==================== CONTROLS ====================
+    function startGame() {
+        initGame();
+    }
+
+    function createRoom() {
+        gameState.roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+        const link = `${window.location.href}?room=${gameState.roomId}`;
+        document.getElementById('inviteLink').innerHTML = `🔗 Link mời: <span onclick="copyInvite()">${link}</span>`;
+        gameState.isHost = true;
+        startGame();
+    }
+
+    function copyInvite() {
+        const link = `${window.location.href}?room=${gameState.roomId}`;
+        navigator.clipboard?.writeText(link).then(() => {
+            alert('📋 Đã copy link mời!');
+        }).catch(() => {
+            // Fallback
+            const ta = document.createElement('textarea');
+            ta.value = link;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            ta.remove();
+            alert('📋 Đã copy link mời!');
+        });
+    }
+
+    function respawn() {
+        if(myPlayer) {
+            myPlayer.alive = true;
+            myPlayer.hp = CONFIG.maxHP;
+            myPlayer.x = W/2;
+            myPlayer.y = H/2;
+            gameState.isDead = false;
+            document.getElementById('deathOverlay').classList.remove('active');
+        }
+    }
+
+    function backToMenu() {
+        gameState.gameStarted = false;
+        document.getElementById('gameContainer').style.display = 'none';
+        document.getElementById('menu').style.display = 'flex';
+        document.getElementById('hud').classList.remove('active');
+        document.getElementById('deathOverlay').classList.remove('active');
+    }
+
+    // ==================== INIT ====================
+    console.log('🔫 Game Bắn Súng đã sẵn sàng!');
 </script>
-
 </body>
 </html>
