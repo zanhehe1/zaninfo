@@ -3,22 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>nqbinhan. - Portfolio</title>
-    <!-- Font Awesome & Google Fonts -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <title>nqbinhan. — Creative Developer</title>
+    <!-- Google Fonts & Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --bg-color: #0b0b0d;
-            --card-bg: #131317;
-            --accent-red: #ff2a2a;
-            --accent-hover: #e02222;
+            --bg: #050508;
+            --card-bg: rgba(18, 18, 26, 0.75);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --red: #ff003c;
+            --red-glow: rgba(255, 0, 60, 0.5);
             --text-main: #ffffff;
-            --text-muted: #9a9a9a;
-            --glass-bg: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --red-glow: rgba(255, 42, 42, 0.4);
+            --text-sub: #8e8e9f;
         }
 
         * {
@@ -29,254 +27,333 @@
         }
 
         body {
-            background-color: var(--bg-color);
+            background-color: var(--bg);
             color: var(--text-main);
             min-height: 100vh;
+            overflow-x: hidden;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            overflow-x: hidden;
-            padding: 20px 80px;
+            padding: 24px 8%;
+            background-image: 
+                radial-gradient(circle at 15% 20%, rgba(255, 0, 60, 0.12) 0%, transparent 45%),
+                radial-gradient(circle at 85% 80%, rgba(255, 0, 60, 0.08) 0%, transparent 45%);
         }
+
+        /* Background Ambient Light */
+        .glow-orb {
+            position: absolute;
+            width: 350px;
+            height: 350px;
+            background: var(--red);
+            filter: blur(160px);
+            opacity: 0.25;
+            z-index: -1;
+            pointer-events: none;
+            border-radius: 50%;
+        }
+        .orb-1 { top: 10%; right: 15%; }
+        .orb-2 { bottom: 10%; left: 10%; }
 
         /* Navigation Bar */
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            padding: 15px 40px;
-            border-radius: 50px;
-            backdrop-filter: blur(10px);
+            background: rgba(12, 12, 18, 0.65);
+            border: 1px solid var(--card-border);
+            padding: 16px 36px;
+            border-radius: 100px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
         }
 
         .logo {
+            font-family: 'Syne', sans-serif;
             font-size: 26px;
             font-weight: 800;
-            color: var(--accent-red);
+            color: var(--text-main);
             text-decoration: none;
             letter-spacing: -0.5px;
         }
 
+        .logo span { color: var(--red); }
+
         nav ul {
             display: flex;
             list-style: none;
-            gap: 30px;
+            gap: 32px;
         }
 
         nav ul li a {
-            color: var(--text-muted);
+            color: var(--text-sub);
             text-decoration: none;
             font-size: 13px;
-            font-weight: 600;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            transition: 0.3s;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            transition: all 0.3s ease;
         }
 
         nav ul li a:hover, nav ul li a.active {
             color: var(--text-main);
-            text-shadow: 0 0 10px var(--red-glow);
+            text-shadow: 0 0 12px var(--red-glow);
         }
 
-        /* Hero Main Section */
+        /* Main Hero Section */
         .hero {
-            display: flex;
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
             align-items: center;
-            justify-content: space-between;
-            margin-top: 40px;
-            gap: 50px;
-        }
-
-        .hero-content {
-            max-width: 550px;
+            gap: 60px;
+            margin: 40px 0;
         }
 
         .welcome-tag {
-            font-size: 16px;
+            display: inline-block;
+            font-size: 14px;
             font-weight: 600;
-            color: var(--text-main);
-            margin-bottom: 10px;
+            color: var(--text-sub);
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
         }
 
         .hero-title {
-            font-size: 42px;
+            font-family: 'Syne', sans-serif;
+            font-size: 52px;
             font-weight: 800;
-            color: var(--accent-red);
-            line-height: 1.2;
+            line-height: 1.15;
             margin-bottom: 20px;
+            letter-spacing: -1px;
+        }
+
+        .hero-title .highlight {
+            color: var(--red);
+            text-shadow: 0 0 30px var(--red-glow);
         }
 
         .hero-desc {
-            color: var(--text-muted);
-            font-size: 14px;
-            line-height: 1.6;
-            margin-bottom: 30px;
+            color: var(--text-sub);
+            font-size: 15px;
+            line-height: 1.7;
+            margin-bottom: 36px;
+            max-width: 520px;
         }
 
-        /* Stats Section */
-        .stats-container {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 35px;
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 36px;
         }
 
         .stat-card {
             background: var(--card-bg);
-            border: 1px solid var(--glass-border);
-            padding: 18px;
-            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            padding: 20px 16px;
+            border-radius: 20px;
             text-align: center;
-            flex: 1;
-            transition: 0.3s transform;
+            backdrop-filter: blur(10px);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         .stat-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--accent-red);
+            transform: translateY(-6px);
+            border-color: var(--red);
+            box-shadow: 0 10px 30px rgba(255, 0, 60, 0.2);
         }
 
         .stat-number {
-            font-size: 28px;
+            font-family: 'Syne', sans-serif;
+            font-size: 32px;
             font-weight: 800;
-            color: var(--accent-red);
+            color: var(--red);
+            margin-bottom: 4px;
         }
 
         .stat-label {
-            font-size: 11px;
-            color: var(--text-muted);
-            margin-top: 5px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-sub);
         }
 
-        /* Buttons */
+        /* Action Buttons */
         .cta-group {
             display: flex;
-            gap: 15px;
+            gap: 18px;
         }
 
         .btn {
-            padding: 12px 28px;
-            border-radius: 30px;
-            font-weight: 600;
+            padding: 14px 32px;
+            border-radius: 100px;
+            font-weight: 700;
             font-size: 14px;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            transition: all 0.3s ease;
             cursor: pointer;
-            transition: 0.3s;
         }
 
         .btn-primary {
-            background: var(--accent-red);
-            color: var(--text-main);
+            background: var(--red);
+            color: #fff;
             border: none;
-            box-shadow: 0 0 15px var(--red-glow);
-        }
-
-        .btn-primary:hover {
-            background: var(--accent-hover);
             box-shadow: 0 0 25px var(--red-glow);
         }
 
+        .btn-primary:hover {
+            transform: scale(1.04);
+            box-shadow: 0 0 40px var(--red-glow);
+        }
+
         .btn-secondary {
-            background: transparent;
+            background: rgba(255, 255, 255, 0.03);
             color: var(--text-main);
-            border: 1px solid var(--glass-border);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(10px);
         }
 
         .btn-secondary:hover {
-            border-color: var(--accent-red);
-            color: var(--accent-red);
+            border-color: var(--red);
+            color: var(--red);
+            transform: scale(1.04);
         }
 
-        /* Right Avatar Box */
-        .hero-image-wrapper {
+        /* Right Frame Visual */
+        .hero-visual {
             position: relative;
-            width: 360px;
-            height: 480px;
-            border: 2px solid #2a0808;
-            border-radius: 24px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .image-frame {
+            position: relative;
+            width: 380px;
+            height: 500px;
+            border-radius: 32px;
+            padding: 8px;
+            background: linear-gradient(145deg, rgba(255, 0, 60, 0.5), rgba(255, 255, 255, 0.05));
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.9), 0 0 40px rgba(255, 0, 60, 0.2);
+        }
+
+        .image-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 26px;
             overflow: hidden;
+            position: relative;
             background: #000;
         }
 
-        .hero-image-wrapper img {
+        .image-inner img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            filter: brightness(0.8) contrast(1.1);
+            filter: contrast(1.1) brightness(0.95);
+            transition: transform 0.5s ease;
         }
 
-        /* Badges over Image */
+        .image-frame:hover img {
+            transform: scale(1.06);
+        }
+
+        /* Animated Floating Badges */
         .badge {
             position: absolute;
-            background: rgba(20, 20, 25, 0.85);
-            border: 1px solid var(--glass-border);
-            backdrop-filter: blur(8px);
-            padding: 8px 16px;
-            border-radius: 12px;
+            background: rgba(15, 15, 22, 0.88);
+            border: 1px solid var(--card-border);
+            padding: 12px 20px;
+            border-radius: 16px;
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            font-weight: 600;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            z-index: 10;
+        }
+
+        .badge i {
+            color: var(--red);
+            font-size: 16px;
         }
 
         .badge-top {
-            top: 100px;
-            left: -10px;
+            top: 40px;
+            left: -30px;
+            animation: float 4s ease-in-out infinite;
         }
 
         .badge-bottom {
-            bottom: 60px;
-            left: 20px;
+            bottom: 50px;
+            right: -20px;
+            animation: float 4s ease-in-out infinite 2s;
         }
 
-        /* Footer Socials */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* Social Footer */
         footer {
             display: flex;
-            gap: 15px;
-            margin-top: 30px;
+            gap: 16px;
         }
 
-        .social-icon {
-            width: 36px;
-            height: 36px;
+        .social-btn {
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--text-muted);
+            color: var(--text-sub);
             text-decoration: none;
-            transition: 0.3s;
-            font-size: 14px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
         }
 
-        .social-icon:hover {
-            color: var(--text-main);
-            background: var(--accent-red);
-            border-color: var(--accent-red);
-            box-shadow: 0 0 10px var(--red-glow);
+        .social-btn:hover {
+            color: #fff;
+            background: var(--red);
+            border-color: var(--red);
+            box-shadow: 0 0 20px var(--red-glow);
+            transform: translateY(-4px);
         }
 
-        @media (max-width: 900px) {
-            body { padding: 20px; }
-            .hero { flex-direction: column; text-align: center; }
-            .stats-container { justify-content: center; }
+        @media (max-width: 1024px) {
+            .hero { grid-template-columns: 1fr; text-align: center; }
+            .hero-desc { margin: 0 auto 36px auto; }
             .cta-group { justify-content: center; }
-            nav ul { display: none; }
+            .badge-top { left: 10px; }
+            .badge-bottom { right: 10px; }
+            footer { justify-content: center; }
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 16px 4%; }
+            nav { display: none; }
+            .hero-title { font-size: 38px; }
+            .image-frame { width: 100%; height: 400px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Header Navigation -->
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+
     <header>
-        <a href="#" class="logo">nqbinhan.</a>
+        <a href="#" class="logo">nqbinhan<span>.</span></a>
         <nav>
             <ul>
                 <li><a href="#" class="active">HOME</a></li>
@@ -289,16 +366,18 @@
         </nav>
     </header>
 
-    <!-- Main Content -->
     <main class="hero">
-        <div class="hero-content">
-            <div class="welcome-tag">Welcome</div>
-            <h1 class="hero-title">Hello Everyone I'm <span id="typing"></span></h1>
+        <div class="hero-left">
+            <span class="welcome-tag">Welcome to my space</span>
+            <h1 class="hero-title">
+                Hello Everyone<br>
+                I'm <span class="highlight" id="typing"></span>
+            </h1>
             <p class="hero-desc">
                 I am a web developer focused on building modern, responsive, and efficient websites. With a growing expertise in HTML, CSS, and JavaScript.
             </p>
 
-            <div class="stats-container">
+            <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-number">40+</div>
                     <div class="stat-label">Project Completed</div>
@@ -314,48 +393,52 @@
             </div>
 
             <div class="cta-group">
-                <a href="#" class="btn btn-primary">Hire me <i class="fa-solid fa-arrow-right"></i></a>
-                <a href="#" class="btn btn-secondary">Download CV</a>
+                <a href="#" class="btn btn-primary">Hire me <i class="fa-solid fa-arrow-right-long"></i></a>
+                <a href="#" class="btn btn-secondary"><i class="fa-solid fa-download"></i> Download CV</a>
             </div>
         </div>
 
-        <!-- Right Side Image Box -->
-        <div class="hero-image-wrapper">
-            <img src="https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1000&auto=format&fit=crop" alt="Profile Visual">
-            
-            <div class="badge badge-top">
-                <i class="fa-solid fa-mobile-screen" style="color: var(--accent-red);"></i> Responsive
-            </div>
-            
-            <div class="badge badge-bottom">
-                <i class="fa-solid fa-code" style="color: var(--accent-red);"></i> Clean code
+        <div class="hero-visual">
+            <div class="image-frame">
+                <div class="image-inner">
+                    <!-- Bạn lưu ảnh trên về cùng thư mục rồi đổi tên thành eye.jpg hoặc dùng đường dẫn bên dưới -->
+                    <img src="eye.jpg" onerror="this.src='https://wallpaperaccess.com/full/1151624.jpg'" alt="nqbinhan visual">
+                </div>
+
+                <div class="badge badge-top">
+                    <i class="fa-solid fa-mobile-screen"></i>
+                    <span>Responsive</span>
+                </div>
+
+                <div class="badge badge-bottom">
+                    <i class="fa-solid fa-code"></i>
+                    <span>Clean code</span>
+                </div>
             </div>
         </div>
     </main>
 
-    <!-- Footer Social Links -->
     <footer>
-        <a href="#" class="social-icon"><i class="fa-brands fa-github"></i></a>
-        <a href="#" class="social-icon"><i class="fa-brands fa-instagram"></i></a>
-        <a href="#" class="social-icon"><i class="fa-brands fa-youtube"></i></a>
-        <a href="#" class="social-icon"><i class="fa-brands fa-tiktok"></i></a>
+        <a href="#" class="social-btn" title="GitHub"><i class="fa-brands fa-github"></i></a>
+        <a href="#" class="social-btn" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
+        <a href="#" class="social-btn" title="YouTube"><i class="fa-brands fa-youtube"></i></a>
+        <a href="#" class="social-btn" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
     </footer>
 
-    <!-- Typing Effect Script -->
     <script>
         const text = "nqbinhan";
         let index = 0;
-        const speed = 150;
+        const speed = 120;
 
-        function typeWriter() {
+        function typeEffect() {
             if (index < text.length) {
-                document.getElementById("typing").innerHTML += text.charAt(index);
+                document.getElementById("typing").textContent += text.charAt(index);
                 index++;
-                setTimeout(typeWriter, speed);
+                setTimeout(typeEffect, speed);
             }
         }
 
-        window.onload = typeWriter;
+        window.addEventListener('DOMContentLoaded', typeEffect);
     </script>
 </body>
 </html>
