@@ -3,648 +3,590 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔫 Bắn Súng Online</title>
+    <title>Zan · zyo.lol</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800;900&family=Orbitron:wght@700;800;900&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            background: #0a0a0a;
-            color: #fff;
-            font-family: 'Segoe UI', Arial, sans-serif;
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background: #0b0710;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             overflow: hidden;
-            height: 100vh;
+            user-select: none;
         }
-        #gameContainer {
-            display: none;
-            width: 100vw;
-            height: 100vh;
-            background: #1a1a2e;
-            position: relative;
-        }
-        canvas {
-            display: block;
+
+        /* ---- Nền hạt ---- */
+        #particles-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            cursor: crosshair;
+            z-index: 0;
+            pointer-events: none;
         }
-        /* MENU */
-        #menu {
+
+        /* ---- Container chính ---- */
+        .container {
+            position: relative;
+            z-index: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            height: 100vh;
-            background: linear-gradient(135deg, #0a0a0a, #1a0000, #2a0000);
+            gap: 24px;
+            width: 100%;
+            padding: 20px;
+        }
+
+        /* ---- Card chính ---- */
+        .card {
+            width: 320px;
+            background: linear-gradient(145deg, #1a1122, #10081a);
+            border-radius: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 28px 22px 22px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             position: relative;
-        }
-        #menu h1 {
-            font-size: 64px;
-            color: #ff0000;
-            text-shadow: 0 0 50px rgba(255,0,0,0.6);
-            margin-bottom: 10px;
-            letter-spacing: 4px;
-        }
-        #menu .sub {
-            color: #ff8888;
-            font-size: 18px;
-            margin-bottom: 40px;
-        }
-        .menu-btn {
-            background: linear-gradient(135deg, #ff0000, #cc0000);
-            color: #fff;
-            border: none;
-            padding: 16px 50px;
-            font-size: 20px;
-            font-weight: bold;
-            border-radius: 12px;
-            cursor: pointer;
-            margin: 8px;
-            transition: 0.3s;
-            min-width: 220px;
-            box-shadow: 0 0 30px rgba(255,0,0,0.3);
-        }
-        .menu-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 60px rgba(255,0,0,0.6);
-        }
-        .menu-btn.outline {
-            background: transparent;
-            border: 2px solid #ff0000;
-            box-shadow: none;
-        }
-        .menu-btn.outline:hover {
-            background: #ff0000;
-        }
-        #inviteLink {
-            background: #1a1a1a;
-            border: 1px solid #333;
-            padding: 10px 20px;
-            border-radius: 8px;
-            margin-top: 20px;
-            color: #aaa;
-            font-size: 14px;
-            width: 400px;
-            text-align: center;
-        }
-        #inviteLink span {
-            color: #ff0000;
+            transform-style: preserve-3d;
+            perspective: 800px;
+            transition: transform 0.1s ease;
             cursor: pointer;
         }
-        #inviteLink span:hover {
-            text-decoration: underline;
-        }
-        /* HUD */
-        #hud {
+
+        .card .glow-ring {
             position: absolute;
-            top: 20px;
-            left: 20px;
-            right: 20px;
-            display: none;
-            justify-content: space-between;
-            z-index: 10;
+            inset: -2px;
+            border-radius: 34px;
+            padding: 2px;
+            background: conic-gradient(from 0deg, #ff2b4a, #ffb545, #7cf5ff, #ff8ce0, #ff2b4a);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0.6;
+            animation: spin-ring 6s linear infinite;
             pointer-events: none;
         }
-        #hud.active { display: flex; }
-        .hud-left, .hud-right {
-            background: rgba(0,0,0,0.7);
-            padding: 12px 20px;
-            border-radius: 10px;
-            border: 1px solid rgba(255,0,0,0.3);
+        @keyframes spin-ring {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ---- Avatar ---- */
+        .avatar {
+            width: 108px;
+            height: 108px;
+            border-radius: 50%;
+            border: 3px solid rgba(255, 255, 255, 0.15);
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(255, 43, 74, 0.3);
+            margin-bottom: 14px;
+            flex-shrink: 0;
+        }
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* ---- Tên & tagline ---- */
+        .name {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 26px;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, #fff 30%, #b09bc0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 40px rgba(255, 43, 74, 0.3);
+        }
+
+        .tagline {
+            font-size: 13px;
+            color: #a897b3;
+            min-height: 24px;
+            margin: 6px 0 16px;
+            font-weight: 500;
+            text-align: center;
+        }
+        .tagline .cursor {
+            display: inline-block;
+            width: 2px;
+            height: 16px;
+            background: #ff2b4a;
+            margin-left: 2px;
+            animation: blink 0.9s infinite;
+            vertical-align: text-bottom;
+        }
+        @keyframes blink {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0;
+            }
+        }
+
+        /* ---- HUD stats ---- */
+        .stats {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+            margin-bottom: 16px;
+        }
+        .stat-item {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 8px 4px;
+            text-align: center;
+        }
+        .stat-item .number {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 800;
+            font-size: 16px;
+            color: #ffb545;
+        }
+        .stat-item .label {
+            font-size: 9px;
+            color: #7a6a85;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ---- Player nhạc ---- */
+        .music-player {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 16px;
+            padding: 12px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            align-items: center;
+            gap: 12px;
             backdrop-filter: blur(4px);
         }
-        .hud-left { font-size: 16px; }
-        .hud-right { font-size: 20px; font-weight: bold; text-align: right; }
-        .hp-bar {
-            width: 200px;
-            height: 20px;
-            background: #333;
-            border-radius: 10px;
-            overflow: hidden;
-            margin-top: 4px;
-            border: 1px solid #ff000055;
-        }
-        .hp-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #ff0000, #ff4444);
-            width: 100%;
-            transition: width 0.1s;
-            border-radius: 10px;
-        }
-        .hp-label { color: #ff6666; font-weight: bold; }
-        .score-label { color: #ffd700; }
-        /* DEATH OVERLAY */
-        #deathOverlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(0,0,0,0.8);
-            display: none;
+
+        .music-player .play-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: rgba(255, 43, 74, 0.2);
+            border: 1px solid rgba(255, 43, 74, 0.4);
+            display: flex;
             align-items: center;
             justify-content: center;
-            flex-direction: column;
-            z-index: 20;
+            font-size: 18px;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: 0.2s;
+            color: white;
         }
-        #deathOverlay.active { display: flex; }
-        #deathOverlay h2 { color: #ff0000; font-size: 48px; text-shadow: 0 0 40px rgba(255,0,0,0.8); }
-        #deathOverlay p { color: #ff8888; font-size: 20px; margin: 20px 0; }
-        #deathOverlay .menu-btn { margin: 5px; }
-        /* RESPONSIVE */
-        @media(max-width:700px){
-            #menu h1 { font-size: 36px; }
-            .menu-btn { padding: 12px 30px; font-size: 16px; min-width: 160px; }
-            #inviteLink { width: 90%; font-size: 12px; }
-            .hud-left, .hud-right { padding: 8px 14px; font-size: 14px; }
-            .hp-bar { width: 120px; height: 16px; }
+        .music-player .play-btn:hover {
+            background: rgba(255, 43, 74, 0.35);
+            transform: scale(1.05);
+        }
+
+        .music-player .info {
+            flex: 1;
+            min-width: 0;
+        }
+        .music-player .info .title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #ddd;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .music-player .info .artist {
+            font-size: 10px;
+            color: #7a6a85;
+        }
+
+        .music-player .progress-bar {
+            width: 100%;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            margin-top: 4px;
+            cursor: pointer;
+            position: relative;
+        }
+        .music-player .progress-bar .fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ff2b4a, #ffb545);
+            border-radius: 4px;
+            transition: width 0.1s linear;
+        }
+
+        .music-player .time {
+            font-size: 10px;
+            color: #7a6a85;
+            flex-shrink: 0;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* ---- Link bar ---- */
+        .link-bar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 4px;
+        }
+        .link-item {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: #ccc;
+            transition: 0.2s;
+            text-decoration: none;
+            position: relative;
+        }
+        .link-item:hover {
+            transform: translateY(-4px);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+        .link-item .tooltip {
+            position: absolute;
+            bottom: calc(100% + 8px);
+            background: #1a1122;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            color: #ddd;
+            font-size: 10px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.15s;
+        }
+        .link-item:hover .tooltip {
+            opacity: 1;
+        }
+
+        /* ---- Footer ---- */
+        .footer {
+            color: #4a3a55;
+            font-size: 10px;
+            margin-top: 10px;
+        }
+
+        /* ---- Responsive ---- */
+        @media (max-width: 480px) {
+            .card {
+                width: 100%;
+                max-width: 340px;
+                padding: 20px 16px;
+            }
+            .name {
+                font-size: 22px;
+            }
         }
     </style>
 </head>
 <body>
 
-<!-- MENU -->
-<div id="menu">
-    <h1>🔫 BẮN SÚNG</h1>
-    <p class="sub">⚔️ Online - Mời bạn bè cùng chơi</p>
-    <button class="menu-btn" onclick="startGame()">🎯 BẮT ĐẦU</button>
-    <button class="menu-btn outline" onclick="createRoom()">📤 TẠO PHÒNG</button>
-    <div id="inviteLink">🔗 Link mời: <span onclick="copyInvite()">click để copy</span></div>
-    <p style="color:#666;font-size:13px;margin-top:30px;">🔥 Bắn hạ kẻ thù - Máu 200 - Sống sót đến cuối</p>
-</div>
+    <!-- Canvas nền hạt -->
+    <canvas id="particles-canvas"></canvas>
 
-<!-- GAME -->
-<div id="gameContainer">
-    <canvas id="gameCanvas"></canvas>
-    
-    <!-- HUD -->
-    <div id="hud">
-        <div class="hud-left">
-            <div class="hp-label">❤️ MÁU</div>
-            <div class="hp-bar"><div class="hp-fill" id="hpFill"></div></div>
-            <div style="margin-top:6px;color:#aaa;font-size:14px;">🔫 Đạn: <span id="ammoCount">∞</span></div>
+    <div class="container">
+
+        <!-- Card chính -->
+        <div class="card" id="card">
+            <div class="glow-ring"></div>
+
+            <div class="avatar">
+                <img id="avatarImg" src="https://i.pinimg.com/736x/8b/16/7a/8b167af653c2399dd93b952a48740620.jpg" alt="avatar">
+            </div>
+
+            <div class="name">ZAN</div>
+            <div class="tagline">
+                <span id="typedText"></span><span class="cursor"></span>
+            </div>
+
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="number">99</div>
+                    <div class="label">Cấp độ</div>
+                </div>
+                <div class="stat-item">
+                    <div class="number">1.2K</div>
+                    <div class="label">Follow</div>
+                </div>
+                <div class="stat-item">
+                    <div class="number">30</div>
+                    <div class="label">Streak</div>
+                </div>
+            </div>
+
+            <!-- Player nhạc -->
+            <div class="music-player" id="musicPlayer">
+                <button class="play-btn" id="playBtn">▶</button>
+                <div class="info">
+                    <div class="title" id="songTitle">Không yêu ai nữa</div>
+                    <div class="artist" id="songArtist">nqbinhan</div>
+                    <div class="progress-bar" id="progressBar">
+                        <div class="fill" id="progressFill"></div>
+                    </div>
+                </div>
+                <span class="time" id="timeDisplay">0:00 / 0:00</span>
+            </div>
+
+            <!-- Link bar -->
+            <div class="link-bar">
+                <a href="#" class="link-item" data-tooltip="TikTok">🎵<span class="tooltip">TikTok</span></a>
+                <a href="#" class="link-item" data-tooltip="Instagram">📸<span class="tooltip">Instagram</span></a>
+                <a href="#" class="link-item" data-tooltip="Facebook">📘<span class="tooltip">Facebook</span></a>
+                <a href="#" class="link-item" data-tooltip="YouTube">▶️<span class="tooltip">YouTube</span></a>
+                <a href="#" class="link-item" data-tooltip="Discord">🎮<span class="tooltip">Discord</span></a>
+                <a href="#" class="link-item" data-tooltip="Zalo">💬<span class="tooltip">Zalo</span></a>
+            </div>
         </div>
-        <div class="hud-right">
-            <div class="score-label">🏆 <span id="scoreCount">0</span></div>
-            <div style="color:#ff6666;font-size:16px;margin-top:4px;">👥 <span id="playerCount">1</span></div>
-        </div>
+
+        <div class="footer">© 2026 — made with ❤️</div>
     </div>
 
-    <!-- DEATH -->
-    <div id="deathOverlay">
-        <h2>💀 BỊ HẠ GỤC</h2>
-        <p>Điểm: <span id="deathScore">0</span></p>
-        <button class="menu-btn" onclick="respawn()">🔄 HỒI SINH</button>
-        <button class="menu-btn outline" onclick="backToMenu()">🏠 VỀ MENU</button>
-    </div>
-</div>
+    <script>
+        // ============================================================
+        // 1. HẠT NỀN (Particles)
+        // ============================================================
+        const canvas = document.getElementById('particles-canvas');
+        const ctx = canvas.getContext('2d');
 
-<script>
-    // ==================== CONFIG ====================
-    const CONFIG = {
-        maxHP: 200,
-        damage: 25,
-        bulletSpeed: 12,
-        reloadTime: 500,
-        shootCooldown: 200,
-        playerSpeed: 3.5,
-        bulletRange: 600,
-        respawnTime: 3000,
-    };
+        let width, height, particles = [];
+        const PARTICLE_COUNT = 70;
 
-    // ==================== STATE ====================
-    let gameState = {
-        players: {},
-        bullets: [],
-        myId: null,
-        hp: CONFIG.maxHP,
-        score: 0,
-        isDead: false,
-        gameStarted: false,
-        roomId: Math.random().toString(36).substring(2, 8).toUpperCase(),
-        isHost: false,
-    };
-
-    // ==================== CANVAS ====================
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    let W, H;
-
-    function resizeCanvas() {
-        W = canvas.width = window.innerWidth;
-        H = canvas.height = window.innerHeight;
-    }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-
-    // ==================== INPUT ====================
-    const keys = {};
-    let mouseX = 0, mouseY = 0;
-    let isShooting = false;
-
-    document.addEventListener('keydown', e => { keys[e.key] = true; });
-    document.addEventListener('keyup', e => { keys[e.key] = false; });
-    canvas.addEventListener('mousemove', e => {
-        const rect = canvas.getBoundingClientRect();
-        mouseX = (e.clientX - rect.left) * (W / rect.width);
-        mouseY = (e.clientY - rect.top) * (H / rect.height);
-    });
-    canvas.addEventListener('mousedown', e => { if(e.button === 0) isShooting = true; });
-    canvas.addEventListener('mouseup', e => { if(e.button === 0) isShooting = false; });
-    canvas.addEventListener('contextmenu', e => e.preventDefault());
-
-    // ==================== PLAYER ====================
-    class Player {
-        constructor(id, x, y, name = '') {
-            this.id = id;
-            this.x = x;
-            this.y = y;
-            this.radius = 18;
-            this.angle = 0;
-            this.hp = CONFIG.maxHP;
-            this.maxHP = CONFIG.maxHP;
-            this.name = name || `P${id.slice(0,4)}`;
-            this.alive = true;
-            this.score = 0;
-            this.lastShot = 0;
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
         }
-    }
+        window.addEventListener('resize', resize);
+        resize();
 
-    // ==================== BULLET ====================
-    class Bullet {
-        constructor(x, y, angle, ownerId) {
-            this.x = x;
-            this.y = y;
-            this.vx = Math.cos(angle) * CONFIG.bulletSpeed;
-            this.vy = Math.sin(angle) * CONFIG.bulletSpeed;
-            this.radius = 4;
-            this.ownerId = ownerId;
-            this.distance = 0;
-            this.maxDist = CONFIG.bulletRange;
-            this.alive = true;
-        }
-        update() {
-            this.x += this.vx;
-            this.y += this.vy;
-            this.distance += CONFIG.bulletSpeed;
-            if(this.distance > this.maxDist) this.alive = false;
-            // out of bounds
-            if(this.x < -50 || this.x > W+50 || this.y < -50 || this.y > H+50) this.alive = false;
-        }
-    }
-
-    // ==================== GAME LOGIC ====================
-    let players = {};
-    let bullets = [];
-    let myPlayer = null;
-    let shootCooldown = 0;
-    let lastTime = 0;
-
-    function initGame() {
-        players = {};
-        bullets = [];
-        gameState.hp = CONFIG.maxHP;
-        gameState.score = 0;
-        gameState.isDead = false;
-        gameState.gameStarted = true;
-        
-        const myId = gameState.myId || 'player1';
-        gameState.myId = myId;
-        
-        myPlayer = new Player(myId, W/2, H/2, 'Bạn');
-        myPlayer.hp = CONFIG.maxHP;
-        players[myId] = myPlayer;
-        
-        // Thêm bot để bắn
-        addBot('bot1', 150, 150);
-        addBot('bot2', W-150, 150);
-        addBot('bot3', 150, H-150);
-        addBot('bot4', W-150, H-150);
-        
-        document.getElementById('hud').classList.add('active');
-        document.getElementById('deathOverlay').classList.remove('active');
-        document.getElementById('gameContainer').style.display = 'block';
-        document.getElementById('menu').style.display = 'none';
-        
-        gameLoop();
-    }
-
-    function addBot(id, x, y) {
-        const bot = new Player(id, x, y, `Bot ${id.slice(-1)}`);
-        bot.isBot = true;
-        players[id] = bot;
-    }
-
-    function getRandomBotName() {
-        const names = ['Sniper', 'Shotgun', 'Rambo', 'Terminator', 'Ghost', 'Viper', 'Phoenix', 'Shadow'];
-        return names[Math.floor(Math.random() * names.length)];
-    }
-
-    // ==================== UPDATE ====================
-    function update() {
-        if(!myPlayer || gameState.isDead) return;
-        
-        // Move player
-        let dx = 0, dy = 0;
-        if(keys['w'] || keys['W'] || keys['ArrowUp']) dy = -CONFIG.playerSpeed;
-        if(keys['s'] || keys['S'] || keys['ArrowDown']) dy = CONFIG.playerSpeed;
-        if(keys['a'] || keys['A'] || keys['ArrowLeft']) dx = -CONFIG.playerSpeed;
-        if(keys['d'] || keys['D'] || keys['ArrowRight']) dx = CONFIG.playerSpeed;
-        
-        if(dx && dy) { dx *= 0.707; dy *= 0.707; }
-        
-        let newX = myPlayer.x + dx;
-        let newY = myPlayer.y + dy;
-        // Bounds
-        newX = Math.max(myPlayer.radius, Math.min(W - myPlayer.radius, newX));
-        newY = Math.max(myPlayer.radius, Math.min(H - myPlayer.radius, newY));
-        myPlayer.x = newX;
-        myPlayer.y = newY;
-        
-        // Angle
-        const angleToMouse = Math.atan2(mouseY - myPlayer.y, mouseX - myPlayer.x);
-        myPlayer.angle = angleToMouse;
-        
-        // Shoot
-        if(isShooting && shootCooldown <= 0 && myPlayer.alive) {
-            shootBullet(myPlayer.id);
-            shootCooldown = CONFIG.shootCooldown;
-        }
-        if(shootCooldown > 0) shootCooldown -= 16.67;
-        
-        // Update bullets
-        for(let i = bullets.length - 1; i >= 0; i--) {
-            const b = bullets[i];
-            b.update();
-            if(!b.alive) { bullets.splice(i, 1); continue; }
-            
-            // Hit detection
-            for(const pid in players) {
-                const p = players[pid];
-                if(!p.alive || pid === b.ownerId) continue;
-                const dist = Math.hypot(b.x - p.x, b.y - p.y);
-                if(dist < p.radius + b.radius) {
-                    p.hp -= CONFIG.damage;
-                    b.alive = false;
-                    if(p.hp <= 0) {
-                        p.alive = false;
-                        // Bot respawn
-                        if(p.isBot) {
-                            setTimeout(() => {
-                                p.alive = true;
-                                p.hp = CONFIG.maxHP;
-                                p.x = Math.random() * (W - 60) + 30;
-                                p.y = Math.random() * (H - 60) + 30;
-                            }, 2000);
-                        } else {
-                            // Player died
-                            if(pid === myPlayer.id) {
-                                gameState.isDead = true;
-                                document.getElementById('deathScore').textContent = gameState.score;
-                                document.getElementById('deathOverlay').classList.add('active');
-                                // Update HUD
-                                document.getElementById('hpFill').style.width = '0%';
-                            }
-                        }
-                        // Score for shooter
-                        const shooter = players[b.ownerId];
-                        if(shooter && shooter.alive && shooter.id !== pid) {
-                            shooter.score += 10;
-                            if(shooter.id === myPlayer.id) {
-                                gameState.score += 10;
-                                document.getElementById('scoreCount').textContent = gameState.score;
-                            }
-                        }
-                    }
-                    bullets.splice(i, 1);
-                    break;
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.size = Math.random() * 2.5 + 1;
+                this.speedX = (Math.random() - 0.5) * 0.4;
+                this.speedY = (Math.random() - 0.5) * 0.4;
+                this.opacity = Math.random() * 0.5 + 0.2;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x < 0 || this.x > width || this.y < 0 || this.y > height) {
+                    this.reset();
                 }
             }
-        }
-        
-        // Update bots AI
-        for(const pid in players) {
-            const p = players[pid];
-            if(!p.isBot || !p.alive) continue;
-            // Bot di chuyển ngẫu nhiên
-            if(Math.random() < 0.02) {
-                p.targetX = Math.random() * (W - 60) + 30;
-                p.targetY = Math.random() * (H - 60) + 30;
-            }
-            if(p.targetX !== undefined) {
-                const dx2 = p.targetX - p.x;
-                const dy2 = p.targetY - p.y;
-                const dist2 = Math.hypot(dx2, dy2);
-                if(dist2 > 2) {
-                    p.x += (dx2 / dist2) * CONFIG.playerSpeed * 0.7;
-                    p.y += (dy2 / dist2) * CONFIG.playerSpeed * 0.7;
-                }
-            }
-            // Bot bắn về phía player
-            if(myPlayer && myPlayer.alive) {
-                const angleToPlayer = Math.atan2(myPlayer.y - p.y, myPlayer.x - p.x);
-                p.angle = angleToPlayer;
-                if(Math.random() < 0.03) {
-                    shootBullet(p.id);
-                }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                ctx.fill();
             }
         }
-        
-        // Update HUD
-        if(myPlayer) {
-            const hpPercent = Math.max(0, (myPlayer.hp / CONFIG.maxHP) * 100);
-            document.getElementById('hpFill').style.width = hpPercent + '%';
-            document.getElementById('playerCount').textContent = Object.keys(players).filter(id => players[id].alive).length;
+
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+            particles.push(new Particle());
         }
-    }
 
-    function shootBullet(ownerId) {
-        const owner = players[ownerId];
-        if(!owner || !owner.alive) return;
-        const b = new Bullet(
-            owner.x + Math.cos(owner.angle) * 22,
-            owner.y + Math.sin(owner.angle) * 22,
-            owner.angle,
-            ownerId
-        );
-        bullets.push(b);
-    }
-
-    // ==================== RENDER ====================
-    function render() {
-        ctx.clearRect(0, 0, W, H);
-        
-        // Background grid
-        ctx.strokeStyle = '#22224433';
-        ctx.lineWidth = 1;
-        for(let x = 0; x < W; x += 60) {
-            ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, H);
-            ctx.stroke();
+        function animateParticles() {
+            ctx.clearRect(0, 0, width, height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateParticles);
         }
-        for(let y = 0; y < H; y += 60) {
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(W, y);
-            ctx.stroke();
-        }
-        
-        // Draw bullets
-        for(const b of bullets) {
-            ctx.beginPath();
-            ctx.arc(b.x, b.y, b.radius, 0, Math.PI*2);
-            ctx.fillStyle = '#ffaa00';
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = '#ffaa0066';
-            ctx.fill();
-            // Trail
-            ctx.beginPath();
-            ctx.arc(b.x - b.vx * 0.5, b.y - b.vy * 0.5, b.radius * 0.5, 0, Math.PI*2);
-            ctx.fillStyle = '#ffaa0044';
-            ctx.fill();
-            ctx.shadowBlur = 0;
-        }
-        
-        // Draw players
-        for(const pid in players) {
-            const p = players[pid];
-            if(!p.alive) continue;
-            
-            const isMe = pid === myPlayer?.id;
-            const isBot = p.isBot;
-            
-            // Shadow
-            ctx.shadowBlur = 30;
-            ctx.shadowColor = isMe ? '#ff000055' : '#ff440033';
-            
-            // Body
-            const grad = ctx.createRadialGradient(p.x-6, p.y-6, 0, p.x, p.y, p.radius+4);
-            if(isMe) {
-                grad.addColorStop(0, '#ff4444');
-                grad.addColorStop(1, '#990000');
-            } else if(isBot) {
-                grad.addColorStop(0, '#ff8844');
-                grad.addColorStop(1, '#993300');
-            } else {
-                grad.addColorStop(0, '#44aaff');
-                grad.addColorStop(1, '#004499');
-            }
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2);
-            ctx.fillStyle = grad;
-            ctx.fill();
-            ctx.strokeStyle = isMe ? '#ff0000' : '#ffffff44';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            ctx.shadowBlur = 0;
-            
-            // Gun
-            ctx.save();
-            ctx.translate(p.x, p.y);
-            ctx.rotate(p.angle);
-            ctx.fillStyle = isMe ? '#ffaa00' : '#999';
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = '#ffaa0044';
-            ctx.fillRect(12, -3, 25, 6);
-            ctx.restore();
-            
-            // HP bar above
-            if(p.hp < p.maxHP) {
-                const barW = 40;
-                const barH = 4;
-                const hpP = p.hp / p.maxHP;
-                ctx.fillStyle = '#333';
-                ctx.fillRect(p.x - barW/2, p.y - p.radius - 12, barW, barH);
-                ctx.fillStyle = hpP > 0.5 ? '#44ff44' : hpP > 0.25 ? '#ffaa00' : '#ff0000';
-                ctx.fillRect(p.x - barW/2, p.y - p.radius - 12, barW * hpP, barH);
-            }
-            
-            // Name
-            ctx.fillStyle = isMe ? '#ff8888' : '#aaaaaa';
-            ctx.font = '12px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(p.name, p.x, p.y - p.radius - 18);
-            if(isMe) {
-                ctx.fillStyle = '#ff0000';
-                ctx.font = '10px Arial';
-                ctx.fillText('⭐ BẠN', p.x, p.y - p.radius - 32);
-            }
-        }
-        
-        // Crosshair
-        ctx.strokeStyle = '#ff0000';
-        ctx.lineWidth = 2;
-        const cs = 16;
-        ctx.beginPath();
-        ctx.moveTo(mouseX - cs, mouseY);
-        ctx.lineTo(mouseX - 6, mouseY);
-        ctx.moveTo(mouseX + 6, mouseY);
-        ctx.lineTo(mouseX + cs, mouseY);
-        ctx.moveTo(mouseX, mouseY - cs);
-        ctx.lineTo(mouseX, mouseY - 6);
-        ctx.moveTo(mouseX, mouseY + 6);
-        ctx.lineTo(mouseX, mouseY + cs);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(mouseX, mouseY, 2, 0, Math.PI*2);
-        ctx.fillStyle = '#ff000088';
-        ctx.fill();
-    }
+        animateParticles();
 
-    // ==================== GAME LOOP ====================
-    function gameLoop() {
-        if(!gameState.gameStarted) return;
-        update();
-        render();
-        requestAnimationFrame(gameLoop);
-    }
+        // ============================================================
+        // 2. CARD 3D TILT (nghiêng theo chuột)
+        // ============================================================
+        const card = document.getElementById('card');
 
-    // ==================== CONTROLS ====================
-    function startGame() {
-        initGame();
-    }
-
-    function createRoom() {
-        gameState.roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
-        const link = `${window.location.href}?room=${gameState.roomId}`;
-        document.getElementById('inviteLink').innerHTML = `🔗 Link mời: <span onclick="copyInvite()">${link}</span>`;
-        gameState.isHost = true;
-        startGame();
-    }
-
-    function copyInvite() {
-        const link = `${window.location.href}?room=${gameState.roomId}`;
-        navigator.clipboard?.writeText(link).then(() => {
-            alert('📋 Đã copy link mời!');
-        }).catch(() => {
-            // Fallback
-            const ta = document.createElement('textarea');
-            ta.value = link;
-            document.body.appendChild(ta);
-            ta.select();
-            document.execCommand('copy');
-            ta.remove();
-            alert('📋 Đã copy link mời!');
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / rect.width - 0.5;
+            const y = (e.clientY - rect.top) / rect.height - 0.5;
+            const rotateX = y * -12;
+            const rotateY = x * 12;
+            card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
         });
-    }
 
-    function respawn() {
-        if(myPlayer) {
-            myPlayer.alive = true;
-            myPlayer.hp = CONFIG.maxHP;
-            myPlayer.x = W/2;
-            myPlayer.y = H/2;
-            gameState.isDead = false;
-            document.getElementById('deathOverlay').classList.remove('active');
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = 'rotateX(0deg) rotateY(0deg)';
+        });
+
+        // ============================================================
+        // 3. TYPING TAGLINE
+        // ============================================================
+        const phrases = [
+            "» Đang tìm một bản tình ca...",
+            "» Chạm vào card để nghe nhạc 🎵",
+            "» Cảm ơn bạn đã ghé thăm ✨"
+        ];
+        let pIndex = 0,
+            cIndex = 0,
+            deleting = false;
+        const typedEl = document.getElementById('typedText');
+
+        function typeLoop() {
+            const current = phrases[pIndex];
+            if (!deleting) {
+                cIndex++;
+                typedEl.textContent = current.slice(0, cIndex);
+                if (cIndex === current.length) {
+                    deleting = true;
+                    setTimeout(typeLoop, 2000);
+                    return;
+                }
+            } else {
+                cIndex--;
+                typedEl.textContent = current.slice(0, cIndex);
+                if (cIndex === 0) {
+                    deleting = false;
+                    pIndex = (pIndex + 1) % phrases.length;
+                }
+            }
+            setTimeout(typeLoop, deleting ? 20 : 40);
         }
-    }
+        typeLoop();
 
-    function backToMenu() {
-        gameState.gameStarted = false;
-        document.getElementById('gameContainer').style.display = 'none';
-        document.getElementById('menu').style.display = 'flex';
-        document.getElementById('hud').classList.remove('active');
-        document.getElementById('deathOverlay').classList.remove('active');
-    }
+        // ============================================================
+        // 4. MUSIC PLAYER (tự động phát khi click vào card)
+        // ============================================================
+        // Dùng bài hát "Không yêu ai nữa" - nqbinhan từ URL có sẵn
+        const SONG_URL = 'https://files.catbox.moe/3bvhz6.mp3'; // thay bằng link nhạc bạn muốn
 
-    // ==================== INIT ====================
-    console.log('🔫 Game Bắn Súng đã sẵn sàng!');
-</script>
+        const audio = new Audio(SONG_URL);
+        audio.volume = 0.8;
+        audio.loop = true;
+
+        const playBtn = document.getElementById('playBtn');
+        const progressFill = document.getElementById('progressFill');
+        const progressBar = document.getElementById('progressBar');
+        const timeDisplay = document.getElementById('timeDisplay');
+        const songTitle = document.getElementById('songTitle');
+        const songArtist = document.getElementById('songArtist');
+
+        let isPlaying = false;
+
+        // Cập nhật thanh tiến trình
+        audio.addEventListener('timeupdate', () => {
+            const percent = (audio.currentTime / audio.duration) * 100;
+            progressFill.style.width = percent + '%';
+            const current = formatTime(audio.currentTime);
+            const total = formatTime(audio.duration);
+            timeDisplay.textContent = `${current} / ${total}`;
+        });
+
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return '0:00';
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        // Play / Pause
+        function togglePlay() {
+            if (isPlaying) {
+                audio.pause();
+                playBtn.textContent = '▶';
+            } else {
+                // Nếu chưa có dữ liệu, load trước
+                if (audio.readyState < 2) {
+                    audio.load();
+                }
+                audio.play().catch(err => console.log('Tự động phát bị chặn, bấm vào card để phát'));
+                playBtn.textContent = '⏸';
+            }
+            isPlaying = !isPlaying;
+        }
+
+        playBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            togglePlay();
+        });
+
+        // Click vào card để bật/tắt nhạc (giống zyo.lol)
+        card.addEventListener('click', () => {
+            if (!isPlaying) {
+                // Nếu chưa phát, phát nhạc
+                if (audio.readyState < 2) {
+                    audio.load();
+                }
+                audio.play().catch(err => console.log('Tự động phát bị chặn'));
+                playBtn.textContent = '⏸';
+                isPlaying = true;
+            } else {
+                // Nếu đang phát, tạm dừng
+                audio.pause();
+                playBtn.textContent = '▶';
+                isPlaying = false;
+            }
+        });
+
+        // Click thanh tiến trình để tua
+        progressBar.addEventListener('click', (e) => {
+            if (audio.duration) {
+                const rect = progressBar.getBoundingClientRect();
+                const percent = (e.clientX - rect.left) / rect.width;
+                audio.currentTime = percent * audio.duration;
+            }
+        });
+
+        // Khi nhạc kết thúc, reset nút
+        audio.addEventListener('ended', () => {
+            playBtn.textContent = '▶';
+            isPlaying = false;
+        });
+
+        // ============================================================
+        // 5. TOOLTIP CHO LINK (tự động từ data-tooltip)
+        // ============================================================
+        document.querySelectorAll('.link-item').forEach(el => {
+            const tip = el.getAttribute('data-tooltip');
+            if (tip) {
+                const span = el.querySelector('.tooltip');
+                if (span) span.textContent = tip;
+            }
+        });
+
+        // ============================================================
+        // 6. LƯU Ý: Nếu muốn đổi avatar, sửa src trong thẻ img
+        // ============================================================
+        console.log('🎵 Nhạc sẽ tự động phát khi click vào card!');
+    </script>
+
 </body>
 </html>
