@@ -1,370 +1,361 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Zan — Cyberpunk Nexus</title>
-<link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)">
-<link href="[https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap](https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap)" rel="stylesheet">
-<style>
-:root {
---bg: #030305;
---card-bg: rgba(12, 12, 18, 0.7);
---border: rgba(255, 255, 255, 0.08);
---border-glow: rgba(255, 45, 85, 0.4);
---accent: #ff2d55;
---accent-glow: rgba(255, 45, 85, 0.25);
---cyan: #00f0ff;
---text: #f4f4f6;
---muted: #8e8e93;
-font-family: 'Plus Jakarta+Sans', sans-serif;
-}
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-background-color: var(--bg);
-color: var(--text);
-min-height: 100vh;
-display: flex;
-justify-content: center;
-align-items: center;
-overflow-x: hidden;
-position: relative;
-}
-/* Đèn nền động */
-.ambient-glow {
-position: fixed;
-width: 600px; height: 600px;
-background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
-top: 50%; left: 50%;
-transform: translate(-50%, -50%);
-z-index: 0;
-pointer-events: none;
-filter: blur(80px);
-animation: pulseGlow 8s ease-in-out infinite alternate;
-}
-@keyframes pulseGlow {
-0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.5; }
-100% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.9; }
-}
-.grid-bg {
-position: fixed; inset: 0;
-background-image: linear-gradient(to right, rgba(255,255,255,0.015) 1px, transparent 1px),
-linear-gradient(to bottom, rgba(255,255,255,0.015) 1px, transparent 1px);
-background-size: 40px 40px;
-z-index: 0;
-}
-/* Khung chính */
-.container {
-position: relative;
-z-index: 2;
-width: 100%;
-max-width: 440px;
-padding: 24px;
-display: flex;
-flex-direction: column;
-gap: 20px;
-}
-.glass-card {
-background: var(--card-bg);
-backdrop-filter: blur(20px);
--webkit-backdrop-filter: blur(20px);
-border: 1px solid var(--border);
-border-radius: 28px;
-padding: 32px 24px;
-text-align: center;
-position: relative;
-box-shadow: 0 30px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1);
-transition: border-color 0.3s ease, box-shadow 0.3s ease;
-}
-.glass-card:hover {
-border-color: var(--border-glow);
-box-shadow: 0 30px 70px rgba(0,0,0,0.7), 0 0 30px var(--accent-glow);
-}
-/* Badge trạng thái */
-.status-badge {
-display: inline-flex;
-align-items: center;
-gap: 8px;
-background: rgba(255, 45, 85, 0.1);
-border: 1px solid rgba(255, 45, 85, 0.3);
-padding: 6px 14px;
-border-radius: 50px;
-font-size: 11px;
-font-weight: 600;
-letter-spacing: 0.5px;
-color: var(--accent);
-margin-bottom: 22px;
-text-transform: uppercase;
-}
-.status-dot {
-width: 6px; height: 6px;
-background-color: var(--accent);
-border-radius: 50%;
-box-shadow: 0 0 10px var(--accent);
-animation: blink 1.5s infinite;
-}
-@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-/* Avatar */
-.avatar-container {
-width: 110px; height: 110px;
-margin: 0 auto 20px;
-position: relative;
-}
-.avatar-ring {
-position: absolute; inset: -4px;
-border-radius: 50%;
-background: conic-gradient(from 0deg, var(--accent), var(--cyan), transparent, var(--accent));
-animation: rotateRing 6s linear infinite;
-z-index: 1;
-}
-@keyframes rotateRing { to { transform: rotate(360deg); } }
-.avatar-img {
-position: relative; z-index: 2;
-width: 100%; height: 100%;
-border-radius: 50%;
-object-fit: cover;
-border: 3px solid var(--bg);
-}
-/* Tên & Mô tả */
-.profile-name {
-font-family: 'Space Grotesk', sans-serif;
-font-size: 26px;
-font-weight: 700;
-letter-spacing: -0.5px;
-color: var(--text);
-margin-bottom: 6px;
-}
-.profile-bio {
-font-size: 13.5px;
-color: var(--muted);
-line-height: 1.5;
-margin-bottom: 24px;
-min-height: 40px;
-}
-.profile-bio .cursor {
-color: var(--accent);
-animation: blink 0.8s infinite;
-}
-/* Thống kê nhanh */
-.stats-grid {
-display: grid;
-grid-template-columns: repeat(3, 1fr);
-gap: 10px;
-margin-bottom: 26px;
-}
-.stat-box {
-background: rgba(255, 255, 255, 0.02);
-border: 1px solid var(--border);
-border-radius: 16px;
-padding: 12px 8px;
-transition: background 0.2s ease;
-}
-.stat-box:hover {
-background: rgba(255, 255, 255, 0.05);
-}
-.stat-value {
-font-family: 'Space Grotesk', sans-serif;
-font-size: 16px;
-font-weight: 700;
-color: var(--text);
-margin-bottom: 2px;
-}
-.stat-label {
-font-size: 10px;
-color: var(--muted);
-text-transform: uppercase;
-letter-spacing: 0.5px;
-}
-/* Danh sách liên kết (Social Links) */
-.links-list {
-display: flex;
-flex-direction: column;
-gap: 12px;
-}
-.social-link {
-display: flex;
-align-items: center;
-justify-content: space-between;
-background: rgba(255, 255, 255, 0.03);
-border: 1px solid var(--border);
-padding: 14px 18px;
-border-radius: 16px;
-color: var(--text);
-text-decoration: none;
-font-weight: 600;
-font-size: 14px;
-transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-position: relative;
-overflow: hidden;
-}
-.social-link::before {
-content: '';
-position: absolute; inset: 0;
-background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
-transform: translateX(-100%);
-transition: transform 0.5s ease;
-}
-.social-link:hover::before { transform: translateX(100%); }
-.social-link:hover {
-border-color: var(--accent);
-background: rgba(255, 45, 85, 0.06);
-transform: translateY(-2px);
-box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-}
-.link-left {
-display: flex;
-align-items: center;
-gap: 12px;
-}
-.link-icon {
-font-size: 18px;
-}
-.link-arrow {
-color: var(--muted);
-font-size: 14px;
-transition: transform 0.2s ease, color 0.2s ease;
-}
-.social-link:hover .link-arrow {
-transform: translateX(4px);
-color: var(--accent);
-}
-/* Overlay âm thanh khởi động */
-.audio-overlay {
-position: fixed; inset: 0;
-background: rgba(3, 3, 5, 0.95);
-backdrop-filter: blur(10px);
-z-index: 999;
-display: flex;
-flex-direction: column;
-align-items: center;
-justify-content: center;
-cursor: pointer;
-transition: opacity 0.5s ease;
-}
-.audio-overlay h2 {
-font-family: 'Space Grotesk', sans-serif;
-font-size: 20px;
-color: var(--text);
-margin-bottom: 8px;
-letter-spacing: -0.5px;
-}
-.audio-overlay p {
-font-size: 13px;
-color: var(--muted);
-}
-footer {
-text-align: center;
-font-size: 11px;
-color: var(--muted);
-margin-top: 16px;
-letter-spacing: 0.5px;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>nqbinhan. - Portfolio</title>
+    <!-- Font Awesome & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #0b0b0d;
+            --card-bg: #131317;
+            --accent-red: #ff2a2a;
+            --accent-hover: #e02222;
+            --text-main: #ffffff;
+            --text-muted: #9a9a9a;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --red-glow: rgba(255, 42, 42, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow-x: hidden;
+            padding: 20px 80px;
+        }
+
+        /* Navigation Bar */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 15px 40px;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+        }
+
+        .logo {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--accent-red);
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 30px;
+        }
+
+        nav ul li a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: 0.3s;
+        }
+
+        nav ul li a:hover, nav ul li a.active {
+            color: var(--text-main);
+            text-shadow: 0 0 10px var(--red-glow);
+        }
+
+        /* Hero Main Section */
+        .hero {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 40px;
+            gap: 50px;
+        }
+
+        .hero-content {
+            max-width: 550px;
+        }
+
+        .welcome-tag {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 10px;
+        }
+
+        .hero-title {
+            font-size: 42px;
+            font-weight: 800;
+            color: var(--accent-red);
+            line-height: 1.2;
+            margin-bottom: 20px;
+        }
+
+        .hero-desc {
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        /* Stats Section */
+        .stats-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 35px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            padding: 18px;
+            border-radius: 16px;
+            text-align: center;
+            flex: 1;
+            transition: 0.3s transform;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-red);
+        }
+
+        .stat-number {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--accent-red);
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
+        /* Buttons */
+        .cta-group {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--accent-red);
+            color: var(--text-main);
+            border: none;
+            box-shadow: 0 0 15px var(--red-glow);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 0 25px var(--red-glow);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--glass-border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent-red);
+            color: var(--accent-red);
+        }
+
+        /* Right Avatar Box */
+        .hero-image-wrapper {
+            position: relative;
+            width: 360px;
+            height: 480px;
+            border: 2px solid #2a0808;
+            border-radius: 24px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .hero-image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: brightness(0.8) contrast(1.1);
+        }
+
+        /* Badges over Image */
+        .badge {
+            position: absolute;
+            background: rgba(20, 20, 25, 0.85);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(8px);
+            padding: 8px 16px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-top {
+            top: 100px;
+            left: -10px;
+        }
+
+        .badge-bottom {
+            bottom: 60px;
+            left: 20px;
+        }
+
+        /* Footer Socials */
+        footer {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .social-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: 0.3s;
+            font-size: 14px;
+        }
+
+        .social-icon:hover {
+            color: var(--text-main);
+            background: var(--accent-red);
+            border-color: var(--accent-red);
+            box-shadow: 0 0 10px var(--red-glow);
+        }
+
+        @media (max-width: 900px) {
+            body { padding: 20px; }
+            .hero { flex-direction: column; text-align: center; }
+            .stats-container { justify-content: center; }
+            .cta-group { justify-content: center; }
+            nav ul { display: none; }
+        }
+    </style>
 </head>
 <body>
-<div class="audio-overlay" id="audioOverlay">
-<h2>CHẠM ĐỂ KHỞI ĐỘNG HỆ THỐNG</h2>
-<p>Nhấn vào bất kỳ đâu để vào giao diện chính & bật nhạc nền</p>
-</div>
-<audio id="bgMusic" loop>
-<source src="[https://files.catbox.moe/c9v2v3.mp3](https://files.catbox.moe/c9v2v3.mp3)" type="audio/mp3">
-</audio>
-<div class="ambient-glow"></div>
-<div class="grid-bg"></div>
-<div class="container">
-<div class="glass-card">
-<div class="status-badge">
-<span class="status-dot"></span>
-Hệ thống trực tuyến
-</div>
-<div class="avatar-container">
-<div class="avatar-ring"></div>
-<img class="avatar-img" src="data:image/webp;base64,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">
-</div>
-<h1 class="profile-name">ZAN</h1>
-<div class="profile-bio"><span id="typedText"></span><span class="cursor">|</span></div>
-<div class="stats-grid">
-<div class="stat-box">
-<div class="stat-value">99</div>
-<div class="stat-label">Cấp độ</div>
-</div>
-<div class="stat-box">
-<div class="stat-value">1.2K</div>
-<div class="stat-label">Follow</div>
-</div>
-<div class="stat-box">
-<div class="stat-value">30</div>
-<div class="stat-label">Streak</div>
-</div>
-</div>
-<div class="links-list">
-<a class="social-link" href="[https://tiktok.com/@zanx09](https://tiktok.com/@zanx09)" target="_blank" rel="noopener">
-<div class="link-left">
-<span class="link-icon">🎵</span>
-<span>TikTok</span>
-</div>
-<span class="link-arrow">→</span>
-</a>
-<a class="social-link" href="[https://t.me/zanx09](https://t.me/zanx09)" target="_blank" rel="noopener">
-<div class="link-left">
-<span class="link-icon">✈️</span>
-<span>Telegram</span>
-</div>
-<span class="link-arrow">→</span>
-</a>
-<a class="social-link" href="[https://discord.gg/zan](https://discord.gg/zan)" target="_blank" rel="noopener">
-<div class="link-left">
-<span class="link-icon">🎮</span>
-<span>Discord</span>
-</div>
-<span class="link-arrow">→</span>
-</a>
-</div>
-</div>
-<footer>© 2026 ZAN — All Rights Reserved</footer>
-</div>
-<script>
-// Xử lý bật nhạc & ẩn overlay
-const audioOverlay = document.getElementById('audioOverlay');
-const bgMusic = document.getElementById('bgMusic');
-function initAudio() {
-bgMusic.play().catch(e => console.log(e));
-audioOverlay.style.opacity = '0';
-setTimeout(() => audioOverlay.remove(), 500);
-window.removeEventListener('click', initAudio);
-window.removeEventListener('touchstart', initAudio);
-}
-window.addEventListener('click', initAudio);
-window.addEventListener('touchstart', initAudio);
-// Hiệu ứng gõ chữ
-const phrases = [
-"Cyberpunk Nexus & Profile.",
-"Khám phá thế giới của ZAN.",
-"Tốc độ, Sáng tạo & Đam mê."
-];
-let pIdx = 0, charIdx = 0, isDeleting = false;
-const typedSpan = document.getElementById('typedText');
-function typeWriter() {
-const current = phrases[pIdx];
-if (isDeleting) {
-typedSpan.textContent = current.substring(0, charIdx - 1);
-charIdx--;
-if (charIdx === 0) {
-isDeleting = false;
-pIdx = (pIdx + 1) % phrases.length;
-}
-} else {
-typedSpan.textContent = current.substring(0, charIdx + 1);
-charIdx++;
-if (charIdx === current.length) {
-isDeleting = true;
-setTimeout(typeWriter, 1800);
-return;
-}
-}
-setTimeout(typeWriter, isDeleting ? 40 : 80);
-}
-typeWriter();
-</script>
+
+    <!-- Header Navigation -->
+    <header>
+        <a href="#" class="logo">nqbinhan.</a>
+        <nav>
+            <ul>
+                <li><a href="#" class="active">HOME</a></li>
+                <li><a href="#">ABOUT</a></li>
+                <li><a href="#">SERVICE</a></li>
+                <li><a href="#">PROJECT</a></li>
+                <li><a href="#">SKILL</a></li>
+                <li><a href="#">CONTACT</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="hero">
+        <div class="hero-content">
+            <div class="welcome-tag">Welcome</div>
+            <h1 class="hero-title">Hello Everyone I'm <span id="typing"></span></h1>
+            <p class="hero-desc">
+                I am a web developer focused on building modern, responsive, and efficient websites. With a growing expertise in HTML, CSS, and JavaScript.
+            </p>
+
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-number">40+</div>
+                    <div class="stat-label">Project Completed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">1+</div>
+                    <div class="stat-label">Years Experience</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">0+</div>
+                    <div class="stat-label">Happy Clients</div>
+                </div>
+            </div>
+
+            <div class="cta-group">
+                <a href="#" class="btn btn-primary">Hire me <i class="fa-solid fa-arrow-right"></i></a>
+                <a href="#" class="btn btn-secondary">Download CV</a>
+            </div>
+        </div>
+
+        <!-- Right Side Image Box -->
+        <div class="hero-image-wrapper">
+            <img src="https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1000&auto=format&fit=crop" alt="Profile Visual">
+            
+            <div class="badge badge-top">
+                <i class="fa-solid fa-mobile-screen" style="color: var(--accent-red);"></i> Responsive
+            </div>
+            
+            <div class="badge badge-bottom">
+                <i class="fa-solid fa-code" style="color: var(--accent-red);"></i> Clean code
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Social Links -->
+    <footer>
+        <a href="#" class="social-icon"><i class="fa-brands fa-github"></i></a>
+        <a href="#" class="social-icon"><i class="fa-brands fa-instagram"></i></a>
+        <a href="#" class="social-icon"><i class="fa-brands fa-youtube"></i></a>
+        <a href="#" class="social-icon"><i class="fa-brands fa-tiktok"></i></a>
+    </footer>
+
+    <!-- Typing Effect Script -->
+    <script>
+        const text = "nqbinhan";
+        let index = 0;
+        const speed = 150;
+
+        function typeWriter() {
+            if (index < text.length) {
+                document.getElementById("typing").innerHTML += text.charAt(index);
+                index++;
+                setTimeout(typeWriter, speed);
+            }
+        }
+
+        window.onload = typeWriter;
+    </script>
 </body>
 </html>
