@@ -1,592 +1,366 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zan · zyo.lol</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800;900&family=Orbitron:wght@700;800;900&display=swap" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Be Vietnam Pro', sans-serif;
-            background: #0b0710;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            user-select: none;
-        }
-
-        /* ---- Nền hạt ---- */
-        #particles-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            pointer-events: none;
-        }
-
-        /* ---- Container chính ---- */
-        .container {
-            position: relative;
-            z-index: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 24px;
-            width: 100%;
-            padding: 20px;
-        }
-
-        /* ---- Card chính ---- */
-        .card {
-            width: 320px;
-            background: linear-gradient(145deg, #1a1122, #10081a);
-            border-radius: 32px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            padding: 28px 22px 22px;
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            position: relative;
-            transform-style: preserve-3d;
-            perspective: 800px;
-            transition: transform 0.1s ease;
-            cursor: pointer;
-        }
-
-        .card .glow-ring {
-            position: absolute;
-            inset: -2px;
-            border-radius: 34px;
-            padding: 2px;
-            background: conic-gradient(from 0deg, #ff2b4a, #ffb545, #7cf5ff, #ff8ce0, #ff2b4a);
-            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor;
-            mask-composite: exclude;
-            opacity: 0.6;
-            animation: spin-ring 6s linear infinite;
-            pointer-events: none;
-        }
-        @keyframes spin-ring {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* ---- Avatar ---- */
-        .avatar {
-            width: 108px;
-            height: 108px;
-            border-radius: 50%;
-            border: 3px solid rgba(255, 255, 255, 0.15);
-            overflow: hidden;
-            box-shadow: 0 0 30px rgba(255, 43, 74, 0.3);
-            margin-bottom: 14px;
-            flex-shrink: 0;
-        }
-        .avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-
-        /* ---- Tên & tagline ---- */
-        .name {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 900;
-            font-size: 26px;
-            letter-spacing: 1px;
-            background: linear-gradient(135deg, #fff 30%, #b09bc0);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 40px rgba(255, 43, 74, 0.3);
-        }
-
-        .tagline {
-            font-size: 13px;
-            color: #a897b3;
-            min-height: 24px;
-            margin: 6px 0 16px;
-            font-weight: 500;
-            text-align: center;
-        }
-        .tagline .cursor {
-            display: inline-block;
-            width: 2px;
-            height: 16px;
-            background: #ff2b4a;
-            margin-left: 2px;
-            animation: blink 0.9s infinite;
-            vertical-align: text-bottom;
-        }
-        @keyframes blink {
-            0%,
-            100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0;
-            }
-        }
-
-        /* ---- HUD stats ---- */
-        .stats {
-            display: flex;
-            gap: 12px;
-            width: 100%;
-            margin-bottom: 16px;
-        }
-        .stat-item {
-            flex: 1;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 12px;
-            padding: 8px 4px;
-            text-align: center;
-        }
-        .stat-item .number {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 800;
-            font-size: 16px;
-            color: #ffb545;
-        }
-        .stat-item .label {
-            font-size: 9px;
-            color: #7a6a85;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        /* ---- Player nhạc ---- */
-        .music-player {
-            width: 100%;
-            background: rgba(255, 255, 255, 0.04);
-            border-radius: 16px;
-            padding: 12px 16px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            backdrop-filter: blur(4px);
-        }
-
-        .music-player .play-btn {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            background: rgba(255, 43, 74, 0.2);
-            border: 1px solid rgba(255, 43, 74, 0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            cursor: pointer;
-            flex-shrink: 0;
-            transition: 0.2s;
-            color: white;
-        }
-        .music-player .play-btn:hover {
-            background: rgba(255, 43, 74, 0.35);
-            transform: scale(1.05);
-        }
-
-        .music-player .info {
-            flex: 1;
-            min-width: 0;
-        }
-        .music-player .info .title {
-            font-size: 12px;
-            font-weight: 600;
-            color: #ddd;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .music-player .info .artist {
-            font-size: 10px;
-            color: #7a6a85;
-        }
-
-        .music-player .progress-bar {
-            width: 100%;
-            height: 3px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-            margin-top: 4px;
-            cursor: pointer;
-            position: relative;
-        }
-        .music-player .progress-bar .fill {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, #ff2b4a, #ffb545);
-            border-radius: 4px;
-            transition: width 0.1s linear;
-        }
-
-        .music-player .time {
-            font-size: 10px;
-            color: #7a6a85;
-            flex-shrink: 0;
-            font-variant-numeric: tabular-nums;
-        }
-
-        /* ---- Link bar ---- */
-        .link-bar {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin-top: 4px;
-        }
-        .link-item {
-            width: 44px;
-            height: 44px;
-            border-radius: 14px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            color: #ccc;
-            transition: 0.2s;
-            text-decoration: none;
-            position: relative;
-        }
-        .link-item:hover {
-            transform: translateY(-4px);
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 255, 255, 0.15);
-        }
-        .link-item .tooltip {
-            position: absolute;
-            bottom: calc(100% + 8px);
-            background: #1a1122;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            color: #ddd;
-            font-size: 10px;
-            padding: 4px 10px;
-            border-radius: 6px;
-            white-space: nowrap;
-            opacity: 0;
-            pointer-events: none;
-            transition: 0.15s;
-        }
-        .link-item:hover .tooltip {
-            opacity: 1;
-        }
-
-        /* ---- Footer ---- */
-        .footer {
-            color: #4a3a55;
-            font-size: 10px;
-            margin-top: 10px;
-        }
-
-        /* ---- Responsive ---- */
-        @media (max-width: 480px) {
-            .card {
-                width: 100%;
-                max-width: 340px;
-                padding: 20px 16px;
-            }
-            .name {
-                font-size: 22px;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zan</title>
+<link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)">
+<link href="[https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap](https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap)" rel="stylesheet">
+<style>
+:root{
+--ink: #0a0710;
+--card-a: #1a0f22;
+--card-b: #100816;
+--line: rgba(255,255,255,0.09);
+--crimson: #ff2b4a;
+--gold: #ffb545;
+--holo-a: #7cf5ff;
+--holo-b: #ff8ce0;
+--text: #f6eef9;
+--muted: #a897b3;
+font-family: 'Be Vietnam Pro', sans-serif;
+}
+*{ box-sizing:border-box; }
+html,body{ margin:0; min-height:100%; background: var(--ink); color: var(--text); overflow-x:hidden; }
+.mono{ font-family:'Orbitron', sans-serif; }
+a{ color:inherit; text-decoration:none; }
+::selection{ background: var(--crimson); color:white; }
+body{
+background:
+radial-gradient(900px 500px at 50% -10%, rgba(255,43,74,0.14), transparent 60%),
+radial-gradient(700px 500px at 100% 100%, rgba(124,245,255,0.06), transparent 55%),
+var(--ink);
+}
+body::before{
+content:'';
+position: fixed; inset:0;
+background: repeating-linear-gradient(
+0deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px,
+transparent 1px, transparent 3px
+);
+pointer-events:none;
+z-index:1;
+}
+.page{
+position:relative; z-index:2;
+min-height:100vh;
+display:flex; flex-direction:column; align-items:center; justify-content:center;
+padding: 44px 18px 30px;
+gap: 26px;
+}
+/* ===== RANK CARD ===== */
+.stage{ perspective: 1100px; }
+.card{
+width: min(340px, 88vw);
+aspect-ratio: 3/4.35;
+position:relative;
+border-radius: 22px;
+background: linear-gradient(155deg, var(--card-a), var(--card-b));
+border: 1px solid var(--line);
+box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.02);
+transform-style: preserve-3d;
+transform: perspective(1100px) rotateX(0deg) rotateY(0deg);
+animation: idle-float 6s ease-in-out infinite;
+padding: 20px 20px 22px;
+display:flex; flex-direction:column;
+opacity:0;
+animation: idle-float 6s ease-in-out infinite, cardIn .7s ease forwards .1s;
+}
+@keyframes cardIn{ from{ opacity:0; transform: translateY(20px);} to{ opacity:1; transform: translateY(0);} }
+@keyframes idle-float{ 0%,100%{ transform: rotateX(2deg) rotateY(-3deg); } 50%{ transform: rotateX(-2deg) rotateY(3deg); } }
+.card .foil{
+position:absolute; inset:0;
+border-radius: 22px;
+background: linear-gradient(115deg,
+transparent 30%,
+rgba(124,245,255,0.16) 42%,
+rgba(255,255,255,0.30) 48%,
+rgba(255,140,224,0.18) 54%,
+transparent 66%);
+background-size: 250% 250%;
+background-position: var(--fx, 40%) var(--fy, 40%);
+mix-blend-mode: color-dodge;
+pointer-events:none;
+opacity: 0.85;
+}
+.card .corner-cut{
+position:absolute; top:0; right:0;
+width: 70px; height:70px;
+background: linear-gradient(135deg, transparent 50%, rgba(255,181,69,0.14) 50%);
+border-radius: 0 22px 0 0;
+pointer-events:none;
+}
+.card-top{
+display:flex; align-items:center; justify-content:space-between;
+margin-bottom: 14px;
+position:relative; z-index:2;
+}
+.rank-chip{
+font-family:'Orbitron', sans-serif;
+font-size: 10px;
+font-weight: 700;
+letter-spacing: 1.5px;
+color: var(--gold);
+border: 1px solid rgba(255,181,69,0.4);
+background: rgba(255,181,69,0.08);
+padding: 5px 10px;
+border-radius: 6px;
+}
+.online-tag{
+display:flex; align-items:center; gap:6px;
+font-size: 10px;
+font-weight: 600;
+color: var(--holo-a);
+}
+.online-tag .dot{
+width:6px; height:6px; border-radius:50%;
+background: var(--holo-a);
+box-shadow: 0 0 8px var(--holo-a);
+animation: blink 1.6s infinite;
+}
+@keyframes blink{ 0%,100%{opacity:1;} 50%{opacity:.25;} }
+.avatar-hex{
+width: 108px; height: 118px;
+margin: 4px auto 14px;
+position:relative;
+z-index:2;
+}
+.avatar-hex .glow{
+position:absolute; inset:-14px;
+background: conic-gradient(from 0deg, var(--crimson), var(--gold), var(--holo-a), var(--holo-b), var(--crimson));
+clip-path: polygon(25% 2%, 75% 2%, 100% 50%, 75% 98%, 25% 98%, 0% 50%);
+filter: blur(10px);
+opacity: 0.7;
+animation: spin 6s linear infinite;
+}
+@keyframes spin{ to{ transform: rotate(360deg); } }
+.avatar-hex .frame{
+position:absolute; inset:0;
+clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0% 50%);
+background: var(--ink);
+padding: 3px;
+}
+.avatar-hex img{
+width:100%; height:100%;
+object-fit:cover;
+clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0% 50%);
+display:block;
+}
+#nameField{
+font-family:'Orbitron', sans-serif;
+font-weight: 800;
+font-size: 22px;
+text-align:center;
+letter-spacing: 0.5px;
+outline:none;
+color: var(--text);
+text-shadow: 0 0 18px rgba(255,43,74,0.5);
+position:relative; z-index:2;
+}
+.tagline{
+text-align:center;
+font-size: 12.5px;
+color: var(--muted);
+margin: 8px 0 16px;
+min-height: 18px;
+position:relative; z-index:2;
+font-weight: 500;
+}
+.tagline .cursor{ animation: blink 1s infinite; color: var(--crimson); }
+.hud-stats{
+display:flex; gap: 8px;
+margin-bottom: 16px;
+position:relative; z-index:2;
+}
+.hud-stat{
+flex:1;
+background: rgba(255,255,255,0.03);
+border: 1px solid var(--line);
+border-radius: 10px;
+padding: 8px 6px;
+text-align:center;
+}
+.hud-stat .v{
+font-family:'Orbitron', sans-serif;
+font-weight: 700;
+font-size: 14px;
+color: var(--gold);
+}
+.hud-stat .k{
+font-size: 9px;
+color: var(--muted);
+text-transform: uppercase;
+letter-spacing: 0.5px;
+margin-top: 2px;
+}
+.visits{
+text-align:center;
+font-size: 10.5px;
+color: var(--muted);
+margin-top: auto;
+position:relative; z-index:2;
+}
+.visits b{ color: var(--holo-a); font-family:'Orbitron', sans-serif; }
+/* ===== HOTBAR SOCIAL SLOTS ===== */
+.hotbar{
+display:flex; gap: 10px;
+background: rgba(255,255,255,0.03);
+border: 1px solid var(--line);
+padding: 10px;
+border-radius: 18px;
+backdrop-filter: blur(10px);
+}
+.slot{
+position:relative;
+width: 50px; height:50px;
+border-radius: 12px;
+background: rgba(255,255,255,0.04);
+border: 1px solid var(--line);
+display:flex; align-items:center; justify-content:center;
+font-size: 19px;
+cursor:pointer;
+transition: transform .18s ease, border-color .2s ease, background .2s ease, box-shadow .2s ease;
+overflow:hidden;
+}
+.slot .key{
+position:absolute; top:2px; left:4px;
+font-family:'Orbitron', sans-serif;
+font-size: 8px;
+color: var(--muted);
+}
+.slot .tip{
+position:absolute; bottom: 62px; left:50%;
+transform: translateX(-50%) translateY(4px);
+background: #17101d;
+border: 1px solid var(--line);
+color: var(--text);
+font-size: 11px;
+font-weight: 600;
+padding: 5px 10px;
+border-radius: 8px;
+white-space:nowrap;
+opacity:0;
+pointer-events:none;
+transition: opacity .15s ease, transform .15s ease;
+}
+.slot:hover{ transform: translateY(-6px); box-shadow: 0 12px 24px rgba(0,0,0,0.4); }
+.slot:hover .tip{ opacity:1; transform: translateX(-50%) translateY(0); }
+.slot.tiktok:hover{ border-color:#fe2c55; background: rgba(254,44,85,0.12); }
+.slot.telegram:hover{ border-color:#229ed9; background: rgba(34,158,217,0.12); }
+.slot.discord:hover{ border-color:#5865f2; background: rgba(88,101,242,0.12); }
+.audio-overlay{
+position: fixed; inset:0; background: rgba(10,7,16,0.92);
+display: flex; flex-direction: column; align-items: center; justify-content: center;
+z-index: 999; transition: opacity .5s ease; cursor: pointer;
+}
+.audio-overlay h2{ font-family:'Orbitron',sans-serif; color: var(--holo-a); font-size: 18px; margin-bottom: 8px; }
+.audio-overlay p{ color: var(--muted); font-size: 13px; }
+footer{
+position:relative; z-index:2;
+text-align:center;
+color: var(--muted);
+font-size: 10.5px;
+padding-bottom: 20px;
+}
+</style>
 </head>
 <body>
-
-    <!-- Canvas nền hạt -->
-    <canvas id="particles-canvas"></canvas>
-
-    <div class="container">
-
-        <!-- Card chính -->
-        <div class="card" id="card">
-            <div class="glow-ring"></div>
-
-            <div class="avatar">
-                <img id="avatarImg" src="https://i.pinimg.com/736x/8b/16/7a/8b167af653c2399dd93b952a48740620.jpg" alt="avatar">
-            </div>
-
-            <div class="name">ZAN</div>
-            <div class="tagline">
-                <span id="typedText"></span><span class="cursor"></span>
-            </div>
-
-            <div class="stats">
-                <div class="stat-item">
-                    <div class="number">99</div>
-                    <div class="label">Cấp độ</div>
-                </div>
-                <div class="stat-item">
-                    <div class="number">1.2K</div>
-                    <div class="label">Follow</div>
-                </div>
-                <div class="stat-item">
-                    <div class="number">30</div>
-                    <div class="label">Streak</div>
-                </div>
-            </div>
-
-            <!-- Player nhạc -->
-            <div class="music-player" id="musicPlayer">
-                <button class="play-btn" id="playBtn">▶</button>
-                <div class="info">
-                    <div class="title" id="songTitle">Không yêu ai nữa</div>
-                    <div class="artist" id="songArtist">nqbinhan</div>
-                    <div class="progress-bar" id="progressBar">
-                        <div class="fill" id="progressFill"></div>
-                    </div>
-                </div>
-                <span class="time" id="timeDisplay">0:00 / 0:00</span>
-            </div>
-
-            <!-- Link bar -->
-            <div class="link-bar">
-                <a href="#" class="link-item" data-tooltip="TikTok">🎵<span class="tooltip">TikTok</span></a>
-                <a href="#" class="link-item" data-tooltip="Instagram">📸<span class="tooltip">Instagram</span></a>
-                <a href="#" class="link-item" data-tooltip="Facebook">📘<span class="tooltip">Facebook</span></a>
-                <a href="#" class="link-item" data-tooltip="YouTube">▶️<span class="tooltip">YouTube</span></a>
-                <a href="#" class="link-item" data-tooltip="Discord">🎮<span class="tooltip">Discord</span></a>
-                <a href="#" class="link-item" data-tooltip="Zalo">💬<span class="tooltip">Zalo</span></a>
-            </div>
-        </div>
-
-        <div class="footer">© 2026 — made with ❤️</div>
-    </div>
-
-    <script>
-        // ============================================================
-        // 1. HẠT NỀN (Particles)
-        // ============================================================
-        const canvas = document.getElementById('particles-canvas');
-        const ctx = canvas.getContext('2d');
-
-        let width, height, particles = [];
-        const PARTICLE_COUNT = 70;
-
-        function resize() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resize);
-        resize();
-
-        class Particle {
-            constructor() {
-                this.reset();
-            }
-            reset() {
-                this.x = Math.random() * width;
-                this.y = Math.random() * height;
-                this.size = Math.random() * 2.5 + 1;
-                this.speedX = (Math.random() - 0.5) * 0.4;
-                this.speedY = (Math.random() - 0.5) * 0.4;
-                this.opacity = Math.random() * 0.5 + 0.2;
-            }
-            update() {
-                this.x += this.speedX;
-                this.y += this.speedY;
-                if (this.x < 0 || this.x > width || this.y < 0 || this.y > height) {
-                    this.reset();
-                }
-            }
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
-                ctx.fill();
-            }
-        }
-
-        for (let i = 0; i < PARTICLE_COUNT; i++) {
-            particles.push(new Particle());
-        }
-
-        function animateParticles() {
-            ctx.clearRect(0, 0, width, height);
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
-            requestAnimationFrame(animateParticles);
-        }
-        animateParticles();
-
-        // ============================================================
-        // 2. CARD 3D TILT (nghiêng theo chuột)
-        // ============================================================
-        const card = document.getElementById('card');
-
-        card.addEventListener('mousemove', (e) => {
-            const rect = card.getBoundingClientRect();
-            const x = (e.clientX - rect.left) / rect.width - 0.5;
-            const y = (e.clientY - rect.top) / rect.height - 0.5;
-            const rotateX = y * -12;
-            const rotateY = x * 12;
-            card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-        });
-
-        card.addEventListener('mouseleave', () => {
-            card.style.transform = 'rotateX(0deg) rotateY(0deg)';
-        });
-
-        // ============================================================
-        // 3. TYPING TAGLINE
-        // ============================================================
-        const phrases = [
-            "» Đang tìm một bản tình ca...",
-            "» Chạm vào card để nghe nhạc 🎵",
-            "» Cảm ơn bạn đã ghé thăm ✨"
-        ];
-        let pIndex = 0,
-            cIndex = 0,
-            deleting = false;
-        const typedEl = document.getElementById('typedText');
-
-        function typeLoop() {
-            const current = phrases[pIndex];
-            if (!deleting) {
-                cIndex++;
-                typedEl.textContent = current.slice(0, cIndex);
-                if (cIndex === current.length) {
-                    deleting = true;
-                    setTimeout(typeLoop, 2000);
-                    return;
-                }
-            } else {
-                cIndex--;
-                typedEl.textContent = current.slice(0, cIndex);
-                if (cIndex === 0) {
-                    deleting = false;
-                    pIndex = (pIndex + 1) % phrases.length;
-                }
-            }
-            setTimeout(typeLoop, deleting ? 20 : 40);
-        }
-        typeLoop();
-
-        // ============================================================
-        // 4. MUSIC PLAYER (tự động phát khi click vào card)
-        // ============================================================
-        // Dùng bài hát "Không yêu ai nữa" - nqbinhan từ URL có sẵn
-        const SONG_URL = 'https://files.catbox.moe/3bvhz6.mp3'; // thay bằng link nhạc bạn muốn
-
-        const audio = new Audio(SONG_URL);
-        audio.volume = 0.8;
-        audio.loop = true;
-
-        const playBtn = document.getElementById('playBtn');
-        const progressFill = document.getElementById('progressFill');
-        const progressBar = document.getElementById('progressBar');
-        const timeDisplay = document.getElementById('timeDisplay');
-        const songTitle = document.getElementById('songTitle');
-        const songArtist = document.getElementById('songArtist');
-
-        let isPlaying = false;
-
-        // Cập nhật thanh tiến trình
-        audio.addEventListener('timeupdate', () => {
-            const percent = (audio.currentTime / audio.duration) * 100;
-            progressFill.style.width = percent + '%';
-            const current = formatTime(audio.currentTime);
-            const total = formatTime(audio.duration);
-            timeDisplay.textContent = `${current} / ${total}`;
-        });
-
-        function formatTime(seconds) {
-            if (isNaN(seconds)) return '0:00';
-            const m = Math.floor(seconds / 60);
-            const s = Math.floor(seconds % 60).toString().padStart(2, '0');
-            return `${m}:${s}`;
-        }
-
-        // Play / Pause
-        function togglePlay() {
-            if (isPlaying) {
-                audio.pause();
-                playBtn.textContent = '▶';
-            } else {
-                // Nếu chưa có dữ liệu, load trước
-                if (audio.readyState < 2) {
-                    audio.load();
-                }
-                audio.play().catch(err => console.log('Tự động phát bị chặn, bấm vào card để phát'));
-                playBtn.textContent = '⏸';
-            }
-            isPlaying = !isPlaying;
-        }
-
-        playBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            togglePlay();
-        });
-
-        // Click vào card để bật/tắt nhạc (giống zyo.lol)
-        card.addEventListener('click', () => {
-            if (!isPlaying) {
-                // Nếu chưa phát, phát nhạc
-                if (audio.readyState < 2) {
-                    audio.load();
-                }
-                audio.play().catch(err => console.log('Tự động phát bị chặn'));
-                playBtn.textContent = '⏸';
-                isPlaying = true;
-            } else {
-                // Nếu đang phát, tạm dừng
-                audio.pause();
-                playBtn.textContent = '▶';
-                isPlaying = false;
-            }
-        });
-
-        // Click thanh tiến trình để tua
-        progressBar.addEventListener('click', (e) => {
-            if (audio.duration) {
-                const rect = progressBar.getBoundingClientRect();
-                const percent = (e.clientX - rect.left) / rect.width;
-                audio.currentTime = percent * audio.duration;
-            }
-        });
-
-        // Khi nhạc kết thúc, reset nút
-        audio.addEventListener('ended', () => {
-            playBtn.textContent = '▶';
-            isPlaying = false;
-        });
-
-        // ============================================================
-        // 5. TOOLTIP CHO LINK (tự động từ data-tooltip)
-        // ============================================================
-        document.querySelectorAll('.link-item').forEach(el => {
-            const tip = el.getAttribute('data-tooltip');
-            if (tip) {
-                const span = el.querySelector('.tooltip');
-                if (span) span.textContent = tip;
-            }
-        });
-
-        // ============================================================
-        // 6. LƯU Ý: Nếu muốn đổi avatar, sửa src trong thẻ img
-        // ============================================================
-        console.log('🎵 Nhạc sẽ tự động phát khi click vào card!');
-    </script>
-
+<div class="audio-overlay" id="audioOverlay">
+<h2>BẤM ĐỂ KHỞI ĐỘNG TRẢI NGHIỆM</h2>
+<p>Nhấn vào bất kỳ đâu để bật nhạc và mở giao diện ZAN</p>
+</div>
+<!-- Nhạc nền tự động phát sau khi tương tác (hoặc lách tự động phát bằng Audio Context) -->
+<audio id="bgMusic" loop>
+<source src="[https://files.catbox.moe/c9v2v3.mp3](https://files.catbox.moe/c9v2v3.mp3)" type="audio/mp3">
+</audio>
+<div class="page">
+<div class="stage">
+<div class="card" id="rankCard" style="--fx:40%; --fy:40%;">
+<div class="foil"></div>
+<div class="corner-cut"></div>
+<div class="card-top">
+<div class="rank-chip">HẠNG HUYỀN THOẠI</div>
+<div class="online-tag"><span class="dot"></span>ONLINE</div>
+</div>
+<div class="avatar-hex">
+<div class="glow"></div>
+<div class="frame">
+<!-- Avatar của bạn được giữ nguyên theo yêu cầu -->
+<img id="avatarImg" src="data:image/webp;base64,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" alt="Ảnh đại diện">
+</div>
+</div>
+<div id="nameField" contenteditable="true">ZAN</div>
+<div class="tagline"><span id="typedText"></span><span class="cursor">▍</span></div>
+<div class="hud-stats">
+<div class="hud-stat"><div class="v">99</div><div class="k">Cấp độ</div></div>
+<div class="hud-stat"><div class="v">1.2K</div><div class="k">Follow</div></div>
+<div class="hud-stat"><div class="v">30</div><div class="k">Streak</div></div>
+</div>
+<div class="visits">👁 <b id="visitCount">1.204</b> lượt ghé thăm</div>
+</div>
+</div>
+<div class="hotbar" id="linksBox">
+<a class="slot tiktok" href="[https://tiktok.com/@zanx09](https://tiktok.com/@zanx09)" target="_blank" rel="noopener">
+<span class="key">1</span>🎵<span class="tip">TikTok</span>
+</a>
+<a class="slot telegram" href="[https://t.me/zanx09](https://t.me/zanx09)" target="_blank" rel="noopener">
+<span class="key">2</span>✈️<span class="tip">Telegram</span>
+</a>
+<a class="slot discord" href="[https://discord.gg/zan](https://discord.gg/zan)" target="_blank" rel="noopener">
+<span class="key">3</span>🎮<span class="tip">Discord</span>
+</a>
+</div>
+</div>
+<footer>© 2026 ZAN</footer>
+<script>
+// Tự động phát nhạc khi người dùng tương tác lần đầu (click bất cứ đâu trên màn hình)
+const bgMusic = document.getElementById('bgMusic');
+const audioOverlay = document.getElementById('audioOverlay');
+function unlockAudio() {
+bgMusic.play().then(() => {
+audioOverlay.style.opacity = '0';
+setTimeout(() => audioOverlay.remove(), 500);
+window.removeEventListener('click', unlockAudio);
+window.removeEventListener('touchstart', unlockAudio);
+}).catch(e => console.log(e));
+}
+window.addEventListener('click', unlockAudio);
+window.addEventListener('touchstart', unlockAudio);
+// Hiệu ứng gõ chữ
+const words = ["Giao diện tối thượng", "Zan Profile", "Welcome to my world"];
+let i = 0, j = 0, currentWord = "", isDeleting = false;
+const typedSpan = document.getElementById('typedText');
+function typeEffect() {
+currentWord = words[i];
+if (isDeleting) {
+typedSpan.textContent = currentWord.substring(0, j - 1);
+j--;
+if (j === 0) { isDeleting = false; i = (i + 1) % words.length; }
+} else {
+typedSpan.textContent = currentWord.substring(0, j + 1);
+j++;
+if (j === currentWord.length) { isDeleting = true; setTimeout(typeEffect, 1500); return; }
+}
+setTimeout(typeEffect, isDeleting ? 50 : 100);
+}
+typeEffect();
+// Hiệu ứng xoay 3D thẻ bài theo chuột
+const card = document.getElementById('rankCard');
+document.addEventListener('mousemove', (e) => {
+const rect = card.getBoundingClientRect();
+const x = e.clientX - rect.left;
+const y = e.clientY - rect.top;
+const xc = rect.width / 2;
+const yc = rect.height / 2;
+const dx = (x - xc) / xc;
+const dy = (y - yc) / yc;
+card.style.transform = perspective(1100px) rotateX(${ -dy * 10 }deg) rotateY(${ dx * 10 }deg);
+card.style.setProperty('--fx', ${(x / rect.width) * 100}%);
+card.style.setProperty('--fy', ${(y / rect.height) * 100}%);
+});
+document.addEventListener('mouseleave', () => {
+card.style.transform = 'perspective(1100px) rotateX(0deg) rotateY(0deg)';
+});
+</script>
 </body>
 </html>
