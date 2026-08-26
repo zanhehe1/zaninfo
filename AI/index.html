@@ -3,364 +3,368 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Zan</title>
+<title>Zan — Cyberpunk Nexus</title>
 <link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)">
-<link href="[https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap](https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap)" rel="stylesheet">
+<link href="[https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap](https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap)" rel="stylesheet">
 <style>
-:root{
---ink: #0a0710;
---card-a: #1a0f22;
---card-b: #100816;
---line: rgba(255,255,255,0.09);
---crimson: #ff2b4a;
---gold: #ffb545;
---holo-a: #7cf5ff;
---holo-b: #ff8ce0;
---text: #f6eef9;
---muted: #a897b3;
-font-family: 'Be Vietnam Pro', sans-serif;
+:root {
+--bg: #030305;
+--card-bg: rgba(12, 12, 18, 0.7);
+--border: rgba(255, 255, 255, 0.08);
+--border-glow: rgba(255, 45, 85, 0.4);
+--accent: #ff2d55;
+--accent-glow: rgba(255, 45, 85, 0.25);
+--cyan: #00f0ff;
+--text: #f4f4f6;
+--muted: #8e8e93;
+font-family: 'Plus Jakarta+Sans', sans-serif;
 }
-*{ box-sizing:border-box; }
-html,body{ margin:0; min-height:100%; background: var(--ink); color: var(--text); overflow-x:hidden; }
-.mono{ font-family:'Orbitron', sans-serif; }
-a{ color:inherit; text-decoration:none; }
-::selection{ background: var(--crimson); color:white; }
-body{
-background:
-radial-gradient(900px 500px at 50% -10%, rgba(255,43,74,0.14), transparent 60%),
-radial-gradient(700px 500px at 100% 100%, rgba(124,245,255,0.06), transparent 55%),
-var(--ink);
-}
-body::before{
-content:'';
-position: fixed; inset:0;
-background: repeating-linear-gradient(
-0deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px,
-transparent 1px, transparent 3px
-);
-pointer-events:none;
-z-index:1;
-}
-.page{
-position:relative; z-index:2;
-min-height:100vh;
-display:flex; flex-direction:column; align-items:center; justify-content:center;
-padding: 44px 18px 30px;
-gap: 26px;
-}
-/* ===== RANK CARD ===== */
-.stage{ perspective: 1100px; }
-.card{
-width: min(340px, 88vw);
-aspect-ratio: 3/4.35;
-position:relative;
-border-radius: 22px;
-background: linear-gradient(155deg, var(--card-a), var(--card-b));
-border: 1px solid var(--line);
-box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.02);
-transform-style: preserve-3d;
-transform: perspective(1100px) rotateX(0deg) rotateY(0deg);
-animation: idle-float 6s ease-in-out infinite;
-padding: 20px 20px 22px;
-display:flex; flex-direction:column;
-opacity:0;
-animation: idle-float 6s ease-in-out infinite, cardIn .7s ease forwards .1s;
-}
-@keyframes cardIn{ from{ opacity:0; transform: translateY(20px);} to{ opacity:1; transform: translateY(0);} }
-@keyframes idle-float{ 0%,100%{ transform: rotateX(2deg) rotateY(-3deg); } 50%{ transform: rotateX(-2deg) rotateY(3deg); } }
-.card .foil{
-position:absolute; inset:0;
-border-radius: 22px;
-background: linear-gradient(115deg,
-transparent 30%,
-rgba(124,245,255,0.16) 42%,
-rgba(255,255,255,0.30) 48%,
-rgba(255,140,224,0.18) 54%,
-transparent 66%);
-background-size: 250% 250%;
-background-position: var(--fx, 40%) var(--fy, 40%);
-mix-blend-mode: color-dodge;
-pointer-events:none;
-opacity: 0.85;
-}
-.card .corner-cut{
-position:absolute; top:0; right:0;
-width: 70px; height:70px;
-background: linear-gradient(135deg, transparent 50%, rgba(255,181,69,0.14) 50%);
-border-radius: 0 22px 0 0;
-pointer-events:none;
-}
-.card-top{
-display:flex; align-items:center; justify-content:space-between;
-margin-bottom: 14px;
-position:relative; z-index:2;
-}
-.rank-chip{
-font-family:'Orbitron', sans-serif;
-font-size: 10px;
-font-weight: 700;
-letter-spacing: 1.5px;
-color: var(--gold);
-border: 1px solid rgba(255,181,69,0.4);
-background: rgba(255,181,69,0.08);
-padding: 5px 10px;
-border-radius: 6px;
-}
-.online-tag{
-display:flex; align-items:center; gap:6px;
-font-size: 10px;
-font-weight: 600;
-color: var(--holo-a);
-}
-.online-tag .dot{
-width:6px; height:6px; border-radius:50%;
-background: var(--holo-a);
-box-shadow: 0 0 8px var(--holo-a);
-animation: blink 1.6s infinite;
-}
-@keyframes blink{ 0%,100%{opacity:1;} 50%{opacity:.25;} }
-.avatar-hex{
-width: 108px; height: 118px;
-margin: 4px auto 14px;
-position:relative;
-z-index:2;
-}
-.avatar-hex .glow{
-position:absolute; inset:-14px;
-background: conic-gradient(from 0deg, var(--crimson), var(--gold), var(--holo-a), var(--holo-b), var(--crimson));
-clip-path: polygon(25% 2%, 75% 2%, 100% 50%, 75% 98%, 25% 98%, 0% 50%);
-filter: blur(10px);
-opacity: 0.7;
-animation: spin 6s linear infinite;
-}
-@keyframes spin{ to{ transform: rotate(360deg); } }
-.avatar-hex .frame{
-position:absolute; inset:0;
-clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0% 50%);
-background: var(--ink);
-padding: 3px;
-}
-.avatar-hex img{
-width:100%; height:100%;
-object-fit:cover;
-clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0% 50%);
-display:block;
-}
-#nameField{
-font-family:'Orbitron', sans-serif;
-font-weight: 800;
-font-size: 22px;
-text-align:center;
-letter-spacing: 0.5px;
-outline:none;
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+background-color: var(--bg);
 color: var(--text);
-text-shadow: 0 0 18px rgba(255,43,74,0.5);
-position:relative; z-index:2;
+min-height: 100vh;
+display: flex;
+justify-content: center;
+align-items: center;
+overflow-x: hidden;
+position: relative;
 }
-.tagline{
-text-align:center;
-font-size: 12.5px;
-color: var(--muted);
-margin: 8px 0 16px;
-min-height: 18px;
-position:relative; z-index:2;
-font-weight: 500;
+/* Đèn nền động */
+.ambient-glow {
+position: fixed;
+width: 600px; height: 600px;
+background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+top: 50%; left: 50%;
+transform: translate(-50%, -50%);
+z-index: 0;
+pointer-events: none;
+filter: blur(80px);
+animation: pulseGlow 8s ease-in-out infinite alternate;
 }
-.tagline .cursor{ animation: blink 1s infinite; color: var(--crimson); }
-.hud-stats{
-display:flex; gap: 8px;
-margin-bottom: 16px;
-position:relative; z-index:2;
+@keyframes pulseGlow {
+0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.5; }
+100% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.9; }
 }
-.hud-stat{
-flex:1;
-background: rgba(255,255,255,0.03);
-border: 1px solid var(--line);
-border-radius: 10px;
-padding: 8px 6px;
-text-align:center;
+.grid-bg {
+position: fixed; inset: 0;
+background-image: linear-gradient(to right, rgba(255,255,255,0.015) 1px, transparent 1px),
+linear-gradient(to bottom, rgba(255,255,255,0.015) 1px, transparent 1px);
+background-size: 40px 40px;
+z-index: 0;
 }
-.hud-stat .v{
-font-family:'Orbitron', sans-serif;
+/* Khung chính */
+.container {
+position: relative;
+z-index: 2;
+width: 100%;
+max-width: 440px;
+padding: 24px;
+display: flex;
+flex-direction: column;
+gap: 20px;
+}
+.glass-card {
+background: var(--card-bg);
+backdrop-filter: blur(20px);
+-webkit-backdrop-filter: blur(20px);
+border: 1px solid var(--border);
+border-radius: 28px;
+padding: 32px 24px;
+text-align: center;
+position: relative;
+box-shadow: 0 30px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1);
+transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.glass-card:hover {
+border-color: var(--border-glow);
+box-shadow: 0 30px 70px rgba(0,0,0,0.7), 0 0 30px var(--accent-glow);
+}
+/* Badge trạng thái */
+.status-badge {
+display: inline-flex;
+align-items: center;
+gap: 8px;
+background: rgba(255, 45, 85, 0.1);
+border: 1px solid rgba(255, 45, 85, 0.3);
+padding: 6px 14px;
+border-radius: 50px;
+font-size: 11px;
+font-weight: 600;
+letter-spacing: 0.5px;
+color: var(--accent);
+margin-bottom: 22px;
+text-transform: uppercase;
+}
+.status-dot {
+width: 6px; height: 6px;
+background-color: var(--accent);
+border-radius: 50%;
+box-shadow: 0 0 10px var(--accent);
+animation: blink 1.5s infinite;
+}
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+/* Avatar */
+.avatar-container {
+width: 110px; height: 110px;
+margin: 0 auto 20px;
+position: relative;
+}
+.avatar-ring {
+position: absolute; inset: -4px;
+border-radius: 50%;
+background: conic-gradient(from 0deg, var(--accent), var(--cyan), transparent, var(--accent));
+animation: rotateRing 6s linear infinite;
+z-index: 1;
+}
+@keyframes rotateRing { to { transform: rotate(360deg); } }
+.avatar-img {
+position: relative; z-index: 2;
+width: 100%; height: 100%;
+border-radius: 50%;
+object-fit: cover;
+border: 3px solid var(--bg);
+}
+/* Tên & Mô tả */
+.profile-name {
+font-family: 'Space Grotesk', sans-serif;
+font-size: 26px;
 font-weight: 700;
-font-size: 14px;
-color: var(--gold);
+letter-spacing: -0.5px;
+color: var(--text);
+margin-bottom: 6px;
 }
-.hud-stat .k{
-font-size: 9px;
+.profile-bio {
+font-size: 13.5px;
+color: var(--muted);
+line-height: 1.5;
+margin-bottom: 24px;
+min-height: 40px;
+}
+.profile-bio .cursor {
+color: var(--accent);
+animation: blink 0.8s infinite;
+}
+/* Thống kê nhanh */
+.stats-grid {
+display: grid;
+grid-template-columns: repeat(3, 1fr);
+gap: 10px;
+margin-bottom: 26px;
+}
+.stat-box {
+background: rgba(255, 255, 255, 0.02);
+border: 1px solid var(--border);
+border-radius: 16px;
+padding: 12px 8px;
+transition: background 0.2s ease;
+}
+.stat-box:hover {
+background: rgba(255, 255, 255, 0.05);
+}
+.stat-value {
+font-family: 'Space Grotesk', sans-serif;
+font-size: 16px;
+font-weight: 700;
+color: var(--text);
+margin-bottom: 2px;
+}
+.stat-label {
+font-size: 10px;
 color: var(--muted);
 text-transform: uppercase;
 letter-spacing: 0.5px;
-margin-top: 2px;
 }
-.visits{
-text-align:center;
-font-size: 10.5px;
-color: var(--muted);
-margin-top: auto;
-position:relative; z-index:2;
+/* Danh sách liên kết (Social Links) */
+.links-list {
+display: flex;
+flex-direction: column;
+gap: 12px;
 }
-.visits b{ color: var(--holo-a); font-family:'Orbitron', sans-serif; }
-/* ===== HOTBAR SOCIAL SLOTS ===== */
-.hotbar{
-display:flex; gap: 10px;
-background: rgba(255,255,255,0.03);
-border: 1px solid var(--line);
-padding: 10px;
-border-radius: 18px;
-backdrop-filter: blur(10px);
-}
-.slot{
-position:relative;
-width: 50px; height:50px;
-border-radius: 12px;
-background: rgba(255,255,255,0.04);
-border: 1px solid var(--line);
-display:flex; align-items:center; justify-content:center;
-font-size: 19px;
-cursor:pointer;
-transition: transform .18s ease, border-color .2s ease, background .2s ease, box-shadow .2s ease;
-overflow:hidden;
-}
-.slot .key{
-position:absolute; top:2px; left:4px;
-font-family:'Orbitron', sans-serif;
-font-size: 8px;
-color: var(--muted);
-}
-.slot .tip{
-position:absolute; bottom: 62px; left:50%;
-transform: translateX(-50%) translateY(4px);
-background: #17101d;
-border: 1px solid var(--line);
+.social-link {
+display: flex;
+align-items: center;
+justify-content: space-between;
+background: rgba(255, 255, 255, 0.03);
+border: 1px solid var(--border);
+padding: 14px 18px;
+border-radius: 16px;
 color: var(--text);
-font-size: 11px;
+text-decoration: none;
 font-weight: 600;
-padding: 5px 10px;
-border-radius: 8px;
-white-space:nowrap;
-opacity:0;
-pointer-events:none;
-transition: opacity .15s ease, transform .15s ease;
+font-size: 14px;
+transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+position: relative;
+overflow: hidden;
 }
-.slot:hover{ transform: translateY(-6px); box-shadow: 0 12px 24px rgba(0,0,0,0.4); }
-.slot:hover .tip{ opacity:1; transform: translateX(-50%) translateY(0); }
-.slot.tiktok:hover{ border-color:#fe2c55; background: rgba(254,44,85,0.12); }
-.slot.telegram:hover{ border-color:#229ed9; background: rgba(34,158,217,0.12); }
-.slot.discord:hover{ border-color:#5865f2; background: rgba(88,101,242,0.12); }
-.audio-overlay{
-position: fixed; inset:0; background: rgba(10,7,16,0.92);
-display: flex; flex-direction: column; align-items: center; justify-content: center;
-z-index: 999; transition: opacity .5s ease; cursor: pointer;
+.social-link::before {
+content: '';
+position: absolute; inset: 0;
+background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+transform: translateX(-100%);
+transition: transform 0.5s ease;
 }
-.audio-overlay h2{ font-family:'Orbitron',sans-serif; color: var(--holo-a); font-size: 18px; margin-bottom: 8px; }
-.audio-overlay p{ color: var(--muted); font-size: 13px; }
-footer{
-position:relative; z-index:2;
-text-align:center;
+.social-link:hover::before { transform: translateX(100%); }
+.social-link:hover {
+border-color: var(--accent);
+background: rgba(255, 45, 85, 0.06);
+transform: translateY(-2px);
+box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+.link-left {
+display: flex;
+align-items: center;
+gap: 12px;
+}
+.link-icon {
+font-size: 18px;
+}
+.link-arrow {
 color: var(--muted);
-font-size: 10.5px;
-padding-bottom: 20px;
+font-size: 14px;
+transition: transform 0.2s ease, color 0.2s ease;
+}
+.social-link:hover .link-arrow {
+transform: translateX(4px);
+color: var(--accent);
+}
+/* Overlay âm thanh khởi động */
+.audio-overlay {
+position: fixed; inset: 0;
+background: rgba(3, 3, 5, 0.95);
+backdrop-filter: blur(10px);
+z-index: 999;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+cursor: pointer;
+transition: opacity 0.5s ease;
+}
+.audio-overlay h2 {
+font-family: 'Space Grotesk', sans-serif;
+font-size: 20px;
+color: var(--text);
+margin-bottom: 8px;
+letter-spacing: -0.5px;
+}
+.audio-overlay p {
+font-size: 13px;
+color: var(--muted);
+}
+footer {
+text-align: center;
+font-size: 11px;
+color: var(--muted);
+margin-top: 16px;
+letter-spacing: 0.5px;
 }
 </style>
 </head>
 <body>
 <div class="audio-overlay" id="audioOverlay">
-<h2>BẤM ĐỂ KHỞI ĐỘNG TRẢI NGHIỆM</h2>
-<p>Nhấn vào bất kỳ đâu để bật nhạc và mở giao diện ZAN</p>
+<h2>CHẠM ĐỂ KHỞI ĐỘNG HỆ THỐNG</h2>
+<p>Nhấn vào bất kỳ đâu để vào giao diện chính & bật nhạc nền</p>
 </div>
-<!-- Nhạc nền tự động phát sau khi tương tác (hoặc lách tự động phát bằng Audio Context) -->
 <audio id="bgMusic" loop>
 <source src="[https://files.catbox.moe/c9v2v3.mp3](https://files.catbox.moe/c9v2v3.mp3)" type="audio/mp3">
 </audio>
-<div class="page">
-<div class="stage">
-<div class="card" id="rankCard" style="--fx:40%; --fy:40%;">
-<div class="foil"></div>
-<div class="corner-cut"></div>
-<div class="card-top">
-<div class="rank-chip">HẠNG HUYỀN THOẠI</div>
-<div class="online-tag"><span class="dot"></span>ONLINE</div>
+<div class="ambient-glow"></div>
+<div class="grid-bg"></div>
+<div class="container">
+<div class="glass-card">
+<div class="status-badge">
+<span class="status-dot"></span>
+Hệ thống trực tuyến
 </div>
-<div class="avatar-hex">
-<div class="glow"></div>
-<div class="frame">
-<!-- Avatar của bạn được giữ nguyên theo yêu cầu -->
-<img id="avatarImg" src="data:image/webp;base64,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" alt="Ảnh đại diện">
+<div class="avatar-container">
+<div class="avatar-ring"></div>
+<img class="avatar-img" src="data:image/webp;base64,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">
+</div>
+<h1 class="profile-name">ZAN</h1>
+<div class="profile-bio"><span id="typedText"></span><span class="cursor">|</span></div>
+<div class="stats-grid">
+<div class="stat-box">
+<div class="stat-value">99</div>
+<div class="stat-label">Cấp độ</div>
+</div>
+<div class="stat-box">
+<div class="stat-value">1.2K</div>
+<div class="stat-label">Follow</div>
+</div>
+<div class="stat-box">
+<div class="stat-value">30</div>
+<div class="stat-label">Streak</div>
 </div>
 </div>
-<div id="nameField" contenteditable="true">ZAN</div>
-<div class="tagline"><span id="typedText"></span><span class="cursor">▍</span></div>
-<div class="hud-stats">
-<div class="hud-stat"><div class="v">99</div><div class="k">Cấp độ</div></div>
-<div class="hud-stat"><div class="v">1.2K</div><div class="k">Follow</div></div>
-<div class="hud-stat"><div class="v">30</div><div class="k">Streak</div></div>
+<div class="links-list">
+<a class="social-link" href="[https://tiktok.com/@zanx09](https://tiktok.com/@zanx09)" target="_blank" rel="noopener">
+<div class="link-left">
+<span class="link-icon">🎵</span>
+<span>TikTok</span>
 </div>
-<div class="visits">👁 <b id="visitCount">1.204</b> lượt ghé thăm</div>
-</div>
-</div>
-<div class="hotbar" id="linksBox">
-<a class="slot tiktok" href="[https://tiktok.com/@zanx09](https://tiktok.com/@zanx09)" target="_blank" rel="noopener">
-<span class="key">1</span>🎵<span class="tip">TikTok</span>
+<span class="link-arrow">→</span>
 </a>
-<a class="slot telegram" href="[https://t.me/zanx09](https://t.me/zanx09)" target="_blank" rel="noopener">
-<span class="key">2</span>✈️<span class="tip">Telegram</span>
+<a class="social-link" href="[https://t.me/zanx09](https://t.me/zanx09)" target="_blank" rel="noopener">
+<div class="link-left">
+<span class="link-icon">✈️</span>
+<span>Telegram</span>
+</div>
+<span class="link-arrow">→</span>
 </a>
-<a class="slot discord" href="[https://discord.gg/zan](https://discord.gg/zan)" target="_blank" rel="noopener">
-<span class="key">3</span>🎮<span class="tip">Discord</span>
+<a class="social-link" href="[https://discord.gg/zan](https://discord.gg/zan)" target="_blank" rel="noopener">
+<div class="link-left">
+<span class="link-icon">🎮</span>
+<span>Discord</span>
+</div>
+<span class="link-arrow">→</span>
 </a>
 </div>
 </div>
-<footer>© 2026 ZAN</footer>
+<footer>© 2026 ZAN — All Rights Reserved</footer>
+</div>
 <script>
-// Tự động phát nhạc khi người dùng tương tác lần đầu (click bất cứ đâu trên màn hình)
-const bgMusic = document.getElementById('bgMusic');
+// Xử lý bật nhạc & ẩn overlay
 const audioOverlay = document.getElementById('audioOverlay');
-function unlockAudio() {
-bgMusic.play().then(() => {
+const bgMusic = document.getElementById('bgMusic');
+function initAudio() {
+bgMusic.play().catch(e => console.log(e));
 audioOverlay.style.opacity = '0';
 setTimeout(() => audioOverlay.remove(), 500);
-window.removeEventListener('click', unlockAudio);
-window.removeEventListener('touchstart', unlockAudio);
-}).catch(e => console.log(e));
+window.removeEventListener('click', initAudio);
+window.removeEventListener('touchstart', initAudio);
 }
-window.addEventListener('click', unlockAudio);
-window.addEventListener('touchstart', unlockAudio);
+window.addEventListener('click', initAudio);
+window.addEventListener('touchstart', initAudio);
 // Hiệu ứng gõ chữ
-const words = ["Giao diện tối thượng", "Zan Profile", "Welcome to my world"];
-let i = 0, j = 0, currentWord = "", isDeleting = false;
+const phrases = [
+"Cyberpunk Nexus & Profile.",
+"Khám phá thế giới của ZAN.",
+"Tốc độ, Sáng tạo & Đam mê."
+];
+let pIdx = 0, charIdx = 0, isDeleting = false;
 const typedSpan = document.getElementById('typedText');
-function typeEffect() {
-currentWord = words[i];
+function typeWriter() {
+const current = phrases[pIdx];
 if (isDeleting) {
-typedSpan.textContent = currentWord.substring(0, j - 1);
-j--;
-if (j === 0) { isDeleting = false; i = (i + 1) % words.length; }
+typedSpan.textContent = current.substring(0, charIdx - 1);
+charIdx--;
+if (charIdx === 0) {
+isDeleting = false;
+pIdx = (pIdx + 1) % phrases.length;
+}
 } else {
-typedSpan.textContent = currentWord.substring(0, j + 1);
-j++;
-if (j === currentWord.length) { isDeleting = true; setTimeout(typeEffect, 1500); return; }
+typedSpan.textContent = current.substring(0, charIdx + 1);
+charIdx++;
+if (charIdx === current.length) {
+isDeleting = true;
+setTimeout(typeWriter, 1800);
+return;
 }
-setTimeout(typeEffect, isDeleting ? 50 : 100);
 }
-typeEffect();
-// Hiệu ứng xoay 3D thẻ bài theo chuột
-const card = document.getElementById('rankCard');
-document.addEventListener('mousemove', (e) => {
-const rect = card.getBoundingClientRect();
-const x = e.clientX - rect.left;
-const y = e.clientY - rect.top;
-const xc = rect.width / 2;
-const yc = rect.height / 2;
-const dx = (x - xc) / xc;
-const dy = (y - yc) / yc;
-card.style.transform = perspective(1100px) rotateX(${ -dy * 10 }deg) rotateY(${ dx * 10 }deg);
-card.style.setProperty('--fx', ${(x / rect.width) * 100}%);
-card.style.setProperty('--fy', ${(y / rect.height) * 100}%);
-});
-document.addEventListener('mouseleave', () => {
-card.style.transform = 'perspective(1100px) rotateX(0deg) rotateY(0deg)';
-});
+setTimeout(typeWriter, isDeleting ? 40 : 80);
+}
+typeWriter();
 </script>
 </body>
 </html>
