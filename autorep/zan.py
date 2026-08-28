@@ -1,4 +1,4 @@
-import asyncio, os, random, datetime, edge_tts, re, glob, requests
+import asyncio, os, random, datetime, edge_tts, re, glob, requests, aiohttp
 from telethon import TelegramClient, events, Button, functions, types
 from telethon.errors import FloodWaitError, RPCError, PremiumAccountRequiredError
 
@@ -10,6 +10,8 @@ O_ID = 8432808225
 
 U1 = "https://raw.githubusercontent.com/ehvuebe-png/Cailontaone/main/chui.txt"
 U2 = "https://gist.githubusercontent.com/tranthanhloc2099-wq/26971850c22bbc6578dae5a91fc2f154/raw/e96b3178dbce97dab5a9218eced5085802eb1711/chui2.txt"
+
+API_URL = "https://autoreplybyzan.onrender.com"
 
 def _sync():
     for n, u in {"chui.txt": U1, "chui2.txt": U2}.items():
@@ -303,7 +305,6 @@ def _logic(c, u_i):
         else: o_f[u_i] = (y == "on")
         await e.edit(f"✅ {x.upper()} {y.upper()} "); await asyncio.sleep(1); await e.delete()
 
-    # =============== AUTOREPLY ===============
     @c.on(events.NewMessage(outgoing=True, pattern=r'/autoreply(?:\s+(on|off))?(?:\s+([\s\S]+))?'))
     async def _autoreply(e):
         try:
@@ -353,7 +354,6 @@ def _logic(c, u_i):
             await e.edit(f"❌ **Lỗi:** {ex}")
             await asyncio.sleep(2)
             await e.delete()
-    # =============== END AUTOREPLY ===============
 
     @c.on(events.NewMessage(outgoing=True, pattern=r'/logout'))
     async def _lo(e):
@@ -382,7 +382,6 @@ def _logic(c, u_i):
             try: await ev.reply("đây là tin nhắn tự động, Tao đang bận không thấy off à nhắn cc")
             except: pass
         
-        # AUTO REPLY - XỬ LÝ TIN NHẮN ĐẾN
         if u_i in auto_reply and ev.is_private and ev.sender_id != u_i:
             try:
                 if not ev.out:
@@ -470,15 +469,37 @@ async def _tb(e):
         
     await e.respond(f"✅ Đã gửi thành công cho {count} người dùng!")
 
+async def ping_api():
+    """Gọi API mỗi 10 phút để giữ bot alive"""
+    while True:
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(API_URL, timeout=10) as response:
+                    if response.status == 200:
+                        text = await response.text()
+                        print(f"[PING] ✅ {API_URL} - Status: {response.status} - {text[:50]}")
+                    else:
+                        print(f"[PING] ⚠️ {API_URL} - Status: {response.status}")
+        except Exception as e:
+            print(f"[PING] ❌ Lỗi: {e}")
+        
+        await asyncio.sleep(600)
+
 async def main():
+    # Chạy ping API background
+    asyncio.create_task(ping_api())
+    
     for f in glob.glob("u_*.session"):
         try:
             u = int(f.split('_')[1].split('.')[0])
             if u in b_u: continue
             c = TelegramClient(f"u_{u}", A_ID, A_HS)
             await c.connect()
-            if await c.is_user_authorized(): u_c[u] = c; _logic(c, u)
-            else: await c.disconnect()
+            if await c.is_user_authorized():
+                u_c[u] = c
+                _logic(c, u)
+            else:
+                await c.disconnect()
         except: pass
     await bot.run_until_disconnected()
 
