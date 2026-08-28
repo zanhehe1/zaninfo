@@ -6868,18 +6868,8 @@ def telegram_server(message):
         days = uptime_seconds // 86400
         hours = (uptime_seconds % 86400) // 3600
         minutes = (uptime_seconds % 3600) // 60
-        uptime_str = f"{days} ngày {hours} giờ {minutes} phút" if days > 0 else f"{hours} giờ {minutes} phút"
-        
-        bar_length = 20
-        
-        ram_filled = int(bar_length * memory_percent / 100)
-        ram_bar = '█' * ram_filled + '░' * (bar_length - ram_filled)
-        
-        cpu_filled = int(bar_length * cpu_percent / 100)
-        cpu_bar = '█' * cpu_filled + '░' * (bar_length - cpu_filled)
-        
-        disk_filled = int(bar_length * disk_percent / 100)
-        disk_bar = '█' * disk_filled + '░' * (bar_length - disk_filled)
+        seconds = uptime_seconds % 60
+        uptime_str = f"{days:02d} ngày {hours:02d} giờ {minutes:02d} phút {seconds:02d} giây"
         
         text = f"""
 <blockquote>
@@ -6890,18 +6880,15 @@ RAM
 Đã dùng: {memory_used_gb:.1f} GB
 Tổng: {memory_total_gb:.1f} GB
 Đã dùng: {memory_percent:.1f}%
-[{ram_bar}]
 
 CPU
 Đã dùng: {cpu_percent:.1f}%
 Số nhân: {cpu_count}
-[{cpu_bar}]
 
 DISK
 Đã dùng: {disk_used_gb:.1f} GB
 Tổng: {disk_total_gb:.1f} GB
 Đã dùng: {disk_percent:.1f}%
-[{disk_bar}]
 
 UPTIME BOT
 {uptime_str}
@@ -6917,59 +6904,6 @@ Dùng /ping để kiểm tra kết nối
         
     except Exception as e:
         telegram_bot.reply_to(message, f"Lỗi: {e}")
-                
-@telegram_bot.message_handler(commands=['uptime'])
-def telegram_uptime(message):
-    if not is_telegram_admin(message.from_user.id):
-        telegram_bot.reply_to(message, "❌ Không có quyền!")
-        return
-    
-    try:
-        global BOT_START_TIME
-        uptime_seconds = int(time.time() - BOT_START_TIME)
-        
-        days = uptime_seconds // 86400
-        hours = (uptime_seconds % 86400) // 3600
-        minutes = (uptime_seconds % 3600) // 60
-        seconds = uptime_seconds % 60
-        
-        max_uptime = 604800
-        percent = min(100, (uptime_seconds / max_uptime) * 100)
-        
-        bar_length = 20
-        filled = int(bar_length * percent / 100)
-        bar = '█' * filled + '░' * (bar_length - filled)
-        
-        start_time_str = time.strftime('%H:%M:%S %d/%m/%Y', time.localtime(BOT_START_TIME))
-        
-        if uptime_seconds < 3600:
-            status = "Bot mới khởi động!"
-        elif uptime_seconds < 86400:
-            status = "Bot đang chạy ổn định!"
-        else:
-            status = "Bot hoạt động tốt!"
-        
-        text = f"""
-<blockquote>
-UPTIME
-====================================
-
-{days:02d} ngày  {hours:02d} giờ  {minutes:02d} phút  {seconds:02d} giây
-
-[{bar}] {percent:.1f}%
-
-Khởi động: {start_time_str}
-
-{status}
-
-====================================
-Bot đang hoạt động ổn định
-</blockquote>
-"""
-        telegram_bot.reply_to(message, text, parse_mode="HTML")
-        
-    except Exception as e:
-        telegram_bot.reply_to(message, f"Lỗi: {e}") 
                           
 @telegram_bot.message_handler(commands=['online'])
 def telegram_online_bot(message):
