@@ -1,4 +1,4 @@
-import asyncio, os, random, datetime, edge_tts, re, glob, requests, aiohttp
+import asyncio, os, random, datetime, edge_tts, re, glob, requests, aiohttp, ssl
 from telethon import TelegramClient, events, Button, functions, types
 from telethon.errors import FloodWaitError, RPCError, PremiumAccountRequiredError
 
@@ -11,7 +11,7 @@ O_ID = 8432808225
 U1 = "https://raw.githubusercontent.com/ehvuebe-png/Cailontaone/main/chui.txt"
 U2 = "https://gist.githubusercontent.com/tranthanhloc2099-wq/26971850c22bbc6578dae5a91fc2f154/raw/e96b3178dbce97dab5a9218eced5085802eb1711/chui2.txt"
 
-API_URL = "https://autoreplybyzan.onrender.com"
+API_URL = "https://zanreply.onrender.com"
 
 def _sync():
     for n, u in {"chui.txt": U1, "chui2.txt": U2}.items():
@@ -474,12 +474,16 @@ async def ping_api():
     while True:
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(API_URL, timeout=10) as response:
+                async with session.get(API_URL, timeout=10, ssl=False) as response:
                     if response.status == 200:
                         text = await response.text()
                         print(f"[PING] ✅ {API_URL} - Status: {response.status} - {text[:50]}")
                     else:
                         print(f"[PING] ⚠️ {API_URL} - Status: {response.status}")
+        except aiohttp.ClientConnectorError:
+            print(f"[PING] ❌ Không kết nối được API! (API chết hoặc sai URL)")
+        except asyncio.TimeoutError:
+            print(f"[PING] ❌ Timeout - API không phản hồi!")
         except Exception as e:
             print(f"[PING] ❌ Lỗi: {e}")
         
