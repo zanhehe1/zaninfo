@@ -1,6 +1,7 @@
 import asyncio, os, random, datetime, edge_tts, re, glob, requests, aiohttp, ssl
 from telethon import TelegramClient, events, Button, functions, types
 from telethon.errors import FloodWaitError, RPCError, PremiumAccountRequiredError
+from aiohttp import web
 
 # --- CẤU HÌNH ---
 A_ID = 36093394
@@ -477,7 +478,7 @@ async def ping_api():
                 async with session.get(API_URL, timeout=10, ssl=False) as response:
                     if response.status == 200:
                         text = await response.text()
-                        print(f"[PING] ✅ {API_URL} - Status: {response.status} - {text[:50]}")
+                        print(f"[PING] ✅ {API_URL} - Status: {response.status}")
                     else:
                         print(f"[PING] ⚠️ {API_URL} - Status: {response.status}")
         except aiohttp.ClientConnectorError:
@@ -489,7 +490,29 @@ async def ping_api():
         
         await asyncio.sleep(600)
 
+async def health_check(request):
+    """Health check cho Render"""
+    return web.Response(text="Bot is alive!", status=200)
+
+async def start_web():
+    """Chạy web server để giữ port cho Render"""
+    app = web.Application()
+    app.router.add_get('/', health_check)
+    app.router.add_get('/health', health_check)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', 8080)
+    await site.start()
+    print("[WEB] ✅ Health check server running on port 8080")
+    
+    # Giữ web server chạy mãi
+    while True:
+        await asyncio.sleep(3600)
+
 async def main():
+    # Chạy web server giữ port
+    asyncio.create_task(start_web())
+    
     # Chạy ping API background
     asyncio.create_task(ping_api())
     
