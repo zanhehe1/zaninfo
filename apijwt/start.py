@@ -21,7 +21,7 @@ _executor = ThreadPoolExecutor(max_workers=20)
 
 # ====== PING KEEP ALIVE ======
 def ping_keep_alive():
-    url = "https://zanaplike.onrender.com"
+    url = "https://zanapilike.onrender.com"
     while True:
         try:
             r = requests.get(url, timeout=10)
@@ -252,5 +252,5 @@ def api_tokens():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     print(f"🚀 API chạy tại port {port}")
-    print(f"🔄 Ping API https://zanaplike.onrender.com mỗi 10 phút")
+    print(f"🔄 Ping API https://zanapilike.onrender.com mỗi 10 phút")
     app.run(host='0.0.0.0', port=port, debug=True)
