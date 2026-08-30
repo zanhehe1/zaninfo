@@ -7,6 +7,8 @@ import base64
 from concurrent.futures import ThreadPoolExecutor
 import asyncio
 import aiohttp
+import threading
+import binascii
 
 app = Flask(__name__)
 
@@ -16,6 +18,20 @@ TOKEN_FILE = "token_bd.json"
 REGION = "BD"
 TOKEN_REFRESH_INTERVAL = 8 * 60 * 60  # 8 giờ
 _executor = ThreadPoolExecutor(max_workers=20)
+
+# ====== PING KEEP ALIVE ======
+def ping_keep_alive():
+    url = "https://zanaplike.onrender.com"
+    while True:
+        try:
+            r = requests.get(url, timeout=10)
+            print(f"[PING] ✅ {url} - Status: {r.status_code}")
+        except Exception as e:
+            print(f"[PING] ❌ Lỗi: {e}")
+        time.sleep(600)  # 10 phút
+
+# Chạy thread ping khi khởi động
+threading.Thread(target=ping_keep_alive, daemon=True).start()
 
 # ====== LẤY JWT ======
 def get_jwt(uid, password):
@@ -139,7 +155,6 @@ async def send_likes(uid, region, tokens, count=200):
         return await asyncio.gather(*tasks, return_exceptions=True)
 
 def encrypt_uid(uid):
-    # Encrypt UID đơn giản
     import binascii
     return binascii.hexlify(str(uid).encode()).decode()
 
@@ -173,6 +188,8 @@ def home():
     <code>/tokens</code> - Xem số token
     <br>
     <code>/refresh</code> - Refresh token
+    <br>
+    <code>/reset</code> - Reset token
     '''
 
 @app.route('/like', methods=['GET'])
@@ -213,6 +230,20 @@ def api_refresh():
     result = refresh_tokens()
     return jsonify(result)
 
+@app.route('/reset', methods=['GET'])
+def api_reset():
+    try:
+        if os.path.exists(TOKEN_FILE):
+            os.remove(TOKEN_FILE)
+        result = refresh_tokens()
+        return jsonify({
+            "success": True,
+            "message": "Reset thành công",
+            "data": result
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
 @app.route('/tokens', methods=['GET'])
 def api_tokens():
     tokens = load_tokens()
@@ -220,4 +251,6 @@ def api_tokens():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
+    print(f"🚀 API chạy tại port {port}")
+    print(f"🔄 Ping API {url} mỗi 10 phút")
     app.run(host='0.0.0.0', port=port, debug=True)
