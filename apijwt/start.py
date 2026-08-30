@@ -1,24 +1,29 @@
 from flask import Flask, request, jsonify
 import requests
 import json
+import time
+import os
 import base64
+from concurrent.futures import ThreadPoolExecutor
+import asyncio
+import aiohttp
 
 app = Flask(__name__)
 
+# ====== CẤU HÌNH ======
+ACC_FILE = "acc.json"
+TOKEN_FILE = "token_bd.json"
+REGION = "BD"
+TOKEN_REFRESH_INTERVAL = 8 * 60 * 60  # 8 giờ
+_executor = ThreadPoolExecutor(max_workers=20)
+
+# ====== LẤY JWT ======
 def get_jwt(uid, password):
-    """
-    Lấy JWT token từ UID và Password (request trực tiếp Garena)
-    """
     url = "https://100067.connect.garena.com/oauth/guest/token/grant"
-    
     headers = {
-        "Host": "100067.connect.garena.com",
         "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 11; SM-G998B Build/RP1A.200720.012)",
         "Content-Type": "application/x-www-form-urlencoded",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Connection": "close"
     }
-    
     data = {
         "uid": uid,
         "password": password,
@@ -27,206 +32,192 @@ def get_jwt(uid, password):
         "client_secret": "2ee44819e9b4598845141067b281621874d0d5d7af9d8f7e00c1e54715b7d1e3",
         "client_id": "100067"
     }
-    
     try:
-        response = requests.post(url, headers=headers, data=data, timeout=15)
-        
-        if response.status_code == 200:
-            result = response.json()
-            jwt_token = result.get("access_token")
-            
-            if jwt_token:
-                # Decode JWT để lấy thông tin
-                try:
-                    parts = jwt_token.split('.')
-                    if len(parts) >= 2:
-                        payload = parts[1]
-                        payload += '=' * (4 - len(payload) % 4)
-                        decoded = json.loads(base64.urlsafe_b64decode(payload))
-                        nickname = decoded.get('nickname', '')
-                        if nickname:
-                            try:
-                                nickname = base64.b64decode(nickname).decode('utf-8', errors='ignore')
-                            except:
-                                pass
-                    else:
-                        nickname = ''
-                except:
-                    nickname = ''
-                
-                return {
-                    "success": True,
-                    "jwt": jwt_token,
-                    "uid": result.get("uid"),
-                    "open_id": result.get("open_id"),
-                    "account_id": result.get("accountId"),
-                    "nickname": nickname
-                }
-            else:
-                return {
-                    "success": False,
-                    "error": "Không lấy được JWT",
-                    "data": result
-                }
-        else:
-            return {
-                "success": False,
-                "error": f"HTTP {response.status_code}",
-                "data": response.text
-            }
-            
+        r = requests.post(url, headers=headers, data=data, timeout=30)
+        if r.status_code == 200:
+            result = r.json()
+            token = result.get("access_token")
+            if token:
+                return {"success": True, "token": token, "uid": result.get("uid")}
+        return {"success": False, "error": f"HTTP {r.status_code}"}
     except Exception as e:
-        return {
-            "success": False,
-            "error": str(e)
-        }
+        return {"success": False, "error": str(e)}
 
-@app.route('/', methods=['GET', 'POST'])
+# ====== LOAD ACCOUNTS ======
+def load_accounts():
+    if not os.path.exists(ACC_FILE):
+        return []
+    try:
+        with open(ACC_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, dict):
+            return [{"uid": str(k), "password": str(v)} for k, v in data.items()]
+        return []
+    except:
+        return []
+
+# ====== SAVE TOKEN ======
+def save_tokens(token_list):
+    with open(TOKEN_FILE, "w") as f:
+        json.dump({"created_at": time.time(), "tokens": token_list}, f, indent=2)
+
+# ====== LOAD TOKEN ======
+def load_tokens():
+    if not os.path.exists(TOKEN_FILE):
+        return []
+    try:
+        with open(TOKEN_FILE, "r") as f:
+            data = json.load(f)
+            return data.get("tokens", [])
+    except:
+        return []
+
+# ====== REFRESH TOKENS ======
+def refresh_tokens():
+    accounts = load_accounts()
+    if not accounts:
+        return {"success": False, "error": "No accounts"}
+    
+    tokens = []
+    success = 0
+    fail = 0
+    
+    for acc in accounts:
+        result = get_jwt(acc["uid"], acc["password"])
+        if result.get("success"):
+            tokens.append({"uid": acc["uid"], "token": result["token"]})
+            success += 1
+        else:
+            fail += 1
+        time.sleep(0.5)
+    
+    if tokens:
+        save_tokens(tokens)
+    
+    return {"success": True, "total": len(accounts), "ok": success, "fail": fail}
+
+# ====== GET TOKEN ======
+def get_next_token():
+    tokens = load_tokens()
+    if not tokens:
+        refresh_tokens()
+        tokens = load_tokens()
+    if tokens:
+        return tokens[0]["token"]
+    return None
+
+# ====== BUFF LIKE ======
+async def send_request(session, edata, token, url):
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': 'Dalvik/2.1.0',
+        'ReleaseVersion': 'OB54'
+    }
+    try:
+        async with session.post(url, data=edata, headers=headers, timeout=10) as r:
+            return await r.text()
+    except:
+        return None
+
+async def send_likes(uid, region, tokens, count=200):
+    url = {
+        "IND": "https://client.ind.freefiremobile.com/LikeProfile",
+        "BR": "https://client.us.freefiremobile.com/LikeProfile",
+        "US": "https://client.us.freefiremobile.com/LikeProfile",
+        "VN": "https://clientbp.ggpolarbear.com/LikeProfile",
+        "BD": "https://clientbp.ggpolarbear.com/LikeProfile"
+    }.get(region, "https://clientbp.ggpolarbear.com/LikeProfile")
+    
+    edata = bytes.fromhex(encrypt_uid(uid))
+    
+    async with aiohttp.ClientSession() as session:
+        tasks = [
+            send_request(session, edata, tokens[i % len(tokens)], url)
+            for i in range(count)
+        ]
+        return await asyncio.gather(*tasks, return_exceptions=True)
+
+def encrypt_uid(uid):
+    # Encrypt UID đơn giản
+    import binascii
+    return binascii.hexlify(str(uid).encode()).decode()
+
+def get_info(uid, region):
+    token = get_next_token()
+    if not token:
+        return None
+    url = {
+        "IND": "https://client.ind.freefiremobile.com/GetPlayerPersonalShow",
+        "BR": "https://client.us.freefiremobile.com/GetPlayerPersonalShow",
+        "VN": "https://clientbp.ggpolarbear.com/GetPlayerPersonalShow"
+    }.get(region, "https://clientbp.ggpolarbear.com/GetPlayerPersonalShow")
+    
+    headers = {'Authorization': f'Bearer {token}'}
+    try:
+        r = requests.get(url, params={"uid": uid}, headers=headers, timeout=10)
+        if r.status_code == 200:
+            return r.json()
+    except:
+        pass
+    return None
+
+# ====== API ======
+@app.route('/')
 def home():
     return '''
-    <h1>🔑 API LẤY JWT FREE FIRE</h1>
+    <h1>🔥 API BUFF LIKE FREE FIRE</h1>
     <p>Dùng:</p>
-    <code>/gettoken?uid=UID&password=PASSWORD</code>
-    <br><br>
-    <b>Ví dụ:</b>
+    <code>/like?uid=UID&region=VN</code>
     <br>
-    <code>/gettoken?uid=4295974131&password=06_QBEKVPVOQ39</code>
+    <code>/tokens</code> - Xem số token
+    <br>
+    <code>/refresh</code> - Refresh token
     '''
 
-@app.route('/gettoken', methods=['GET', 'POST'])
-def api_get_jwt():
-    if request.method == 'POST':
-        uid = request.form.get('uid')
-        password = request.form.get('password')
-    else:
-        uid = request.args.get('uid')
-        password = request.args.get('password')
+@app.route('/like', methods=['GET'])
+def api_like():
+    uid = request.args.get('uid')
+    region = request.args.get('region', 'BD').upper()
     
-    if not uid or not password:
-        return jsonify({
-            "success": False,
-            "error": "Missing uid or password",
-            "usage": "/gettoken?uid=UID&password=PASSWORD"
-        }), 400
+    if not uid:
+        return jsonify({"error": "Missing uid"}), 400
     
-    result = get_jwt(uid, password)
+    tokens = load_tokens()
+    if not tokens:
+        return jsonify({"error": "No tokens, run /refresh first"}), 500
+    
+    # Get before
+    before = get_info(uid, region)
+    before_like = before.get('likes', 0) if before else 0
+    
+    # Send likes
+    asyncio.run(send_likes(uid, region, [t["token"] for t in tokens], 200))
+    time.sleep(2)
+    
+    # Get after
+    after = get_info(uid, region)
+    after_like = after.get('likes', 0) if after else 0
+    
+    return jsonify({
+        "success": True,
+        "uid": uid,
+        "region": region,
+        "before": before_like,
+        "after": after_like,
+        "added": after_like - before_like
+    })
+
+@app.route('/refresh', methods=['GET'])
+def api_refresh():
+    result = refresh_tokens()
     return jsonify(result)
 
-@app.route('/info', methods=['GET', 'POST'])
-def api_info():
-    """Lấy info bằng UID + Password"""
-    if request.method == 'POST':
-        uid = request.form.get('uid')
-        password = request.form.get('password')
-    else:
-        uid = request.args.get('uid')
-        password = request.args.get('password')
-    
-    if not uid or not password:
-        return jsonify({
-            "success": False,
-            "error": "Missing uid or password",
-            "usage": "/info?uid=UID&password=PASSWORD"
-        }), 400
-    
-    # Lấy JWT
-    jwt_result = get_jwt(uid, password)
-    
-    if not jwt_result["success"]:
-        return jsonify(jwt_result)
-    
-    jwt = jwt_result["jwt"]
-    
-    # Từ JWT decode ra thông tin
-    try:
-        parts = jwt.split('.')
-        if len(parts) >= 2:
-            payload = parts[1]
-            payload += '=' * (4 - len(payload) % 4)
-            decoded = json.loads(base64.urlsafe_b64decode(payload))
-            
-            # Decode nickname
-            nickname = decoded.get('nickname', '')
-            if nickname:
-                try:
-                    nickname = base64.b64decode(nickname).decode('utf-8', errors='ignore')
-                except:
-                    pass
-            
-            region = decoded.get('lock_region', 'VN')
-            uid = decoded.get('account_id', uid)
-            
-            return jsonify({
-                "success": True,
-                "jwt": jwt,
-                "uid": uid,
-                "nickname": nickname,
-                "region": region,
-                "account_id": decoded.get('account_id'),
-                "exp": decoded.get('exp')
-            })
-        else:
-            return jsonify({
-                "success": False,
-                "error": "Invalid JWT format",
-                "jwt": jwt
-            })
-            
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e),
-            "jwt": jwt
-        })
-
-# API lấy thông tin từ JWT (không cần uid/pass)
-@app.route('/decode', methods=['GET', 'POST'])
-def api_decode():
-    """Decode JWT lấy thông tin"""
-    if request.method == 'POST':
-        jwt = request.form.get('jwt')
-    else:
-        jwt = request.args.get('jwt')
-    
-    if not jwt:
-        return jsonify({
-            "success": False,
-            "error": "Missing jwt",
-            "usage": "/decode?jwt=JWT_TOKEN"
-        }), 400
-    
-    try:
-        parts = jwt.split('.')
-        if len(parts) >= 2:
-            payload = parts[1]
-            payload += '=' * (4 - len(payload) % 4)
-            decoded = json.loads(base64.urlsafe_b64decode(payload))
-            
-            nickname = decoded.get('nickname', '')
-            if nickname:
-                try:
-                    nickname = base64.b64decode(nickname).decode('utf-8', errors='ignore')
-                except:
-                    pass
-            
-            return jsonify({
-                "success": True,
-                "uid": decoded.get('account_id'),
-                "nickname": nickname,
-                "region": decoded.get('lock_region'),
-                "exp": decoded.get('exp'),
-                "raw": decoded
-            })
-        else:
-            return jsonify({
-                "success": False,
-                "error": "Invalid JWT format"
-            })
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        })
+@app.route('/tokens', methods=['GET'])
+def api_tokens():
+    tokens = load_tokens()
+    return jsonify({"total": len(tokens), "tokens": [t["uid"] for t in tokens]})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    port = int(os.environ.get('PORT', 8080))
+    app.run(host='0.0.0.0', port=port, debug=True)
