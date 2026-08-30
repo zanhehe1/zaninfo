@@ -105,7 +105,7 @@ def refresh_tokens():
             success += 1
         else:
             fail += 1
-        time.sleep(0.5)
+        time.sleep(0.1)
     
     if tokens:
         save_tokens(tokens)
