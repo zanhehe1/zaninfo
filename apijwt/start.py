@@ -98,20 +98,26 @@ def refresh_tokens():
     success = 0
     fail = 0
     
-    for acc in accounts:
-        result = get_jwt(acc["uid"], acc["password"])
-        if result.get("success"):
-            tokens.append({"uid": acc["uid"], "token": result["token"]})
-            success += 1
-        else:
-            fail += 1
-        time.sleep(0.1)
+    with ThreadPoolExecutor(max_workers=20) as executor:
+        futures = {executor.submit(get_jwt, acc["uid"], acc["password"]): acc for acc in accounts}
+        
+        for future in as_completed(futures):
+            acc = futures[future]
+            try:
+                result = future.result(timeout=30)
+                if result.get("success"):
+                    tokens.append({"uid": acc["uid"], "token": result["token"]})
+                    success += 1
+                else:
+                    fail += 1
+            except:
+                fail += 1
     
     if tokens:
         save_tokens(tokens)
     
     return {"success": True, "total": len(accounts), "ok": success, "fail": fail}
-
+    
 # ====== GET TOKEN ======
 def get_next_token():
     tokens = load_tokens()
