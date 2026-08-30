@@ -141,7 +141,7 @@ def generate_password():
     raw = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(12))
     return raw, hashlib.sha256(raw.encode()).hexdigest().upper()
 
-def generate_nickname(prefix, max_len=11):
+def generate_nickname(prefix, max_len=12):
     clean = prefix.replace("/","").strip()
     if len(clean) >= max_len: return clean[:max_len]
     return clean + ''.join(random.choice(_SUPER) for _ in range(max_len - len(clean)))
