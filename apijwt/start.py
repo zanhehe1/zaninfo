@@ -252,5 +252,5 @@ def api_tokens():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     print(f"🚀 API chạy tại port {port}")
-    print(f"🔄 Ping API {url} mỗi 10 phút")
+    print(f"🔄 Ping API https://zanaplike.onrender.com mỗi 10 phút")
     app.run(host='0.0.0.0', port=port, debug=True)
