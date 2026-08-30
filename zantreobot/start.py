@@ -5405,7 +5405,7 @@ def telegram_reg_account(message):
             )
             return
         
-        if len(name) > 8:
+        if len(name) > 12:
             telegram_bot.reply_to(
                 message,
                 f"<blockquote><b>❌ TÊN QUÁ DÀI</b>\n"
