@@ -5467,6 +5467,26 @@ def telegram_isbanned(message):
             )
             return
         
+        # ====== GỬI TIN ĐANG XỬ LÝ ======
+        msg = telegram_bot.reply_to(
+            message,
+            f"<blockquote>⏳ <b>Đang lấy thông tin cho UID {uid}...</b></blockquote>",
+            parse_mode="HTML"
+        )
+        
+        # ====== DELAY 2-4 GIÂY ======
+        import random
+        import time
+        delay = random.uniform(2.0, 4.0)
+        time.sleep(delay)
+        
+        # ====== XÓA TIN ĐANG XỬ LÝ ======
+        try:
+            telegram_bot.delete_message(message.chat.id, msg.message_id)
+        except:
+            pass
+        
+        # ====== TRẢ KẾT QUẢ ======
         response = """
 <blockquote>
 ⚠️ <b>API KHÔNG PHẢN HỒI</b>
