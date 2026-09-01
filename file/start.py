@@ -2568,7 +2568,7 @@ def handle_telegram_status(message):
             message,
             f"<blockquote><b>❌ LỖI</b>\n🔴 {str(e)}</blockquote>"
         )
-@telegram_bot.message_handlero(commands=['lag'])
+@telegram_bot.message_handler(commands=['lag'])
 @check_group_only
 @async_telegram
 def handle_telegram_lag(message):
