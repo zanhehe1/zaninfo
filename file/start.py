@@ -2568,7 +2568,7 @@ def handle_telegram_status(message):
             message,
             f"<blockquote><b>❌ LỖI</b>\n🔴 {str(e)}</blockquote>"
         )
-@telegram_bot.message_handler(commands=['lag'])
+@telegram_bot.message_handlero(commands=['lag'])
 @check_group_only
 @async_telegram
 def handle_telegram_lag(message):
@@ -5443,7 +5443,6 @@ def telegram_xkb_all(message):
                 
 @telegram_bot.message_handler(commands=['isbanned'])
 @check_group_only
-@async_telegram
 def telegram_isbanned(message):
     if not check_user_in_group(message.from_user.id):
         send_warn_join_group(message)
@@ -5454,7 +5453,7 @@ def telegram_isbanned(message):
         if len(args) < 2:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ INVALID SYNTAX</b>\n💡 Use: <code>/isbanned [uid]</code>\n📌 Example: <code>/isbanned 123456789</code></blockquote>",
+                "<blockquote>💡 <code>/isbanned [uid]</code></blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -5463,62 +5462,26 @@ def telegram_isbanned(message):
         if not uid.isdigit():
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ ERROR</b>\n🔴 UID must be a number!</blockquote>",
+                "<blockquote>🔴 UID phải là số!</blockquote>",
                 parse_mode="HTML"
             )
             return
         
-        msg = telegram_bot.reply_to(
-            message,
-            f"<blockquote><b>📡 CHECKING BAN STATUS</b>\n━━━━━━━━━━━━━━━━━━━━\n🎯 <b>UID:</b> <code>{uid}</code>\n━━━━━━━━━━━━━━━━━━━━\n⏳ Processing...</blockquote>",
-            parse_mode="HTML"
-        )
+        response = """
+<blockquote>
+⚠️ <b>API KHÔNG PHẢN HỒI</b>
+</blockquote>
+"""
         
-        def run_check():
-            try:
-                is_banned = check_banned(uid)
-                
-                if is_banned:
-                    response = (
-                        f"<blockquote><b>🆔 UID: {uid}</b>\n"
-                        f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"📌 <b>Status:</b> 🚫 BANNED\n"
-                        f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"⚠️ This account has been banned!</blockquote>"
-                    )
-                else:
-                    response = (
-                        f"<blockquote><b>🆔 UID: {uid}</b>\n"
-                        f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"📌 <b>Status:</b> ✅ NOT BANNED\n"
-                        f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"✅ This account is active!</blockquote>"
-                    )
-                
-                telegram_bot.edit_message_text(
-                    response,
-                    chat_id=message.chat.id,
-                    message_id=msg.message_id,
-                    parse_mode="HTML"
-                )
-                
-            except Exception as e:
-                telegram_bot.edit_message_text(
-                    f"<blockquote><b>❌ ERROR</b>\n🔴 {str(e)}</blockquote>",
-                    chat_id=message.chat.id,
-                    message_id=msg.message_id,
-                    parse_mode="HTML"
-                )
-        
-        threading.Thread(target=run_check, daemon=True).start()
+        telegram_bot.reply_to(message, response, parse_mode="HTML")
         
     except Exception as e:
         telegram_bot.reply_to(
             message,
-            f"<blockquote><b>❌ ERROR</b>\n🔴 {str(e)}</blockquote>",
+            f"<blockquote>❌ {str(e)}</blockquote>",
             parse_mode="HTML"
         )
-                                           
+     
 @telegram_bot.message_handler(commands=['addid'])
 def telegram_addid(message):
     if not is_telegram_admin(message.from_user.id):
