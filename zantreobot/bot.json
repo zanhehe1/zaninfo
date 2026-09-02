@@ -75,7 +75,7 @@
     },
     {
       "id": 19,
-      "botid": 17188937571,
+      "botid": 19,
       "name": "máy xả",
       "token": "a96e0302d193b96f358273f638f7a47e15054a29301139aa36182a6c6bd571cc",
       "online": true,
@@ -220,20 +220,20 @@
         {
           "uid": 956184010,
           "expire": "2026-09-06 09:43:35"
+        },
+        {
+          "uid": 11850565270,
+          "expire": "2026-09-07 15:51:14"
         }
       ]
     },
     {
       "id": 55,
-      "botid": 17657188030,
+      "botid": 55,
       "name": "bocutehihi⁹³",
       "token": "52c46a097dbd10d3c34b71ae4e3e8296b2b5c1abbe46a4b19bd0a7eae30bb804",
-      "online": true,
+      "online": false,
       "users": [
-        {
-          "uid": 1869813434,
-          "expire": "2026-09-02 13:48:41"
-        },
         {
           "uid": 16104663154,
           "expire": "2054-01-15 23:05:45"
