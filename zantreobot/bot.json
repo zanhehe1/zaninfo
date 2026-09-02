@@ -207,40 +207,6 @@
       ]
     },
     {
-      "id": 50,
-      "botid": 17613564174,
-      "name": "nhimeo⁰¹⁷³³",
-      "token": "298981b2ed46f39e712ca246b06a9789e6030b6bb324bc2452acb1faea5e3f1d",
-      "online": false,
-      "users": [
-        {
-          "uid": 830842153,
-          "expire": "2026-09-05 12:21:20"
-        },
-        {
-          "uid": 16104663154,
-          "expire": "2054-01-15 22:45:37"
-        }
-      ]
-    },
-    {
-      "id": 52,
-      "botid": 17645679536,
-      "name": "datpikachu³⁵",
-      "token": "78dbdf173d9a66e4bcb5a4a75e95807ca019824f0ea75b405fe8144bc7af1dd6",
-      "online": true,
-      "users": [
-        {
-          "uid": 1300525587,
-          "expire": "2026-09-06 08:20:17"
-        },
-        {
-          "uid": 16104663154,
-          "expire": "2054-01-15 23:06:03"
-        }
-      ]
-    },
-    {
       "id": 54,
       "botid": 17648211943,
       "name": "anoth4rkitty",
@@ -394,6 +360,19 @@
         {
           "uid": 1678622206,
           "expire": "2026-09-07 23:44:30"
+        }
+      ]
+    },
+    {
+      "id": 64,
+      "botid": 17735551903,
+      "name": "nhimeo;",
+      "token": "7402758925:4D8CE311473D26D0848F98A9EFBA407E7171B1FE7BEFDD7947F64EF47404ECBF",
+      "online": true,
+      "users": [
+        {
+          "uid": 830842153,
+          "expire": "2026-09-08 03:25:30"
         }
       ]
     }
