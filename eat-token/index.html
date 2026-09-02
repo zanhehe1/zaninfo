@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔑 ZAN EAT → TOKEN GENERATOR</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+        :root{--primary:#ff6b6b;--primary-glow:rgba(255,107,107,0.35);--dark-bg:#0a0a1a;}
+        body{font-family:'Space Grotesk',sans-serif;background:var(--dark-bg);color:#e2e8f0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background-image:radial-gradient(ellipse at 50% 0%, rgba(255,107,107,0.08) 0%, transparent 70%);}
+        .cyber-card{background:rgba(10,10,20,0.85);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.06);border-radius:24px;padding:30px;max-width:520px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+        h1{font-size:26px;font-weight:700;text-align:center;color:#fff;}
+        h1 span{color:#ff6b6b;}
+        .sub{text-align:center;color:#8888aa;font-size:13px;margin-bottom:24px;}
+        .cyber-input{width:100%;padding:14px 16px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(0,0,0,0.4);color:#fff;font-size:13px;font-family:monospace;transition:all 0.3s;}
+        .cyber-input:focus{outline:none;border-color:#ff6b6b;box-shadow:0 0 30px rgba(255,107,107,0.15);}
+        .btn-grad{width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#ff6b6b,#ee5a24);color:#fff;font-size:16px;font-weight:700;cursor:pointer;transition:all 0.3s;margin-top:12px;}
+        .btn-grad:hover{transform:scale(1.02);box-shadow:0 8px 30px rgba(255,107,107,0.3);}
+        .btn-grad:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+        .social-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:16px 0;}
+        .social-btn{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:10px 4px;text-align:center;color:#fff;font-size:11px;cursor:pointer;transition:all 0.3s;text-decoration:none;}
+        .social-btn:hover{background:rgba(255,255,255,0.08);border-color:#ff6b6b;transform:translateY(-2px);}
+        .social-btn img{width:28px;height:28px;object-fit:contain;display:block;margin:0 auto 4px;}
+        .result-box{display:none;margin-top:20px;animation:fadeIn 0.4s;}
+        .result-box.show{display:block;}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+        .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
+        .info-item{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:10px;padding:10px 14px;}
+        .info-item .label{font-size:9px;text-transform:uppercase;color:#ff6b6b;font-weight:600;letter-spacing:0.5px;}
+        .info-item .value{font-size:14px;font-weight:600;color:#fff;margin-top:2px;word-break:break-all;}
+        .token-box{background:rgba(0,0,0,0.3);border-radius:10px;padding:12px;margin-bottom:12px;border-left:3px solid #ff6b6b;}
+        .token-box .label{font-size:9px;text-transform:uppercase;color:#ff6b6b;font-weight:600;letter-spacing:0.5px;display:flex;justify-content:space-between;align-items:center;}
+        .token-box .value{font-size:11px;font-family:monospace;color:#ffd93d;word-break:break-all;margin-top:6px;max-height:100px;overflow-y:auto;}
+        .token-box .value::-webkit-scrollbar{width:3px;}
+        .token-box .value::-webkit-scrollbar-thumb{background:#ff6b6b;border-radius:4px;}
+        .copy-btn{background:rgba(255,255,255,0.06);border:none;color:#aaaacc;padding:2px 10px;border-radius:4px;font-size:10px;cursor:pointer;transition:all 0.3s;}
+        .copy-btn:hover{background:rgba(255,255,255,0.12);color:#fff;}
+        .copy-btn.copied{background:#10b981;color:#fff;}
+        .status{text-align:center;color:#ffd93d;font-size:13px;margin-top:10px;display:none;}
+        .status.show{display:block;}
+        .status.error{color:#ff6b6b;}
+        .status.success{color:#4ecdc4;}
+        .footer{text-align:center;color:#555577;font-size:11px;margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.04);}
+        .footer a{color:#ff6b6b;text-decoration:none;}
+        .tutorial-box{background:rgba(255,255,255,0.03);border:1px dashed rgba(255,107,107,0.2);border-radius:12px;padding:14px;margin-bottom:16px;}
+        .tutorial-box .step{display:flex;gap:10px;font-size:12px;color:#aaaacc;padding:4px 0;}
+        .tutorial-box .step .num{color:#ff6b6b;font-weight:700;}
+        .tutorial-box .step code{color:#ffd93d;font-size:11px;}
+        .full-response{background:rgba(0,0,0,0.3);border-radius:10px;padding:12px;max-height:200px;overflow-y:auto;font-family:monospace;font-size:10px;color:#aabbcc;white-space:pre-wrap;word-break:break-all;border:1px solid rgba(255,255,255,0.04);}
+        .full-response::-webkit-scrollbar{width:4px;}
+        .full-response::-webkit-scrollbar-thumb{background:#ff6b6b;border-radius:4px;}
+        .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;}
+        .modal-overlay.active{display:flex;}
+        .modal-box{background:#0f0f1a;border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:24px;max-width:400px;width:100%;}
+        .modal-box h3{color:#fff;font-size:18px;font-weight:700;margin-bottom:12px;}
+        .modal-box p{color:#8888aa;font-size:13px;line-height:1.6;}
+        .modal-box .close-btn{float:right;color:#666;cursor:pointer;font-size:20px;}
+        .modal-box .close-btn:hover{color:#fff;}
+        @media(max-width:500px){.cyber-card{padding:20px;} .social-grid{grid-template-columns:repeat(3,1fr);} .info-grid{grid-template-columns:1fr;}}
+    </style>
+</head>
+<body>
+
+<div class="cyber-card">
+    <h1>🔑 ZAN <span>EAT</span> TOKEN</h1>
+    <p class="sub">⚡ Lấy Access Token + JWT + Open ID + Nickname + Region</p>
+
+    <!-- Hướng dẫn -->
+    <div class="tutorial-box">
+        <div class="step"><span class="num">1</span> <span>Đăng nhập qua nền tảng bên dưới</span></div>
+        <div class="step"><span class="num">2</span> <span>Sao chép URL có chứa <code>eat=...</code></span></div>
+        <div class="step"><span class="num">3</span> <span>Dán vào ô bên dưới và bấm GENERATE</span></div>
+    </div>
+
+    <!-- Nền tảng login -->
+    <div class="social-grid">
+        <a href="https://auth.garena.com/universal/oauth?platform=8&response_type=code&locale=en-SG&client_id=100067&redirect_uri=https://api.ff.garena.co.id/auth/auth/callback_n?site=https://api-discountstore.kiosgamer.gameid.garena.co.id/oauth/callback_redirect/" target="_blank" class="social-btn"><img src="https://raw.githubusercontent.com/KillerSharmaBot/Eat-Token/refs/heads/main/image/Google.png" alt="Google">Google</a>
+        <a href="https://auth.garena.com/universal/oauth?platform=3&response_type=code&locale=en-SG&client_id=100067&redirect_uri=https://api.ff.garena.co.id/auth/auth/callback_n?site=https://api-discountstore.kiosgamer.gameid.garena.co.id/oauth/callback_redirect/" target="_blank" class="social-btn"><img src="https://raw.githubusercontent.com/KillerSharmaBot/Eat-Token/refs/heads/main/image/Facebook.png" alt="Facebook">FB</a>
+        <a href="https://auth.garena.com/universal/oauth?platform=10&response_type=code&locale=en-SG&client_id=100067&redirect_uri=https://api.ff.garena.co.id/auth/auth/callback_n?site=https://api-discountstore.kiosgamer.gameid.garena.co.id/oauth/callback_redirect/" target="_blank" class="social-btn"><i class="fab fa-apple text-2xl text-white" style="display:block;margin:0 auto 4px;"></i>Apple</a>
+        <a href="https://auth.garena.com/universal/oauth?platform=11&response_type=code&locale=en-SG&client_id=100067&redirect_uri=https://api.ff.garena.co.id/auth/auth/callback_n?site=https://api-discountstore.kiosgamer.gameid.garena.co.id/oauth/callback_redirect/" target="_blank" class="social-btn"><img src="https://raw.githubusercontent.com/KillerSharmaBot/Eat-Token/refs/heads/main/image/X.png" alt="X">Twitter/X</a>
+        <a href="https://auth.garena.com/universal/oauth?platform=5&response_type=code&locale=en-SG&client_id=100067&redirect_uri=https://api.ff.garena.co.id/auth/auth/callback_n?site=https://api-discountstore.kiosgamer.gameid.garena.co.id/oauth/callback_redirect/" target="_blank" class="social-btn"><img src="https://raw.githubusercontent.com/KillerSharmaBot/Eat-Token/refs/heads/main/image/VK.png" alt="VK">VK</a>
+        <a href="https://auth.garena.com/universal/oauth?platform=7&response_type=code&locale=en-SG&client_id=100067&redirect_uri=https://api.ff.garena.co.id/auth/auth/callback_n?site=https://api-discountstore.kiosgamer.gameid.garena.co.id/oauth/callback_redirect/" target="_blank" class="social-btn"><img src="https://raw.githubusercontent.com/KillerSharmaBot/Eat-Token/refs/heads/main/image/Huawei.png" alt="Huawei">Huawei</a>
+    </div>
+
+    <!-- Input -->
+    <input type="text" id="eatInput" class="cyber-input" placeholder="Paste URL or EAT token here..." autocomplete="off">
+
+    <!-- Nút generate -->
+    <button class="btn-grad" id="genBtn" onclick="processEat()">🚀 GENERATE</button>
+
+    <!-- Status -->
+    <div id="status" class="status">⏳ Đang xử lý...</div>
+
+    <!-- Kết quả -->
+    <div id="resultBox" class="result-box">
+        <div class="info-grid">
+            <div class="info-item"><div class="label">👤 Nickname</div><div class="value" id="nickDisplay">-</div></div>
+            <div class="info-item"><div class="label">🌍 Region</div><div class="value" id="regionDisplay">-</div></div>
+            <div class="info-item"><div class="label">🆔 Account UID</div><div class="value" id="uidDisplay">-</div></div>
+            <div class="info-item"><div class="label">🔑 Open ID</div><div class="value" id="openidDisplay">-</div></div>
+        </div>
+
+        <div class="token-box">
+            <div class="label">🔐 Access Token <button class="copy-btn" onclick="copyText('accessTokenDisplay')">📋 Copy</button></div>
+            <div class="value" id="accessTokenDisplay">-</div>
+        </div>
+
+        <div class="token-box" id="jwtBox">
+            <div class="label">🔏 JWT Token <button class="copy-btn" onclick="copyText('jwtDisplay')">📋 Copy</button></div>
+            <div class="value" id="jwtDisplay">-</div>
+        </div>
+
+        <div style="margin-top:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                <span style="color:#8888aa;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;">📦 Full API Response</span>
+                <button class="copy-btn" onclick="copyText('fullResponse')">📋 Copy</button>
+            </div>
+            <div class="full-response" id="fullResponse">Waiting for response...</div>
+        </div>
+    </div>
+
+    <div class="footer">
+        🔥 Made by <a href="https://t.me/zanbackj" target="_blank">@zanbackj</a> | 
+        <a href="#" onclick="document.getElementById('termsModal').classList.toggle('active');return false;">Terms</a>
+    </div>
+</div>
+
+<!-- Terms Modal -->
+<div class="modal-overlay" id="termsModal">
+    <div class="modal-box">
+        <span class="close-btn" onclick="document.getElementById('termsModal').classList.remove('active')">&times;</span>
+        <h3>📜 Terms & Conditions</h3>
+        <p>This tool is for educational purposes only. Use at your own risk. Do not violate Garena ToS.</p>
+        <br>
+        <button onclick="document.getElementById('termsModal').classList.remove('active')" style="width:100%;padding:10px;border:none;border-radius:8px;background:#ff6b6b;color:#fff;font-weight:700;cursor:pointer;">I AGREE</button>
+    </div>
+</div>
+
+<script>
+let currentData = null;
+
+function extractEat(input) {
+    const match = input.match(/[?&]eat=([^&]+)/);
+    return match ? match[1] : input;
+}
+
+async function processEat() {
+    const input = document.getElementById('eatInput').value.trim();
+    const status = document.getElementById('status');
+    const resultBox = document.getElementById('resultBox');
+    const btn = document.getElementById('genBtn');
+
+    if (!input) {
+        status.textContent = '⚠️ Vui lòng nhập EAT Token hoặc URL!';
+        status.className = 'status show error';
+        return;
+    }
+
+    const eat = extractEat(input);
+    if (eat.length < 30) {
+        status.textContent = '❌ EAT Token không hợp lệ!';
+        status.className = 'status show error';
+        return;
+    }
+
+    status.textContent = '⏳ Đang xử lý...';
+    status.className = 'status show';
+    resultBox.classList.remove('show');
+    btn.disabled = true;
+    btn.textContent = '⏳ ĐANG XỬ LÝ...';
+
+    try {
+        // Gọi API callback lấy token
+        const url = `https://api-otrss.garena.com/support/callback/?access_token=${eat}`;
+        const resp = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+        const finalUrl = resp.url;
+        const params = new URLSearchParams(finalUrl.split('?')[1] || '');
+
+        const accessToken = params.get('access_token') || '';
+        const accountId = params.get('account_id') || '';
+        const nickname = decodeURIComponent(params.get('nickname') || '');
+        const region = params.get('region') || '';
+
+        // Decode JWT lấy open_id
+        let openId = '';
+        let jwtToken = accessToken;
+
+        if (accessToken) {
+            try {
+                const parts = accessToken.split('.');
+                if (parts.length >= 2) {
+                    let payload = parts[1];
+                    while (payload.length % 4) payload += '=';
+                    const decoded = JSON.parse(atob(payload));
+                    openId = decoded.open_id || '';
+                }
+            } catch (e) {}
+        }
+
+        // Hiển thị kết quả
+        document.getElementById('nickDisplay').textContent = nickname || 'N/A';
+        document.getElementById('regionDisplay').textContent = region || 'N/A';
+        document.getElementById('uidDisplay').textContent = accountId || 'N/A';
+        document.getElementById('openidDisplay').textContent = openId || 'N/A';
+        document.getElementById('accessTokenDisplay').textContent = accessToken || eat;
+        document.getElementById('jwtDisplay').textContent = jwtToken || 'N/A';
+
+        // Full response
+        const fullData = {
+            access_token: accessToken,
+            account_id: accountId,
+            nickname: nickname,
+            region: region,
+            open_id: openId
+        };
+        document.getElementById('fullResponse').textContent = JSON.stringify(fullData, null, 2);
+        currentData = fullData;
+
+        status.textContent = '✅ Lấy thông tin thành công!';
+        status.className = 'status show success';
+        resultBox.classList.add('show');
+
+    } catch (error) {
+        status.textContent = '❌ Lỗi: ' + error.message;
+        status.className = 'status show error';
+    }
+
+    btn.disabled = false;
+    btn.textContent = '🚀 GENERATE';
+}
+
+function copyText(id) {
+    const el = document.getElementById(id);
+    const text = el.textContent;
+    if (!text || text === '-' || text === 'N/A' || text === 'Waiting for response...') return;
+
+    navigator.clipboard.writeText(text).then(() => {
+        const btns = document.querySelectorAll('.copy-btn');
+        btns.forEach(b => {
+            if (b.textContent.includes('Copy')) {
+                b.textContent = '✅ Copied!';
+                b.classList.add('copied');
+                setTimeout(() => {
+                    b.textContent = '📋 Copy';
+                    b.classList.remove('copied');
+                }, 2000);
+            }
+        });
+    });
+}
+
+// Enter để generate
+document.getElementById('eatInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') processEat();
+});
+</script>
+
+</body>
+</html>
