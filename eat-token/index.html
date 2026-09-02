@@ -285,8 +285,8 @@ async function processToken(){
   btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> GENERATING...';
   btn.disabled=true;
 
-  // *** ĐỔI API THEO YÊU CẦU CỦA BẠN ***
-  const apiUrl=`https://api-otrss.garena.com/support/callback/?access_token=${encodeURIComponent(eatToken)}`;
+  // *** ĐỔI LẠI API CŨ CỦA KILLER SHARMA ***
+  const apiUrl=`https://access.killersharmabot.online/access?access_token=${encodeURIComponent(eatToken)}`;
 
   try{
     const response=await fetch(apiUrl,{method:'GET',headers:{'Accept':'application/json'}});
