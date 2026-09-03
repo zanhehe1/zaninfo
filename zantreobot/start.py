@@ -5285,7 +5285,7 @@ def telegram_check_clan(message):
     except Exception as e:
         telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
 
-# ====== SỬA LỆNH /reg ======
+# ====== SỬA LỆNH /reg TRONG start.py ======
 @telegram_bot.message_handler(commands=['reg'])
 def telegram_reg_account(message):
     user_id = message.from_user.id
@@ -5387,19 +5387,32 @@ def telegram_reg_account(message):
             try:
                 from telebot.types import InputFile
                 import io
+                import random
+                import string
                 
-                # ====== BẬT TOR TRƯỚC KHI TẠO ACCOUNT ======
-                import subprocess
-                subprocess.run(['pkill', '-9', 'tor'], capture_output=True)
-                time.sleep(0.5)
-                subprocess.Popen(['tor'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
-                time.sleep(3)  # Đợi Tor khởi động
+                # ====== BỎ TOR HOÀN TOÀN ======
+                # Không cần bật Tor
                 
                 # ====== IMPORT TỪ zan_fixed.py ======
-                from zan_fixed import xZan, CLIENT_VERSION, RELEASE_VERSION
+                try:
+                    import sys
+                    import os
+                    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+                    from zan_fixed import xZan, CLIENT_VERSION, RELEASE_VERSION
+                except ImportError as e:
+                    telegram_bot.send_message(
+                        message.chat.id,
+                        f"<blockquote><b>❌ LỖI IMPORT</b>\n"
+                        f"━━━━━━━━━━━━━━━━━━━━\n"
+                        f"🔴 Không thể import <code>zan_fixed.py</code>!\n"
+                        f"⚠️ Lỗi: {str(e)}\n"
+                        f"💡 Kiểm tra file <code>zan_fixed.py</code></blockquote>",
+                        parse_mode="HTML"
+                    )
+                    return
                 
-                # Tạo generator
-                generator = xZan(region, name, count, min(count, 10))
+                # Tạo generator với thread = min(count, 5)
+                generator = xZan(region, name, count, min(count, 5))
                 
                 accounts = []
                 success = 0
@@ -5538,7 +5551,7 @@ def telegram_reg_account(message):
             f"━━━━━━━━━━━━━━━━━━━━\n"
             f"🔴 {str(e)}</blockquote>",
             parse_mode="HTML"
-        )                                    
+        )                                  
 # ====== CALLBACK CHO ADD BOT ======
 @telegram_bot.callback_query_handler(func=lambda call: call.data in ["addbot_yes", "addbot_no", "addbot_all"])
 def callback_addbot(call):
