@@ -42,33 +42,8 @@ REGION_LANG = {
 CLIENT_VERSION = "1.126.2"
 RELEASE_VERSION = "OB54"
 
-# ====== BỎ AUTO_CHECK ======
-# auto_check() đã bị xóa để chạy trên Render
-
-def start_tor():
-    try:
-        subprocess.run(['pkill', '-9', 'tor'], capture_output=True)
-        time.sleep(0.5)
-        subprocess.Popen(['tor'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
-        for _ in range(15):
-            time.sleep(0.5)
-            if subprocess.run(['pgrep', '-x', 'tor'], capture_output=True).returncode == 0:
-                return True
-        return False
-    except:
-        return False
-
-def renew_tor():
-    try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(3)
-        sock.connect(('127.0.0.1', 9051))
-        sock.send(b'AUTHENTICATE ""\r\nSIGNAL NEWNYM\r\nQUIT\r\n')
-        sock.close()
-        time.sleep(1.5)
-        return True
-    except:
-        return False
+# ====== BỎ TOR HOÀN TOÀN ======
+# Xóa các hàm start_tor, renew_tor
 
 def varint_encode(value):
     result = []
@@ -316,8 +291,7 @@ class xZan:
         if not self.sessions:
             for _ in range(self.threads * 2):
                 s = requests.Session()
-                # Bỏ proxy Tor để chạy trên Render
-                # s.proxies.update({'http':'socks5h://127.0.0.1:9050', 'https':'socks5h://127.0.0.1:9050'})
+                # KHÔNG DÙNG PROXY
                 s.verify = False
                 s.timeout = 15
                 self.sessions.append(s)
@@ -465,14 +439,6 @@ class xZan:
             with self.lock:
                 if self.completed >= self.total:
                     break
-                self.ip_counter += 1
-                if self.ip_counter >= 8:
-                    self.ip_counter = 0
-                    try:
-                        renew_tor()
-                    except:
-                        pass
-                    self._renew_sessions()
             acc = self._build_one()
             if acc:
                 with self.lock:
@@ -484,14 +450,9 @@ class xZan:
             else:
                 with self.lock:
                     self.failed_count += 1
-                time.sleep(0.1)
+                time.sleep(0.5)
 
     def run(self):
-        try:
-            start_tor()
-        except:
-            pass
-        
         # ====== HIỂN THỊ THÔNG TIN SERVER ======
         print(f"\n{G}┌─────────────────────────────────────────────────────────┐")
         print(f"│{W}  Free Fire Account Creator (FIXED){G}                    │")
