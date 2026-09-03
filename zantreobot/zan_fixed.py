@@ -42,33 +42,7 @@ REGION_LANG = {
 CLIENT_VERSION = "1.126.2"
 RELEASE_VERSION = "OB54"
 
-# ====== TOR - CÓ BẮT LỖI ======
-def start_tor():
-    try:
-        subprocess.run(['pkill', '-9', 'tor'], capture_output=True)
-        time.sleep(0.5)
-        subprocess.Popen(['tor'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
-        for _ in range(15):
-            time.sleep(0.5)
-            if subprocess.run(['pgrep', '-x', 'tor'], capture_output=True).returncode == 0:
-                return True
-        return False
-    except Exception as e:
-        print(f"{Y}⚠️ Tor không chạy được: {e}{C}")
-        print(f"{Y}⚠️ Tiếp tục dùng IP thường...{C}")
-        return False
-
-def renew_tor():
-    try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(3)
-        sock.connect(('127.0.0.1', 9051))
-        sock.send(b'AUTHENTICATE ""\r\nSIGNAL NEWNYM\r\nQUIT\r\n')
-        sock.close()
-        time.sleep(1.5)
-        return True
-    except:
-        return False
+# ====== BỎ TOR HOÀN TOÀN ======
 
 def varint_encode(value):
     result = []
@@ -300,7 +274,6 @@ class xZan:
         self.results = []
         self.start_time = time.time()
         self.failed_count = 0
-        self.tor_enabled = False  # Biến kiểm tra Tor có chạy không
         if os.path.exists("xZan.json"):
             try:
                 with open("xZan.json", "r", encoding="utf-8") as f:
@@ -317,20 +290,13 @@ class xZan:
         if not self.sessions:
             for _ in range(self.threads * 2):
                 s = requests.Session()
-                # Nếu Tor đang chạy thì dùng proxy
-                if self.tor_enabled:
-                    try:
-                        s.proxies.update({'http':'socks5h://127.0.0.1:9050', 'https':'socks5h://127.0.0.1:9050'})
-                    except:
-                        pass
+                # BỎ TOR - Không dùng proxy
                 s.verify = False
                 s.timeout = 15
                 self.sessions.append(s)
         return random.choice(self.sessions)
 
     def _renew_sessions(self):
-        if self.tor_enabled:
-            renew_tor()
         for s in self.sessions:
             try:
                 s.close()
@@ -472,12 +438,6 @@ class xZan:
             with self.lock:
                 if self.completed >= self.total:
                     break
-                self.ip_counter += 1
-                if self.ip_counter >= 8:
-                    self.ip_counter = 0
-                    if self.tor_enabled:
-                        renew_tor()
-                    self._renew_sessions()
             acc = self._build_one()
             if acc:
                 with self.lock:
@@ -492,15 +452,6 @@ class xZan:
                 time.sleep(0.5)
 
     def run(self):
-        # ====== THỬ KHỞI ĐỘNG TOR ======
-        print(f"{Y}[*] Đang khởi động Tor...{C}")
-        if start_tor():
-            self.tor_enabled = True
-            print(f"{G}[✓] Tor đã chạy!{C}")
-        else:
-            self.tor_enabled = False
-            print(f"{Y}[!] Không thể chạy Tor, dùng IP thường...{C}")
-        
         # ====== HIỂN THỊ THÔNG TIN SERVER ======
         print(f"\n{G}┌─────────────────────────────────────────────────────────┐")
         print(f"│{W}  Free Fire Account Creator (FIXED){G}                    │")
@@ -509,7 +460,6 @@ class xZan:
         print(f"│  {Y}Version :{W} {CLIENT_VERSION} ({RELEASE_VERSION})")
         print(f"│  {Y}Region  :{W} {self.region}  |  Prefix : {self.nick_base}")
         print(f"│  {Y}Target  :{W} {self.total}  |  Threads: {self.threads}")
-        print(f"│  {Y}Tor     :{W} {'✅ Enabled' if self.tor_enabled else '❌ Disabled'}")
         print(f"└─────────────────────────────────────────────────────────┘{C}\n")
         
         # ====== LOADING ANIMATION ======
