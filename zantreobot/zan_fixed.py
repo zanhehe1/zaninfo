@@ -42,65 +42,21 @@ REGION_LANG = {
 CLIENT_VERSION = "1.126.2"
 RELEASE_VERSION = "OB54"
 
-PY_MODULES = {
-    "requests": "requests",
-    "urllib3": "urllib3",
-    "Crypto": "pycryptodome",
-    "google.protobuf": "protobuf",
-    "socks": "PySocks",
-}
-
-SYSTEM_PKGS = {
-    "python": "python",
-    "pip": "python-pip",
-    "tor": "tor",
-    "cmatrix": "cmatrix",
-}
-
-def run(cmd):
-    try:
-        subprocess.check_call(cmd)
-        return True
-    except:
-        return False
-
-def install_system(pkg):
-    if shutil.which("pkg"):
-        return run(["pkg", "install", "-y", pkg])
-    if shutil.which("apt"):
-        run(["apt", "update"])
-        return run(["apt", "install", "-y", pkg])
-    return False
-
-def auto_check():
-    print(f"{Y}[*] Checking system...{C}")
-    for cmd, pkg in SYSTEM_PKGS.items():
-        if shutil.which(cmd):
-            print(f"{G}[✓] {cmd}{C}")
-        else:
-            print(f"{Y}[+] Installing {pkg}...{C}")
-            install_system(pkg)
-
-    for module, package in PY_MODULES.items():
-        try:
-            importlib.import_module(module)
-            print(f"{G}[✓] {module}{C}")
-        except ImportError:
-            print(f"{Y}[+] pip install {package}{C}")
-            run([sys.executable, "-m", "pip", "install", "--upgrade", package])
-    print(f"{G}[✓] Done.{C}")
-
-auto_check()
+# ====== BỎ AUTO_CHECK ======
+# auto_check() đã bị xóa để chạy trên Render
 
 def start_tor():
-    subprocess.run(['pkill', '-9', 'tor'], capture_output=True)
-    time.sleep(0.5)
-    subprocess.Popen(['tor'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
-    for _ in range(15):
+    try:
+        subprocess.run(['pkill', '-9', 'tor'], capture_output=True)
         time.sleep(0.5)
-        if subprocess.run(['pgrep', '-x', 'tor'], capture_output=True).returncode == 0:
-            return True
-    return False
+        subprocess.Popen(['tor'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        for _ in range(15):
+            time.sleep(0.5)
+            if subprocess.run(['pgrep', '-x', 'tor'], capture_output=True).returncode == 0:
+                return True
+        return False
+    except:
+        return False
 
 def renew_tor():
     try:
@@ -360,7 +316,8 @@ class xZan:
         if not self.sessions:
             for _ in range(self.threads * 2):
                 s = requests.Session()
-                s.proxies.update({'http':'socks5h://127.0.0.1:9050', 'https':'socks5h://127.0.0.1:9050'})
+                # Bỏ proxy Tor để chạy trên Render
+                # s.proxies.update({'http':'socks5h://127.0.0.1:9050', 'https':'socks5h://127.0.0.1:9050'})
                 s.verify = False
                 s.timeout = 15
                 self.sessions.append(s)
@@ -511,7 +468,10 @@ class xZan:
                 self.ip_counter += 1
                 if self.ip_counter >= 8:
                     self.ip_counter = 0
-                    renew_tor()
+                    try:
+                        renew_tor()
+                    except:
+                        pass
                     self._renew_sessions()
             acc = self._build_one()
             if acc:
@@ -527,7 +487,10 @@ class xZan:
                 time.sleep(0.1)
 
     def run(self):
-        start_tor()
+        try:
+            start_tor()
+        except:
+            pass
         
         # ====== HIỂN THỊ THÔNG TIN SERVER ======
         print(f"\n{G}┌─────────────────────────────────────────────────────────┐")
@@ -584,7 +547,6 @@ class xZan:
 if __name__ == "__main__":
     os.system('clear' if os.name == 'posix' else 'cls')
     
-    # ====== LOGO 1 LẦN DUY NHẤT ======
     print(f"""
 {G}   ███████╗ █████╗ ███╗   ██╗██╗  ██╗
 {Y}   ╚══███╔╝██╔══██╗████╗  ██║╚██╗██╔╝
@@ -602,7 +564,6 @@ if __name__ == "__main__":
 {GR}    All Rights Reserved By ZanX{C}
 """)
     
-    # ====== NHẬP THÔNG TIN ======
     print(f"\n{Y}[?]{W} Name prefix {GR}(default zan){W}: {C}", end='')
     name = input().strip() or "zan"
     
