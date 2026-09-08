@@ -151,7 +151,12 @@
       "name": "tr jan jan.",
       "token": "7521641044:275BEA4CE0A550D5E3AD79E3E1646B72FF10929B0E56F40C94D76E15265FF710",
       "online": true,
-      "users": []
+      "users": [
+        {
+          "uid": 1747745614,
+          "expire": "2029-06-03 11:10:46"
+        }
+      ]
     },
     {
       "id": 21,
