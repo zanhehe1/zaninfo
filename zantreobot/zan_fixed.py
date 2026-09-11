@@ -42,7 +42,104 @@ REGION_LANG = {
 CLIENT_VERSION = "1.126.2"
 RELEASE_VERSION = "OB54"
 
-# ====== BỎ TOR HOÀN TOÀN ======
+PY_MODULES = {
+    "requests": "requests",
+    "urllib3": "urllib3",
+    "Crypto": "pycryptodome",
+    "google.protobuf": "protobuf",
+    "socks": "PySocks",
+}
+
+SYSTEM_PKGS = {
+    "python": "python",
+    "pip": "python-pip",
+    "tor": "tor",
+    "cmatrix": "cmatrix",
+}
+
+def run(cmd):
+    try:
+        subprocess.check_call(cmd)
+        return True
+    except:
+        return False
+
+def install_system(pkg):
+    if shutil.which("pkg"):
+        return run(["pkg", "install", "-y", pkg])
+    if shutil.which("apt"):
+        run(["apt", "update"])
+        return run(["apt", "install", "-y", pkg])
+    return False
+
+def auto_check():
+    print(f"{Y}[*] Checking system...{C}")
+    for cmd, pkg in SYSTEM_PKGS.items():
+        if shutil.which(cmd):
+            print(f"{G}[✓] {cmd}{C}")
+        else:
+            print(f"{Y}[+] Installing {pkg}...{C}")
+            install_system(pkg)
+
+    for module, package in PY_MODULES.items():
+        try:
+            importlib.import_module(module)
+            print(f"{G}[✓] {module}{C}")
+        except ImportError:
+            print(f"{Y}[+] pip install {package}{C}")
+            run([sys.executable, "-m", "pip", "install", "--upgrade", package])
+    print(f"{G}[✓] Done.{C}")
+
+auto_check()
+
+# ====== KIỂM TRA TOR CÓ CHẠY KHÔNG ======
+def is_tor_running():
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(2)
+        result = sock.connect_ex(('127.0.0.1', 9050))
+        sock.close()
+        return result == 0
+    except:
+        return False
+
+def start_tor():
+    try:
+        # Kiểm tra Tor đã chạy chưa
+        if is_tor_running():
+            print(f"{G}✅ Tor đã chạy!{C}")
+            return True
+        
+        print(f"{Y}🔄 Khởi động Tor...{C}")
+        subprocess.run(['pkill', '-9', 'tor'], capture_output=True)
+        time.sleep(0.5)
+        subprocess.Popen(['tor'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        
+        for _ in range(15):
+            time.sleep(0.5)
+            if is_tor_running():
+                print(f"{G}✅ Tor đã chạy!{C}")
+                return True
+        
+        print(f"{R}❌ Không thể khởi động Tor!{C}")
+        return False
+    except Exception as e:
+        print(f"{R}❌ Lỗi Tor: {e}{C}")
+        return False
+
+def renew_tor():
+    try:
+        if not is_tor_running():
+            return False
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(3)
+        sock.connect(('127.0.0.1', 9051))
+        sock.send(b'AUTHENTICATE ""\r\nSIGNAL NEWNYM\r\nQUIT\r\n')
+        sock.close()
+        time.sleep(1.5)
+        return True
+    except:
+        return False
 
 def varint_encode(value):
     result = []
@@ -140,32 +237,88 @@ def register_guest_account(session):
         "Content-Type": "application/json; charset=utf-8",
         "Host": "100067.connect.garena.com"
     }
-    response = session.post("https://100067.connect.garena.com/api/v2/oauth/guest:register", data=body_json, headers=headers, timeout=36)
-    if response.status_code != 200:
-        response.raise_for_status()
-    data = response.json()
-    if data.get("code") != 0:
-        raise Exception(f"Register error: {data.get('message', 'Unknown')} - Code: {data.get('code')}")
-    return str(data["data"]["uid"]), password
+    
+    # ====== RETRY VỚI DELAY ======
+    for attempt in range(5):
+        try:
+            if attempt > 0:
+                delay = random.uniform(3, 8)
+                print(f"{Y}⏳ Đợi {delay:.1f}s trước khi thử lại...{C}")
+                time.sleep(delay)
+            
+            response = session.post(
+                "https://100067.connect.garena.com/api/v2/oauth/guest:register",
+                data=body_json,
+                headers=headers,
+                timeout=36
+            )
+            
+            if response.status_code == 429:
+                print(f"{Y}⚠️ Too Many Requests (429), đợi 15s...{C}")
+                time.sleep(15)
+                continue
+                
+            if response.status_code == 503:
+                print(f"{Y}⚠️ Server bận (503), đợi 10s...{C}")
+                time.sleep(10)
+                continue
+                
+            if response.status_code != 200:
+                response.raise_for_status()
+                
+            data = response.json()
+            if data.get("code") != 0:
+                raise Exception(f"Register error: {data.get('message', 'Unknown')} - Code: {data.get('code')}")
+            return str(data["data"]["uid"]), password
+            
+        except requests.exceptions.RequestException as e:
+            print(f"{Y}⚠️ Lỗi: {e}, thử lại...{C}")
+            time.sleep(3)
+            continue
+    
+    raise Exception("Register failed after 5 attempts")
 
 def obtain_access_token(session, uid, password):
     url = "https://auth.garena.com/oauth/guest/token/grant"
     payload = {"uid": str(uid), "password": str(password), "response_type": "token", "client_type": "2", "client_id": "100067", "client_secret": CLIENT_SECRET}
     headers = {"User-Agent": "Mozilla/5.0 (Android 9; Mobile; rv:91.0) Gecko/91.0 Firefox/91.0", "Content-Type": "application/x-www-form-urlencoded"}
-    resp = session.post(url, data=payload, headers=headers, timeout=10)
-    if resp.status_code != 200:
-        resp.raise_for_status()
-    data = resp.json()
-    if "access_token" not in data:
-        raise Exception()
-    return data["access_token"], data["open_id"]
+    
+    for attempt in range(3):
+        try:
+            resp = session.post(url, data=payload, headers=headers, timeout=10)
+            if resp.status_code != 200:
+                resp.raise_for_status()
+            data = resp.json()
+            if "access_token" not in data:
+                raise Exception()
+            return data["access_token"], data["open_id"]
+        except:
+            time.sleep(2)
+            continue
+    raise Exception("Token grant failed")
 
 def major_register(session, nick_prefix, access_token, open_id, region, ghost=False):
     url = "https://loginbp.ggpolarbear.com/MajorRegister"
-    exp_digits = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹'}
-    num = random.randint(1,99999)
-    suffix = ''.join(exp_digits[d] for d in f"{num:05d}")
-    nickname = nick_prefix[:12] + suffix
+    
+    # ====== TỐI ĐA 12 KÝ TỰ ======
+    MAX_NAME_LENGTH = 12
+    
+    # ====== LẤY PREFIX (TỐI ĐA 12) ======
+    prefix = nick_prefix[:MAX_NAME_LENGTH]
+    prefix_len = len(prefix)
+    
+    # ====== TÍNH SỐ KÝ TỰ CẦN THÊM ======
+    need = MAX_NAME_LENGTH - prefix_len
+    
+    if need > 0:
+        # ====== TẠO SỐ NGẪU NHIÊN ======
+        exp_digits = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹'}
+        num = random.randint(1, 10**need - 1)
+        suffix = ''.join(exp_digits[d] for d in f"{num:0{need}d}")
+        nickname = prefix + suffix
+    else:
+        nickname = prefix[:MAX_NAME_LENGTH]
+    
     lang = "pt" if ghost else REGION_LANG.get(region.upper(), "vi")
     xor_key = [0x30,0x30,0x30,0x32,0x30,0x31,0x37,0x30,0x30,0x30,0x30,0x30,0x32,0x30,0x31,0x37,0x30,0x30,0x30,0x30,0x30,0x32,0x30,0x31,0x37,0x30,0x30,0x30,0x30,0x30,0x32,0x30]
     encoded = ''.join(chr(ord(c) ^ xor_key[i % len(xor_key)]) for i, c in enumerate(open_id))
@@ -263,7 +416,7 @@ def activate_account(session, jwt_token, client_url, open_id):
 class xZan:
     def __init__(self, region, nickname_prefix, total, threads):
         self.region = region.upper()
-        self.nick_base = nickname_prefix[:7]
+        self.nick_base = nickname_prefix[:12]
         self.total = total
         self.threads = threads
         self.completed = 0
@@ -274,6 +427,7 @@ class xZan:
         self.results = []
         self.start_time = time.time()
         self.failed_count = 0
+        self.tor_enabled = False
         if os.path.exists("xZan.json"):
             try:
                 with open("xZan.json", "r", encoding="utf-8") as f:
@@ -288,15 +442,27 @@ class xZan:
 
     def _get_session(self):
         if not self.sessions:
+            # ====== KIỂM TRA TOR ======
+            self.tor_enabled = is_tor_running()
+            
             for _ in range(self.threads * 2):
                 s = requests.Session()
-                # BỎ TOR - Không dùng proxy
+                if self.tor_enabled:
+                    try:
+                        s.proxies.update({'http':'socks5h://127.0.0.1:9050', 'https':'socks5h://127.0.0.1:9050'})
+                    except:
+                        pass
                 s.verify = False
-                s.timeout = 15
+                s.timeout = 30
                 self.sessions.append(s)
         return random.choice(self.sessions)
 
     def _renew_sessions(self):
+        if self.tor_enabled:
+            try:
+                renew_tor()
+            except:
+                pass
         for s in self.sessions:
             try:
                 s.close()
@@ -438,6 +604,19 @@ class xZan:
             with self.lock:
                 if self.completed >= self.total:
                     break
+                self.ip_counter += 1
+                if self.ip_counter >= 5:
+                    self.ip_counter = 0
+                    if self.tor_enabled:
+                        try:
+                            renew_tor()
+                        except:
+                            pass
+                    self._renew_sessions()
+            
+            # ====== DELAY NGẪU NHIÊN ======
+            time.sleep(random.uniform(2, 5))
+            
             acc = self._build_one()
             if acc:
                 with self.lock:
@@ -449,9 +628,12 @@ class xZan:
             else:
                 with self.lock:
                     self.failed_count += 1
-                time.sleep(0.5)
+                time.sleep(3)
 
     def run(self):
+        # ====== KHỞI ĐỘNG TOR ======
+        self.tor_enabled = start_tor()
+        
         # ====== HIỂN THỊ THÔNG TIN SERVER ======
         print(f"\n{G}┌─────────────────────────────────────────────────────────┐")
         print(f"│{W}  Free Fire Account Creator (FIXED){G}                    │")
@@ -460,6 +642,7 @@ class xZan:
         print(f"│  {Y}Version :{W} {CLIENT_VERSION} ({RELEASE_VERSION})")
         print(f"│  {Y}Region  :{W} {self.region}  |  Prefix : {self.nick_base}")
         print(f"│  {Y}Target  :{W} {self.total}  |  Threads: {self.threads}")
+        print(f"│  {Y}Tor     :{W} {'✅ Enabled' if self.tor_enabled else '❌ Disabled'}")
         print(f"└─────────────────────────────────────────────────────────┘{C}\n")
         
         # ====== LOADING ANIMATION ======
