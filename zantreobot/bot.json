@@ -75,7 +75,7 @@
     },
     {
       "id": 8,
-      "botid": 16811218930,
+      "botid": 8,
       "name": "come my way’",
       "token": "328786769bad5e33285492429b8add9afb4b6a8a1df6886d591a35970dd9e5f4",
       "online": true,
@@ -316,6 +316,32 @@
         {
           "uid": 16104663154,
           "expire": "2054-01-27 09:50:11"
+        }
+      ]
+    },
+    {
+      "id": 35,
+      "botid": 17914707045,
+      "name": "zanxgay⁹⁸⁹⁹⁷",
+      "token": "34ba2440400bbd977e7f4cabb6495616532c685b363243fe7ba204d6d1b0c457",
+      "online": true,
+      "users": [
+        {
+          "uid": 17676666387,
+          "expire": "2026-09-13 09:59:47"
+        }
+      ]
+    },
+    {
+      "id": 36,
+      "botid": 17975387700,
+      "name": "愛┊AlphaSkყ〆²",
+      "token": "30433d4ea9829adce02e17f64d8c8c09c27eba777663c604f50142e6922b2b9e",
+      "online": true,
+      "users": [
+        {
+          "uid": 16104663154,
+          "expire": "2054-01-27 11:05:45"
         }
       ]
     }
