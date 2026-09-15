@@ -558,7 +558,7 @@ if bot:
             last_attack_time = time.time()
             reply_json(message, {
                 "status": "success",
-                "message": "CVIP đã khởi chạy",
+                "message": "CVIP STARTED",
                 "teamcode": tc,
                 "bots_started": total_started,
                 "accounts_left": remaining,
