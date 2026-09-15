@@ -685,7 +685,7 @@ def stop_telegram_polling():
         bot_polling_thread.join(timeout=5)
 
 def ping_api_keep_alive():
-    url = "http://zanlagx.onrender.com"
+    url = "http://zanlagx.onrender.com/status"
     
     while True:
         try:
