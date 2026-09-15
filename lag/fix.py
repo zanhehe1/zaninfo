@@ -562,8 +562,7 @@ if bot:
                 "teamcode": tc,
                 "bots_started": total_started,
                 "accounts_left": remaining,
-                "delay": delay,
-                "time": time.strftime("%H:%M:%S %d/%m/%Y")
+                "delay": delay,    
             })
         except Exception as e:
             logger.error(f"/c error: {e}")
