@@ -6847,7 +6847,7 @@ def run_telegram():
     telegram_bot.infinity_polling()
 
 def ping_api_keep_alive():
-    url = "http://zangayinfo.onrender.com"
+    url = "https://zangayinfo-yzah.onrender.com"
     
     while True:
         try:
