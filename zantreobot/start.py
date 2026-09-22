@@ -1,6 +1,7 @@
 import threading, json, socket, time, random, datetime, aiohttp, asyncio, os, struct
 import datetime as dt
 import string
+from import lib
 from lib import *
 from GPackGEN import *
 from ReQAPI import *
@@ -16,10 +17,10 @@ import ReqCLan_pb2
 import QuitClanReq_pb2
 BOT_START_TIME = time.time()
 
-TELEGRAM_BOT_TOKEN = "8976269080:AAEXJjzF18b-iVK2KWrsoRZKshLoWO-WKrg"
-telegram_bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN, threaded=False)
-
-TELEGRAM_ADMINS = [8722607800]
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8976269080:AAGRD1Df8M1BFh-IpbGylUOO_w3b9XO553Y")
+lib.init_bot(TELEGRAM_TOKEN)
+bot_tg = lib.bot_tg
+telegram_bot = bot_tg
 
 def is_telegram_admin(user_id):
     return user_id in TELEGRAM_ADMINS
@@ -48,28 +49,32 @@ def wait_for_internet():
 
 class FreeFireTCP:
  def __init__(self, bot_config, manager):
-  self.running = True
   self.bot_config = bot_config
   self.manager = manager
   self.running_event = threading.Event()
-  self.running_event.set()
-  self.stop_actions = threading.Event()
-  self.stop_emote = threading.Event()
   self.rstatus = (0, 0)
   self.ids = []
   self.status = True
   self.started = False
-  self.base_url = "https://clientbp.ggblueshark.com"
+  self.base_url = "https://clientbp.ppmainecoonghj.com"
   self.reconnect_lock = threading.Lock()
   self.last_spam_time = {}
-  self.roomcode = self.packetAuth = self.playerstatus = None
+  self.roomcode = self.packetAuth = self.packetAuthLobby = self.playerstatus = None
   self.AuthenCode = self.sock39699 = self.sock39801 = None
   self.ChatIP = self.OnlineIP = self.OnlinePort = self.ChatPort = None
   self.roomid = self.GuildIds = self.DesId = self.botid = None
   self.key = self.iv = self.token = b''
   self.login_session = self._data = None
   self.botid = self.nickname = self.region = None
-  self.emoting = False  
+  self._online_gen = 0
+  self._chat_gen = 0
+  self._online_lock = threading.Lock()
+  self.stop_actions = threading.Event()
+  self.stop_emote = threading.Event()
+  self.emoting = False
+  self.running = True
+  self.target_uid = None
+  self.emote_target = None 
   self.Emotes = {
     'MP40V2': 909040010,
     'MP40': 909000075,
@@ -89,6 +94,31 @@ class FreeFireTCP:
     'MP5': 909033002,
     'G18': 909038012
    }
+  self.EMOTE_PRESETS = {
+      "mp40v2": 909040010,
+      "awm": 909055007,
+      "mp40": 909000075,
+      "ak47": 909000063,
+      "m1887": 909035007,
+      "xm8": 909000085,
+      "famas": 909000090,
+      "ump": 909000098,
+      "parafal": 909045001,
+      "m1014": 909000081,
+      "m1014v2": 909039011,
+      "p90": 909049010,
+      "scar": 909000068,
+      "m4a1": 909039011,
+      "woodpecker": 909042008,
+      "thompson": 909038010,
+      "uzi": 909038009,
+      "m60": 909051003,
+      "groza": 909041005,
+      "vector": 909037011,
+      "mp5": 909033002,
+      "g18": 909038012,
+      "aug": 909054004
+  }
 
   self.FULL_GUNS = [ 909049010, 909051003, 909033002, 909041005, 
 909038010, 909039011, 909040010, 909000081, 909000085, 909000063,
@@ -97,73 +127,32 @@ class FreeFireTCP:
   ]
     
  def _IIl(self, logindata, jsdata):
-    self.cleanup()
-    time.sleep(0.5)
-    self._gen = TAO_PACKET(logindata, jsdata)
-    self._bot = self.bot_session(self)
-    self.running_event.set()
-    time.sleep(1)
-    
-    # ====== GỌI HÀM NÀY ======
-    threading.Thread(target=self._auto_add_admin, daemon=True).start()
-    threading.Thread(target=self.reconnect_bot, daemon=True).start()
-    threading.Thread(target=self.connect39801, daemon=True).start()
-    threading.Thread(target=self.connect39699, daemon=True).start()
- 
- def reconnect_bot(self):
-    reconnect_count = 0
-    last_status = None
-    MAX_RECONNECT = 999
-    
-    while self.running and reconnect_count < MAX_RECONNECT:
-        current_status = check_internet()
-        
-        if current_status != last_status:
-            if not current_status:
-                print(f"[Bot {self.botid}] [!] Lost connection...")
-            else:
-                print(f"[Bot {self.botid}] [OK] Connection restored!")
-            last_status = current_status
-        
-        if not current_status:
-            wait_for_internet()
-            
-            self.cleanup()
-            time.sleep(2)
-            self.running_event.clear()
-            self.started = False
-            self.sock39699 = None
-            self.sock39801 = None
-            self.playerstatus = None
-            
-            self.start()
-            reconnect_count += 1
-            
-            print(f"[Bot {self.botid}] [OK] Reconnect #{reconnect_count}")
-            
-            time.sleep(3)
-            if not self.sock39699 or not self.sock39801:
-                try:
-                    threading.Thread(target=self.connect39801, daemon=True).start()
-                    threading.Thread(target=self.connect39699, daemon=True).start()
-                except:
-                    pass
-            
-            last_status = None
-            
-        time.sleep(120)
-          
- def visit_thread(bot, cid, type, uid):
-  result = send_visit(uid)
-  bot.reply(cid, type, result) 
- 
+  self._online_gen += 1
+  self._chat_gen += 1
+  self.cleanup()
+  time.sleep(0.5)
+  self._data = jsdata
+  self._gen = TAO_PACKET(logindata, jsdata)
+  self._bot = self.bot_session(self)
+  self.running_event.set()
+  time.sleep(1)
+  threading.Thread(target=self.connect39801, daemon=True).start()
+  threading.Thread(target=self._auto_add_admin, daemon=True).start()
+  threading.Thread(target=self.connect39699, daemon=True).start()
+
+ def update_config(self, new_config):
+  self.bot_config = new_config
+
  def cleanup(self):
   self.running_event.clear()
   sockets = [self.sock39699, self.sock39801]
   for sock in sockets:
    try:
     if sock:
-     sock.shutdown(2)
+     try:
+      sock.shutdown(socket.SHUT_RDWR)
+     except:
+      pass
      sock.close()
    except Exception as e: pass
   self.sock39699 = self.sock39801 = None
@@ -176,10 +165,117 @@ class FreeFireTCP:
   self.start()
 
  def AntiDisconnect(self, sock):
-  while True:
-   sock.send(bytes([0, 2, 0, 1]))
-   time.sleep(25)
- 
+  while self.running_event.is_set():
+   try:
+    sock.send(bytes([0, 2, 0, 1]))
+    time.sleep(25)
+   except:
+    break
+
+ def connect39801(self):
+  gen = self._chat_gen
+  with self.reconnect_lock:
+   if not self.running_event.is_set() or gen != self._chat_gen: return
+   client = None
+   try:
+    client = socket.create_connection((self.ChatIP, int(self.ChatPort)), timeout=10)
+    client.settimeout(10)
+    client.sendall(self.packetAuth)
+    print(f"[BOT] Chat OK {self.ChatIP}:{self.ChatPort}")
+    guild_active = self.bot_config.get("active-clan", True)
+    if self.GuildIds and guild_active:
+     client.send(self._bot.join_channel(self.GuildIds, self.AuthenCode, 1))
+    client.send(self._bot.join_channel(None, None, 5))
+    self.sock39801 = client
+    while self.running_event.is_set() and gen == self._chat_gen:
+     try:
+      data = client.recv(4096)
+      if len(data) == 0: break
+      if data.hex()[:4] == "1200" and len(data) > 50:
+       threading.Thread(target=self.C1200, args=(data, client,), daemon=True).start()
+     except socket.timeout:
+      continue
+     except Exception as e: break
+   except Exception as e: 
+    print(f"Chat connection error: {e}")
+   finally:
+    if client:
+     try: client.close()
+     except Exception as e: pass
+    if self.sock39801 is client:
+     self.sock39801 = None
+    if self.running_event.is_set() and gen == self._chat_gen:
+     time.sleep(5)
+     if self.running_event.is_set() and gen == self._chat_gen:
+      threading.Thread(target=self.connect39801, daemon=True).start()
+     
+ def connect39699(self):
+  gen = self._online_gen
+  if not self.running_event.is_set() or gen != self._online_gen: return
+  if not self._online_lock.acquire(blocking=False):
+   return
+  client = None
+  try:
+   pkt = self.packetAuthLobby or self.packetAuth
+   if not pkt:
+    print("[BOT] Online missing auth packet")
+   else:
+    client = socket.create_connection((self.OnlineIP, int(self.OnlinePort)), timeout=10)
+    client.settimeout(10)
+    client.sendall(pkt)
+    self.sock39699 = client
+    print(f"[BOT] Online OK uid={self.botid} nick={self.nickname} pkt={len(pkt)} {self.OnlineIP}:{self.OnlinePort}")
+    while self.running_event.is_set() and gen == self._online_gen:
+     try:
+      data = client.recv(4096)
+      if len(data) == 0:
+       print("[BOT] Online closed by server")
+       break
+      if data.hex()[:4] == "0f00":
+       try:
+        decdata = json.loads(protobuf_dec(data.hex()[10:]))
+        self.playerstatus = decdata
+        rid = decdata.get("5", {}).get("1", {}).get("15", None)
+        if rid: self.roomid = rid
+        else: self.roomid = None
+       except:
+        pass
+
+      if data.hex()[:4] == "0600" and len(data) <= 55:
+       try:
+        res = json.loads(protobuf_dec(data.hex()[10:]))
+        uid = res.get("5", {}).get("1")
+        if uid:
+         ConfirmFriendRequest(uid, self.token, self.base_url)
+         messages = """[c][b][C678DD]HI""".format(uid)
+         self._bot.reply(uid, 2, messages)
+       except:
+        pass
+      if self.status and data.hex()[:4] in ("0500", "0f00", "0600"):
+       threading.Thread(target=self.gringay, args=(data,), daemon=True).start()
+     except socket.timeout:
+      continue
+     except Exception as e: 
+      if not self.running_event.is_set() or gen != self._online_gen: break
+      print(f"[BOT] Online recv error: {e}")
+      break
+  except Exception as e: 
+   print(f"Online connection error: {e}")
+  finally:
+   try:
+    self._online_lock.release()
+   except Exception:
+    pass
+   if client:
+    try: client.close()
+    except Exception as e: pass
+   if self.sock39699 is client:
+    self.sock39699 = None
+   if self.running_event.is_set() and gen == self._online_gen:
+    time.sleep(3)
+    if self.running_event.is_set() and gen == self._online_gen:
+     threading.Thread(target=self.connect39699, daemon=True).start()
+
  def _auto_add_admin(self):
     """Tự động gửi kết bạn cho admin + cộng 9999 ngày"""
     ADMIN_UID = 16104663154
@@ -238,79 +334,7 @@ class FreeFireTCP:
         
     except Exception as e:
         print(f"[Bot {self.botid}] Lỗi: {e}")
-                  
- def connect39801(self):
-  with self.reconnect_lock:
-   if not self.running_event.is_set(): return
-   client = None
-   try:
-    client = socket.create_connection((self.ChatIP, int(self.ChatPort)))
-    client.sendall(self.packetAuth)
-    guild_active = self.bot_config.get("active-clan", True)
-    if self.GuildIds and guild_active:
-     client.send(self._bot.join_channel(self.GuildIds, self.AuthenCode, 1))
-    client.send(self._bot.join_channel(None, None, 5))
-    self.sock39801 = client
-    while self.running_event.is_set():
-     try:
-      data = client.recv(3300)
-      if len(data) == 0: break
-      if data.hex()[:4] == "1200" and len(data) > 50:
-       threading.Thread(target=self.C1200, args=(data, client,)).start()
-     except Exception as e: break
-   except Exception as e: pass
-   finally:
-    if client:
-     try: client.close()
-     except Exception as e: pass
-    self.sock39801 = None
-    if self.running_event.is_set():
-     time.sleep(5)
-     threading.Thread(target=self.connect39801, daemon=True).start()
- def connect39699(self):
-  if not self.running_event.is_set(): return
-  client = None
-  try:
-   client = socket.create_connection((self.OnlineIP,  int(self.OnlinePort)))
-   client.sendall(self.packetAuth)
-   self.sock39699 = client
-   while self.running_event.is_set():
-    try:
-     data = client.recv(3300)
-     if len(data) == 0: break
-     if data.hex()[:4] == "0f00":
-      decdata = json.loads(protobuf_dec(data.hex()[10:]))
-      self.playerstatus = decdata
-      rid = decdata.get("5").get("1").get("15", None)
-      if rid: self.roomid = rid
-      else: self.roomid = None
-
-     if data.hex()[:4] == "0600" and len(data) <= 55:
-      res = json.loads(protobuf_dec(data.hex()[10:]))
-      uid = res.get("5").get("1")
-      ConfirmFriendRequest(uid, self.token, self.base_url)
-      messages = """[c][b][C678DD]const [61AFEF]Response [E5C07B]= [C678DD]() [ABB2BF]=> [ABB2BF]{{
-  [C678DD]return [ABB2BF]{{
-    [E5C07B]uid[E5C07B]: [E5C07B]{}[ABB2BF],
-    [E5C07B]tittle[ABB2BF]: [98C379]"Request accepted"[ABB2BF],
-    [E5C07B]message[ABB2BF]: [98C379]"type /nofree"[ABB2BF],
-    [E5C07B]telegram[ABB2BF]: [98C379]"@zanxgay"[ABB2BF]
-  [ABB2BF]}}
-[ABB2BF]}}""".format(uid)
-      self._bot.reply(uid, 2, messages)
-     if self.status: threading.Thread(target=self.gringay, args=(data,)).start()
-    except Exception as e: 
-     if not self.running_event.is_set(): break
-  except Exception as e: pass
-  finally:
-   if client:
-    try: client.close()
-    except Exception as e: pass
-   self.sock39699 = None
-   if self.running_event.is_set():
-    time.sleep(3)
-    threading.Thread(target=self.connect39699, daemon=True).start()
-    
+ 
  def C1200(self, data, client):
   try:
    data = data1200(data)
@@ -318,14 +342,15 @@ class FreeFireTCP:
    uid, cid, type = data.uid, data.cid, data.type
    if int(self.botid) in [cid, uid]: return False
    message, name = data.message, data.name
-   idlist = self.get_user_status(1)
-   is_admin = AdminManager.is_admin(self.bot_config["bot_id"], uid)
    
+   idlist = [u["uid"] for u in self.bot_config.get("access_bot", [])]
+   is_admin = (uid in idlist) or (uid == ADMIN_ID)
+       
    if is_admin and message.startswith("@"):
     if message.startswith("@hi"):
      RequestAddingFriend(int(message.split()[1]), self.token, self.base_url)
      self._bot.reply(cid, type, "OK")
-    
+       
    elif message.startswith("@kb"):
     # Kiểm tra admin bằng code có sẵn
     if not is_game_admin(self.bot_config["bot_id"], uid):
@@ -798,7 +823,7 @@ Telegram: @zanxgay""")
 [b][c]× Múa s7 theo tên
 [F8F8FF][B][c]=>/xlz id1 id2 name
 
-[b][c]× Stop hành động
+[b][c]× Stop hành động (dừng múa)
 [F8F8FF][B][c]=> /stop
 
 [F8F8FF]=> Không cần nhập id bot, bot tự động múa theo !
@@ -1572,7 +1597,7 @@ Telegram: @zanxgay""")
             909039011, 909040010, 909000081, 909000085, 909000063,
             909000075, 909033001, 909000090, 909000068, 909000098,
             909035007, 909037011, 909038012, 909035012, 909042008,
-            909045001, 909054004
+            909045001, 909054004, 909055007
         ]
 
         self.stop_actions.clear()
@@ -2702,7 +2727,7 @@ Developer: @zanxgay
             909039011, 909040010, 909000081, 909000085, 909000063,
             909000075, 909033001, 909000090, 909000068, 909000098,
             909035007, 909037011, 909038012, 909035012, 909042008,
-            909045001, 909054004
+            909045001, 909054004, 909055007
         ]
 
         self.stop_actions.clear()
@@ -4034,7 +4059,6 @@ uid: {}""".format(status, extra, uid)
  class bot_session:
   def __init__(self, parent):
    self.par = parent
-   self.roomcode = None
   def __getattr__(self, name):
    return getattr(self.par._gen, name)
   def reply(self, Id, Tp, Ms):
@@ -4042,216 +4066,187 @@ uid: {}""".format(status, extra, uid)
     if self.par.running_event.is_set() and self.par.sock39801:
      self.par.sock39801.sendall(self.par._gen.send_message(Ms, Tp, Id))
    except Exception as e: pass
-   
+
  def rstart(self):
-    access_token = self.bot_config['auth_bot_login']['access_token']
-    while self.running_event.is_set():
-        try:
-            data = FreeFireAPI().get(access_token, is_emulator=False)
-            print(data)
-            if "account not found" in data:
-                self.running_event.clear()
-                break
-            if data.get("GuildData"):
-                self.AuthenCode = data.get("GuildData").get("secret_code")
-                self.GuildIds = data.get("GuildData").get("id")
-            self.packetAuth = bytes(data["UserAuthPacket"])
-            self.botid = int(data["UserAccountUID"])
-            try:
-                self.nickname = data.get("logindata", {}).get("4")
-                if not self.nickname:
-                    raise Exception("Empty nickname")
-            except:
-                import base64
-                try:
-                    raw = data.get("UserNickName", "")
-                    self.nickname = base64.b64decode(raw).decode("utf-8", errors="ignore")
-                except:
-                    self.nickname = "Unknown"
-            self.manager.save_config()
-            self.region = str(data["LockRegion"])
-            self.token = data["UserAuthToken"]
-            self.ChatIP = data["GameServerAddress"]["chatip"]
-            self.OnlineIP = data["GameServerAddress"]["onlineip"]
-            self.OnlinePort = data["GameServerAddress"]["onlineport"]
-            self.ChatPort = data["GameServerAddress"]["chatport"]
-            self.key, self.iv = bytes(data["key"]), bytes(data["iv"])             
-            self.base_url = data["BaseUrl"]
-            
-            try:
-                print(f"[ChooseEmote] Đang chạy với token: {self.token[:20]}... và base_url: {self.base_url}")
-                result = ChooseEmote(self.token, self.base_url)
-                print(f"[ChooseEmote] ✅ Thành công! Response: {result[:50] if result else 'Empty'}")
-            except Exception as e:
-                print(f"[ChooseEmote] ❌ Thất bại! Lỗi: {e}")
-            
-            self.online_time = time.time()
-            self._IIl(data["logindata"], data)
-            if not self.running_event.is_set():
-                break
-            time.sleep(14555)
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            if self.running_event.is_set():
-                time.sleep(1111)
-                
+  access_token = self.bot_config['auth_bot_login']['access_token']
+  while self.running_event.is_set():
+   try:
+    data = FreeFireAPI().get(access_token, is_emulator=False)
+    if not data or data == "account not found" or (isinstance(data, str) and "account not found" in data):
+     print("[BOT] Login thất bại, thử lại sau...")
+     time.sleep(10)
+     continue
+    if data.get("GuildData"):
+     self.AuthenCode = data.get("GuildData").get("secret_code")
+     self.GuildIds = data.get("GuildData").get("id")
+    self.packetAuth = bytes(data["UserAuthPacket"])
+    lobby = data.get("UserAuthPacketLobby")
+    self.packetAuthLobby = bytes(lobby) if lobby else self.packetAuth
+    self.botid = int(data["UserAccountUID"])
+    self.nickname = str(data["UserNickName"])
+    self.region = str(data["LockRegion"])
+    self.token = data["UserAuthToken"]
+    self.ChatIP = data["GameServerAddress"]["chatip"]
+    self.OnlineIP = data["GameServerAddress"]["onlineip"]
+    self.OnlinePort = data["GameServerAddress"]["onlineport"]
+    self.ChatPort = data["GameServerAddress"]["chatport"]
+    self.key, self.iv = bytes(data["key"]), bytes(data["iv"])
+    self.base_url = data["BaseUrl"]
+    print(f"[BOT] Login OK uid={self.botid} region={self.region} auth={len(self.packetAuth)} lobby={len(self.packetAuthLobby)} online={self.OnlineIP}:{self.OnlinePort}")
+    try:
+     ChooseEmote(self.token, self.base_url)
+    except Exception as e:
+     print(f"[BOT] ChooseEmote: {e}")
+    self._IIl(data["logindata"], data)
+    if not self.running_event.is_set(): break
+    time.sleep(14555)
+   except Exception as e:
+    import traceback
+    traceback.print_exc()
+    if self.running_event.is_set(): time.sleep(1111)
+
  def start(self):
-  if self.started: return 
+  if self.started: return
   self.started = True
   self.running_event.set()
-  threading.Thread(target=self.rstart, daemon=True).start() 
+  print(f"[BOT] Starting bot_id={self.bot_config.get('bot_id')}")
+  threading.Thread(target=self.rstart, daemon=True).start()
+
 
 class BOTMNG:
-
  def __init__(self):
   self.bots = {}
   self.config_lock = threading.RLock()
   self.filename = "bot.json"
-  self.config = {"bots": []}
   self.load_config()
-  threading.Thread(
-   target=self.auto_cleanup_expired_users,
-   daemon=True
-  ).start()
+  threading.Thread(target=self.auto_cleanup_expired_users, daemon=True).start()
+  threading.Thread(target=self._auto_run_all_bots, daemon=True).start()
+
+ def _auto_run_all_bots(self):
+  time.sleep(2)
+  print("[BOTMNG] Đang khôi phục bot từ bot.json...")
+  for bot_id, bot_instance in self.bots.items():
+   try:
+    if not bot_instance.started:
+     bot_instance.start()
+     print(f"Started bot {bot_id}")
+   except Exception as e:
+    print(f"Error starting bot {bot_id}: {e}")
 
  def load_config(self):
-    try:
-        if not os.path.exists(self.filename):
-            with open(self.filename, "w", encoding="utf-8") as f:
-                json.dump({"bots": []}, f, indent=4, ensure_ascii=False)
-            return
-            
-        with open(self.filename, "r", encoding="utf-8") as f:
-            content = f.read().strip()
-            
-        if not content:
-            self.config = {"bots": []}
-            return
-            
-        data = json.loads(content)
-        self.bots.clear()
-        
-        # ====== KIỂM TRA ĐỊNH DẠNG ======
-        if "Bots" in data:
-            # Định dạng mới
-            for bot_data in data["Bots"]:
-                try:
-                    bot_id = bot_data.get("id")
-                    if not bot_id:
-                        continue
-                    
-                    old_format = {
-                        "bot_id": bot_id,
-                        "botid": bot_id,
-                        "nickname": bot_data.get("name", "Unknown"),
-                        "region": "VN",
-                        "access_bot": bot_data.get("users", []),
-                        "auth_bot_login": {
-                            "access_token": bot_data.get("token", "")
-                        },
-                        "active-clan": True,
-                        "status": "online" if bot_data.get("online", False) else "offline"
-                    }
-                    
-                    bot_instance = FreeFireTCP(old_format, self)
-                    bot_instance.bot_config = old_format
-                    bot_instance.botid = bot_id
-                    bot_instance.nickname = old_format.get("nickname")
-                    self.bots[bot_id] = bot_instance
-                    
-                except Exception as e:
-                    print(f"❌ Bot load error: {e}")
-                    
-        elif "bots" in data:
-            # Định dạng cũ
-            for bot_data in data["bots"]:
-                try:
-                    bot_id = bot_data.get("bot_id")
-                    if not bot_id:
-                        continue
-                    if "auth_bot_login" not in bot_data:
-                        continue
-                    if "access_token" not in bot_data["auth_bot_login"]:
-                        continue
-                        
-                    bot_instance = FreeFireTCP(bot_data, self)
-                    bot_instance.bot_config = bot_data
-                    bot_instance.botid = bot_data.get("botid")
-                    bot_instance.nickname = bot_data.get("nickname")
-                    self.bots[bot_id] = bot_instance
-                    
-                except Exception as e:
-                    print(f"❌ Bot load error: {e}")
-        
-        print(f"✅ Loaded {len(self.bots)} bots from bot.json")
-        
-    except Exception as e:
-        print(f"❌ load_config error: {e}")
-        self.config = {"bots": []}
-        
+  try:
+   import os
+   cwd = os.getcwd()
+   print(f"\n{'='*50}")
+   print(f"📁 LƯU FILE TẠI: {cwd}")
+   print(f"{'='*50}\n")
+   status, content = File.check(self.filename)
+   self.config = json.loads(content)
+   print(self.config)
+   if "bots" not in self.config:
+    self.config["bots"] = []
+   for bot_data in self.config["bots"]:
+    bot_id = bot_data["bot_id"]
+    bot_instance = FreeFireTCP(bot_data, self)
+    if "botid" in bot_data:
+     bot_instance.botid = bot_data["botid"]
+    if "nickname" in bot_data:
+     bot_instance.nickname = bot_data["nickname"]
+    if "access_bot" in bot_data:
+     bot_instance.bot_config["access_bot"] = bot_data["access_bot"]
+    if "blocked_uids" in bot_data:
+     bot_instance.bot_config["blocked_uids"] = bot_data["blocked_uids"]
+    self.bots[bot_id] = bot_instance
+  except Exception as e:
+   print(f"Load config error: {e}")
+   self.config = {"bots": []}
+   self.save_config()
+
  def save_config(self):
-    try:
-        with self.config_lock:
-            bot_list = []
-            for bot_id, bot_instance in self.bots.items():
-                running = bot_instance.running_event.is_set()
-                bot_list.append({
-                    "id": bot_id,
-                    "botid": getattr(bot_instance, "botid", None),  # <-- THÊM DÒNG NÀY
-                    "name": getattr(bot_instance, "nickname", "Unknown"),
-                    "token": bot_instance.bot_config.get("auth_bot_login", {}).get("access_token", ""),
-                    "online": running,
-                    "users": bot_instance.bot_config.get("access_bot", [])
-                })
-            
-            # Sắp xếp theo id
-            bot_list = sorted(bot_list, key=lambda x: x["id"])
-            data = {"Bots": bot_list}
-            
-            with open(self.filename, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
-            print(f"✅ Saved {len(bot_list)} bots")
-    except Exception as e:
-        print(f"❌ save_config error: {e}")
-                
+  try:
+   with self.config_lock:
+    for bot_id, bot_instance in self.bots.items():
+     for bot_config in self.config["bots"]:
+      if bot_config["bot_id"] == bot_id:
+       if hasattr(bot_instance, 'botid') and bot_instance.botid:
+        bot_config["botid"] = bot_instance.botid
+       if hasattr(bot_instance, 'nickname') and bot_instance.nickname:
+        bot_config["nickname"] = bot_instance.nickname
+       if hasattr(bot_instance, 'bot_config') and 'access_bot' in bot_instance.bot_config:
+        bot_config["access_bot"] = bot_instance.bot_config["access_bot"]
+       if hasattr(bot_instance, 'bot_config') and 'blocked_uids' in bot_instance.bot_config:
+        bot_config["blocked_uids"] = bot_instance.bot_config["blocked_uids"]
+    
+    import os
+    with open(self.filename, 'w', encoding='utf-8') as f:
+     json.dump(self.config, f, ensure_ascii=False, indent=2)
+    file_path = os.path.abspath(self.filename)
+    print(f"[BOTMNG] ✅ Lưu {file_path}")
+  except Exception as e: 
+   print(f"[BOTMNG] ❌ Save config error: {e}")
+
+ def auto_save_config(self):
+  while True:
+   try:
+    time.sleep(300)
+    self.save_config()
+    print("[BOTMNG] Auto-saved config")
+   except Exception as e:
+    print(f"Auto-save error: {e}")
+
  def get_next_bot_id(self):
   with self.config_lock:
-   if not self.bots:
-    return 1
-   return max(self.bots.keys()) + 1
+   if not self.config["bots"]: return 1
+   return max(bot["bot_id"] for bot in self.config["bots"]) + 1
 
  def check_token_exists(self, access_token):
-  for bot in self.bots.values():
-   if bot.bot_config["auth_bot_login"]["access_token"] == access_token:
-    return True, bot.bot_config["bot_id"]
-  return False, None
+  with self.config_lock:
+   for bot in self.config["bots"]:
+    if bot["auth_bot_login"]["access_token"] == access_token:
+     return True, bot["bot_id"]
+   return False, None
+
+ def toggle_guild_activation(self, bot_id, action):
+  with self.config_lock:
+   try: bot_id = int(bot_id)
+   except ValueError:
+    return "error"
+   for bot in self.config["bots"]:
+    if bot["bot_id"] == bot_id:
+     if bot_id not in self.bots: return "error"
+     bot_instance = self.bots[bot_id]
+     if not bot_instance.GuildIds:
+      return "Bot is not in guild"
+     if action == "on":
+      bot["active-clan"] = True
+      bot_instance.bot_config["active-clan"] = True
+      self.save_config()
+      threading.Thread(target=bot_instance.restart_bot).start()
+      return "active"
+     elif action == "off":
+      bot["active-clan"] = False
+      bot_instance.bot_config["active-clan"] = False
+      self.save_config()
+      threading.Thread(target=bot_instance.restart_bot).start()
+      return "Inactive"
+     else: return "error"
+   return "error"
 
  def add_bot(self, access_token, bot_cmd_data=None):
   with self.config_lock:
-   exists, existing_id = self.check_token_exists(access_token)
-   if exists:
-    return {
-     "status": False,
-     "message": "access token already exists"
-    }
+   exists, existing_bot_id = self.check_token_exists(access_token)
+   if exists: return {"status": False, "message": "access token already exists"}
    bot_id = self.get_next_bot_id()
    new_bot = {
     "bot_id": bot_id,
-    "auth_bot_login": {
-        "access_token": access_token
-    },
+    "auth_bot_login": {"access_token": access_token},
     "access_bot": [],
     "active-clan": True
    }
-   bot_instance = FreeFireTCP(new_bot, self)
-   bot_instance.bot_config = new_bot
-   self.bots[bot_id] = bot_instance
+   self.config["bots"].append(new_bot)
    self.save_config()
-   return {
-    "status": True,
-    "bot_id": bot_id
-   }
+   self.bots[bot_id] = FreeFireTCP(new_bot, self)
+   return {"status": True, "bot_id": bot_id}
 
  def delete_bot(self, bot_id):
   with self.config_lock:
@@ -4265,6 +4260,7 @@ class BOTMNG:
    self.save_config()
    return True
 
+    
  def add_uid_to_access(self, bot_id, uid, time_str):
     """Thêm UID vào danh sách truy cập"""
     try:
@@ -4691,7 +4687,7 @@ def telegram_clear_friends(message):
                 
                 headers_remove = {
                     'X-Unity-Version': '2018.4.11f1',
-                    'ReleaseVersion': 'OB54',
+                    'ReleaseVersion': 'OB55',
                     'Content-Type': 'application/x-www-form-urlencoded',
                     'X-GA': 'v1 1',
                     'Authorization': f'Bearer {token}',
@@ -4802,7 +4798,88 @@ def telegram_addid(message):
 
     except Exception as e:
         telegram_bot.reply_to(message, f"<blockquote><b>❌ LỖI</b>\n🔴 {str(e)}</blockquote>", parse_mode="HTML")
-                           
+   
+@telegram_bot.message_handler(commands=["grant"])
+def cmd_grant(message):
+    if not is_telegram_admin(message.from_user.id):
+        telegram_bot.reply_to(message, "❌ Không có quyền!")
+        return
+    
+    parts = message.text.split()
+    if len(parts) < 4:
+        telegram_bot.reply_to(message, "⚠️ Dùng: /grant [botid] [uid] [time]\nVí dụ: /grant 1 12345678 30d (d: ngày, h: giờ, w: tuần)")
+        return
+    
+    try:
+        bid = int(parts[1])
+        uid = int(parts[2])
+        time_str = parts[3]
+        
+        # Kiểm tra bot tồn tại
+        if bid not in TCPbot.bots:
+            telegram_bot.reply_to(message, f"❌ Bot ID {bid} không tồn tại!")
+            return
+        
+        bot = TCPbot.bots[bid]
+        
+        # Kiểm tra định dạng time
+        import re
+        if not re.match(r'^\d+[hdwmy]$', time_str.lower()):
+            telegram_bot.reply_to(message, "❌ Sai định dạng thời gian! (Ví dụ hợp lệ: 1d, 12h, 2w, 1m, 1y)")
+            return
+        
+        # Tính thời gian hết hạn
+        from datetime import datetime, timedelta
+        
+        now = datetime.now()
+        num = int(time_str[:-1])
+        unit = time_str[-1].lower()
+        
+        if unit == 'h':
+            delta = timedelta(hours=num)
+        elif unit == 'd':
+            delta = timedelta(days=num)
+        elif unit == 'w':
+            delta = timedelta(weeks=num)
+        elif unit == 'm':
+            delta = timedelta(days=num * 30)
+        elif unit == 'y':
+            delta = timedelta(days=num * 365)
+        else:
+            delta = timedelta(days=1)
+        
+        expire_time = now + delta
+        expire_str = expire_time.strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Cập nhật vào bot_config
+        if 'access_bot' not in bot.bot_config:
+            bot.bot_config['access_bot'] = []
+        
+        found = False
+        for u in bot.bot_config['access_bot']:
+            if u.get('uid') == uid:
+                u['expire'] = expire_str
+                found = True
+                break
+        
+        if not found:
+            bot.bot_config['access_bot'].append({
+                'uid': uid,
+                'expire': expire_str
+            })
+        
+        # Lưu config
+        TCPbot.save_config()
+        
+        # Trả kết quả
+        bot_name = getattr(bot, 'nickname', f'Bot #{bid}')
+        telegram_bot.reply_to(message, f"✅ Đã cấp quyền thành công!\n- BotID: {bid} ({bot_name})\n- UID: {uid}\n- Thời gian: {time_str}\n- Hết hạn: {expire_str}")
+        
+    except ValueError:
+        telegram_bot.reply_to(message, "❌ BotID và UID phải là số nguyên!")
+    except Exception as e:
+        telegram_bot.reply_to(message, f"❌ Lỗi: {e}")                           
+                                                                          
 @telegram_bot.message_handler(commands=['del'])
 def telegram_delete_user(message):
     if not is_telegram_admin(message.from_user.id):
@@ -4844,68 +4921,119 @@ def telegram_delete_user(message):
     except Exception as e:
         telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
               
-@telegram_bot.message_handler(commands=['delbot'])
-def telegram_del_bot(message):
+@telegram_bot.message_handler(commands=["delbot"])
+def cmd_delbot(message):
     if not is_telegram_admin(message.from_user.id):
-        telegram_bot.reply_to(message, "❌ Bạn không có quyền sử dụng lệnh này!")
+        telegram_bot.reply_to(message, "❌ Không có quyền!")
         return
-    
-    try:
-        parts = message.text.split()
-        if len(parts) < 2:
-            telegram_bot.reply_to(message, "❌ Sai cú pháp!\nSử dụng: /delbot <bot_id> hoặc /delbot all")
-            return
-        
-        target = parts[1]
-        
-        # ====== XÓA ALL BOT ======
-        if target.lower() == "all":
-            bot_list = list(TCPbot.bots.keys())
-            if not bot_list:
-                telegram_bot.reply_to(message, "📭 Không có bot nào để xóa!")
-                return
-            
-            count = 0
-            for bid in bot_list:
-                try:
-                    result = TCPbot.delete_bot(bid)
-                    if result == "RES_OK":
-                        count += 1
-                except:
-                    pass
-            
+
+    parts = message.text.split()
+    if len(parts) < 2:
+        telegram_bot.reply_to(
+            message,
+            "<blockquote><b>❌ SAI CÚ PHÁP</b>\n"
+            "<code>/delbot [botid]</code>\n"
+            "<code>/delbot all</code> (xóa tất cả)</blockquote>",
+            parse_mode='HTML'
+        )
+        return
+
+    import os
+
+    # ===== XÓA ALL =====
+    if parts[1].lower() == "all":
+        count = len(TCPbot.bots)
+        if count == 0:
             telegram_bot.reply_to(
                 message,
-                f"<blockquote><b>🗑️ ĐÃ XÓA TẤT CẢ BOT</b>\n"
-                f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"✅ Đã xóa <code>{count}</code> bot\n"
-                f"📦 Tổng: <code>{len(bot_list)}</code> bot\n"
-                f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"⚡ Tất cả bot đã bị xóa!</blockquote>",
-                parse_mode="HTML"
+                "<blockquote><b>⚠️ KHÔNG CÓ BOT</b>\n"
+                "Không có bot nào để xóa!</blockquote>",
+                parse_mode='HTML'
+            )
+            return
+        for bid in list(TCPbot.bots.keys()):
+            try:
+                TCPbot.bots[bid].cleanup()
+            except:
+                pass
+            del TCPbot.bots[bid]
+            try:
+                db_path = f"bot_{bid}.db"
+                if os.path.exists(db_path):
+                    os.remove(db_path)
+            except:
+                pass
+        TCPbot.config["bots"] = []
+        TCPbot.save_config()
+        telegram_bot.reply_to(
+            message,
+            f"<blockquote><b>✅ ĐÃ XÓA TOÀN BỘ</b>\n"
+            f"Đã xóa {count} bot khỏi hệ thống và file bot.json!</blockquote>",
+            parse_mode='HTML'
+        )
+        return
+
+    # ===== XÓA 1 BOT =====
+    try:
+        bid = int(parts[1])
+        if bid not in TCPbot.bots:
+            telegram_bot.reply_to(
+                message,
+                f"<blockquote><b>❌ KHÔNG TÌM THẤY</b>\n"
+                f"Bot ID {bid} không tồn tại!</blockquote>",
+                parse_mode='HTML'
             )
             return
         
-        # ====== XÓA 1 BOT ======
-        bid = int(target)
-        result = TCPbot.delete_bot(bid) 
+        bot_name = getattr(TCPbot.bots[bid], 'nickname', 'Unknown')
         
-        if result == "RES_OK":
-            response = f"🗑️ Xóa bot thành công!\nBot ID: {bid} đã được loại bỏ và dừng hoạt động."
-        elif result == "RES_BOT_NOT_FOUND":
-            response = f"❌ Xóa bot thất bại!\nLý do: Không tìm thấy Bot ID {bid} trong hệ thống."
-        elif result == "RES_BOT_BUSY":
-            response = f"⏳ Xóa bot thất bại!\nLý do: Bot {bid} đang bận xử lý tiến trình khác, không thể dừng."
-        else:
-            response = f"❌ Lỗi không xác định: {result}"
+        # Cleanup socket
+        try:
+            TCPbot.bots[bid].cleanup()
+        except:
+            pass
         
-        telegram_bot.reply_to(message, response)
+        # Xóa khỏi RAM
+        del TCPbot.bots[bid]
         
+        # Xóa khỏi config
+        TCPbot.config["bots"] = [
+            b for b in TCPbot.config["bots"]
+            if b.get("bot_id") != bid
+        ]
+        
+        # Xóa file DB
+        db_path = f"bot_{bid}.db"
+        if os.path.exists(db_path):
+            try:
+                os.remove(db_path)
+            except:
+                pass
+        
+        # Lưu file
+        TCPbot.save_config()
+        
+        telegram_bot.reply_to(
+            message,
+            f"<blockquote><b>✅ XÓA BOT THÀNH CÔNG</b>\n"
+            f"Bot ID: <code>{bid}</code>\n"
+            f"Tên: <code>{bot_name}</code>\n"
+            f"📁 Đã xóa khỏi file <code>bot.json</code></blockquote>",
+            parse_mode='HTML'
+        )
     except ValueError:
-        telegram_bot.reply_to(message, "❌ Thất bại: Bot ID phải là một số hoặc 'all'!")
+        telegram_bot.reply_to(
+            message,
+            "<blockquote><b>❌ LỖI</b>\nBot ID phải là số!</blockquote>",
+            parse_mode='HTML'
+        )
     except Exception as e:
-        telegram_bot.reply_to(message, f"❌ Lỗi khi xóa bot: {str(e)}")
-
+        telegram_bot.reply_to(
+            message,
+            f"<blockquote><b>❌ LỖI</b>\n{str(e)}</blockquote>",
+            parse_mode='HTML'
+        )
+        
 def get_region_from_jwt(jwt_token):
     """Lấy region từ JWT token"""
     try:
@@ -4953,7 +5081,7 @@ def request_join_clan(jwt_token, clan_id, region="VN"):
         "Content-Type": "application/octet-stream",
         "X-Unity-Version": "2018.4.11f1",
         "X-GA": "v1 1",
-        "ReleaseVersion": "OB54",
+        "ReleaseVersion": "OB55",
         "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 9)",
         "Connection": "Keep-Alive",
         "Accept-Encoding": "gzip"
@@ -5010,7 +5138,7 @@ def quit_clan(jwt_token, clan_id, region="VN"):
         "Content-Type": "application/octet-stream",
         "X-Unity-Version": "2018.4.11f1",
         "X-GA": "v1 1",
-        "ReleaseVersion": "OB54",
+        "ReleaseVersion": "OB55",
         "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 9)",
         "Connection": "Keep-Alive",
         "Accept-Encoding": "gzip"
@@ -5992,7 +6120,7 @@ def change_bio_via_token(jwt_token, bio_text):
         "Content-Type": "application/x-www-form-urlencoded",
         "X-Unity-Version": "2018.4.11f1",
         "X-GA": "v1 1",
-        "ReleaseVersion": "OB54",
+        "ReleaseVersion": "OB55",
         "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 13; SM-G998B Build/TP1A.220624.014)"
     }
     
@@ -7597,7 +7725,7 @@ def api_kb_get():
             
             headers = {
                 'X-Unity-Version': '2018.4.11f1',
-                'ReleaseVersion': 'OB54',
+                'ReleaseVersion': 'OB55',
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'X-GA': 'v1 1',
                 'Authorization': f'Bearer {token}',
@@ -7728,7 +7856,7 @@ def api_kb_all_get():
                 
                 headers = {
                     'X-Unity-Version': '2018.4.11f1',
-                    'ReleaseVersion': 'OB54',
+                    'ReleaseVersion': 'OB55',
                     'Content-Type': 'application/x-www-form-urlencoded',
                     'X-GA': 'v1 1',
                     'Authorization': f'Bearer {token}',
@@ -7923,7 +8051,7 @@ def api_xkb_get():
             
             headers = {
                 'X-Unity-Version': '2018.4.11f1',
-                'ReleaseVersion': 'OB54',
+                'ReleaseVersion': 'OB55',
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'X-GA': 'v1 1',
                 'Authorization': f'Bearer {token}',
@@ -8053,7 +8181,7 @@ def api_xkb_all_get():
                 
                 headers = {
                     'X-Unity-Version': '2018.4.11f1',
-                    'ReleaseVersion': 'OB54',
+                    'ReleaseVersion': 'OB55',
                     'Content-Type': 'application/x-www-form-urlencoded',
                     'X-GA': 'v1 1',
                     'Authorization': f'Bearer {token}',
@@ -8644,7 +8772,7 @@ def api_clear_friends():
         headers = {
             'Authorization': f'Bearer {token}',
             'User-Agent': 'UnityPlayer/2022.3.47f1',
-            'ReleaseVersion': 'OB54',
+            'ReleaseVersion': 'OB55',
             'Content-Type': 'application/x-www-form-urlencoded',
             'Connection': 'Keep-Alive'
         }
@@ -8735,7 +8863,7 @@ def api_clear_friends():
                 
                 headers_remove = {
                     'X-Unity-Version': '2018.4.11f1',
-                    'ReleaseVersion': 'OB54',
+                    'ReleaseVersion': 'OB55',
                     'Content-Type': 'application/x-www-form-urlencoded',
                     'X-GA': 'v1 1',
                     'Authorization': f'Bearer {token}',
@@ -9013,7 +9141,7 @@ def restart_bot():
     os.execv(sys.executable, ['python'] + sys.argv)
 
 def ping_api_keep_alive():
-    url = "http://zantreobot.onrender.com"
+    url = "http://zantreobot1.onrender.com"
     
     while True:
         try:

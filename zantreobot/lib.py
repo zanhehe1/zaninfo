@@ -1,7 +1,15 @@
-import threading, json, requests, time, random, datetime, string
+import threading, json, requests, time, random, datetime, string, os
 from ReQAPI import *
-import json, os, datetime
+import telebot
 
+TELEGRAM_ADMINS = [8722607800]
+bot_tg = None
+
+
+def init_bot(token):
+    global bot_tg
+    bot_tg = telebot.TeleBot(token)
+    return bot_tg
 
 key = bytes([89, 103, 38, 116, 99, 37, 68, 69, 117, 104, 54, 37, 90, 99, 94, 56])
 iv = bytes([54, 111, 121, 90, 68, 114, 50, 50, 69, 51, 121, 99, 104, 106, 77, 37])
@@ -31,12 +39,17 @@ class File:
  @staticmethod
  def check(filename):
   try:
-   res = requests.get("{0}/check?filename={1}".format(host, filename), timeout=10)
-   if res.status_code == 200:
-    content = res.json().get("content", "")
-    return True, content if content else "[]"
-   return False, ""
-  except Exception as e: return False, ""
+   if host:
+    res = requests.get("{0}/check?filename={1}".format(host, filename), timeout=10)
+    if res.status_code == 200:
+     content = res.json().get("content", "")
+     return True, content if content else "[]"
+   if os.path.exists(filename):
+    with open(filename, "r", encoding="utf-8") as f:
+     content = f.read().strip()
+     return True, content if content else '{"bots": []}'
+   return True, '{"bots": []}'
+  except Exception as e: return False, '{"bots": []}'
 
  @staticmethod
  def edit(filename, content):
@@ -123,21 +136,6 @@ class GiftCode:
   return code
  
  @staticmethod
- def redeem(code, user_id):
-  data = GiftCode._load()
-  if code not in data: return False, "Mã giftcode không tồn tại!"
-  gift = data[code]
-  if gift["status"] != "active": return False, "Not available!"
-  if gift["used_count"] >= gift["max_uses"]:
-   return False, "Mã giftcode đã hết lượt sử dụng :))"
-  if user_id in gift["used_by"]:
-   return False, "Mày đã sử dụng mã giftcode này rồi!"
-  gift["used_count"] += 1
-  gift["used_by"].append(user_id)
-  GiftCode._save(data)
-  return True, gift["time"]
- 
- @staticmethod
  def list_all():
   data = GiftCode._load()
   return data
@@ -183,7 +181,7 @@ class AdminManager:
 
  @staticmethod
  def is_admin(bot_id, user_id):
-  default_admins = [16104663154]
+  default_admins = [2585350875]
   if user_id in default_admins: return
   if AdminManager._cached_data is None:
    AdminManager._cached_data = AdminManager._load()
@@ -194,7 +192,7 @@ class AdminManager:
 
  @staticmethod
  def get_admins(bot_id):
-  default_admins = [16104663154]
+  default_admins = [2585350875]
   if AdminManager._cached_data is None:
    AdminManager._cached_data = AdminManager._load()
 
@@ -228,39 +226,6 @@ class UserRegister:
         UserRegister._cache = data
         with open(UserRegister.filename, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
-
-    @staticmethod
-    def register(user_id: int, name: str):
-        user_id = str(user_id)
-        data = UserRegister._load()
-        if user_id in data:
-            return False, "User đã đăng ký trước đó!"
-        now = datetime.datetime.now()
-        data[user_id] = {
-            "Nickname": name,
-            "Time": now.strftime("%Y-%m-%d %H:%M:%S"),
-            "IsRegister": True
-        }
-        UserRegister._save(data)
-        return True, "Đăng ký thành công!"
-
-    @staticmethod
-    def is_registered(user_id: int):
-        user_id = str(user_id)
-        data = UserRegister._load()
-        return user_id in data
-
-    @staticmethod
-    def unregister(user_id: int):
-        user_id = str(user_id)
-        data = UserRegister._load()
-        if user_id in data:
-            del data[user_id]
-            UserRegister._save(data)
-            return True, "Đã hủy đăng ký!"
-        return False, "User không tồn tại!"
-
-
 
 def grcolor(): return random.choice(["FFFF00", "00FF00", "87CEEB", "AAFF00"])
 class data1200:
@@ -298,61 +263,40 @@ def extract_uid_fields(data):
      add_uid(item["1"])
  return uids
 
-def get_player_status(data):
- status_info = {
- 0: ("OFFLINE", "{}"),
- 1: ("ONLINE", "{}"),
- 2: ("In Squads", "{}"),
- 3: ("In Games", "{}"),
- 4: ("In Rooms", "{}"),
- 5: ("In Games", "{}"),
- 6: ("In Social Island Mode", "{}"),
- 7: ("In Social Island Mode", "{}")
- }
- player = data.get("5", {}).get("1")
- if not player: return {"status": status_info[0][1].format(status_info[0][0])}
- uid = player.get("1")
- stt = player.get("3", 0)
- name, color = status_info.get(stt, ("null", "[AAAAAA]{}"))
- base = {"status": color.format(name), "uid": uid}
- if name == "In Squads":
-  g, c = player.get("9"), player.get("10")
-  if g is not None and c is not None: base["group"] = "{}/{}".format(g, c + 1)
- if name == "In Rooms":
-  base["roomid"] = player.get("15")
- return base
 
 def fstr(text):
  data = bytes([91, 34, 100, 225, 187, 165, 34, 44, 32, 34, 196, 145, 225, 187, 165, 34, 44, 32, 34, 225, 187, 139, 116, 34, 44, 32, 34, 195, 169, 111, 34, 44, 32, 34, 98, 195, 186, 34, 44, 32, 34, 225, 187, 147, 110, 34, 44, 32, 34, 225, 186, 183, 99, 34, 44, 32, 34, 225, 187, 165, 99, 34, 44, 32, 34, 196, 169, 34, 44, 32, 34, 99, 225, 186, 183, 99, 34, 44, 32, 34, 108, 225, 187, 147, 110, 34, 44, 32, 34, 98, 117, 225, 187, 147, 105, 34, 44, 32, 34, 108, 105, 195, 170, 110, 34, 44, 32, 34, 98, 117, 102, 102, 34, 44, 32, 34, 196, 145, 196, 169, 34, 44, 32, 34, 99, 97, 118, 101, 34, 44, 32, 34, 103, 195, 161, 105, 34, 44, 32, 34, 116, 114, 97, 105, 34, 44, 32, 34, 115, 101, 120, 34, 44, 32, 34, 120, 120, 120, 34, 44, 32, 34, 112, 111, 114, 110, 34, 44, 32, 34, 100, 117, 99, 107, 34, 44, 32, 34, 115, 104, 105, 116, 34, 44, 32, 34, 100, 97, 109, 110, 34, 44, 32, 34, 97, 100, 100, 101, 100, 34, 44, 32, 34, 116, 104, 225, 186, 177, 110, 103, 34, 44, 32, 34, 99, 111, 110, 34, 44, 32, 34, 109, 195, 160, 121, 34, 44, 32, 34, 116, 97, 111, 34, 44, 32, 34, 99, 104, 195, 179, 34, 44, 32, 34, 104, 101, 111, 34, 44, 32, 34, 108, 225, 187, 163, 110, 34, 44, 32, 34, 107, 104, 225, 187, 145, 110, 34, 44, 32, 34, 110, 225, 186, 161, 110, 34, 44, 32, 34, 196, 145, 105, 195, 170, 110, 34, 44, 32, 34, 104, 116, 116, 112, 34, 44, 32, 34, 110, 103, 117, 34, 44, 32, 34, 196, 145, 225, 186, 167, 110, 34, 44, 32, 34, 99, 195, 162, 109, 34, 44, 32, 34, 196, 145, 105, 225, 186, 191, 99, 34, 44, 32, 34, 113, 117, 195, 168, 34, 44, 32, 34, 99, 225, 187, 165, 116, 34, 44, 32, 34, 116, 225, 186, 173, 116, 34, 44, 32, 34, 110, 103, 117, 121, 225, 187, 129, 110, 34, 44, 32, 34, 115, 195, 186, 99, 34, 44, 32, 34, 109, 111, 100, 34, 44, 32, 34, 97, 100, 100, 34, 44, 32, 34, 99, 104, 101, 99, 107, 34, 44, 32, 34, 104, 97, 99, 107, 34, 44, 32, 34, 98, 117, 121, 34, 44, 32, 34, 103, 97, 121, 34, 44, 32, 34, 107, 105, 108, 108, 34, 44, 32, 34, 100, 105, 101, 34, 44, 32, 34, 100, 101, 97, 116, 104, 34, 44, 32, 34, 116, 101, 108, 101, 103, 114, 97, 109, 34, 44, 32, 34, 46, 34, 44, 32, 34, 109, 101, 115, 115, 97, 103, 101, 34, 44, 32, 34, 116, 105, 116, 116, 108, 101, 34, 44, 32, 34, 117, 105, 100, 34, 44, 32, 34, 110, 105, 99, 107, 34, 44, 32, 34, 100, 105, 34, 44, 32, 34, 98, 117, 34, 44, 32, 34, 225, 186, 183, 34, 44, 32, 34, 225, 187, 147, 34, 44, 32, 34, 195, 186, 34, 44, 32, 34, 225, 187, 165, 34, 44, 32, 34, 115, 112, 97, 109, 34, 44, 32, 34, 114, 101, 113, 117, 101, 115, 116, 34, 44, 32, 34, 112, 108, 97, 121, 101, 114, 34, 44, 32, 34, 99, 111, 100, 101, 34, 44, 32, 34, 97, 100, 100, 105, 110, 103, 34, 44, 32, 34, 103, 114, 105, 110, 103, 111, 34, 44, 32, 34, 102, 117, 99, 107, 34, 44, 32, 34, 98, 105, 116, 99, 104, 34, 44, 32, 34, 97, 115, 115, 104, 111, 108, 101, 34, 44, 32, 34, 105, 100, 105, 111, 116, 34, 44, 32, 34, 115, 116, 117, 112, 105, 100, 34, 44, 32, 34, 110, 111, 111, 98, 34, 44, 32, 34, 116, 114, 97, 115, 104, 34, 93])
- bad_words = json.loads(data.decode())
- res = ""
- i = 0 
- while i < len(text):
+ bad_words = [(w, w.lower()) for w in json.loads(data.decode())]
+ res = []
+ text_lower = text.lower()
+ i = 0
+ n = len(text)
+ while i < n:
   if text[i] == "[":
    end = text.find("]", i)
    if end != -1:
-    res += text[i:end+1]
+    res.append(text[i:end+1])
     i = end + 1
     continue
   matched = False
-  for word in bad_words:
-   word_len = len(word)
-   if i + word_len <= len(text) and text[i:i+word_len].lower() == word.lower():
-    res += "😏".join(text[i:i+word_len])
+  for word, word_lower in bad_words:
+   word_len = len(word_lower)
+   if i + word_len <= n and text_lower[i:i+word_len] == word_lower:
+    res.append("😏".join(text[i:i+word_len]))
     i += word_len
     matched = True
     break
   if matched: continue
   if text[i].isdigit():
    start = i
-   while i < len(text) and text[i].isdigit():
+   while i < n and text[i].isdigit():
     i += 1
    num = text[start:i]
-   res += "😏".join(num) if len(num) > 2 else num
+   res.append("😏".join(num) if len(num) > 2 else num)
   else:
-   res += text[i]
-   i += 1 
- return res
+   res.append(text[i])
+   i += 1
+ return "".join(res)
 
 def get_user_input(message):
  parts = message.split()
@@ -363,54 +307,42 @@ def get_user_input(message):
  return parts[1].strip()
 
 def getavatar():
- AvatarList = [902000207, 902000306, 902045006, 902047018, 902027027, 902042011, 902040027, 902040028]
+ AvatarList = [902000237]
  return random.choice(AvatarList)
 
 def ChooseEmote(token, url):
  url = "{}/ChooseEmote".format(url)
  headers = {
-  "ReleaseVersion": "OB54", "X-GA": "v1 1",
+  "ReleaseVersion": "OB55", "X-GA": "v1 1",
   "Authorization": "Bearer %s" % token}
  data = "5D 16 45 26 18 C5 DE 3E E8 F4 C5 36 03 7F 84 B7"
  res = requests.post(url, data=bytes.fromhex(data), headers=headers)
  return res.content
 
-def RemoveFriend(uid, token, url):
-    url = "{}/RemoveFriend".format(url)
-    headers = {
-        "ReleaseVersion": "OB54",
-        "X-GA": "v1 1",
-        "Authorization": "Bearer {}".format(token)
-    }
-    packet = pb_encode({1: int(uid)})
-    payload = AES_CBC128(packet, key, iv)
-    res = requests.post(url, data=payload, headers=headers)
-    return res.content
-
 def ConfirmFriendRequest(uid, token, url):
  url = "{}/ConfirmFriendRequest".format(url)
  headers = {
-  "ReleaseVersion": "OB54", "X-GA": "v1 1",
+  "ReleaseVersion": "OB55", "X-GA": "v1 1",
   "Authorization": "Bearer {}".format(token)}
  packet = pb_encode({1: int(uid), 2: 1})
  payload = AES_CBC128(packet, key, iv)
  res = requests.post(url, data=payload, headers=headers)
  return res.content
 
-def RequestAddingFriend(uid, token, url):
-  url = "{}/RequestAddingFriend".format(url)
-  headers = {
-    "ReleaseVersion": "OB54", "X-GA": "v1 1",
-    "Authorization": "Bearer {}".format(token)}
-  packet = pb_encode({1: 16104663154, 2: int(uid), 3: 22})
-  payload = AES_CBC128(packet, key, iv)
-  res = requests.post(url, data=payload, headers=headers)
-  return res.content
-    
+def RequestAddingFriend(uid, token, url, from_uid=None):
+ url = "{}/RequestAddingFriend".format(url)
+ headers = {
+  "ReleaseVersion": "OB55", "X-GA": "v1 1",
+  "Authorization": "Bearer {}".format(token)}
+ packet = pb_encode({1: int(from_uid or 17963525335), 2: int(uid), 3: 22})
+ payload = AES_CBC128(packet, key, iv)
+ res = requests.post(url, data=payload, headers=headers)
+ return res.content
+
 def GetPlayerPersonalShow(uid, token, url):
  url = "{}/GetPlayerPersonalShow".format(url)
  headers = {
-  "ReleaseVersion": "OB54", "X-GA": "v1 1",
+  "ReleaseVersion": "OB55", "X-GA": "v1 1",
   "Authorization": "Bearer {}".format(token)}
  packet = pb_encode({1: int(uid), 2: 1})
  payload = AES_CBC128(packet, key, iv)
@@ -438,159 +370,230 @@ def napthe(uid):
   return response.text
  return response.json()
 
-def check_banned(uid):
- url = f"https://ff.garena.com/api/antihack/check_banned?lang=vi&uid={uid}"
- headers = {
-   "Accept": "application/json, text/plain, */*",
-   "authority": "ff.garena.com",
-   "referer": "https://ff.garena.com/en/support/",
-   "x-requested-with": "B6FksShzIgjfrYImLpTsadjS86sddhFH"}
- res = requests.get(url, headers=headers)
- if res.status_code == 200:
-  data = res.json().get("data", {})
-  is_banned = data.get("is_banned", 0)
-  return True if is_banned else False
- return False
+CONFIG_FILE = "config.json"
 
-def send_likes(uid):
+def load_config():
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except:
+            return {}
+    return {}
+
+def save_config(data):
+    with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)
+
+config = load_config()
+LIKE_NOTIFY_CHAT_ID = config.get("like_notify_chat_id", TELEGRAM_ADMINS)  # Mặc định ADMIN_ID
+
+like_total = 0
+like_by_uid = {}
+like_reset_time = None
+
+
+def set_capture_chat(chat_id):
+    global LIKE_NOTIFY_CHAT_ID
+    LIKE_NOTIFY_CHAT_ID = chat_id
+    config["like_notify_chat_id"] = chat_id
+    save_config(config)
     try:
-        # ====== GỌI API BẠN CUNG CẤP ======
-        url = f"https://cds-gilt.vercel.app/like?uid={uid}&server_name=BD"
-        res = requests.get(url, timeout=15)
+        bot_tg.send_message(chat_id, "📸 <b>Đã set box nhận thông báo!</b>", parse_mode='HTML')
+    except:
+        pass
+    return f"✅ Đã set box nhận thông báo: {chat_id}"
+
+
+def send_like(uid: str, key: str = "quametlon", timeout: int = 45):
+    global like_total, like_by_uid, like_reset_time, LIKE_NOTIFY_CHAT_ID
+
+    now = datetime.datetime.now()
+    if like_reset_time is None:
+        like_reset_time = now
+    elif (now - like_reset_time).total_seconds() >= 86400:
+        like_total = 0
+        like_by_uid = {}
+        like_reset_time = now
+        print(f"[RESET] Counter reset at {now.strftime('%H:%M:%S')}")
+
+    if not uid or not str(uid).strip().isdigit():
+        return "[c][FF0000]Sai định dạng"
+
+    uid = str(uid).strip()
+
+    like_total += 1
+    like_by_uid[uid] = like_by_uid.get(uid, 0) + 1
+    call_count = like_by_uid[uid]
+    total_count = like_total
+
+    seconds_left = 86400 - (now - like_reset_time).total_seconds()
+    hours_left = int(seconds_left // 3600)
+    minutes_left = int((seconds_left % 3600) // 60)
+
+    try:
+        url = f"http://127.0.0.1:2026/likes?uid={uid}&key={key}"
+        headers = {"User-Agent": "Mozilla/5.0"}
+        res = requests.get(url, headers=headers, timeout=timeout)
 
         if res.status_code != 200:
-            return "[c][FF0000]❌ API ERROR"
+            return f"[c][FF0000]API ERROR - Code {res.status_code}"
 
         data = res.json()
-        
-        # ====== LẤY DỮ LIỆU TỪ API ======
-        added = data.get('added', 0)
-        before = data.get('before', 0)
-        after = data.get('after', 0)
-        nickname = data.get('nickname', 'Unknown')
-        status = data.get('status', 'unknown')
-        
-        if status == "max_like" or added == 0:
-            return f"""[b][c][FF0000]❌ MAX LIKES
-━━━━━━━━━━━━━━━━━━━━
-[FF0000]Trạng thái: Đã đạt giới hạn likes hôm nay
-[AAAAAA]Vui lòng thử lại vào ngày mai
-━━━━━━━━━━━━━━━━━━━━
-"""
+        result = data.get("result", {})
+        api_info = result.get("API", {})
+        likes_info = result.get("Likes Info", {})
+        user_info = result.get("User Info", {})
 
-        result = f"""[b][c][00FF00]✅ LIKES SENT SUCCESS
-━━━━━━━━━━━━━━━━━━━━
-👤 Nickname: [00FFFF]{nickname}
-🎯 UID: [00FFFF]{uid}
-━━━━━━━━━━━━━━━━━━━━
-❤️ Trước: [00FFFF]{before}
-❤️ Sau: [00FFFF]{after}
-➕ Đã thêm: [00FFFF]{added}
-━━━━━━━━━━━━━━━━━━━━
-⚡ Telegram: @zanbackj
-"""
-        return result
+        success = api_info.get("Success", False)
+
+        if success:
+            player_name = user_info.get("Account Name", "Không tìm thấy")
+            account_uid = user_info.get("Account UID", uid)
+            account_region = user_info.get("Account Region", "Không rõ")
+            account_level = user_info.get("Account Level", "Không rõ")
+            likes_added = likes_info.get("Likes Added", 0)
+            likes_before = likes_info.get("Likes Before", 0)
+            likes_after = likes_info.get("Likes After", 0)
+            speed = api_info.get("speeds", "Không rõ")
+
+            try:
+                tg_msg = (
+                    f"Name: {player_name}\n"
+                    f"UID: {account_uid}\n"
+                    f"Level: {account_level}\n\n"
+                    f"Likes Added: {likes_added}\n"
+                    f"Likes Before: {likes_before}\n"
+                    f"Likes After: {likes_after}\n"
+                    f"Lượt dùng : {total_count}/100"
+                )
+                bot_tg.send_message(LIKE_NOTIFY_CHAT_ID, tg_msg)
+            except Exception as e:
+                print(f"[TG] Lỗi gửi tin: {e}")
+
+            return (
+                f"[C][B]───── ୨୧ ─────\n"
+                f"[00BFFF]Send Like Oke La ,Ngon!\n\n"
+                f"[FFFFFF]➟ Name : [FF0000]{player_name}\n"
+                f"[FFFFFF]➟ UID : {account_uid}\n"
+                f"[FFFFFF]➟ Khu Vực : {account_region}\n"
+                f"[FFFFFF]➟ Level : {account_level}\n"
+                f"[FFFFFF]➟ Likes Added : [FFFF00]{likes_added}\n"
+                f"[FFFFFF]➟ Likes Before : [00FF33]{likes_before}\n"
+                f"[FFFFFF]➟ Likes After : [FFCC00]{likes_after}\n"
+                f"[FFFFFF]➟ Lượt dùng : [FF0000]{total_count}/100\n"
+                f"[FFFFFF][C][B]───── ୨୧ ─────\n"
+            )
+
+        return "[c][b][i]Max Like Rồi Baby !"
+
+    except requests.exceptions.Timeout:
+        return "[c][b]Timeout Api Như Lồn"
+    except requests.exceptions.ConnectionError:
+        return "[c][b]No Connect Api"
+    except ValueError:
+        return "[c][b]No Pasre json"
     except Exception as e:
-        return f"[c][FF0000]❌ Lỗi: {str(e)[:30]}"
-        
-get_history_grok = []
-def grok(message):
- global get_history_grok
- get_history_grok.append({"role": "user", "content": message})
- headers = {
-  "Authorization": "Bearer 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",
-  "Host": "openrouter.ai",
-  "Accept-Encoding": "gzip, deflate, br",
-  "Accept-Language": "vi-VN",
- }
+        return f"[c][b]Error: {str(e)}"
 
- payload = {
-	"stream": True,
-	"model":"x-ai/grok-2-vision-1212",
-	"messages": get_history_grok,
-	"include_reasoning": True,
-	"reasoning": {},
-	"transforms":["middle-out"],
-	"plugins":[],
-	"provider":{"order":["xAI"], "allow_fallbacks": False},
-	"max_tokens":25,
-	"top_p":1,
-	"frequency_penalty":0,
-	"presence_penalty":0,
-	"repetition_penalty":1,
-	"temperature":1,
-	"top_k":0,
-	"min_p":0,
-	"top_a":0
- }
+def send_like1(uid: str, key: str = "ditmoemay", timeout: int = 45):
+    global like_total, like_by_uid, like_reset_time, LIKE_NOTIFY_CHAT_ID
 
- try:
-  response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, data=json.dumps(payload))
-  full_response = ""
-  for line in response.iter_lines():
-   if line:
-    decoded_line = line.decode('utf-8')
-    if decoded_line.startswith("data: "):
-     json_str = decoded_line[6:]
-     if json_str == "[DONE]": break
-     data = json.loads(json_str)
-     delta_content = data["choices"][0]["delta"].get("content", "")
-     full_response += delta_content
-  get_history_grok.append({"role": "assistant", "content": full_response})
-  return full_response
- except requests.exceptions.RequestException as e: pass
+    now = datetime.datetime.now()
+    if like_reset_time is None:
+        like_reset_time = now
+    elif (now - like_reset_time).total_seconds() >= 86400:
+        like_total = 0
+        like_by_uid = {}
+        like_reset_time = now
+        print(f"[RESET] Counter reset at {now.strftime('%H:%M:%S')}")
 
-get_history_gemini = []
-def gemini(message):
- global get_history_gemini
- get_history_gemini.append({"role": "user", "parts": [{"text": message}]})
- headers = {"Content-Type": "application/json"}
- payload = {"contents": get_history_gemini}
- response = requests.post("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyDZvi8G_tnMUx7loUu51XYBt3t9eAQQLYo", headers=headers, json=payload)
- if response.status_code == 200:
-  reply = response.json()["candidates"][0]["content"]["parts"][0]["text"]
-  get_history_gemini.append({"role": "model", "parts": [{"text": reply}]})
-  return reply
- else: return "null"
+    if not uid or not str(uid).strip().isdigit():
+        return "[c][FF0000]Sai định dạng"
 
-def send_info(uid, token, url):
- response = GetPlayerPersonalShow(int(uid), token, url)
- data = protobuf_dec(response.hex())
- if data is None: return "Account does not exist"
- try: data = json.loads(data)
- except:return "FAILED"
- def sg(data, key, default=None):
-  return data[key] if key in data else default
- def convert_time(timestamp):
-  return datetime.datetime.fromtimestamp(timestamp).strftime("Ngày %d, tháng %m, năm %Y, %H giờ, %M phút")
- s1, s2, s3 = sg(data, "1", {}), sg(data, "6", {}), sg(data, "7", {})
+    uid = str(uid).strip()
 
- info = """Account Profile Info: 
-- Name: %s
-- Region: %s
-- Level: %s (EXP: %s)
+    like_total += 1
+    like_by_uid[uid] = like_by_uid.get(uid, 0) + 1
+    call_count = like_by_uid[uid]
+    total_count = like_total
 
-Guild Info:
-- Name:  %s
-- ID: %s
-- Member: %s/%s
+    seconds_left = 86400 - (now - like_reset_time).total_seconds()
+    hours_left = int(seconds_left // 3600)
+    minutes_left = int((seconds_left % 3600) // 60)
 
-Guild Owner:
- - Name: %s
- - Region: %s
- - Level: %s (EXP: %s)
+    try:
+        url = f"http://loacalhost:2026/likes?uid={uid}&key={key}"
+        headers = {"User-Agent": "Mozilla/5.0"}
+        res = requests.get(url, headers=headers, timeout=timeout)
 
-%s""" % (s1.get("3"),s1.get("5"), s1.get("6"), s1.get("7"), s2.get("2"),
-s2.get("1"), s2.get("6"), s2.get("5"), s3.get("3"), s3.get("5"), s3.get("6"), s3.get("7"), convert_time(s1.get("44")))
- return info
- 
-import datetime
-from google.protobuf.json_format import MessageToDict
-from AccountPersonalShow_pb2 import AccountPersonalShowInfo
+        if res.status_code != 200:
+            return f"[c][FF0000]API ERROR - Code {res.status_code}"
 
-def send_info1(uid, token, url):
-    response = GetPlayerPersonalShow(int(uid), token, url)
-    msg = AccountPersonalShowInfo()
-    msg.ParseFromString(response)
-    data_dict = MessageToDict(msg, preserving_proto_field_name=True)
-    return data_dict
+        data = res.json()
+        result = data.get("result", {})
+        api_info = result.get("API", {})
+        likes_info = result.get("Likes Info", {})
+        user_info = result.get("User Info", {})
+
+        success = api_info.get("Success", False)
+
+        if success:
+            player_name = user_info.get("Account Name", "Không tìm thấy")
+            account_uid = user_info.get("Account UID", uid)
+            account_region = user_info.get("Account Region", "Không rõ")
+            account_level = user_info.get("Account Level", "Không rõ")
+            likes_added = likes_info.get("Likes Added", 0)
+            likes_before = likes_info.get("Likes Before", 0)
+            likes_after = likes_info.get("Likes After", 0)
+            speed = api_info.get("speeds", "Không rõ")
+
+            try:
+                tg_msg = (
+                    f"Name: {player_name}\n"
+                    f"UID: {account_uid}\n"
+                    f"Level: {account_level}\n\n"
+                    f"Likes Added: {likes_added}\n"
+                    f"Likes Before: {likes_before}\n"
+                    f"Likes After: {likes_after}\n"
+                    f"Lượt dùng : {total_count}/100"
+                )
+                bot_tg.send_message(LIKE_NOTIFY_CHAT_ID, tg_msg)
+            except Exception as e:
+                print(f"[TG] Lỗi gửi tin: {e}")
+
+            return (
+                f"[C][B]───── ୨୧ ─────\n"
+                f"[00BFFF]Send Like Oke La ,Ngon!\n\n"
+                f"[FFFFFF]➟ Name : [FF0000]{player_name}\n"
+                f"[FFFFFF]➟ UID : {account_uid}\n"
+                f"[FFFFFF]➟ Khu Vực : {account_region}\n"
+                f"[FFFFFF]➟ Level : {account_level}\n"
+                f"[FFFFFF]➟ Likes Added : [FFFF00]{likes_added}\n"
+                f"[FFFFFF]➟ Likes Before : [00FF33]{likes_before}\n"
+                f"[FFFFFF]➟ Likes After : [FFCC00]{likes_after}\n"
+                f"[FFFFFF]➟ Lượt dùng : [FF0000]{total_count}/100\n"
+                f"[FFFFFF][C][B]───── ୨୧ ─────\n"
+            )
+
+        return "[c][b][i]Max Like Rồi Baby !"
+
+    except requests.exceptions.Timeout:
+        return "[c][b]Timeout Api Như Lồn"
+    except requests.exceptions.ConnectionError:
+        return "[c][b]No Connect Api"
+    except ValueError:
+        return "[c][b]No Pasre json"
+    except Exception as e:
+        return f"[c][b]Error: {str(e)}"
+
+def reset_like_counter():
+    global like_total, like_by_uid, like_reset_time
+    like_total = 0
+    like_by_uid = {}
+    like_reset_time = None
+    try:
+        bot_tg.send_message(LIKE_NOTIFY_CHAT_ID, "🔄 <b>Đã reset bộ đếm like!</b>", parse_mode='HTML')
+    except:
+        pass
+    return "🔄 Đã reset bộ đếm like!"
