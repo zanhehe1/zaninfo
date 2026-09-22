@@ -28,36 +28,39 @@ import socket
 import traceback
 
 # ====== BOT TOKEN ======
-TELEGRAM_BOT_TOKEN = "8643765731:AAGIXmguLbAS0xmifYUXUAki2faa5EpyYfA"
+TELEGRAM_BOT_TOKEN = "8643765731:AAHUrOIK6mMwIGTmtLowhA49WYtjxlaHgLo"
 telegram_bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN, threaded=False)
 
 TELEGRAM_ADMINS = [8722607800]
 
 class FreeFireTCP:
  def __init__(self, bot_config, manager):
-  self.running = True
   self.bot_config = bot_config
   self.manager = manager
   self.running_event = threading.Event()
-  self.running_event.set()
-  self.stop_actions = threading.Event()
-  self.stop_emote = threading.Event()
   self.rstatus = (0, 0)
   self.ids = []
   self.status = True
   self.started = False
-  self.base_url = "https://clientbp.ggblueshark.com"
+  self.base_url = "https://clientbp.ppmainecoonghj.com"
   self.reconnect_lock = threading.Lock()
   self.last_spam_time = {}
-  self.roomcode = self.packetAuth = self.playerstatus = None
+  self.roomcode = self.packetAuth = self.packetAuthLobby = self.playerstatus = None
   self.AuthenCode = self.sock39699 = self.sock39801 = None
   self.ChatIP = self.OnlineIP = self.OnlinePort = self.ChatPort = None
   self.roomid = self.GuildIds = self.DesId = self.botid = None
   self.key = self.iv = self.token = b''
   self.login_session = self._data = None
   self.botid = self.nickname = self.region = None
+  self._online_gen = 0
+  self._chat_gen = 0
+  self._online_lock = threading.Lock()
+  self.stop_actions = threading.Event()
+  self.stop_emote = threading.Event()
   self.emoting = False
-  self.reset_count = 0  # THÊM DÒNG NÀY
+  self.running = True
+  self.target_uid = None
+  self.emote_target = None 
   self.Emotes = {
     'MP40V2': 909040010,
     'MP40': 909000075,
@@ -77,16 +80,44 @@ class FreeFireTCP:
     'MP5': 909033002,
     'G18': 909038012
    }
+  self.EMOTE_PRESETS = {
+      "mp40v2": 909040010,
+      "awm": 909055007,
+      "mp40": 909000075,
+      "ak47": 909000063,
+      "m1887": 909035007,
+      "xm8": 909000085,
+      "famas": 909000090,
+      "ump": 909000098,
+      "parafal": 909045001,
+      "m1014": 909000081,
+      "m1014v2": 909039011,
+      "p90": 909049010,
+      "scar": 909000068,
+      "m4a1": 909039011,
+      "woodpecker": 909042008,
+      "thompson": 909038010,
+      "uzi": 909038009,
+      "m60": 909051003,
+      "groza": 909041005,
+      "vector": 909037011,
+      "mp5": 909033002,
+      "g18": 909038012,
+      "aug": 909054004
+  }
 
   self.FULL_GUNS = [ 909049010, 909051003, 909033002, 909041005, 
 909038010, 909039011, 909040010, 909000081, 909000085, 909000063,
  909000075, 909033001, 909000090, 909000068, 909000098, 909035007,
  909037011, 909038012, 909035012, 909042008, 909035007
   ]
-  
+    
  def _IIl(self, logindata, jsdata):
+  self._online_gen += 1
+  self._chat_gen += 1
   self.cleanup()
   time.sleep(0.5)
+  self._data = jsdata
   self._gen = TAO_PACKET(logindata, jsdata)
   self._bot = self.bot_session(self)
   self.running_event.set()
@@ -94,59 +125,23 @@ class FreeFireTCP:
   threading.Thread(target=self.connect39801, daemon=True).start()
   threading.Thread(target=self.connect39699, daemon=True).start()
 
- def _save_history(self, action, data):
-    """Lưu lịch sử redeem vào file"""
-    try:
-        history_file = "redeem_history.json"
-        history = []
-        
-        if os.path.exists(history_file):
-            try:
-                with open(history_file, "r", encoding="utf-8") as f:
-                    history = json.load(f)
-                    if not isinstance(history, list):
-                        history = []
-            except:
-                history = []
-        
-        history.append({
-            "action": action,
-            "data": data,
-            "time": time.strftime("%Y-%m-%d %H:%M:%S")
-        })
-        
-        with open(history_file, "w", encoding="utf-8") as f:
-            json.dump(history, f, indent=4, ensure_ascii=False)
-            
-    except Exception as e:
-        print(f"[_save_history] Error: {e}")
+ def update_config(self, new_config):
+  self.bot_config = new_config
 
- def visit_thread(bot, cid, type, uid):
-  result = send_visit(uid)
-  bot.reply(cid, type, result) 
- 
  def cleanup(self):
   self.running_event.clear()
   sockets = [self.sock39699, self.sock39801]
   for sock in sockets:
    try:
     if sock:
-     sock.shutdown(2)
+     try:
+      sock.shutdown(socket.SHUT_RDWR)
+     except:
+      pass
      sock.close()
    except Exception as e: pass
   self.sock39699 = self.sock39801 = None
 
- def _keep_alive(self, sock):
-    while self.running_event.is_set() and sock:
-        try:
-            sock.send(bytes([0, 2, 0, 1]))
-            time.sleep(20)  
-        except:          
-            self.cleanup()
-            time.sleep(2)
-            self.start()
-            break
-             
  def restart_bot(self):
   self.cleanup()
   time.sleep(2)
@@ -154,108 +149,140 @@ class FreeFireTCP:
   self.started = False
   self.start()
 
- def start(self):
-    if self.started: return 
-    self.started = True
-    self.running_event.set()
-    threading.Thread(target=self.rstart, daemon=True).start()
-    
  def AntiDisconnect(self, sock):
-  while True:
-   sock.send(bytes([0, 2, 0, 1]))
-   time.sleep(25)
-                   
+  while self.running_event.is_set():
+   try:
+    sock.send(bytes([0, 2, 0, 1]))
+    time.sleep(25)
+   except:
+    break
+
  def connect39801(self):
+  gen = self._chat_gen
   with self.reconnect_lock:
-   if not self.running_event.is_set(): return
+   if not self.running_event.is_set() or gen != self._chat_gen: return
    client = None
    try:
-    client = socket.create_connection((self.ChatIP, int(self.ChatPort)))
+    client = socket.create_connection((self.ChatIP, int(self.ChatPort)), timeout=10)
+    client.settimeout(10)
     client.sendall(self.packetAuth)
+    print(f"[BOT] Chat OK {self.ChatIP}:{self.ChatPort}")
     guild_active = self.bot_config.get("active-clan", True)
     if self.GuildIds and guild_active:
      client.send(self._bot.join_channel(self.GuildIds, self.AuthenCode, 1))
     client.send(self._bot.join_channel(None, None, 5))
     self.sock39801 = client
-    while self.running_event.is_set():
+    while self.running_event.is_set() and gen == self._chat_gen:
      try:
-      data = client.recv(3300)
+      data = client.recv(4096)
       if len(data) == 0: break
       if data.hex()[:4] == "1200" and len(data) > 50:
-       threading.Thread(target=self.C1200, args=(data, client,)).start()
+       threading.Thread(target=self.C1200, args=(data, client,), daemon=True).start()
+     except socket.timeout:
+      continue
      except Exception as e: break
-   except Exception as e: pass
+   except Exception as e: 
+    print(f"Chat connection error: {e}")
    finally:
     if client:
      try: client.close()
      except Exception as e: pass
-    self.sock39801 = None
-    if self.running_event.is_set():
+    if self.sock39801 is client:
+     self.sock39801 = None
+    if self.running_event.is_set() and gen == self._chat_gen:
      time.sleep(5)
-     threading.Thread(target=self.connect39801, daemon=True).start()
+     if self.running_event.is_set() and gen == self._chat_gen:
+      threading.Thread(target=self.connect39801, daemon=True).start()
+     
  def connect39699(self):
-  if not self.running_event.is_set(): return
+  gen = self._online_gen
+  if not self.running_event.is_set() or gen != self._online_gen: return
+  if not self._online_lock.acquire(blocking=False):
+   return
   client = None
   try:
-   client = socket.create_connection((self.OnlineIP,  int(self.OnlinePort)))
-   client.sendall(self.packetAuth)
-   self.sock39699 = client
-   while self.running_event.is_set():
-    try:
-     data = client.recv(3300)
-     if len(data) == 0: break
-     if data.hex()[:4] == "0f00":
-      decdata = json.loads(protobuf_dec(data.hex()[10:]))
-      self.playerstatus = decdata
-      rid = decdata.get("5").get("1").get("15", None)
-      if rid: self.roomid = rid
-      else: self.roomid = None
+   pkt = self.packetAuthLobby or self.packetAuth
+   if not pkt:
+    print("[BOT] Online missing auth packet")
+   else:
+    client = socket.create_connection((self.OnlineIP, int(self.OnlinePort)), timeout=10)
+    client.settimeout(10)
+    client.sendall(pkt)
+    self.sock39699 = client
+    print(f"[BOT] Online OK uid={self.botid} nick={self.nickname} pkt={len(pkt)} {self.OnlineIP}:{self.OnlinePort}")
+    while self.running_event.is_set() and gen == self._online_gen:
+     try:
+      data = client.recv(4096)
+      if len(data) == 0:
+       print("[BOT] Online closed by server")
+       break
+      if data.hex()[:4] == "0f00":
+       try:
+        decdata = json.loads(protobuf_dec(data.hex()[10:]))
+        self.playerstatus = decdata
+        rid = decdata.get("5", {}).get("1", {}).get("15", None)
+        if rid: self.roomid = rid
+        else: self.roomid = None
+       except:
+        pass
 
-     if data.hex()[:4] == "0600" and len(data) <= 55:
-      res = json.loads(protobuf_dec(data.hex()[10:]))
-      uid = res.get("5").get("1")
-      # ConfirmFriendRequest(uid, self.token, self.base_url)
-      messages = """[c][b][C678DD]const [61AFEF]Response [E5C07B]= [C678DD]() [ABB2BF]=> [ABB2BF]{{
-  [C678DD]return [ABB2BF]{{
-    [E5C07B]uid[E5C07B]: [E5C07B]{}[ABB2BF],
-    [E5C07B]tittle[ABB2BF]: [98C379]"Request accepted"[ABB2BF],
-    [E5C07B]message[ABB2BF]: [98C379]"type /nofree"[ABB2BF],
-    [E5C07B]telegram[ABB2BF]: [98C379]"@zanbackj"[ABB2BF]
-  [ABB2BF]}}
-[ABB2BF]}}""".format(uid)
-      self._bot.reply(uid, 2, messages)
-     if self.status: threading.Thread(target=self.gringay, args=(data,)).start()
-    except Exception as e: 
-     if not self.running_event.is_set(): break
-  except Exception as e: pass
+      if data.hex()[:4] == "0600" and len(data) <= 55:
+       try:
+        res = json.loads(protobuf_dec(data.hex()[10:]))
+        uid = res.get("5", {}).get("1")
+        if uid:
+         ConfirmFriendRequest(uid, self.token, self.base_url)
+         messages = """[c][b][C678DD]HI""".format(uid)
+         self._bot.reply(uid, 2, messages)
+       except:
+        pass
+      if self.status and data.hex()[:4] in ("0500", "0f00", "0600"):
+       threading.Thread(target=self.gringay, args=(data,), daemon=True).start()
+     except socket.timeout:
+      continue
+     except Exception as e: 
+      if not self.running_event.is_set() or gen != self._online_gen: break
+      print(f"[BOT] Online recv error: {e}")
+      break
+  except Exception as e: 
+   print(f"Online connection error: {e}")
   finally:
+   try:
+    self._online_lock.release()
+   except Exception:
+    pass
    if client:
     try: client.close()
     except Exception as e: pass
-   self.sock39699 = None
-   if self.running_event.is_set():
+   if self.sock39699 is client:
+    self.sock39699 = None
+   if self.running_event.is_set() and gen == self._online_gen:
     time.sleep(3)
-    threading.Thread(target=self.connect39699, daemon=True).start()
-                                                  
+    if self.running_event.is_set() and gen == self._online_gen:
+     threading.Thread(target=self.connect39699, daemon=True).start()
+
  def C1200(self, data, client):
-    try:
-        data = data1200(data)
-        if not data.valid:
-            return False
-        uid, cid, type = data.uid, data.cid, data.type
-        if int(self.botid) in [cid, uid]:
-            return False
-        message, name = data.message, data.name
-        idlist = self.get_user_status(1)
-        is_admin = AdminManager.is_admin(self.bot_config["bot_id"], uid)
+  try:
+   data = data1200(data)
+   if not data.valid: return False
+   uid, cid, type = data.uid, data.cid, data.type
+   if int(self.botid) in [cid, uid]: return False
+   message, name = data.message, data.name
+  
+   idlist = [u["uid"] for u in self.bot_config.get("access_bot", [])]
+   is_admin = (uid in idlist) or (uid in ADMIN_ID)
+  
+   if not message:
+    return False
+  
+  # ===== PHẦN XỬ LÝ LỆNH Ở ĐÂY =====
+  # (giữ nguyên code cũ của mày từ đây)
+  
+   return False
+  except Exception as e:
+   print(f"[C1200 ERROR] {e}")
+   self.rstatus, self.ids = (0, 0), []
 
-        # ... phần code xử lý lệnh ở giữa ...
-
-    except Exception as e:
-        self.rstatus, self.ids = (0, 0), []
-        print(f"[C1200] Error: {e}")
-        return False
-         
  def leave(self, uid, delay):
   try:
    time.sleep(int(delay))
@@ -511,171 +538,187 @@ uid: {}""".format(status, extra, uid)
     if self.par.running_event.is_set() and self.par.sock39801:
      self.par.sock39801.sendall(self.par._gen.send_message(Ms, Tp, Id))
    except Exception as e: pass
-   
+
  def rstart(self):
-    access_token = self.bot_config['auth_bot_login']['access_token']
-    while self.running_event.is_set():
-        try:
-            data = FreeFireAPI().get(access_token, is_emulator=False)
-            print(data)
-            if "account not found" in data:
-                self.running_event.clear()
-                break
-            if data.get("GuildData"):
-                self.AuthenCode = data.get("GuildData").get("secret_code")
-                self.GuildIds = data.get("GuildData").get("id")
-            self.packetAuth = bytes(data["UserAuthPacket"])
-            self.botid = int(data["UserAccountUID"])
-            try:
-                self.nickname = data.get("logindata", {}).get("4")
-                if not self.nickname:
-                    raise Exception("Empty nickname")
-            except:
-                import base64
-                try:
-                    raw = data.get("UserNickName", "")
-                    self.nickname = base64.b64decode(raw).decode("utf-8", errors="ignore")
-                except:
-                    self.nickname = "Unknown"
-            self.manager.save_config()
-            self.region = str(data["LockRegion"])
-            self.token = data["UserAuthToken"]
-            self.ChatIP = data["GameServerAddress"]["chatip"]
-            self.OnlineIP = data["GameServerAddress"]["onlineip"]
-            self.OnlinePort = data["GameServerAddress"]["onlineport"]
-            self.ChatPort = data["GameServerAddress"]["chatport"]
-            self.key, self.iv = bytes(data["key"]), bytes(data["iv"])             
-            self.base_url = data["BaseUrl"]
-            ChooseEmote(self.token, self.base_url)
-            self.online_time = time.time()
-            self._IIl(data["logindata"], data)
-            if not self.running_event.is_set():
-                break
-            time.sleep(14555)
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            if self.running_event.is_set():
-                time.sleep(1111)
+  access_token = self.bot_config['auth_bot_login']['access_token']
+  while self.running_event.is_set():
+   try:
+    data = FreeFireAPI().get(access_token, is_emulator=False)
+    if not data or data == "account not found" or (isinstance(data, str) and "account not found" in data):
+     print("[BOT] Login thất bại, thử lại sau...")
+     time.sleep(10)
+     continue
+    if data.get("GuildData"):
+     self.AuthenCode = data.get("GuildData").get("secret_code")
+     self.GuildIds = data.get("GuildData").get("id")
+    self.packetAuth = bytes(data["UserAuthPacket"])
+    lobby = data.get("UserAuthPacketLobby")
+    self.packetAuthLobby = bytes(lobby) if lobby else self.packetAuth
+    self.botid = int(data["UserAccountUID"])
+    self.nickname = str(data["UserNickName"])
+    self.region = str(data["LockRegion"])
+    self.token = data["UserAuthToken"]
+    self.ChatIP = data["GameServerAddress"]["chatip"]
+    self.OnlineIP = data["GameServerAddress"]["onlineip"]
+    self.OnlinePort = data["GameServerAddress"]["onlineport"]
+    self.ChatPort = data["GameServerAddress"]["chatport"]
+    self.key, self.iv = bytes(data["key"]), bytes(data["iv"])
+    self.base_url = data["BaseUrl"]
+    print(f"[BOT] Login OK uid={self.botid} region={self.region} auth={len(self.packetAuth)} lobby={len(self.packetAuthLobby)} online={self.OnlineIP}:{self.OnlinePort}")
+    try:
+     ChooseEmote(self.token, self.base_url)
+    except Exception as e:
+     print(f"[BOT] ChooseEmote: {e}")
+    self._IIl(data["logindata"], data)
+    if not self.running_event.is_set(): break
+    time.sleep(14555)
+   except Exception as e:
+    import traceback
+    traceback.print_exc()
+    if self.running_event.is_set(): time.sleep(1111)
+
  def start(self):
-  if self.started: return 
+  if self.started: return
   self.started = True
   self.running_event.set()
-  threading.Thread(target=self.rstart, daemon=True).start() 
+  print(f"[BOT] Starting bot_id={self.bot_config.get('bot_id')}")
+  threading.Thread(target=self.rstart, daemon=True).start()
+
 
 class BOTMNG:
-
  def __init__(self):
   self.bots = {}
   self.config_lock = threading.RLock()
   self.filename = "bot.json"
-  self.config = {"bots": []}
   self.load_config()
-  threading.Thread(
-   target=self.auto_cleanup_expired_users,
-   daemon=True
-  ).start()
+  threading.Thread(target=self.auto_cleanup_expired_users, daemon=True).start()
+  threading.Thread(target=self._auto_run_all_bots, daemon=True).start()
+
+ def _auto_run_all_bots(self):
+  time.sleep(2)
+  print("[BOTMNG] Đang khôi phục bot từ bot.json...")
+  for bot_id, bot_instance in self.bots.items():
+   try:
+    if not bot_instance.started:
+     bot_instance.start()
+     print(f"Started bot {bot_id}")
+   except Exception as e:
+    print(f"Error starting bot {bot_id}: {e}")
 
  def load_config(self):
   try:
-   if not os.path.exists(self.filename):
-    with open(self.filename, "w", encoding="utf-8") as f:
-     json.dump({"bots": []}, f, indent=4, ensure_ascii=False)
-   with open(self.filename, "r", encoding="utf-8") as f:
-    content = f.read().strip()
-   if not content:
-    self.config = {"bots": []}
-    return
+   import os
+   cwd = os.getcwd()
+   print(f"\n{'='*50}")
+   print(f"📁 LƯU FILE TẠI: {cwd}")
+   print(f"{'='*50}\n")
+   status, content = File.check(self.filename)
    self.config = json.loads(content)
+   print(self.config)
    if "bots" not in self.config:
     self.config["bots"] = []
-   self.bots.clear()
    for bot_data in self.config["bots"]:
-
-    try:
-     bot_id = bot_data.get("bot_id")
-     if not bot_id:
-      continue
-     if "auth_bot_login" not in bot_data:
-      continue
-
-     if "access_token" not in bot_data["auth_bot_login"]:
-      continue
-     bot_instance = FreeFireTCP(bot_data, self)
-     bot_instance.bot_config = bot_data
-     bot_instance.botid = bot_data.get("botid")
-     bot_instance.nickname = bot_data.get("nickname")
-     self.bots[bot_id] = bot_instance
-    except Exception as e:
-     print("Bot load error:", e)
-   print(f"Loaded {len(self.bots)} bots from bot.json")
+    bot_id = bot_data["bot_id"]
+    bot_instance = FreeFireTCP(bot_data, self)
+    if "botid" in bot_data:
+     bot_instance.botid = bot_data["botid"]
+    if "nickname" in bot_data:
+     bot_instance.nickname = bot_data["nickname"]
+    if "access_bot" in bot_data:
+     bot_instance.bot_config["access_bot"] = bot_data["access_bot"]
+    if "blocked_uids" in bot_data:
+     bot_instance.bot_config["blocked_uids"] = bot_data["blocked_uids"]
+    self.bots[bot_id] = bot_instance
   except Exception as e:
-   print("load_config error:", e)
+   print(f"Load config error: {e}")
    self.config = {"bots": []}
+   self.save_config()
 
  def save_config(self):
   try:
    with self.config_lock:
-    new_list = []
     for bot_id, bot_instance in self.bots.items():
-     bot_config = bot_instance.bot_config.copy()
-     bot_config["bot_id"] = bot_id
-     if getattr(bot_instance, "botid", None):
-      bot_config["botid"] = bot_instance.botid
-     if getattr(bot_instance, "nickname", None):
-      bot_config["nickname"] = bot_instance.nickname
-     if "access_bot" not in bot_config:
-      bot_config["access_bot"] = []
-     new_list.append(bot_config)
-    self.config["bots"] = new_list
-    with open(self.filename, "w", encoding="utf-8") as f:
-     json.dump(
-      self.config,
-      f,
-      indent=4,
-      ensure_ascii=False
-     )
-    print(f"Saved {len(new_list)} bots to bot.json")
-  except Exception as e:
-   print("save_config error:", e)
+     for bot_config in self.config["bots"]:
+      if bot_config["bot_id"] == bot_id:
+       if hasattr(bot_instance, 'botid') and bot_instance.botid:
+        bot_config["botid"] = bot_instance.botid
+       if hasattr(bot_instance, 'nickname') and bot_instance.nickname:
+        bot_config["nickname"] = bot_instance.nickname
+       if hasattr(bot_instance, 'bot_config') and 'access_bot' in bot_instance.bot_config:
+        bot_config["access_bot"] = bot_instance.bot_config["access_bot"]
+       if hasattr(bot_instance, 'bot_config') and 'blocked_uids' in bot_instance.bot_config:
+        bot_config["blocked_uids"] = bot_instance.bot_config["blocked_uids"]
+    
+    import os
+    with open(self.filename, 'w', encoding='utf-8') as f:
+     json.dump(self.config, f, ensure_ascii=False, indent=2)
+    file_path = os.path.abspath(self.filename)
+    print(f"[BOTMNG] ✅ Lưu {file_path}")
+  except Exception as e: 
+   print(f"[BOTMNG] ❌ Save config error: {e}")
+
+ def auto_save_config(self):
+  while True:
+   try:
+    time.sleep(300)
+    self.save_config()
+    print("[BOTMNG] Auto-saved config")
+   except Exception as e:
+    print(f"Auto-save error: {e}")
 
  def get_next_bot_id(self):
   with self.config_lock:
-   if not self.bots:
-    return 1
-   return max(self.bots.keys()) + 1
+   if not self.config["bots"]: return 1
+   return max(bot["bot_id"] for bot in self.config["bots"]) + 1
 
  def check_token_exists(self, access_token):
-  for bot in self.bots.values():
-   if bot.bot_config["auth_bot_login"]["access_token"] == access_token:
-    return True, bot.bot_config["bot_id"]
-  return False, None
+  with self.config_lock:
+   for bot in self.config["bots"]:
+    if bot["auth_bot_login"]["access_token"] == access_token:
+     return True, bot["bot_id"]
+   return False, None
+
+ def toggle_guild_activation(self, bot_id, action):
+  with self.config_lock:
+   try: bot_id = int(bot_id)
+   except ValueError:
+    return "error"
+   for bot in self.config["bots"]:
+    if bot["bot_id"] == bot_id:
+     if bot_id not in self.bots: return "error"
+     bot_instance = self.bots[bot_id]
+     if not bot_instance.GuildIds:
+      return "Bot is not in guild"
+     if action == "on":
+      bot["active-clan"] = True
+      bot_instance.bot_config["active-clan"] = True
+      self.save_config()
+      threading.Thread(target=bot_instance.restart_bot).start()
+      return "active"
+     elif action == "off":
+      bot["active-clan"] = False
+      bot_instance.bot_config["active-clan"] = False
+      self.save_config()
+      threading.Thread(target=bot_instance.restart_bot).start()
+      return "Inactive"
+     else: return "error"
+   return "error"
 
  def add_bot(self, access_token, bot_cmd_data=None):
   with self.config_lock:
-   exists, existing_id = self.check_token_exists(access_token)
-   if exists:
-    return {
-     "status": False,
-     "message": "access token already exists"
-    }
+   exists, existing_bot_id = self.check_token_exists(access_token)
+   if exists: return {"status": False, "message": "access token already exists"}
    bot_id = self.get_next_bot_id()
    new_bot = {
     "bot_id": bot_id,
-    "auth_bot_login": {
-        "access_token": access_token
-    },
+    "auth_bot_login": {"access_token": access_token},
     "access_bot": [],
     "active-clan": True
    }
-   bot_instance = FreeFireTCP(new_bot, self)
-   bot_instance.bot_config = new_bot
-   self.bots[bot_id] = bot_instance
+   self.config["bots"].append(new_bot)
    self.save_config()
-   return {
-    "status": True,
-    "bot_id": bot_id
-   }
+   self.bots[bot_id] = FreeFireTCP(new_bot, self)
+   return {"status": True, "bot_id": bot_id}
 
  def delete_bot(self, bot_id):
   with self.config_lock:
@@ -688,7 +731,7 @@ class BOTMNG:
    del self.bots[bot_id]
    self.save_config()
    return True
-
+ 
  def add_uid_to_access(self, bot_id, uid, time_str):
     """Thêm UID vào danh sách truy cập"""
     try:
@@ -956,6 +999,13 @@ def telegram_start_help_menu(message):
 ├ /autolike {uid} {số ngày} ➜ Auto like hàng ngày (Admin)
 ├ /autolist ➜ Xem danh sách auto like (Admin)
 └ /delauto {uid} ➜ Xóa khỏi danh sách auto like (Admin)
+
+[ QUYỀN HẠN QUẢN TRỊ ]
+├ /addbot {token} ➜ Thêm bot mới
+├ /kb {botid} {id} ➜ Gửi yêu cầu kết bạn
+├ /xkb {botid} {id} ➜ Hủy yêu cầu kết bạn
+├ /delbot {botid} ➜ Xóa bot khỏi hệ thống
+└ /checkbot ➜ Kiểm tra danh sách bot online
 
 ⚠️ LƯU Ý QUAN TRỌNG:
 • Chỉ quản trị viên mới có thể nhắn tin riêng với bot
@@ -2575,7 +2625,6 @@ def handle_telegram_lag(message):
     user_id = message.from_user.id
     current_time = time.time()
     
-    # ====== KIỂM TRA COOLDOWN ======
     if user_id in lag_cooldown:
         remaining = int(lag_cooldown[user_id] - current_time)
         if remaining > 0:
@@ -2590,78 +2639,142 @@ def handle_telegram_lag(message):
     if len(parts) < 2 or not parts[1].isdigit():
         telegram_bot.reply_to(
             message, 
-            "<blockquote><b>❌ SAI CÚ PHÁP</b>\n━━━━━━━━━━━━━━━━━━━━\n💡 Dùng: <code>/lag [teamcode]</code>\n📌 Ví dụ: <code>/lag 1234567</code>\n━━━━━━━━━━━━━━━━━━━━\n⛔ Teamcode phải là <b>7 CHỮ SỐ</b>!</blockquote>", 
+            "<blockquote><b>❌ SAI CÚ PHÁP</b>\n━━━━━━━━━━━━━━━━━━━━\n💡 Dùng: <code>/lag [teamcode]</code>\n📌 Ví dụ: <code>/lag 1234567</code></blockquote>", 
             parse_mode='HTML'
         )
         return
     
     team_code = parts[1].strip()
     
-    # ====== KIỂM TRA ĐỘ DÀI 7 CHỮ SỐ ======
     if len(team_code) != 7:
         telegram_bot.reply_to(
             message, 
-            f"<blockquote><b>❌ TEAMCODE PHẢI 7 CHỮ SỐ</b>\n━━━━━━━━━━━━━━━━━━━━\n🔴 Teamcode bạn nhập: <code>{team_code}</code> ({len(team_code)} số)\n💡 Vui lòng nhập đúng <b>7 chữ số</b>!\n📌 Ví dụ: <code>/lag 1234567</code></blockquote>", 
+            f"<blockquote><b>❌ TEAMCODE PHẢI 7 CHỮ SỐ</b>\n━━━━━━━━━━━━━━━━━━━━\n🔴 Teamcode: <code>{team_code}</code> ({len(team_code)} số)\n📌 Ví dụ: <code>/lag 1234567</code></blockquote>", 
             parse_mode='HTML'
         )
         return
     
     team_code_int = int(team_code)
     
-    bots = get_available_bots(2)
-    if len(bots) < 2:
+    available_bots = []
+    for b in TCPbot.bots.values():
+        if (b.running_event.is_set() and 
+            getattr(b, "sock39699", None) is not None and 
+            not getattr(b, "is_busy", False)):
+            available_bots.append(b)
+            if len(available_bots) == 2:
+                break
+    
+    if len(available_bots) < 2:
         telegram_bot.reply_to(
             message, 
-            "<blockquote><b>⚠️ KHÔNG ĐỦ BOT</b>\n━━━━━━━━━━━━━━━━━━━━\n🔴 Cần 2 bot rảnh. Vui lòng đợi!</blockquote>", 
+            f"<blockquote><b>⚠️ KHÔNG ĐỦ 2 BOT</b>\n━━━━━━━━━━━━━━━━━━━━\n🔴 Cần <b>2 bot</b>!\n📊 Bot rảnh: <b>{len(available_bots)}</b></blockquote>", 
             parse_mode='HTML'
         )
         return
     
-    bot1, bot2 = bots[0], bots[1]
-    bot1.is_busy = True
-    bot2.is_busy = True
+    for b in available_bots:
+        b.is_busy = True
     
+    bot1, bot2 = available_bots[0], available_bots[1]
     bot1_name = getattr(bot1, 'nickname', f"Bot #{bot1.botid}")
     bot2_name = getattr(bot2, 'nickname', f"Bot #{bot2.botid}")
     
-    # ====== SET COOLDOWN ======
     lag_cooldown[user_id] = current_time + 15
     
     status_msg = telegram_bot.reply_to(
         message, 
-        f"<blockquote><b>✅ KÍCH HOẠT LAG TEAMCODE {team_code_int} THÀNH CÔNG!</b>\n━━━━━━━━━━━━━━━━━━━━\n🤖 <b>Bot:</b> <code>{bot1_name}</code> & <code>{bot2_name}</code>\n📩 <b>Trạng thái:</b> Đang thực thi gửi gói tin lag vào phòng...</blockquote>", 
+        f"<blockquote><b>🔥 LAG TEAMCODE {team_code_int}</b>\n━━━━━━━━━━━━━━━━━━━━\n🤖 Bot 1: <code>{bot1_name}</code>\n🤖 Bot 2: <code>{bot2_name}</code>\n━━━━━━━━━━━━━━━━━━━━\n⏳ Đang lag không delay...</blockquote>", 
         parse_mode='HTML'
     )
 
-    def run_lag(bot):
+    def safe_send(sock, data):
         try:
-            bot.sock39699.sendall(bot._bot.join_squad(team_code_int))
-            time.sleep(1)
+            if sock and data:
+                sock.sendall(data)
+                return True
+        except:
+            return False
+        return False
+
+    def run_bot1(bot, bot_name, team_code_int):
+        """Bot 1: JOIN → RỜI không delay"""
+        try:
+            sock = bot.sock39699
+            if sock is None:
+                return
+            bot_uid = getattr(bot, 'botid', 0)
+            start_time = time.time()
+            count = 0
             
-            for _ in range(1111):
-                try:
-                    bot.sock39699.sendall(bot._gen.lag_zan())
-                    time.sleep(0.0001)
-                except:
-                    pass
+            while time.time() - start_time < 30:
+                safe_send(sock, bot._bot.join_squad(team_code_int))
+                if bot_uid:
+                    safe_send(sock, bot._bot.leave_squad(bot_uid))
+                else:
+                    safe_send(sock, bot._bot.leave_squad(0))
+                count += 1
+                # Không sleep, gửi liên tục
             
-            bot.sock39699.sendall(bot._bot.leave_squad(0))
-            bot.is_busy = False
+            bot.rstatus = (0, 0)
+            print(f"[LAG] ✅ {bot_name} JOIN/RỜI {count} lần!")
             
         except Exception as e:
-            print(f"[LAG ERROR] {e}")
+            print(f"[LAG ERROR] {bot_name}: {e}")
+        finally:
             bot.is_busy = False
+
+    def run_bot2(bot, bot_name, team_code_int):
+        """Bot 2: VÔ ĐỘI → VÔ TRẬN → RỜI không delay"""
+        try:
+            sock = bot.sock39699
+            if sock is None:
+                return
+            
+            bot_uid = getattr(bot, 'botid', 0)
+            start_time = time.time()
+            count = 0
+            
+            while time.time() - start_time < 30:
+                safe_send(sock, bot._bot.join_squad(team_code_int))
+                safe_send(sock, bot._gen.start_match())
+                if bot_uid:
+                    safe_send(sock, bot._bot.leave_squad(bot_uid))
+                else:
+                    safe_send(sock, bot._bot.leave_squad(0))
+                count += 1
+                # Không sleep, gửi liên tục
+            
+            bot.rstatus = (0, 0)
+            print(f"[LAG] ✅ {bot_name} VÔ ĐỘI+VÔ TRẬN+RỜI {count} lần!")
+            
+        except Exception as e:
+            print(f"[LAG ERROR] {bot_name}: {e}")
+        finally:
+            bot.is_busy = False
+
+    def run_lag():
+        thread1 = threading.Thread(target=run_bot1, args=(bot1, bot1_name, team_code_int), daemon=True)
+        thread2 = threading.Thread(target=run_bot2, args=(bot2, bot2_name, team_code_int), daemon=True)
+        
+        thread1.start()
+        thread2.start()
+        
+        thread1.join()
+        thread2.join()
+        
+        try:
+            telegram_bot.edit_message_text(
+                f"<blockquote><b>✅ LAG TEAMCODE {team_code_int} HOÀN TẤT</b>\n━━━━━━━━━━━━━━━━━━━━\n🤖 Bot 1: <code>{bot1_name}</code> (JOIN/RỜI)\n🤖 Bot 2: <code>{bot2_name}</code> (VÔ ĐỘI+VÔ TRẬN+RỜI)\n━━━━━━━━━━━━━━━━━━━━\n🔥 KHÔNG DELAY! GỬI LIÊN TỤC!</blockquote>",
+                chat_id=message.chat.id,
+                message_id=status_msg.message_id,
+                parse_mode='HTML'
+            )
+        except:
+            pass
     
-    def run():
-        t1 = threading.Thread(target=run_lag, args=(bot1,), daemon=True)
-        t2 = threading.Thread(target=run_lag, args=(bot2,), daemon=True)
-        t1.start()
-        t2.start()
-        t1.join()
-        t2.join()
-    
-    threading.Thread(target=run, daemon=True).start()
-                      
+    threading.Thread(target=run_lag, daemon=True).start()
+                              
 @telegram_bot.message_handler(commands=['addbot'])
 @async_telegram
 def telegram_add_bot(message):
@@ -2811,7 +2924,7 @@ def handle_telegram_rd(message):
             909039011, 909040010, 909000081, 909000085, 909000063,
             909000075, 909033001, 909000090, 909000068, 909000098,
             909035007, 909037011, 909038012, 909035012, 909042008,
-            909045001
+            909045001, 909055007
         ]
         
         cfg = getattr(bot, "bot_config", {}) or {}
@@ -3259,7 +3372,7 @@ def handle_telegram_s7_cmd(message):
             time.sleep(3)
             safe_send(bot._bot.showskin(skin_id))
             time.sleep(1)
-            vip_emotes = [909040010, 909000090, 909035012, 909038010, 909035007, 909039011, 909000063, 909000098, 909000081, 909000075, 909042008, 909000068, 909049010, 909041005, 909033002, 909045001, 909000085, 909051003]
+            vip_emotes = [909040010, 909000090, 909035012, 909038010, 909035007, 909039011, 909000063, 909055007, 909000098, 909000081, 909000075, 909042008, 909000068, 909049010, 909041005, 909033002, 909045001, 909000085, 909051003]
             for _ in range(1):
                 for emo in vip_emotes:
                     if not bot.sock39699: 
@@ -4514,35 +4627,6 @@ def telegram_reg_account(message):
             f"🔴 {str(e)}</blockquote>",
             parse_mode="HTML"
         )
-
-@telegram_bot.message_handler(commands=['grok'])
-def telegram_grok(message):
-    user_id = message.from_user.id
-    if not check_user_in_group(user_id):
-        send_warn_join_group(message)
-        return
-
-    text = message.text.replace('/grok', '').strip()
-    if not text:
-        telegram_bot.reply_to(message, '📝 Nhập nội dung cần hỏi!')
-        return
-
-    try:
-        import requests
-        headers = {
-            "Authorization": "Bearer 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",
-            "Content-Type": "application/json"
-        }
-        payload = {
-            "model": "x-ai/grok-2-vision-1212",
-            "messages": [{"role": "user", "content": text}],
-            "max_tokens": 1000
-        }
-        resp = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload, timeout=60)
-        reply = resp.json()['choices'][0]['message']['content']
-        telegram_bot.reply_to(message, reply[:4000])
-    except Exception as e:
-        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)[:100]}")
                             
 # ====== CALLBACK CHO ADD BOT ======
 @telegram_bot.callback_query_handler(func=lambda call: call.data in ["addbot_yes", "addbot_no", "addbot_all"])
@@ -5443,6 +5527,7 @@ def telegram_xkb_all(message):
                 
 @telegram_bot.message_handler(commands=['isbanned'])
 @check_group_only
+@async_telegram
 def telegram_isbanned(message):
     if not check_user_in_group(message.from_user.id):
         send_warn_join_group(message)
@@ -5453,7 +5538,7 @@ def telegram_isbanned(message):
         if len(args) < 2:
             telegram_bot.reply_to(
                 message,
-                "<blockquote>💡 <code>/isbanned [uid]</code></blockquote>",
+                "<blockquote><b>❌ INVALID SYNTAX</b>\n💡 Use: <code>/isbanned [uid]</code>\n📌 Example: <code>/isbanned 123456789</code></blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -5462,46 +5547,62 @@ def telegram_isbanned(message):
         if not uid.isdigit():
             telegram_bot.reply_to(
                 message,
-                "<blockquote>🔴 UID phải là số!</blockquote>",
+                "<blockquote><b>❌ ERROR</b>\n🔴 UID must be a number!</blockquote>",
                 parse_mode="HTML"
             )
             return
         
-        # ====== GỬI TIN ĐANG XỬ LÝ ======
         msg = telegram_bot.reply_to(
             message,
-            f"<blockquote>⏳ <b>Đang lấy thông tin cho UID {uid}...</b></blockquote>",
+            f"<blockquote><b>📡 CHECKING BAN STATUS</b>\n━━━━━━━━━━━━━━━━━━━━\n🎯 <b>UID:</b> <code>{uid}</code>\n━━━━━━━━━━━━━━━━━━━━\n⏳ Processing...</blockquote>",
             parse_mode="HTML"
         )
         
-        # ====== DELAY 2-4 GIÂY ======
-        import random
-        import time
-        delay = random.uniform(2.0, 4.0)
-        time.sleep(delay)
+        def run_check():
+            try:
+                is_banned = check_banned(uid)
+                
+                if is_banned:
+                    response = (
+                        f"<blockquote><b>🆔 UID: {uid}</b>\n"
+                        f"━━━━━━━━━━━━━━━━━━━━\n"
+                        f"📌 <b>Status:</b> 🚫 BANNED\n"
+                        f"━━━━━━━━━━━━━━━━━━━━\n"
+                        f"⚠️ This account has been banned!</blockquote>"
+                    )
+                else:
+                    response = (
+                        f"<blockquote><b>🆔 UID: {uid}</b>\n"
+                        f"━━━━━━━━━━━━━━━━━━━━\n"
+                        f"📌 <b>Status:</b> ✅ NOT BANNED\n"
+                        f"━━━━━━━━━━━━━━━━━━━━\n"
+                        f"✅ This account is active!</blockquote>"
+                    )
+                
+                telegram_bot.edit_message_text(
+                    response,
+                    chat_id=message.chat.id,
+                    message_id=msg.message_id,
+                    parse_mode="HTML"
+                )
+                
+            except Exception as e:
+                telegram_bot.edit_message_text(
+                    f"<blockquote><b>❌ ERROR</b>\n🔴 {str(e)}</blockquote>",
+                    chat_id=message.chat.id,
+                    message_id=msg.message_id,
+                    parse_mode="HTML"
+                )
         
-        # ====== XÓA TIN ĐANG XỬ LÝ ======
-        try:
-            telegram_bot.delete_message(message.chat.id, msg.message_id)
-        except:
-            pass
-        
-        # ====== TRẢ KẾT QUẢ ======
-        response = """
-<blockquote>
-⚠️ <b>API KHÔNG PHẢN HỒI</b>
-</blockquote>
-"""
-        
-        telegram_bot.reply_to(message, response, parse_mode="HTML")
+        threading.Thread(target=run_check, daemon=True).start()
         
     except Exception as e:
         telegram_bot.reply_to(
             message,
-            f"<blockquote>❌ {str(e)}</blockquote>",
+            f"<blockquote><b>❌ ERROR</b>\n🔴 {str(e)}</blockquote>",
             parse_mode="HTML"
         )
-     
+                                           
 @telegram_bot.message_handler(commands=['addid'])
 def telegram_addid(message):
     if not is_telegram_admin(message.from_user.id):
