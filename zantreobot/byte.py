@@ -193,14 +193,14 @@ def Encrypt_ID(x):
 def SendFriendRequest_HTTP(target_uid, token, bot_uid=""):
     # Thử các domain khác nhau
     domains = [
-        'https://clientbp.ggpolarbear.com/RequestAddingFriend',
-        'https://clientbp.ggwhitehawk.com/RequestAddingFriend',
-        'https://clientbp.ggpbn.com/RequestAddingFriend',
+        'https://clientbp.ppmainecoonghj.com/RequestAddingFriend',
+        'https://clientbp.ppmainecoonghj.com/RequestAddingFriend',
+        'https://clientbp.ppmainecoonghj.com/RequestAddingFriend',
     ]
     
     headers = {
         'X-Unity-Version': '2018.4.11f1',
-        'ReleaseVersion': 'OB54',
+        'ReleaseVersion': 'OB55',
         'Content-Type': 'application/x-www-form-urlencoded',
         'X-GA': 'v1 1',
         'Authorization': f'Bearer {token}',
