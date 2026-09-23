@@ -17,7 +17,7 @@ import ReqCLan_pb2
 import QuitClanReq_pb2
 BOT_START_TIME = time.time()
 
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8189017159:AAF8jWU89nfF5AP0wi2WFCNntX2xrcniklk")
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8976269080:AAGWymLoBpIyLnbMKHhFImci7vnVPE67onw")
 lib.init_bot(TELEGRAM_TOKEN)
 bot_tg = lib.bot_tg
 telegram_bot = bot_tg
