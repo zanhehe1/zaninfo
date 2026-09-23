@@ -310,6 +310,36 @@
       "active-clan": true,
       "botid": 18289702216,
       "nickname": "VQZYVExADQQX2uXRhuWN0LDf"
+    },
+    {
+      "bot_id": 19,
+      "auth_bot_login": {
+        "access_token": "7908192827:2B3596C9F08BD7F462D5131058A24CC9590D31CA97D81A7418ACDC5B0F3D68A2"
+      },
+      "access_bot": [
+        {
+          "uid": 1406785176,
+          "expire": "2026-10-23 14:10:15"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18292994603,
+      "nickname": "UxcGWVJVBlqAuOq++Ya5vA=="
+    },
+    {
+      "bot_id": 20,
+      "auth_bot_login": {
+        "access_token": "7908488086:09666DF43C33E520BB4D135276465EF9AAFF08894F8F0A40ED746C817DD65F40"
+      },
+      "access_bot": [
+        {
+          "uid": 3845172074,
+          "expire": "2026-10-19 14:42:04"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18293417738,
+      "nickname": "XAZMQUAWU1UVGQ=="
     }
   ]
 }
