@@ -17,7 +17,7 @@ import ReqCLan_pb2
 import QuitClanReq_pb2
 BOT_START_TIME = time.time()
 
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8976269080:AAGRD1Df8M1BFh-IpbGylUOO_w3b9XO553Y")
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8189017159:AAF8jWU89nfF5AP0wi2WFCNntX2xrcniklk")
 lib.init_bot(TELEGRAM_TOKEN)
 bot_tg = lib.bot_tg
 telegram_bot = bot_tg
@@ -334,7 +334,7 @@ class FreeFireTCP:
         
     except Exception as e:
         print(f"[Bot {self.botid}] Lỗi: {e}")
- 
+
  def C1200(self, data, client):
   try:
    data = data1200(data)
@@ -344,14 +344,32 @@ class FreeFireTCP:
    message, name = data.message, data.name
    
    idlist = [u["uid"] for u in self.bot_config.get("access_bot", [])]
-   is_admin = (uid in idlist) or (uid == ADMIN_ID)
+   ADMIN_UID = 16104663154
+   
+   # ====== CHỈ CHẶN KHI CHAT RIÊNG (type == 2) ======
+   if type == 2:
+    if uid not in idlist and uid != ADMIN_UID:
+     status = self.get_user_status(3, uid)
+     if status in ["Chưa kích hoạt", "Hết hạn", None, False, "null", "∞", "Vô hạn"]:
+      try:
+       self._bot.reply(cid, type, """[B][c][FF0000]❌ Bạn chưa có quyền sử dụng BOT!
+[FFFFFF]Vui lòng liên hệ admin để được cấp quyền.
+[00FFFF]Telegram: @zanxgay""")
+      except Exception as e:
+       print(f"[REP ERROR] {e}")
+      return
+   
+   # ====== TYPE != 2 (quân đoàn/team) → KHÔNG CHẶN, CHẠY TIẾP ======
+   
+  except Exception as e:
+   self.rstatus, self.ids = (0, 0), []
        
    if is_admin and message.startswith("@"):
     if message.startswith("@hi"):
      RequestAddingFriend(int(message.split()[1]), self.token, self.base_url)
-     self._bot.reply(cid, type, "OK")
-       
-   elif message.startswith("@kb"):
+     self._bot.reply(cid, type, "OK") 
+             
+   elif message.startswith("@kb"):  
     # Kiểm tra admin bằng code có sẵn
     if not is_game_admin(self.bot_config["bot_id"], uid):
         self._bot.reply(cid, type, "[B][c][FF0000]❌ Bạn không có quyền sử dụng lệnh này!")
@@ -706,16 +724,8 @@ Liên hệ admin để gia hạn: @zanbackj""")
             self.sock39801.send(self._bot.send_object(payload, cid, type))
     except Exception as e:
         self._bot.reply(cid, type, f"[B][C][FF0000]❌ Lỗi: {str(e)}")
-    return
-                    
-   if type == 2:
-    if uid not in idlist:
-        status = self.get_user_status(3, uid)
-        if status in ["Chưa kích hoạt", "Hết hạn", None, False, "null", "∞", "Vô hạn"]:
-            self._bot.reply(cid, type, """× Bạn chưa được cấp quyền dùng bot vui lòng liên hệ admin để được cấp quyền 
-Telegram: @zanxgay""")
-            return
-
+    return            
+                                                      
    if message and (message.startswith("/start") or message.startswith("/help")):
     import time
 
@@ -9141,7 +9151,7 @@ def restart_bot():
     os.execv(sys.executable, ['python'] + sys.argv)
 
 def ping_api_keep_alive():
-    url = "https://zantreobot1.onrender.com/"
+    url = "http://zantreobot1.onrender.com"
     
     while True:
         try:
