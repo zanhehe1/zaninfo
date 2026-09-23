@@ -242,6 +242,63 @@
       "active-clan": true,
       "botid": 18276577470,
       "nickname": "U6ac+plaDBegmAkPABc="
+    },
+    {
+      "bot_id": 14,
+      "auth_bot_login": {
+        "access_token": "7897714025:F23053B19B6A19AE7C757CBEB8A03C28A620DB730404836521DDA02220484ED4"
+      },
+      "access_bot": [
+        {
+          "uid": 16104663154,
+          "expire": "2054-02-07 05:29:09"
+        },
+        {
+          "uid": 9120008092,
+          "expire": "2026-10-23 05:31:19"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18278741115,
+      "nickname": "XwpZUV9dTVJRC1Mm"
+    },
+    {
+      "bot_id": 15,
+      "auth_bot_login": {
+        "access_token": "7897391307:0E90FD9F151BFCC3DDAB04F7BA115BFFCEB3C4E27FC23B4D8D9CE2091D7C0575"
+      },
+      "access_bot": [
+        {
+          "uid": 16104663154,
+          "expire": "2054-02-07 05:29:48"
+        },
+        {
+          "uid": 356696089,
+          "expire": "2026-09-30 05:30:37"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18278148586,
+      "nickname": "VAhc+plTFggDXAU="
+    },
+    {
+      "bot_id": 16,
+      "auth_bot_login": {
+        "access_token": "7905155475:C1DFC78ACC323DE268CF0B6967D24D62F47A7C363727CCA29F3E0AB1499DBC85"
+      },
+      "access_bot": [
+        {
+          "uid": 16104663154,
+          "expire": "2054-02-07 07:34:07"
+        },
+        {
+          "uid": 300000687,
+          "expire": "2026-10-23 07:34:48"
+        }
+      ],
+      "active-clan": true,
+      "botid": ,
+      "nickname": "RQ1cXVf6wwIMAw=="
     }
   ]
 }
