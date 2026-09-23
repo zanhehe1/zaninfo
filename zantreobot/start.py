@@ -17,7 +17,9 @@ import ReqCLan_pb2
 import QuitClanReq_pb2
 BOT_START_TIME = time.time()
 
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8976269080:AAGWymLoBpIyLnbMKHhFImci7vnVPE67onw")
+ADMIN_ID = 16104663154
+
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8189017159:AAE7x8RA2xSgS1-7UCSM-5osOTQggPdAw7w")
 lib.init_bot(TELEGRAM_TOKEN)
 bot_tg = lib.bot_tg
 telegram_bot = bot_tg
@@ -345,7 +347,8 @@ class FreeFireTCP:
    
    idlist = [u["uid"] for u in self.bot_config.get("access_bot", [])]
    is_admin = (uid in idlist) or (uid == ADMIN_ID)
-       
+
+                        
    if is_admin and message.startswith("@"):
     if message.startswith("@hi"):
      RequestAddingFriend(int(message.split()[1]), self.token, self.base_url)
@@ -708,6 +711,14 @@ Liên hệ admin để gia hạn: @zanbackj""")
         self._bot.reply(cid, type, f"[B][C][FF0000]❌ Lỗi: {str(e)}")
     return            
                                                       
+   if type == 2:
+    if uid not in idlist:
+        status = self.get_user_status(3, uid)
+        if status in ["Chưa kích hoạt", "Hết hạn", None, False, "null", "∞", "Vô hạn"]:
+            self._bot.reply(cid, type, """× Bạn chưa được cấp quyền dùng bot vui lòng liên hệ admin để được cấp quyền 
+Telegram: @zanxgay""")
+            return
+
    if message and (message.startswith("/start") or message.startswith("/help")):
     import time
 
@@ -918,10 +929,10 @@ Liên hệ admin để gia hạn: @zanbackj""")
 
     self._bot.reply(cid, type, """[B][c]THÔNG BÁO OB MỚI:
 [b][c] Cập Nhật Bot:  
-[F8F8FF] 24/6/2026
+[F8F8FF] 23/9/2026
 
 [b][c] New:
-[F8F8FF] Đã Cập Nhật Xong OB54!
+[F8F8FF] Đã Cập Nhật Xong OB55!
 
 [b][c] Admin Bot:
 [F8F8FF]Tiktok: @deocanthuonghai09
@@ -941,6 +952,7 @@ Liên hệ admin để gia hạn: @zanbackj""")
 [F8FFFF]time: "{exps}" """)  
     
     return
+
          
    elif message.startswith("/sk"):
     type = get_user_input(message)
