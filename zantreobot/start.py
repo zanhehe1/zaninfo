@@ -344,25 +344,7 @@ class FreeFireTCP:
    message, name = data.message, data.name
    
    idlist = [u["uid"] for u in self.bot_config.get("access_bot", [])]
-   ADMIN_UID = 16104663154
-   
-   # ====== CHỈ CHẶN KHI CHAT RIÊNG (type == 2) ======
-   if type == 2:
-    if uid not in idlist and uid != ADMIN_UID:
-     status = self.get_user_status(3, uid)
-     if status in ["Chưa kích hoạt", "Hết hạn", None, False, "null", "∞", "Vô hạn"]:
-      try:
-       self._bot.reply(cid, type, """[B][c][FF0000]❌ Bạn chưa có quyền sử dụng BOT!
-[FFFFFF]Vui lòng liên hệ admin để được cấp quyền.
-[00FFFF]Telegram: @zanxgay""")
-      except Exception as e:
-       print(f"[REP ERROR] {e}")
-      return
-   
-   # ====== TYPE != 2 (quân đoàn/team) → KHÔNG CHẶN, CHẠY TIẾP ======
-   
-  except Exception as e:
-   self.rstatus, self.ids = (0, 0), []
+   is_admin = (uid in idlist) or (uid == ADMIN_ID)
        
    if is_admin and message.startswith("@"):
     if message.startswith("@hi"):
