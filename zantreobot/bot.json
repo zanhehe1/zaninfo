@@ -340,6 +340,21 @@
       "active-clan": true,
       "botid": 18293417738,
       "nickname": "XAZMQUAWU1UVGQ=="
+    },
+    {
+      "bot_id": 21,
+      "auth_bot_login": {
+        "access_token": "7915606926:1AAFACDE4F859FE96E133A1DC389EB22054CD9B576FA1536173932A7BB48A740"
+      },
+      "access_bot": [
+        {
+          "uid": 1834785369,
+          "expire": "2026-10-01 07:08:30"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18301923352,
+      "nickname": "WlQH+pnZ2cYP+sQCp8ZM0LHo4f8="
     }
   ]
 }
