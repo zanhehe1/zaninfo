@@ -15,4 +15,4 @@ fastapi
 uvicorn
 pillow
 python-multipart
-unidecodea
+Unidecode
