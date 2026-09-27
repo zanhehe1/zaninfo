@@ -309,6 +309,14 @@
       "active-clan": true,
       "botid": 18328969534,
       "nickname": "bÃ©Â botÂ mids."
+    },
+    {
+      "bot_id": 29,
+      "auth_bot_login": {
+        "access_token": "7951617625:C196FA77B344AFEFEA393621B0BC83CA4B88E774C13F92A8216EC0C95B9D3233"
+      },
+      "access_bot": [],
+      "active-clan": true
     }
   ]
 }
