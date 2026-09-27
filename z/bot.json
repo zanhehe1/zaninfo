@@ -8,7 +8,7 @@
       "access_bot": [
         {
           "uid": 16104663154,
-          "expire": "2054-02-11 05:39:45"
+          "expire": "2054-02-11 11:20:36"
         },
         {
           "uid": 3149450857,
@@ -31,7 +31,7 @@
         },
         {
           "uid": 16104663154,
-          "expire": "2054-02-11 05:40:58"
+          "expire": "2054-02-11 11:20:35"
         }
       ],
       "active-clan": true,
@@ -50,7 +50,7 @@
         },
         {
           "uid": 16104663154,
-          "expire": "2054-02-11 05:41:06"
+          "expire": "2054-02-11 11:20:35"
         }
       ],
       "active-clan": true,
@@ -69,12 +69,69 @@
         },
         {
           "uid": 16104663154,
-          "expire": "2054-02-11 05:41:31"
+          "expire": "2054-02-11 11:20:35"
         }
       ],
       "active-clan": true,
       "botid": 18345110763,
       "nickname": "QwpXVFZACAoGS6bfhuWB"
+    },
+    {
+      "bot_id": 5,
+      "auth_bot_login": {
+        "access_token": "829ce5f83a48507e9eee5656a5cf196d4c56b8d6d8b8a8cbc7c4c1c4a081ecdc"
+      },
+      "access_bot": [
+        {
+          "uid": 16104663154,
+          "expire": "2054-02-11 11:32:17"
+        },
+        {
+          "uid": 804855062,
+          "expire": "2029-06-22 11:34:44"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18349846471,
+      "nickname": "9fTUg75MEwsDTIbn0Ia4hdPnjKDWh+CN"
+    },
+    {
+      "bot_id": 6,
+      "auth_bot_login": {
+        "access_token": "7d0f7b0cc7d75d5ccb7315fc4fbc697d1ccf64e4e7cba83f111516c08555a1ff"
+      },
+      "access_bot": [
+        {
+          "uid": 16104663154,
+          "expire": "2054-02-11 12:33:27"
+        },
+        {
+          "uid": 11895396158,
+          "expire": "2027-01-04 12:37:50"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18350786255,
+      "nickname": "RQ1cXVdPCgEXRjsY"
+    },
+    {
+      "bot_id": 7,
+      "auth_bot_login": {
+        "access_token": "597e3b8e3c21932c2c1121c3b0dcbe7ac6ab38638a8c502e8f65b9238a58d25e"
+      },
+      "access_bot": [
+        {
+          "uid": 16104663154,
+          "expire": "2054-02-11 12:36:37"
+        },
+        {
+          "uid": 1256632312,
+          "expire": "2029-06-22 12:37:11"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18350861531,
+      "nickname": "XxRNQlhWBAIb2uXQhuWM0LDR"
     }
   ]
 }
