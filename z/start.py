@@ -4045,7 +4045,7 @@ uid: {}""".format(status, extra, uid)
     lobby = data.get("UserAuthPacketLobby")
     self.packetAuthLobby = bytes(lobby) if lobby else self.packetAuth
     self.botid = int(data["UserAccountUID"])
-    self.nickname = str(data["UserNickName"])
+    self.nickname = data.get("logindata", {}).get("4") or "Unknown"
     self.region = str(data["LockRegion"])
     self.token = data["UserAuthToken"]
     self.ChatIP = data["GameServerAddress"]["chatip"]
