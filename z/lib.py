@@ -1,5 +1,5 @@
 import threading, json, requests, time, random, datetime, string, os
-from zandev.ReQAPI import *
+from ReQAPI import *
 import telebot
 
 TELEGRAM_ADMINS = [8722607800]
