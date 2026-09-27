@@ -8,16 +8,20 @@
       "access_bot": [
         {
           "uid": 16104663154,
-          "expire": "2054-02-11 11:20:36"
+          "expire": "2054-02-11 14:44:12"
         },
         {
           "uid": 3149450857,
           "expire": "2026-10-07 05:26:31"
+        },
+        {
+          "uid": 17595099156,
+          "expire": "2027-01-04 14:45:17"
         }
       ],
       "active-clan": true,
       "botid": 18344232242,
-      "nickname": "VRRAWV5QFgmAudOE5dLbs4SEuNs="
+      "nickname": "dquaghuj⁷⁶⁵⁹"
     },
     {
       "bot_id": 2,
@@ -31,12 +35,12 @@
         },
         {
           "uid": 16104663154,
-          "expire": "2054-02-11 11:20:35"
+          "expire": "2054-02-11 14:44:12"
         }
       ],
       "active-clan": true,
       "botid": 18275022988,
-      "nickname": "Ug1U+plcoMEM+sQRBRYX"
+      "nickname": "cha dân war."
     },
     {
       "bot_id": 3,
@@ -50,12 +54,12 @@
         },
         {
           "uid": 16104663154,
-          "expire": "2054-02-11 11:20:35"
+          "expire": "2054-02-11 14:44:38"
         }
       ],
       "active-clan": true,
       "botid": 18344170692,
-      "nickname": "VRFAWVdcGYHjgKbVhuWO0LDT2+PS"
+      "nickname": "dtuandz⁸³⁷⁵⁶"
     },
     {
       "bot_id": 4,
@@ -69,12 +73,12 @@
         },
         {
           "uid": 16104663154,
-          "expire": "2054-02-11 11:20:35"
+          "expire": "2054-02-11 14:44:38"
         }
       ],
       "active-clan": true,
       "botid": 18345110763,
-      "nickname": "QwpXVFZACAoGS6bfhuWB"
+      "nickname": "robloxkids¹⁸"
     },
     {
       "bot_id": 5,
@@ -93,7 +97,7 @@
       ],
       "active-clan": true,
       "botid": 18349846471,
-      "nickname": "9fTUg75MEwsDTIbn0Ia4hdPnjKDWh+CN"
+      "nickname": "đệtphat⁴⁷⁵²⁵"
     },
     {
       "bot_id": 6,
@@ -103,7 +107,7 @@
       "access_bot": [
         {
           "uid": 16104663154,
-          "expire": "2054-02-11 12:33:27"
+          "expire": "2054-02-11 14:44:39"
         },
         {
           "uid": 11895396158,
@@ -112,7 +116,7 @@
       ],
       "active-clan": true,
       "botid": 18350786255,
-      "nickname": "RQ1cXVdPCgEXRjsY"
+      "nickname": "thienwibu~_~"
     },
     {
       "bot_id": 7,
@@ -131,7 +135,26 @@
       ],
       "active-clan": true,
       "botid": 18350861531,
-      "nickname": "XxRNQlhWBAIb2uXQhuWM0LDR"
+      "nickname": "nqxzangay⁶⁵⁷"
+    },
+    {
+      "bot_id": 8,
+      "auth_bot_login": {
+        "access_token": "b4ec3354548e73b27745673fcc3d0579e0ef60ca6ba0dc0cc4c6af3ff82a2e71"
+      },
+      "access_bot": [
+        {
+          "uid": 13451178781,
+          "expire": "2026-10-27 14:44:25"
+        },
+        {
+          "uid": 16104663154,
+          "expire": "2054-02-11 14:44:46"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18349993711,
+      "nickname": "zanメgay²⁴⁸⁷⁷"
     }
   ]
 }
