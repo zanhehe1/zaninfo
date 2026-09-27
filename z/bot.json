@@ -1,0 +1,23 @@
+{
+  "bots": [
+    {
+      "bot_id": 1,
+      "auth_bot_login": {
+        "access_token": "e171a94dd4e624416fdf35eff7b7526b80b845a47dc81ef5ee67b105035ec85a"
+      },
+      "access_bot": [
+        {
+          "uid": 16104663154,
+          "expire": "2054-02-11 05:26:28"
+        },
+        {
+          "uid": 3149450857,
+          "expire": "2026-10-07 05:26:31"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18344232242,
+      "nickname": "VRRAWV5QFgmAudOE5dLbs4SEuNs="
+    }
+  ]
+}
