@@ -275,9 +275,6 @@ class FreeFireTCP:
    if not message:
     return False
   
-  # ===== PHẦN XỬ LÝ LỆNH Ở ĐÂY =====
-  # (giữ nguyên code cũ của mày từ đây)
-  
    return False
   except Exception as e:
    print(f"[C1200 ERROR] {e}")
@@ -291,7 +288,6 @@ class FreeFireTCP:
    self.sock39801.send(self._bot.leave_channel(uid, None))
    self.sock39699.send(self._bot.leave_squad(uid))
   except: self.rstatus, self.ids = (0, 0), []
-
 
  def gringay(self, data):
   if data.hex()[:4] == "0500" and len(data) >= 80:
@@ -339,7 +335,6 @@ class FreeFireTCP:
             self.sock39699.send(self._bot.leave_squad(00000))
             
             if custom_name:
-                # Ghost với tên custom
                 colors = ["[FF0000]", "[00FF00]", "[0000FF]", "[FFFF00]", "[FF00FF]", "[00FFFF]"]
                 color = random.choice(colors)
                 
@@ -359,9 +354,8 @@ class FreeFireTCP:
                 ghost_packet = self._gen._builder(fields=list(fields.items()))
                 self.sock39699.sendall(ghost_packet)
                 
-                self._bot.reply(uid, None, f"[B][c][00FF00]✅ Ghost thành công với tên: {custom_name}")
+                self._bot.reply(uid, None, f"[B][c][00FF00]Ghost thành công với tên: {custom_name}")
             else:
-                # Ghost mặc định (multi bot)
                 packetjs = self._bot.join_squad(current_code)
                 bots = []
                 for bot in self.manager.bots.values():
@@ -409,7 +403,7 @@ class FreeFireTCP:
         recruit_code = data.get("5", {}).get("17")
         self.sock39801.send(self._bot.join_channel(uid, recruit_code, None))
         time.sleep(1.2)
-        self._bot.reply(uid, None, "[B][C][00FF00]Bo[c]t Em[b]ote By Zan\n[00FF00]TikTok: [FF69B4]zanbackj\n[00FF00]Tele[c]gr[c]am: [87CEEB]@zanbackj\n[00FF00]Group: [FFD700]ht[c]tps://t.[b]me/zancommunity")
+        self._bot.reply(uid, None, "[B][C][00FF00]Bot Emote By Zan\n[00FF00]TikTok: [FF69B4]zanbackj\n[00FF00]Telegram: [87CEEB]@zanbackj\n[00FF00]Group: [FFD700]https://t.me/zancommunity")
         self.rstatus = (10, '')
         self.ids.extend(extract_uid_fields(data))
     except Exception as e:
@@ -484,7 +478,7 @@ class FreeFireTCP:
                     now = datetime.datetime.now()
                     if exp_time < now:
                         self.manager.deleteId(self.bot_config["bot_id"], uid)
-                        return "Hết hạn" if type == 3 else False  # SỬA
+                        return "Hết hạn" if type == 3 else False
                     if type == 2:
                         return True
                     if type == 3:
@@ -499,12 +493,11 @@ class FreeFireTCP:
                         time_left = ", ".join(parts) if parts else "0 phút"
                         return time_left
                 except Exception as e:
-                    return "Hết hạn" if type == 3 else False  # SỬA
+                    return "Hết hạn" if type == 3 else False
         
-        # KHÔNG TÌM THẤY UID -> TRẢ VỀ "Chưa kích hoạt"
-        return "Chưa kích hoạt"  # SỬA DÒNG NÀY
+        return "Chưa kích hoạt"
     
-    return "Chưa kích hoạt"  # SỬA DÒNG NÀY
+    return "Chưa kích hoạt"
            
  def format_status_message(self, info, uid):
   status = info.get("status", "") 
@@ -609,7 +602,7 @@ class BOTMNG:
    import os
    cwd = os.getcwd()
    print(f"\n{'='*50}")
-   print(f"📁 LƯU FILE TẠI: {cwd}")
+   print(f"LƯU FILE TẠI: {cwd}")
    print(f"{'='*50}\n")
    status, content = File.check(self.filename)
    self.config = json.loads(content)
@@ -652,9 +645,9 @@ class BOTMNG:
     with open(self.filename, 'w', encoding='utf-8') as f:
      json.dump(self.config, f, ensure_ascii=False, indent=2)
     file_path = os.path.abspath(self.filename)
-    print(f"[BOTMNG] ✅ Lưu {file_path}")
+    print(f"[BOTMNG] Lưu {file_path}")
   except Exception as e: 
-   print(f"[BOTMNG] ❌ Save config error: {e}")
+   print(f"[BOTMNG] Lỗi lưu config: {e}")
 
  def auto_save_config(self):
   while True:
@@ -732,19 +725,15 @@ class BOTMNG:
    return True
  
  def add_uid_to_access(self, bot_id, uid, time_str):
-    """Thêm UID vào danh sách truy cập"""
     try:
-        # Parse time
         import re
         if not re.match(r'^\d+[hdwmy]$', time_str.lower()):
             return "invalid_time"
         
-        # Lấy bot
         bot = self.bots.get(bot_id)
         if not bot:
             return "bot_not_found"
         
-        # Tính timestamp
         now = datetime.now()
         num = int(time_str[:-1])
         unit = time_str[-1].lower()
@@ -765,7 +754,6 @@ class BOTMNG:
         expire_time = now + delta
         timestamp = int(expire_time.timestamp())
         
-        # Thêm vào database
         if hasattr(bot, 'manager') and bot.manager:
             return bot.manager.add_uid_to_access(bot_id, uid, timestamp)
         else:
@@ -885,9 +873,9 @@ def check_user_in_group(user_id):
 
 def get_join_keyboard():
     markup = InlineKeyboardMarkup()
-    btn_group1 = InlineKeyboardButton(text="👥 Nhóm Cộng Đồng", url="https://t.me/zancommunity")
-    btn_group2 = InlineKeyboardButton(text="📢 Kênh Thông Báo", url="https://t.me/zanxchannel")
-    btn_joined = InlineKeyboardButton(text="✅ Tôi đã tham gia", callback_data="check_joined")
+    btn_group1 = InlineKeyboardButton(text="Nhóm Cộng Đồng", url="https://t.me/zancommunity")
+    btn_group2 = InlineKeyboardButton(text="Kênh Thông Báo", url="https://t.me/zanxchannel")
+    btn_joined = InlineKeyboardButton(text="Tôi đã tham gia", callback_data="check_joined")
     markup.row(btn_group1)
     markup.row(btn_group2)
     markup.row(btn_joined)
@@ -915,12 +903,12 @@ def check_group_only(func):
         if is_private_chat(message):
             telegram_bot.reply_to(
                 message,
-                f"""⛔️ <b>Bạn không có quyền sử dụng bot này.</b>
+                f"""<b>Bạn không có quyền sử dụng bot này.</b>
 Chỉ admin và người quản lý mới có thể sử dụng bot qua tin nhắn riêng!
 Vui lòng sử dụng bot trong nhóm <b>@zancommunity</b> để thực hiện lệnh.
 
 ━━━━━━━━━━━━━━━━━━━━
-📩 Liên hệ: <b>@zanbackj</b>""",
+Liên hệ: <b>@zanbackj</b>""",
                 parse_mode="HTML"
             )
             return
@@ -966,47 +954,47 @@ def telegram_start_help_menu(message):
         return
     
     menu_text = """
-<blockquote>📌 MENU ĐIỀU KHIỂN HỆ THỐNG
+<blockquote><b>MENU ĐIỀU KHIỂN HỆ THỐNG</b>
 
-[ LỆNH TẠO ĐỘI ]
+<b>[ LỆNH TẠO ĐỘI ]</b>
 ├ /2 {uid} ➜ Lập team 2 người
 ├ /3 {uid} ➜ Lập team 3 người
 ├ /4 {uid} ➜ Lập team 4 người
 ├ /5 {uid} ➜ Lập team 5 người
 ├ /6 {uid} ➜ Lập team 6 người
 
-[ LỆNH HÀNH ĐỘNG ]
+<b>[ LỆNH HÀNH ĐỘNG ]</b>
 ├ /s7 {teamcode} {uid1} {uid2} ➜ Múa all hành động s7
 ├ /rd {teamcode} {uid1} {uid2} ➜ Múa random all s7
 ├ /hdco {teamcode} {uid1} {uid2} ➜ Múa all hành động cổ
 └ /rngau {teamcode} {uid1} {uid2} ➜ Múa all hành động ngầu
 
-[ LỆNH SPAM & LAG ]
+<b>[ LỆNH SPAM & LAG ]</b>
 ├ /lag {teamcode} ➜ Gửi request lag đến đội
 ├ /ghost {teamcode} {tên} ➜ Ghost đội với tên tùy chỉnh
 ├ /spamall {uid} ➜ Spam lời mời vô đội
 ├ /rinv {uid} ➜ Spam vô phòng
 └ /msg {teamcode} {message} ➜ Spam tin nhắn vô đội
 
-[ TRA CỨU INFO ]
+<b>[ TRA CỨU INFO ]</b>
 ├ /isbanned {uid} ➜ Kiểm tra tình trạng ban
 ├ /info {uid} ➜ Xem thông tin người chơi
 ├ /status {uid} ➜ Kiểm tra trạng thái người chơi
 
-[ LỆNH BUFF LIKE ]
+<b>[ LỆNH BUFF LIKE ]</b>
 ├ /like {uid} ➜ Buff like ( nhận khoảng 110 like )
 ├ /autolike {uid} {số ngày} ➜ Auto like hàng ngày (Admin)
 ├ /autolist ➜ Xem danh sách auto like (Admin)
 └ /delauto {uid} ➜ Xóa khỏi danh sách auto like (Admin)
 
-[ QUYỀN HẠN QUẢN TRỊ ]
+<b>[ QUYỀN HẠN QUẢN TRỊ ]</b>
 ├ /addbot {token} ➜ Thêm bot mới
 ├ /kb {botid} {id} ➜ Gửi yêu cầu kết bạn
 ├ /xkb {botid} {id} ➜ Hủy yêu cầu kết bạn
 ├ /delbot {botid} ➜ Xóa bot khỏi hệ thống
 └ /checkbot ➜ Kiểm tra danh sách bot online
 
-⚠️ LƯU Ý QUAN TRỌNG:
+<b>LƯU Ý QUAN TRỌNG:</b>
 • Chỉ quản trị viên mới có thể nhắn tin riêng với bot
 • Người dùng thường vui lòng sử dụng lệnh trong nhóm
 • Mọi thắc mắc liên hệ: @zanbackj</blockquote>
@@ -1025,7 +1013,7 @@ def callback_check_joined(call):
             try:
                 telegram_bot.answer_callback_query(
                     call.id,
-                    text="❌ Bạn không phải là người thực hiện yêu cầu này!",
+                    text="Bạn không phải là người thực hiện yêu cầu này!",
                     show_alert=True
                 )
             except:
@@ -1035,7 +1023,7 @@ def callback_check_joined(call):
         if check_user_in_group(user_id):
             try:
                 telegram_bot.edit_message_text(
-                    "🎉 Xác thực thành công! Hãy sử dụng lệnh /menu để xem danh sách lệnh.",
+                    "Xác thực thành công! Hãy sử dụng lệnh /menu để xem danh sách lệnh.",
                     chat_id=call.message.chat.id,
                     message_id=call.message.message_id
                 )
@@ -1045,7 +1033,7 @@ def callback_check_joined(call):
             try:
                 telegram_bot.answer_callback_query(
                     call.id, 
-                    text="✅ Xác thực thành công!", 
+                    text="Xác thực thành công!", 
                     show_alert=False
                 )
             except:
@@ -1074,7 +1062,7 @@ def callback_check_joined(call):
             if not in_group2:
                 missing.append("Kênh Thông Báo (@zanxchannel)")
             
-            msg = "❌ Bạn chưa tham gia:\n" + "\n".join(f"• {m}" for m in missing)
+            msg = "Bạn chưa tham gia:\n" + "\n".join(f"• {m}" for m in missing)
             try:
                 telegram_bot.answer_callback_query(
                     call.id, 
@@ -1100,7 +1088,6 @@ def get_available_bots(count=1):
 def send_warn_join_group(message):
     user_id = message.from_user.id
     
-    # Kiểm tra từng nhóm
     in_group1 = False
     in_group2 = False
     
@@ -1120,23 +1107,23 @@ def send_warn_join_group(message):
     
     status_msg = ""
     if not in_group1:
-        status_msg += "❌ Nhóm Cộng Đồng (@zancommunity)\n"
+        status_msg += "Chưa tham gia Nhóm Cộng Đồng (@zancommunity)\n"
     else:
-        status_msg += "✅ Nhóm Cộng Đồng (@zancommunity)\n"
+        status_msg += "Đã tham gia Nhóm Cộng Đồng (@zancommunity)\n"
     
     if not in_group2:
-        status_msg += "❌ Kênh Thông Báo (@zanxchannel)\n"
+        status_msg += "Chưa tham gia Kênh Thông Báo (@zanxchannel)\n"
     else:
-        status_msg += "✅ Kênh Thông Báo (@zanxchannel)\n"
+        status_msg += "Đã tham gia Kênh Thông Báo (@zanxchannel)\n"
     
     warn_msg = (
         f"<blockquote>"
-        f"<b>⚠️ BẠN CHƯA THAM GIA ĐỦ NHÓM</b>\n"
+        f"<b>BẠN CHƯA THAM GIA ĐỦ NHÓM</b>\n"
         f"───────────────────────\n"
-        f"👋 Xin chào <code>{message.from_user.first_name}</code>,\n\n"
+        f"Xin chào <code>{message.from_user.first_name}</code>,\n\n"
         f"Bạn cần tham gia 2 kênh sau để sử dụng bot:\n\n"
         f"{status_msg}\n"
-        f"👉 Vui lòng bấm vào các nút bên dưới để tham gia đủ!"
+        f"Vui lòng bấm vào các nút bên dưới để tham gia đủ!"
         f"</blockquote>"
     )
     telegram_bot.reply_to(message, warn_msg, parse_mode="HTML", reply_markup=get_join_keyboard())
@@ -1183,7 +1170,7 @@ def encrypt_uid(uid):
 
 # ====== HÀM LOGIN LẤY JWT ======
 def G_AccEss(U, P):
-    log_print(f"🔐 Đang login UID: {U[:6]}...")
+    log_print(f"Đang login UID: {U[:6]}...")
     UrL = "https://100067.connect.garena.com/oauth/guest/token/grant"
     HE = {
         "Host": "100067.connect.garena.com",
@@ -1202,15 +1189,15 @@ def G_AccEss(U, P):
     }
     try:
         R = requests.post(UrL, headers=HE, data=dT)
-        log_print(f"📡 Login response: {R.status_code}")
+        log_print(f"Login response: {R.status_code}")
         if R.status_code == 200:
             data = R.json()
-            log_print(f"✅ Login thành công UID: {U[:6]}...")
+            log_print(f"Login thành công UID: {U[:6]}...")
             return data.get("access_token"), data.get("open_id")
         else:
-            log_print(f"❌ Login thất bại: {R.text[:100]}")
+            log_print(f"Login thất bại: {R.text[:100]}")
     except Exception as e:
-        log_print(f"❌ Lỗi G_AccEss: {e}")
+        log_print(f"Lỗi G_AccEss: {e}")
     return None, None
 
 # ====== HÀM LẤY JWT TỪ ACCOUNTS.JSON ======
@@ -1228,7 +1215,7 @@ def get_jwt_from_file(uid):
 # ====== HÀM GỬI KẾT BẠN DÙNG JWT ======
 def SendFriendRequest(target_uid, jwt_token, bot_uid):
     try:
-        log_print(f"📤 Bot {bot_uid} -> Target {target_uid}")
+        log_print(f"Bot {bot_uid} -> Target {target_uid}")
         
         Key = bytes([89, 103, 38, 116, 99, 37, 68, 69, 117, 104, 54, 37, 90, 99, 94, 56])
         Iv = bytes([54, 111, 121, 90, 68, 114, 50, 50, 69, 51, 121, 99, 104, 106, 77, 37])
@@ -1255,26 +1242,26 @@ def SendFriendRequest(target_uid, jwt_token, bot_uid):
         url = 'https://clientbp.ggpolarbear.com/RequestAddingFriend'
         response = requests.post(url, headers=headers, data=data, verify=False, timeout=10)
         
-        log_print(f"📡 Status: {response.status_code}")
+        log_print(f"Status: {response.status_code}")
         
         if response.status_code == 200:
-            return True, "✅ Gửi kết bạn thành công!"
+            return True, "Gửi kết bạn thành công!"
         else:
             text = response.text
-            log_print(f"📄 Response: {text[:200]}")
+            log_print(f"Response: {text[:200]}")
             if 'BR_FRIEND_NOT_SAME_REGION' in text:
-                return False, "❌ Khác khu vực!"
+                return False, "Khác khu vực!"
             elif 'BR_FRIEND_MAX_REQUEST' in text:
-                return False, "❌ Đã đạt giới hạn!"
+                return False, "Đã đạt giới hạn!"
             elif 'BR_FRIEND_ALREADY_SENT_REQUEST' in text:
-                return False, "❌ Đã gửi trước đó!"
+                return False, "Đã gửi trước đó!"
             elif 'BR_FRIEND_ALREADY_FRIEND' in text:
-                return False, "❌ Đã là bạn bè!"
+                return False, "Đã là bạn bè!"
             else:
-                return False, f"❌ Lỗi: {text[:50]}"
+                return False, f"Lỗi: {text[:50]}"
             
     except Exception as e:
-        return False, f"❌ Lỗi: {str(e)}"
+        return False, f"Lỗi: {str(e)}"
 
 # ====== LỆNH /spamkb ======
 @telegram_bot.message_handler(commands=['spamkb'])
@@ -1285,30 +1272,29 @@ def telegram_spam_kb(message):
         if len(parts) < 2:
             telegram_bot.reply_to(
                 message,
-                "<blockquote>❌ SAI CÚ PHÁP\n💡 Dùng: /spamkb [uid_target]\n📌 Ví dụ: /spamkb 123456789</blockquote>",
+                "<blockquote><b>SAI CÚ PHÁP</b>\nDùng: /spamkb [uid_target]\nVí dụ: /spamkb 123456789</blockquote>",
                 parse_mode="HTML"
             )
             return
         
         target_uid = parts[1].strip()
         if not target_uid.isdigit():
-            telegram_bot.reply_to(message, "<blockquote>❌ UID phải là số!</blockquote>", parse_mode="HTML")
+            telegram_bot.reply_to(message, "<blockquote>UID phải là số!</blockquote>", parse_mode="HTML")
             return
         
-        log_print(f"🎯 Spam tới UID: {target_uid}")
+        log_print(f"Spam tới UID: {target_uid}")
         
         if not os.path.exists(ACCOUNTS_FILE):
-            telegram_bot.reply_to(message, f"<blockquote>❌ Không tìm thấy file {ACCOUNTS_FILE}!</blockquote>", parse_mode="HTML")
+            telegram_bot.reply_to(message, f"<blockquote>Không tìm thấy file {ACCOUNTS_FILE}!</blockquote>", parse_mode="HTML")
             return
         
         with open(ACCOUNTS_FILE, "r", encoding="utf-8") as f:
             accounts = json.load(f)
         
         if not accounts:
-            telegram_bot.reply_to(message, "<blockquote>❌ Không có account nào!</blockquote>", parse_mode="HTML")
+            telegram_bot.reply_to(message, "<blockquote>Không có account nào!</blockquote>", parse_mode="HTML")
             return
         
-        # Lọc accounts có jwt
         valid_accounts = []
         for acc in accounts:
             if acc.get("jwt") and acc.get("status") == "success":
@@ -1318,14 +1304,14 @@ def telegram_spam_kb(message):
                 })
         
         if not valid_accounts:
-            telegram_bot.reply_to(message, "<blockquote>❌ Không có account nào có JWT hợp lệ!</blockquote>", parse_mode="HTML")
+            telegram_bot.reply_to(message, "<blockquote>Không có account nào có JWT hợp lệ!</blockquote>", parse_mode="HTML")
             return
         
-        log_print(f"📦 Load {len(valid_accounts)} accounts có JWT")
+        log_print(f"Load {len(valid_accounts)} accounts có JWT")
         
         msg = telegram_bot.reply_to(
             message,
-            f"<blockquote>🚀 ĐANG SPAM KẾT BẠN\n━━━━━━━━━━━━━━━━━━━━\n🎯 Target: <code>{target_uid}</code>\n👥 Tổng bots: <b>{len(valid_accounts)}</b>\n✅ Thành công: <b>0</b>\n❌ Thất bại: <b>0</b>\n⏳ Đang xử lý...</blockquote>",
+            f"<blockquote><b>ĐANG SPAM KẾT BẠN</b>\n━━━━━━━━━━━━━━━━━━━━\nTarget: <code>{target_uid}</code>\nTổng bots: <b>{len(valid_accounts)}</b>\nThành công: <b>0</b>\nThất bại: <b>0</b>\nĐang xử lý...</blockquote>",
             parse_mode="HTML"
         )
         
@@ -1345,11 +1331,10 @@ def telegram_spam_kb(message):
                     else:
                         fail_count += 1
                     
-                    # Cập nhật mỗi 5 acc
                     if i % 5 == 0 or i == len(valid_accounts):
                         try:
                             telegram_bot.edit_message_text(
-                                f"<blockquote>🚀 ĐANG SPAM KẾT BẠN\n━━━━━━━━━━━━━━━━━━━━\n🎯 Target: <code>{target_uid}</code>\n👥 Tổng bots: <b>{len(valid_accounts)}</b>\n🔄 Tiến độ: <b>{i}/{len(valid_accounts)}</b>\n✅ Thành công: <b>{success_count}</b>\n❌ Thất bại: <b>{fail_count}</b>\n⏳ Đang xử lý...</blockquote>",
+                                f"<blockquote><b>ĐANG SPAM KẾT BẠN</b>\n━━━━━━━━━━━━━━━━━━━━\nTarget: <code>{target_uid}</code>\nTổng bots: <b>{len(valid_accounts)}</b>\nTiến độ: <b>{i}/{len(valid_accounts)}</b>\nThành công: <b>{success_count}</b>\nThất bại: <b>{fail_count}</b>\nĐang xử lý...</blockquote>",
                                 chat_id=message.chat.id,
                                 message_id=msg.message_id,
                                 parse_mode="HTML"
@@ -1362,16 +1347,15 @@ def telegram_spam_kb(message):
                 except Exception as e:
                     fail_count += 1
             
-            # Kết quả cuối cùng
             summary = (
-                f"<blockquote>📊 KẾT QUẢ SPAM KẾT BẠN\n"
+                f"<blockquote><b>KẾT QUẢ SPAM KẾT BẠN</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"🎯 Target: <code>{target_uid}</code>\n"
-                f"👥 Tổng bots: <b>{len(valid_accounts)}</b>\n"
-                f"✅ Thành công: <b>{success_count}</b>\n"
-                f"❌ Thất bại: <b>{fail_count}</b>\n"
+                f"Target: <code>{target_uid}</code>\n"
+                f"Tổng bots: <b>{len(valid_accounts)}</b>\n"
+                f"Thành công: <b>{success_count}</b>\n"
+                f"Thất bại: <b>{fail_count}</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"⚡ Hoàn thành!</blockquote>"
+                f"Hoàn thành!</blockquote>"
             )
             
             try:
@@ -1391,8 +1375,8 @@ def telegram_spam_kb(message):
         threading.Thread(target=run_spam, daemon=True).start()
         
     except Exception as e:
-        log_print(f"❌ Lỗi: {e}")
-        telegram_bot.reply_to(message, f"<blockquote>❌ Lỗi: {str(e)}</blockquote>", parse_mode="HTML")
+        log_print(f"Lỗi: {e}")
+        telegram_bot.reply_to(message, f"<blockquote>Lỗi: {str(e)}</blockquote>", parse_mode="HTML")
                                                                 
 from telebot import types
 
@@ -1406,13 +1390,12 @@ def handle_team_creation(message):
     user_id = message.from_user.id
     current_time = time.time()
     
-    # ====== KIỂM TRA COOLDOWN ======
     if user_id in team_cooldown:
         remaining = int(team_cooldown[user_id] - current_time)
         if remaining > 0:
             telegram_bot.reply_to(
                 message,
-                f"<blockquote><b>⏳ vui lòng đợi {remaining} giây và sử dụng lại</b></blockquote>",
+                f"<blockquote><b>vui lòng đợi {remaining} giây và sử dụng lại</b></blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -1423,10 +1406,10 @@ def handle_team_creation(message):
     if len(parts) < 2 or not parts[1].isdigit():
         telegram_bot.reply_to(
             message,
-            f"<blockquote><b>❌ SAI CÚ PHÁP</b>\n"
-            f"💡 Vui lòng nhập theo định dạng:\n"
+            f"<blockquote><b>SAI CÚ PHÁP</b>\n"
+            f"Vui lòng nhập theo định dạng:\n"
             f"<code>/{cmd} [UID]</code>\n\n"
-            f"📌 Ví dụ: <code>/{cmd} 123456789</code></blockquote>",
+            f"Ví dụ: <code>/{cmd} 123456789</code></blockquote>",
             parse_mode="HTML"
         )
         return
@@ -1435,7 +1418,7 @@ def handle_team_creation(message):
     if len(uid_str) < 8 or len(uid_str) > 11:
         telegram_bot.reply_to(
             message,
-            f"<blockquote><b>❌ UID KHÔNG HỢP LỆ</b>\n"
+            f"<blockquote><b>UID KHÔNG HỢP LỆ</b>\n"
             f"UID phải từ 8-10 chữ số.</blockquote>",
             parse_mode="HTML"
         )
@@ -1448,8 +1431,8 @@ def handle_team_creation(message):
     if not bots:
         telegram_bot.reply_to(
             message,
-            f"<blockquote><b>⚠️ HỆ THỐNG QUÁ TẢI</b>\n\n"
-            f"🔴 Không thể khởi tạo <b>Team {team_size}</b> cho UID <code>{uid}</code>.\n"
+            f"<blockquote><b>HỆ THỐNG QUÁ TẢI</b>\n\n"
+            f"Không thể khởi tạo <b>Team {team_size}</b> cho UID <code>{uid}</code>.\n"
             f"Hiện tại tất cả các Bot đều đang bận hoặc offline. Vui lòng thử lại sau giây lát!</blockquote>",
             parse_mode="HTML"
         )
@@ -1458,7 +1441,6 @@ def handle_team_creation(message):
     bot = bots[0]
     bot.is_busy = True 
     
-    # ====== SET COOLDOWN ======
     team_cooldown[user_id] = current_time + 15
     
     def safe_send(data):
@@ -1471,7 +1453,7 @@ def handle_team_creation(message):
     def run():
         try:
             if not bot.sock39699:
-                print("❌ SOCKET NULL")
+                print("SOCKET NULL")
                 return
             safe_send(bot._bot.open_squad(team_size))
             time.sleep(0.5)
@@ -1489,12 +1471,12 @@ def handle_team_creation(message):
     
     telegram_bot.reply_to(
         message,
-        f"<blockquote><b>✅ ĐÃ GỬI LỜI MỜI TEAM {team_size}</b>\n"
+        f"<blockquote><b>ĐÃ GỬI LỜI MỜI TEAM {team_size}</b>\n"
         f"━━━━━━━━━━━━━━━━━━\n"
-        f"🤖 Bot: {bot_name}\n"
-        f"🆔 UID: {uid}\n"
+        f"Bot: {bot_name}\n"
+        f"UID: <code>{uid}</code>\n"
         f"━━━━━━━━━━━━━━━━━━\n"
-        f"⚡ Vào game nhận lời mời nhé!</blockquote>",
+        f"Vào game nhận lời mời nhé!</blockquote>",
         parse_mode="HTML"
     )
 
@@ -1512,10 +1494,10 @@ def telegram_web(message):
         if len(parts) < 2:
             telegram_bot.reply_to(
                 message,
-                "<b>❌ SAI CÚ PHÁP</b>\n"
+                "<blockquote><b>SAI CÚ PHÁP</b>\n"
                 "━━━━━━━━━━━━━━━━━━━━\n"
-                "💡 <code>/web [url]</code>\n"
-                "📌 Ví dụ: <code>/web example.com</code>",
+                "<code>/web [url]</code>\n"
+                "Ví dụ: <code>/web example.com</code></blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -1527,8 +1509,8 @@ def telegram_web(message):
         
         msg = telegram_bot.reply_to(
             message,
-            f"<b>🔄 ĐANG LẤY NỘI DUNG...</b>\n"
-            f"🔗 <code>{url}</code>",
+            f"<blockquote><b>ĐANG LẤY NỘI DUNG...</b>\n"
+            f"<code>{url}</code></blockquote>",
             parse_mode="HTML"
         )
         
@@ -1543,7 +1525,6 @@ def telegram_web(message):
                 response = requests.get(url, headers=headers, timeout=15)
                 
                 if response.status_code == 200:
-                    # Lấy title
                     title = "Không có title"
                     try:
                         import re
@@ -1553,22 +1534,21 @@ def telegram_web(message):
                     except:
                         pass
                     
-                    # Lấy text
                     text = response.text
                     text = re.sub(r'<[^>]+>', ' ', text)
                     text = ' '.join(text.split())[:500]
                     
-                    text_response = f"<b>📄 NỘI DUNG WEB</b>\n"
+                    text_response = f"<blockquote><b>NỘI DUNG WEB</b>\n"
                     text_response += f"━━━━━━━━━━━━━━━━━━━━\n"
-                    text_response += f"🔗 <b>URL:</b> <code>{url}</code>\n"
-                    text_response += f"📌 <b>Status:</b> {response.status_code}\n"
+                    text_response += f"URL: <code>{url}</code>\n"
+                    text_response += f"Status: {response.status_code}\n"
                     text_response += f"━━━━━━━━━━━━━━━━━━━━\n"
-                    text_response += f"📝 <b>Title:</b> {title}\n"
+                    text_response += f"Title: {title}\n"
                     text_response += f"━━━━━━━━━━━━━━━━━━━━\n"
-                    text_response += f"📄 <b>Nội dung:</b>\n"
+                    text_response += f"Nội dung:\n"
                     text_response += f"<i>{text[:300]}{'...' if len(text) > 300 else ''}</i>\n"
                     text_response += f"━━━━━━━━━━━━━━━━━━━━\n"
-                    text_response += f"📊 <b>Kích thước:</b> {len(response.content)} bytes"
+                    text_response += f"Kích thước: {len(response.content)} bytes</blockquote>"
                     
                     telegram_bot.edit_message_text(
                         text_response,
@@ -1578,8 +1558,8 @@ def telegram_web(message):
                     )
                 else:
                     telegram_bot.edit_message_text(
-                        f"<b>❌ LỖI</b>\n"
-                        f"🔴 Status: {response.status_code}",
+                        f"<blockquote><b>LỖI</b>\n"
+                        f"Status: {response.status_code}</blockquote>",
                         chat_id=message.chat.id,
                         message_id=msg.message_id,
                         parse_mode="HTML"
@@ -1587,7 +1567,7 @@ def telegram_web(message):
                 
             except Exception as e:
                 telegram_bot.edit_message_text(
-                    f"<b>❌ LỖI</b>\n🔴 {str(e)}",
+                    f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
                     chat_id=message.chat.id,
                     message_id=msg.message_id,
                     parse_mode="HTML"
@@ -1596,7 +1576,7 @@ def telegram_web(message):
         threading.Thread(target=run_web, daemon=True).start()
         
     except Exception as e:
-        telegram_bot.reply_to(message, f"<b>❌ LỖI</b>\n🔴 {str(e)}", parse_mode="HTML")
+        telegram_bot.reply_to(message, f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>", parse_mode="HTML")
 
 # ====== LỆNH /gettoken ======
 @telegram_bot.message_handler(commands=['gettoken'])
@@ -1612,12 +1592,12 @@ def telegram_gettoken(message):
         if len(parts) < 3:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n"
+                "<blockquote><b>SAI CÚ PHÁP</b>\n"
                 "━━━━━━━━━━━━━━━━━━━━\n"
-                "💡 <code>/gettoken [uid] [password]</code>\n"
-                "📌 Ví dụ: <code>/gettoken 123456789 matkhau123</code>\n"
+                "<code>/gettoken [uid] [password]</code>\n"
+                "Ví dụ: <code>/gettoken 123456789 matkhau123</code>\n"
                 "━━━━━━━━━━━━━━━━━━━━\n"
-                "🔑 Lấy Access Token từ UID và Password</blockquote>",
+                "Lấy Access Token từ UID và Password</blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -1626,15 +1606,15 @@ def telegram_gettoken(message):
         password = parts[2].strip()
         
         if not uid.isdigit():
-            telegram_bot.reply_to(message, "<blockquote>❌ UID phải là số!</blockquote>", parse_mode="HTML")
+            telegram_bot.reply_to(message, "<blockquote>UID phải là số!</blockquote>", parse_mode="HTML")
             return
         
         msg = telegram_bot.reply_to(
             message,
-            f"<blockquote><b>🔄 ĐANG LẤY TOKEN...</b>\n"
+            f"<blockquote><b>ĐANG LẤY TOKEN...</b>\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"🆔 UID: <code>{uid}</code>\n"
-            f"⏳ Đang xử lý...</blockquote>",
+            f"UID: <code>{uid}</code>\n"
+            f"Đang xử lý...</blockquote>",
             parse_mode="HTML"
         )
         
@@ -1643,7 +1623,6 @@ def telegram_gettoken(message):
                 import requests
                 import json
                 
-                # ====== GỌI API LẤY TOKEN ======
                 url = "https://100067.connect.garena.com/oauth/guest/token/grant"
                 headers = {
                     "Host": "100067.connect.garena.com",
@@ -1670,7 +1649,6 @@ def telegram_gettoken(message):
                     uid_return = result.get("uid")
                     
                     if access_token:
-                        # Lấy thông tin từ token (decode JWT)
                         try:
                             import base64
                             import json as json_decode
@@ -1691,33 +1669,33 @@ def telegram_gettoken(message):
                             nickname = "N/A"
                         
                         telegram_bot.edit_message_text(
-                            f"<blockquote><b>✅ LẤY TOKEN THÀNH CÔNG</b>\n"
+                            f"<blockquote><b>LẤY TOKEN THÀNH CÔNG</b>\n"
                             f"━━━━━━━━━━━━━━━━━━━━\n"
-                            f"🆔 UID: <code>{uid_return or uid}</code>\n"
-                            f"👤 Name: {nickname}\n"
+                            f"UID: <code>{uid_return or uid}</code>\n"
+                            f"Name: {nickname}\n"
                             f"━━━━━━━━━━━━━━━━━━━━\n"
-                            f"🔑 <b>Access Token:</b>\n"
+                            f"<b>Access Token:</b>\n"
                             f"<code>{access_token}</code>\n"
                             f"━━━━━━━━━━━━━━━━━━━━\n"
-                            f"📋 Open ID: <code>{open_id}</code></blockquote>",
+                            f"Open ID: <code>{open_id}</code></blockquote>",
                             chat_id=message.chat.id,
                             message_id=msg.message_id,
                             parse_mode="HTML"
                         )
                     else:
                         telegram_bot.edit_message_text(
-                            f"<blockquote><b>❌ LẤY TOKEN THẤT BẠI</b>\n"
+                            f"<blockquote><b>LẤY TOKEN THẤT BẠI</b>\n"
                             f"━━━━━━━━━━━━━━━━━━━━\n"
-                            f"🔴 Sai UID hoặc Password!</blockquote>",
+                            f"Sai UID hoặc Password!</blockquote>",
                             chat_id=message.chat.id,
                             message_id=msg.message_id,
                             parse_mode="HTML"
                         )
                 else:
                     telegram_bot.edit_message_text(
-                        f"<blockquote><b>❌ LẤY TOKEN THẤT BẠI</b>\n"
+                        f"<blockquote><b>LẤY TOKEN THẤT BẠI</b>\n"
                         f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"🔴 Lỗi: {response.status_code}</blockquote>",
+                        f"Lỗi: {response.status_code}</blockquote>",
                         chat_id=message.chat.id,
                         message_id=msg.message_id,
                         parse_mode="HTML"
@@ -1725,7 +1703,7 @@ def telegram_gettoken(message):
                     
             except Exception as e:
                 telegram_bot.edit_message_text(
-                    f"<blockquote><b>❌ LỖI</b>\n🔴 {str(e)}</blockquote>",
+                    f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
                     chat_id=message.chat.id,
                     message_id=msg.message_id,
                     parse_mode="HTML"
@@ -1734,7 +1712,7 @@ def telegram_gettoken(message):
         threading.Thread(target=run_gettoken, daemon=True).start()
         
     except Exception as e:
-        telegram_bot.reply_to(message, f"<blockquote><b>❌ LỖI</b>\n🔴 {str(e)}</blockquote>", parse_mode="HTML")
+        telegram_bot.reply_to(message, f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>", parse_mode="HTML")
         
 # ====== BUFF LIKE COMMAND (FAST) ======
 LIKE_API_URL = "https://cds-gilt.vercel.app/like"
@@ -1753,12 +1731,12 @@ def telegram_like(message):
         if len(parts) < 2:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n"
+                "<blockquote><b>SAI CÚ PHÁP</b>\n"
                 "━━━━━━━━━━━━━━━━━━━━\n"
-                "💡 <code>/like [uid]</code>\n"
-                "📌 Ví dụ: <code>/like 16890930508</code>\n"
+                "<code>/like [uid]</code>\n"
+                "Ví dụ: <code>/like 16890930508</code>\n"
                 "━━━━━━━━━━━━━━━━━━━━\n"
-                "🌍 Default server: <code>BD</code></blockquote>",
+                "Default server: <code>BD</code></blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -1768,7 +1746,7 @@ def telegram_like(message):
         if not uid.isdigit():
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ ERROR</b>\n🔴 UID must be a number!</blockquote>",
+                "<blockquote><b>LỖI</b>\nUID must be a number!</blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -1776,18 +1754,18 @@ def telegram_like(message):
         if len(uid) < 8 or len(uid) > 11:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ INVALID UID</b>\n🔴 UID must be 8-11 digits!</blockquote>",
+                "<blockquote><b>UID KHÔNG HỢP LỆ</b>\nUID must be 8-11 digits!</blockquote>",
                 parse_mode="HTML"
             )
             return
         
         msg = telegram_bot.reply_to(
             message,
-            f"<blockquote><b>🔄 ĐANG TĂNG LIKES</b>\n"
+            f"<blockquote><b>ĐANG TĂNG LIKES</b>\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"🎯 UID: <code>{uid}</code>\n"
+            f"UID: <code>{uid}</code>\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"⏳ Processing...</blockquote>",
+            f"Processing...</blockquote>",
             parse_mode="HTML"
         )
         
@@ -1795,7 +1773,6 @@ def telegram_like(message):
             try:
                 import requests
                 
-                # ====== GIẢM TIMEOUT XUỐNG 3s ======
                 url = f"https://cds-gilt.vercel.app/like?uid={uid}&server_name=BD"
                 response = requests.get(url, timeout=16)
                 
@@ -1809,24 +1786,24 @@ def telegram_like(message):
                     status = data.get('status', 'unknown')
                     
                     if status == "max_like":
-                        status_text = "✅ Max like reached!"
+                        status_text = "Đã đạt max like!"
                     elif added > 0:
-                        status_text = "✅ Buff like successful!"
+                        status_text = "Buff like thành công!"
                     else:
-                        status_text = "ℹ️ No changes."
+                        status_text = "Không có thay đổi."
                     
                     message_text = (
                         f"<blockquote>\n"
                         f"{status_text}\n"
                         f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"👤 Nickname: <code>{nickname}</code>\n"
-                        f"🎯 UID: <code>{uid}</code>\n"
+                        f"Nickname: <code>{nickname}</code>\n"
+                        f"UID: <code>{uid}</code>\n"
                         f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"❤️ Before: <code>{before}</code>\n"
-                        f"❤️ After: <code>{after}</code>\n"
-                        f"➕ Added: <code>+{added}</code>\n"
+                        f"Before: <code>{before}</code>\n"
+                        f"After: <code>{after}</code>\n"
+                        f"Added: <code>+{added}</code>\n"
                         f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"⚡ Done!</blockquote>"
+                        f"Done!</blockquote>"
                     )
                     
                     telegram_bot.edit_message_text(
@@ -1837,7 +1814,7 @@ def telegram_like(message):
                     )
                 else:
                     telegram_bot.edit_message_text(
-                        f"<blockquote><b>❌ API ERROR</b>\n🔴 HTTP {response.status_code}</blockquote>",
+                        f"<blockquote><b>LỖI API</b>\nHTTP {response.status_code}</blockquote>",
                         chat_id=message.chat.id,
                         message_id=msg.message_id,
                         parse_mode="HTML"
@@ -1845,14 +1822,14 @@ def telegram_like(message):
                     
             except requests.exceptions.Timeout:
                 telegram_bot.edit_message_text(
-                    "<blockquote><b>❌ TIMEOUT</b>\n🔴 API response slow!</blockquote>",
+                    "<blockquote><b>TIMEOUT</b>\nAPI response slow!</blockquote>",
                     chat_id=message.chat.id,
                     message_id=msg.message_id,
                     parse_mode="HTML"
                 )
             except Exception as e:
                 telegram_bot.edit_message_text(
-                    f"<blockquote><b>❌ ERROR</b>\n🔴 {str(e)}</blockquote>",
+                    f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
                     chat_id=message.chat.id,
                     message_id=msg.message_id,
                     parse_mode="HTML"
@@ -1863,7 +1840,7 @@ def telegram_like(message):
     except Exception as e:
         telegram_bot.reply_to(
             message,
-            f"<blockquote><b>❌ ERROR</b>\n🔴 {str(e)}</blockquote>",
+            f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
             parse_mode="HTML"
         )
 
@@ -1877,7 +1854,6 @@ from datetime import datetime, timedelta
 # ====== FILE LƯU AUTO LIKE ======
 AUTO_LIKE_FILE = "auto_like.json"
 
-# ====== LOAD AUTO LIKE DATA ======
 def load_auto_like():
     if os.path.exists(AUTO_LIKE_FILE):
         try:
@@ -1887,36 +1863,30 @@ def load_auto_like():
             return {}
     return {}
 
-# ====== SAVE AUTO LIKE DATA ======
 def save_auto_like(data):
     with open(AUTO_LIKE_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
 
-# ====== ADMIN ID ======
 ADMIN_ID = 8722607800
 
-# ====== HÀM KIỂM TRA ADMIN ======
 def is_admin(user_id):
-    admin_list = [8722607800]  # Thêm các ID admin khác nếu cần
+    admin_list = [8722607800]
     return user_id in admin_list
 
-## ====== LỆNH /AUTOLIKE ======
 @telegram_bot.message_handler(commands=['autolike'])
 @check_group_only
 @async_telegram
 def telegram_autolike(message):
-    # ====== CHECK ADMIN TRƯỚC ======
     if not is_admin(message.from_user.id):
         telegram_bot.reply_to(
             message,
-            "<blockquote><b>❌ TỪ CHỐI TRUY CẬP</b>\n"
-            "🔴 Chỉ Admin mới có quyền sử dụng lệnh này!\n"
-            "📩 Liên hệ: @zanbackj</blockquote>",
+            "<blockquote><b>TỪ CHỐI TRUY CẬP</b>\n"
+            "Chỉ Admin mới có quyền sử dụng lệnh này!\n"
+            "Liên hệ: @zanbackj</blockquote>",
             parse_mode="HTML"
         )
         return
     
-    # ====== CHECK USER IN GROUP SAU ======
     if not check_user_in_group(message.from_user.id):
         send_warn_join_group(message)
         return
@@ -1927,13 +1897,13 @@ def telegram_autolike(message):
         if len(parts) < 3:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n"
+                "<blockquote><b>SAI CÚ PHÁP</b>\n"
                 "━━━━━━━━━━━━━━━━━━━━\n"
-                "💡 <code>/autolike [uid] [số ngày]</code>\n"
-                "📌 Ví dụ: <code>/autolike 16890930508 5</code>\n"
+                "<code>/autolike [uid] [số ngày]</code>\n"
+                "Ví dụ: <code>/autolike 16890930508 5</code>\n"
                 "━━━━━━━━━━━━━━━━━━━━\n"
-                "📌 Xóa: <code>/delauto [uid]</code>\n"
-                "📌 Danh sách: <code>/autolist</code></blockquote>",
+                "Xóa: <code>/delauto [uid]</code>\n"
+                "Danh sách: <code>/autolist</code></blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -1944,7 +1914,7 @@ def telegram_autolike(message):
         if not uid.isdigit():
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ LỖI</b>\n🔴 UID phải là số!</blockquote>",
+                "<blockquote><b>LỖI</b>\nUID phải là số!</blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -1952,7 +1922,7 @@ def telegram_autolike(message):
         if days < 1 or days > 9999:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ LỖI</b>\n🔴 Số ngày phải từ 1-9999!</blockquote>",
+                "<blockquote><b>LỖI</b>\nSố ngày phải từ 1-9999!</blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -1971,30 +1941,29 @@ def telegram_autolike(message):
         
         telegram_bot.reply_to(
             message,
-            f"<blockquote><b>✅ ĐÃ THÊM AUTO LIKE</b>\n"
+            f"<blockquote><b>ĐÃ THÊM AUTO LIKE</b>\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"🎯 UID: <code>{uid}</code>\n"
-            f"📅 Số ngày: <code>{days}</code>\n"
-            f"📆 Hết hạn: <code>{expire_date.strftime('%Y-%m-%d')}</code>\n"
+            f"UID: <code>{uid}</code>\n"
+            f"Số ngày: <code>{days}</code>\n"
+            f"Hết hạn: <code>{expire_date.strftime('%Y-%m-%d')}</code>\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"⚡ Sẽ buff lúc 5:00 sáng mỗi ngày!</blockquote>",
+            f"Sẽ buff lúc 5:00 sáng mỗi ngày!</blockquote>",
             parse_mode="HTML"
         )
         
     except ValueError:
         telegram_bot.reply_to(
             message,
-            "<blockquote><b>❌ LỖI</b>\n🔴 Số ngày phải là số!</blockquote>",
+            "<blockquote><b>LỖI</b>\nSố ngày phải là số!</blockquote>",
             parse_mode="HTML"
         )
     except Exception as e:
         telegram_bot.reply_to(
             message,
-            f"<blockquote><b>❌ LỖI</b>\n🔴 {str(e)}</blockquote>",
+            f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
             parse_mode="HTML"
         )
 
-# ====== LỆNH /AUTOLIST ======
 @telegram_bot.message_handler(commands=['autolist'])
 @check_group_only
 @async_telegram
@@ -2002,9 +1971,9 @@ def telegram_autolist(message):
     if not is_admin(message.from_user.id):
         telegram_bot.reply_to(
             message,
-            "<blockquote><b>❌ TỪ CHỐI TRUY CẬP</b>\n"
-            "🔴 Chỉ Admin mới có quyền sử dụng lệnh này!\n"
-            "📩 Liên hệ: @zanbackj</blockquote>",
+            "<blockquote><b>TỪ CHỐI TRUY CẬP</b>\n"
+            "Chỉ Admin mới có quyền sử dụng lệnh này!\n"
+            "Liên hệ: @zanbackj</blockquote>",
             parse_mode="HTML"
         )
         return
@@ -2019,28 +1988,27 @@ def telegram_autolist(message):
         if not data:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>📭 TRỐNG</b>\n🔴 Chưa có UID nào trong danh sách auto like!</blockquote>",
+                "<blockquote><b>TRỐNG</b>\nChưa có UID nào trong danh sách auto like!</blockquote>",
                 parse_mode="HTML"
             )
             return
         
-        text = "<blockquote><b>📋 DANH SÁCH AUTO LIKE</b>\n━━━━━━━━━━━━━━━━━━━━\n"
+        text = "<blockquote><b>DANH SÁCH AUTO LIKE</b>\n━━━━━━━━━━━━━━━━━━━━\n"
         for uid, info in data.items():
             days_left = info.get('days', 0)
             expire = info.get('expire', 'N/A')
-            text += f"🎯 UID: <code>{uid}</code> - Còn {days_left} ngày - Hết hạn: {expire}\n"
-        text += "━━━━━━━━━━━━━━━━━━━━\n⚡ Tổng: {}</blockquote>".format(len(data))
+            text += f"UID: <code>{uid}</code> - Còn {days_left} ngày - Hết hạn: {expire}\n"
+        text += "━━━━━━━━━━━━━━━━━━━━\nTổng: {}</blockquote>".format(len(data))
         
         telegram_bot.reply_to(message, text, parse_mode="HTML")
         
     except Exception as e:
         telegram_bot.reply_to(
             message,
-            f"<blockquote><b>❌ LỖI</b>\n🔴 {str(e)}</blockquote>",
+            f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
             parse_mode="HTML"
         )
 
-# ====== LỆNH /DELAUTO ======
 @telegram_bot.message_handler(commands=['delauto'])
 @check_group_only
 @async_telegram
@@ -2048,9 +2016,9 @@ def telegram_delauto(message):
     if not is_admin(message.from_user.id):
         telegram_bot.reply_to(
             message,
-            "<blockquote><b>❌ TỪ CHỐI TRUY CẬP</b>\n"
-            "🔴 Chỉ Admin mới có quyền sử dụng lệnh này!\n"
-            "📩 Liên hệ: @zanbackj</blockquote>",
+            "<blockquote><b>TỪ CHỐI TRUY CẬP</b>\n"
+            "Chỉ Admin mới có quyền sử dụng lệnh này!\n"
+            "Liên hệ: @zanbackj</blockquote>",
             parse_mode="HTML"
         )
         return
@@ -2065,7 +2033,7 @@ def telegram_delauto(message):
         if len(parts) < 2:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n💡 <code>/delauto [uid]</code>\n📌 Ví dụ: <code>/delauto 16890930508</code></blockquote>",
+                "<blockquote><b>SAI CÚ PHÁP</b>\n<code>/delauto [uid]</code>\nVí dụ: <code>/delauto 16890930508</code></blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -2078,24 +2046,23 @@ def telegram_delauto(message):
             save_auto_like(data)
             telegram_bot.reply_to(
                 message,
-                f"<blockquote><b>✅ ĐÃ XÓA</b>\n━━━━━━━━━━━━━━━━━━━━\n🎯 UID: <code>{uid}</code>\n━━━━━━━━━━━━━━━━━━━━\n⚡ Đã xóa khỏi danh sách auto like!</blockquote>",
+                f"<blockquote><b>ĐÃ XÓA</b>\n━━━━━━━━━━━━━━━━━━━━\nUID: <code>{uid}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐã xóa khỏi danh sách auto like!</blockquote>",
                 parse_mode="HTML"
             )
         else:
             telegram_bot.reply_to(
                 message,
-                f"<blockquote><b>❌ KHÔNG TÌM THẤY</b>\n🔴 UID <code>{uid}</code> không có trong danh sách!</blockquote>",
+                f"<blockquote><b>KHÔNG TÌM THẤY</b>\nUID <code>{uid}</code> không có trong danh sách!</blockquote>",
                 parse_mode="HTML"
             )
         
     except Exception as e:
         telegram_bot.reply_to(
             message,
-            f"<blockquote><b>❌ LỖI</b>\n🔴 {str(e)}</blockquote>",
+            f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
             parse_mode="HTML"
         )               
 
-# ====== HÀM TÍNH THỜI GIAN ĐẾN 5:00 SÁNG ======
 def time_until_5am():
     now = datetime.now()
     target = now.replace(hour=5, minute=0, second=0, microsecond=0)
@@ -2105,7 +2072,6 @@ def time_until_5am():
     
     return (target - now).total_seconds()
 
-# ====== HÀM TÍNH THỜI GIAN ĐẾN 4:58 HOẶC 4:59 ======
 def time_until_reset():
     now = datetime.now()
     target1 = now.replace(hour=4, minute=58, second=0, microsecond=0)
@@ -2121,7 +2087,6 @@ def time_until_reset():
     else:
         return (target2 - now).total_seconds(), 4, 59
 
-# ====== HÀM RESET TOKEN ======
 def reset_tokens():
     try:
         print(f"[RESET TOKEN] Đang reset lúc {datetime.now().strftime('%H:%M:%S')}")
@@ -2134,7 +2099,6 @@ def reset_tokens():
         print(f"[RESET TOKEN LỖI] {e}")
     return False
 
-# ====== HÀM BUFF LIKE CHO 1 UID ======
 def buff_like(uid):
     try:
         url = f"https://cds-gilt.vercel.app/like?uid={uid}&server_name=BD"
@@ -2146,7 +2110,6 @@ def buff_like(uid):
         print(f"[BUFF LIKE LỖI] {uid}: {e}")
     return False, None
 
-# ====== GỬI BÁO CÁO CHO ADMIN ======
 def send_report_to_admin(success_list, fail_list):
     try:
         if not success_list and not fail_list:
@@ -2154,35 +2117,34 @@ def send_report_to_admin(success_list, fail_list):
         
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        text = f"<blockquote><b>📊 BÁO CÁO AUTO LIKE</b>\n"
+        text = f"<blockquote><b>BÁO CÁO AUTO LIKE</b>\n"
         text += f"━━━━━━━━━━━━━━━━━━━━\n"
-        text += f"🕐 Thời gian: <code>{now}</code>\n"
+        text += f"Thời gian: <code>{now}</code>\n"
         text += f"━━━━━━━━━━━━━━━━━━━━\n"
         
         if success_list:
-            text += f"✅ <b>THÀNH CÔNG ({len(success_list)})</b>\n"
+            text += f"<b>THÀNH CÔNG ({len(success_list)})</b>\n"
             for uid, data in success_list:
                 added = data.get('added', 0)
                 before = data.get('before', 0)
                 after = data.get('after', 0)
                 nickname = data.get('nickname', 'Unknown')
-                text += f"  🎯 {nickname} (<code>{uid}</code>): +{added} like (❤️ {before} → {after})\n"
+                text += f"  {nickname} (<code>{uid}</code>): +{added} like ({before} -> {after})\n"
             text += f"━━━━━━━━━━━━━━━━━━━━\n"
         
         if fail_list:
-            text += f"❌ <b>THẤT BẠI ({len(fail_list)})</b>\n"
+            text += f"<b>THẤT BẠI ({len(fail_list)})</b>\n"
             for uid in fail_list:
-                text += f"  🎯 UID: <code>{uid}</code>\n"
+                text += f"  UID: <code>{uid}</code>\n"
             text += f"━━━━━━━━━━━━━━━━━━━━\n"
         
-        text += f"⚡ Kết thúc báo cáo!</blockquote>"
+        text += f"Kết thúc báo cáo!</blockquote>"
         
         telegram_bot.send_message(ADMIN_ID, text, parse_mode="HTML")
         
     except Exception as e:
         print(f"[SEND REPORT LỖI] {e}")
 
-# ====== HÀM BUFF LIKE HÀNG NGÀY ======
 def daily_buff():
     print("[AUTO LIKE] Đang chạy buff hàng ngày...")
     
@@ -2224,10 +2186,10 @@ def daily_buff():
         success, result = buff_like(uid)
         if success:
             success_list.append((uid, result))
-            print(f"[AUTO LIKE] ✅ {uid}: {result}")
+            print(f"[AUTO LIKE] {uid}: {result}")
         else:
             fail_list.append(uid)
-            print(f"[AUTO LIKE] ❌ {uid}: THẤT BẠI")
+            print(f"[AUTO LIKE] {uid}: THẤT BẠI")
         
         time.sleep(1)
     
@@ -2247,7 +2209,6 @@ def daily_buff():
     
     schedule_next()
 
-# ====== LÊN LỊCH TIẾP THEO ======
 def schedule_next():
     try:
         delay, hour, minute = time_until_reset()
@@ -2264,12 +2225,10 @@ def schedule_next():
     except Exception as e:
         print(f"[SCHEDULE LỖI] {e}")
 
-# ====== KHỞI ĐỘNG ======
 def start_auto_like():
     print("[AUTO LIKE] Đã khởi động!")
     schedule_next()
                             
-# ====== LỆNH RESET TOKEN (KHÔNG CẦN UID) ======
 RESET_TOKEN_API = "https://cds-gilt.vercel.app/refresh-tokens"
 
 @telegram_bot.message_handler(commands=['rstoken'])
@@ -2279,8 +2238,8 @@ def telegram_reset_token(message):
     if not is_telegram_admin(message.from_user.id):
         telegram_bot.reply_to(
             message,
-            "<blockquote><b>❌ TỪ CHỐI TRUY CẬP</b>\n"
-            "🔴 Chỉ Admin mới có quyền sử dụng lệnh này!</blockquote>",
+            "<blockquote><b>TỪ CHỐI TRUY CẬP</b>\n"
+            "Chỉ Admin mới có quyền sử dụng lệnh này!</blockquote>",
             parse_mode="HTML"
         )
         return
@@ -2288,9 +2247,9 @@ def telegram_reset_token(message):
     try:
         msg = telegram_bot.reply_to(
             message,
-            "<blockquote><b>🔄 ĐANG RESET TOKEN...</b>\n"
+            "<blockquote><b>ĐANG RESET TOKEN...</b>\n"
             "━━━━━━━━━━━━━━━━━━━━\n"
-            "⏳ Đang gọi API refresh-tokens...</blockquote>",
+            "Đang gọi API refresh-tokens...</blockquote>",
             parse_mode="HTML"
         )
         
@@ -2307,19 +2266,19 @@ def telegram_reset_token(message):
                     total_tokens = data.get('total_tokens', 0)
                     
                     if status == "refresh_completed":
-                        status_text = "✅ Reset token thành công!"
+                        status_text = "Reset token thành công!"
                     else:
-                        status_text = f"ℹ️ Trạng thái: {status}"
+                        status_text = f"Trạng thái: {status}"
                     
                     message_text = (
-                        f"<blockquote><b>📊 KẾT QUẢ RESET TOKEN</b>\n"
+                        f"<blockquote><b>KẾT QUẢ RESET TOKEN</b>\n"
                         f"━━━━━━━━━━━━━━━━━━━━\n"
                         f"{status_text}\n"
                         f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"📌 Trạng thái: <code>{status}</code>\n"
-                        f"🔑 Tổng token: <code>{total_tokens}</code>\n"
+                        f"Trạng thái: <code>{status}</code>\n"
+                        f"Tổng token: <code>{total_tokens}</code>\n"
                         f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"⚡ Hoàn thành!</blockquote>"
+                        f"Hoàn thành!</blockquote>"
                     )
                     
                     telegram_bot.edit_message_text(
@@ -2330,7 +2289,7 @@ def telegram_reset_token(message):
                     )
                 else:
                     telegram_bot.edit_message_text(
-                        f"<blockquote><b>❌ LỖI API</b>\n🔴 HTTP {response.status_code}</blockquote>",
+                        f"<blockquote><b>LỖI API</b>\nHTTP {response.status_code}</blockquote>",
                         chat_id=message.chat.id,
                         message_id=msg.message_id,
                         parse_mode="HTML"
@@ -2338,14 +2297,14 @@ def telegram_reset_token(message):
                     
             except requests.exceptions.Timeout:
                 telegram_bot.edit_message_text(
-                    "<blockquote><b>❌ LỖI</b>\n🔴 API không phản hồi (Timeout)!</blockquote>",
+                    "<blockquote><b>LỖI</b>\nAPI không phản hồi (Timeout)!</blockquote>",
                     chat_id=message.chat.id,
                     message_id=msg.message_id,
                     parse_mode="HTML"
                 )
             except Exception as e:
                 telegram_bot.edit_message_text(
-                    f"<blockquote><b>❌ LỖI</b>\n🔴 {str(e)}</blockquote>",
+                    f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
                     chat_id=message.chat.id,
                     message_id=msg.message_id,
                     parse_mode="HTML"
@@ -2356,11 +2315,10 @@ def telegram_reset_token(message):
     except Exception as e:
         telegram_bot.reply_to(
             message,
-            f"<blockquote><b>❌ LỖI</b>\n🔴 {str(e)}</blockquote>",
+            f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
             parse_mode="HTML"
         )
                                            
-# ====== LỆNH /dich (BỎ CHỮ NGHIÊNG) ======
 @telegram_bot.message_handler(commands=['dich'])
 @async_telegram
 def telegram_dich(message):
@@ -2374,11 +2332,11 @@ def telegram_dich(message):
         if len(parts) < 2:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n"
+                "<blockquote><b>SAI CÚ PHÁP</b>\n"
                 "━━━━━━━━━━━━━━━━━━━━\n"
-                "💡 <code>/dich [nội dung]</code>\n"
-                "📌 Ví dụ: <code>/dich Hello</code>\n"
-                "🌍 Tự động phát hiện ngôn ngữ và dịch sang tiếng Việt</blockquote>",
+                "<code>/dich [nội dung]</code>\n"
+                "Ví dụ: <code>/dich Hello</code>\n"
+                "Tự động phát hiện ngôn ngữ và dịch sang tiếng Việt</blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -2386,13 +2344,13 @@ def telegram_dich(message):
         text = parts[1].strip()
         
         if not text:
-            telegram_bot.reply_to(message, "<blockquote>❌ Nội dung không được để trống!</blockquote>", parse_mode="HTML")
+            telegram_bot.reply_to(message, "<blockquote>Nội dung không được để trống!</blockquote>", parse_mode="HTML")
             return
         
         msg = telegram_bot.reply_to(
             message,
-            f"<blockquote><b>🔄 ĐANG DỊCH...</b>\n"
-            f"📝 {text[:50]}{'...' if len(text) > 50 else ''}</blockquote>",
+            f"<blockquote><b>ĐANG DỊCH...</b>\n"
+            f"{text[:50]}{'...' if len(text) > 50 else ''}</blockquote>",
             parse_mode="HTML"
         )
         
@@ -2422,32 +2380,32 @@ def telegram_dich(message):
                     source_lang = data[2] if len(data) > 2 else "auto"
                     
                     lang_map = {
-                        'en': '🇬🇧 Tiếng Anh',
-                        'vi': '🇻🇳 Tiếng Việt',
-                        'ja': '🇯🇵 Tiếng Nhật',
-                        'ko': '🇰🇷 Tiếng Hàn',
-                        'zh': '🇨🇳 Tiếng Trung',
-                        'fr': '🇫🇷 Tiếng Pháp',
-                        'de': '🇩🇪 Tiếng Đức',
-                        'es': '🇪🇸 Tiếng Tây Ban Nha',
-                        'ru': '🇷🇺 Tiếng Nga',
-                        'th': '🇹🇭 Tiếng Thái',
-                        'id': '🇮🇩 Tiếng Indonesia',
-                        'ms': '🇲🇾 Tiếng Malaysia',
-                        'pt': '🇵🇹 Tiếng Bồ Đào Nha',
-                        'it': '🇮🇹 Tiếng Ý',
+                        'en': 'Tiếng Anh',
+                        'vi': 'Tiếng Việt',
+                        'ja': 'Tiếng Nhật',
+                        'ko': 'Tiếng Hàn',
+                        'zh': 'Tiếng Trung',
+                        'fr': 'Tiếng Pháp',
+                        'de': 'Tiếng Đức',
+                        'es': 'Tiếng Tây Ban Nha',
+                        'ru': 'Tiếng Nga',
+                        'th': 'Tiếng Thái',
+                        'id': 'Tiếng Indonesia',
+                        'ms': 'Tiếng Malaysia',
+                        'pt': 'Tiếng Bồ Đào Nha',
+                        'it': 'Tiếng Ý',
                     }
                     
-                    source_name = lang_map.get(source_lang, f"🇺🇳 {source_lang.upper()}")
+                    source_name = lang_map.get(source_lang, f"{source_lang.upper()}")
                     
-                    text_response = f"<blockquote><b>🌍 KẾT QUẢ DỊCH</b>\n"
+                    text_response = f"<blockquote><b>KẾT QUẢ DỊCH</b>\n"
                     text_response += f"━━━━━━━━━━━━━━━━━━━━\n"
-                    text_response += f"📥 <b>Gốc:</b> {source_name}\n"
+                    text_response += f"Gốc: {source_name}\n"
                     text_response += f"━━━━━━━━━━━━━━━━━━━━\n"
-                    text_response += f"📝 <b>Nội dung gốc:</b>\n"
+                    text_response += f"<b>Nội dung gốc:</b>\n"
                     text_response += f"{text[:200]}{'...' if len(text) > 200 else ''}\n"
                     text_response += f"━━━━━━━━━━━━━━━━━━━━\n"
-                    text_response += f"✅ <b>Dịch sang tiếng Việt:</b>\n"
+                    text_response += f"<b>Dịch sang tiếng Việt:</b>\n"
                     text_response += f"{translated}</blockquote>"
                     
                     telegram_bot.edit_message_text(
@@ -2458,7 +2416,6 @@ def telegram_dich(message):
                     )
                     return
                 
-                # API dự phòng
                 url2 = f"https://api.mymemory.translated.net/get?q={encoded_text}&langpair=en|vi"
                 
                 response2 = requests.get(url2, timeout=15)
@@ -2468,12 +2425,12 @@ def telegram_dich(message):
                     translated = data2.get("responseData", {}).get("translatedText", "")
                     
                     if translated:
-                        text_response = f"<blockquote><b>🌍 KẾT QUẢ DỊCH</b>\n"
+                        text_response = f"<blockquote><b>KẾT QUẢ DỊCH</b>\n"
                         text_response += f"━━━━━━━━━━━━━━━━━━━━\n"
-                        text_response += f"📝 <b>Gốc:</b>\n"
+                        text_response += f"<b>Gốc:</b>\n"
                         text_response += f"{text[:200]}{'...' if len(text) > 200 else ''}\n"
                         text_response += f"━━━━━━━━━━━━━━━━━━━━\n"
-                        text_response += f"✅ <b>Dịch:</b>\n"
+                        text_response += f"<b>Dịch:</b>\n"
                         text_response += f"{translated}</blockquote>"
                         
                         telegram_bot.edit_message_text(
@@ -2485,7 +2442,7 @@ def telegram_dich(message):
                         return
                 
                 telegram_bot.edit_message_text(
-                    f"<blockquote><b>❌ KHÔNG THỂ DỊCH</b>\n🔴 Vui lòng thử lại sau!</blockquote>",
+                    f"<blockquote><b>KHÔNG THỂ DỊCH</b>\nVui lòng thử lại sau!</blockquote>",
                     chat_id=message.chat.id,
                     message_id=msg.message_id,
                     parse_mode="HTML"
@@ -2493,7 +2450,7 @@ def telegram_dich(message):
                 
             except Exception as e:
                 telegram_bot.edit_message_text(
-                    f"<blockquote><b>❌ LỖI</b>\n🔴 {str(e)}</blockquote>",
+                    f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
                     chat_id=message.chat.id,
                     message_id=msg.message_id,
                     parse_mode="HTML"
@@ -2502,7 +2459,7 @@ def telegram_dich(message):
         threading.Thread(target=run_dich, daemon=True).start()
         
     except Exception as e:
-        telegram_bot.reply_to(message, f"<blockquote><b>❌ LỖI</b>\n🔴 {str(e)}</blockquote>", parse_mode="HTML")
+        telegram_bot.reply_to(message, f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>", parse_mode="HTML")
 
 @telegram_bot.message_handler(commands=['status'])
 @check_group_only
@@ -2513,7 +2470,7 @@ def handle_telegram_status(message):
         if len(parts) < 2:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n💡 Dùng: <code>/status [uid]</code>\n📌 Ví dụ: <code>/status 123456789</code></blockquote>"
+                "<blockquote><b>SAI CÚ PHÁP</b>\nDùng: <code>/status [uid]</code>\nVí dụ: <code>/status 123456789</code></blockquote>"
             )
             return
 
@@ -2521,7 +2478,7 @@ def handle_telegram_status(message):
         if not uid.isdigit():
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ LỖI</b>\n🔴 UID phải là số!</blockquote>"
+                "<blockquote><b>LỖI</b>\nUID phải là số!</blockquote>"
             )
             return
 
@@ -2529,7 +2486,7 @@ def handle_telegram_status(message):
         if not bots:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>⚠️ BOT BẬN</b>\n🔴 Không có bot nào rảnh!</blockquote>"
+                "<blockquote><b>BOT BẬN</b>\nKhông có bot nào rảnh!</blockquote>"
             )
             return
 
@@ -2539,7 +2496,7 @@ def handle_telegram_status(message):
 
         msg = telegram_bot.reply_to(
             message,
-            f"<blockquote><b>📡 ĐANG LẤY THÔNG TIN</b>\n━━━━━━━━━━━━━━━━━━━━\n🎯 <b>UID:</b> <code>{uid}</code>\n🤖 <b>Bot:</b> <code>{bot_name}</code>\n━━━━━━━━━━━━━━━━━━━━\n⏳ Đang xử lý...</blockquote>",
+            f"<blockquote><b>ĐANG LẤY THÔNG TIN</b>\n━━━━━━━━━━━━━━━━━━━━\nUID: <code>{uid}</code>\nBot: <code>{bot_name}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐang xử lý...</blockquote>",
             parse_mode="HTML"
         )
 
@@ -2554,7 +2511,6 @@ def handle_telegram_status(message):
 
                 if bot.playerstatus:
                     try:
-                        # ====== DÙNG HÀM get_player_status ======
                         data = get_player_status(bot.playerstatus)
                         
                         if data:
@@ -2565,33 +2521,33 @@ def handle_telegram_status(message):
                             
                             extra = ""
                             if group:
-                                extra = f"\n🏠 <b>Nhóm:</b> <code>{group}</code>"
+                                extra = f"\nNhóm: <code>{group}</code>"
                             if roomid:
-                                extra = f"\n🏠 <b>Room ID:</b> <code>{roomid}</code>"
+                                extra = f"\nRoom ID: <code>{roomid}</code>"
                             
                             telegram_bot.edit_message_text(
-                                f"<blockquote><b>✅ THÔNG TIN NGƯỜI CHƠI</b>\n━━━━━━━━━━━━━━━━━━━━\n🆔 <b>UID:</b> <code>{player_uid}</code>\n📌 <b>Trạng thái:</b> <code>{status_text}</code>{extra}\n🤖 <b>Bot:</b> <code>{bot_name}</code>\n━━━━━━━━━━━━━━━━━━━━\n⚡ Lấy thông tin thành công!</blockquote>",
+                                f"<blockquote><b>THÔNG TIN NGƯỜI CHƠI</b>\n━━━━━━━━━━━━━━━━━━━━\nUID: <code>{player_uid}</code>\nTrạng thái: <code>{status_text}</code>{extra}\nBot: <code>{bot_name}</code>\n━━━━━━━━━━━━━━━━━━━━\nLấy thông tin thành công!</blockquote>",
                                 chat_id=message.chat.id,
                                 message_id=msg.message_id,
                                 parse_mode="HTML"
                             )
                         else:
                             telegram_bot.edit_message_text(
-                                f"<blockquote><b>⚠️ KHÔNG TÌM THẤY</b>\n━━━━━━━━━━━━━━━━━━━━\n🎯 <b>UID:</b> <code>{uid}</code>\n🔴 <b>Trạng thái:</b> <code>Không có dữ liệu</code>\n━━━━━━━━━━━━━━━━━━━━\n💡 Vui lòng thử lại!</blockquote>",
+                                f"<blockquote><b>KHÔNG TÌM THẤY</b>\n━━━━━━━━━━━━━━━━━━━━\nUID: <code>{uid}</code>\nTrạng thái: <code>Không có dữ liệu</code>\n━━━━━━━━━━━━━━━━━━━━\nVui lòng thử lại!</blockquote>",
                                 chat_id=message.chat.id,
                                 message_id=msg.message_id,
                                 parse_mode="HTML"
                             )
                     except Exception as e:
                         telegram_bot.edit_message_text(
-                            f"<blockquote><b>⚠️ LỖI PARSE</b>\n━━━━━━━━━━━━━━━━━━━━\n🎯 <b>UID:</b> <code>{uid}</code>\n🔴 <b>Lỗi:</b> <code>{str(e)[:30]}</code>\n━━━━━━━━━━━━━━━━━━━━\n⚡ Vui lòng thử lại!</blockquote>",
+                            f"<blockquote><b>LỖI PARSE</b>\n━━━━━━━━━━━━━━━━━━━━\nUID: <code>{uid}</code>\nLỗi: <code>{str(e)[:30]}</code>\n━━━━━━━━━━━━━━━━━━━━\nVui lòng thử lại!</blockquote>",
                             chat_id=message.chat.id,
                             message_id=msg.message_id,
                             parse_mode="HTML"
                         )
                 else:
                     telegram_bot.edit_message_text(
-                        f"<blockquote><b>⚠️ KHÔNG TÌM THẤY</b>\n━━━━━━━━━━━━━━━━━━━━\n🎯 <b>UID:</b> <code>{uid}</code>\n🔴 <b>Trạng thái:</b> <code>Không có dữ liệu</code>\n━━━━━━━━━━━━━━━━━━━━\n💡 Lỗi API hoặc disconnect, thử lại!</blockquote>",
+                        f"<blockquote><b>KHÔNG TÌM THẤY</b>\n━━━━━━━━━━━━━━━━━━━━\nUID: <code>{uid}</code>\nTrạng thái: <code>Không có dữ liệu</code>\n━━━━━━━━━━━━━━━━━━━━\nLỗi API hoặc disconnect, thử lại!</blockquote>",
                         chat_id=message.chat.id,
                         message_id=msg.message_id,
                         parse_mode="HTML"
@@ -2600,7 +2556,7 @@ def handle_telegram_status(message):
             except Exception as e:
                 try:
                     telegram_bot.edit_message_text(
-                        f"<blockquote><b>❌ LỖI</b>\n🔴 {str(e)[:50]}</blockquote>",
+                        f"<blockquote><b>LỖI</b>\n{str(e)[:50]}</blockquote>",
                         chat_id=message.chat.id,
                         message_id=msg.message_id,
                         parse_mode="HTML"
@@ -2615,8 +2571,9 @@ def handle_telegram_status(message):
     except Exception as e:
         telegram_bot.reply_to(
             message,
-            f"<blockquote><b>❌ LỖI</b>\n🔴 {str(e)}</blockquote>"
+            f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>"
         )
+
 @telegram_bot.message_handler(commands=['lag'])
 @check_group_only
 @async_telegram
@@ -2629,7 +2586,7 @@ def handle_telegram_lag(message):
         if remaining > 0:
             telegram_bot.reply_to(
                 message,
-                f"<blockquote><b>⏳ vui lòng đợi {remaining} giây và sử dụng lại</b></blockquote>",
+                f"<blockquote><b>vui lòng đợi {remaining} giây và sử dụng lại</b></blockquote>",
                 parse_mode='HTML'
             )
             return
@@ -2638,7 +2595,7 @@ def handle_telegram_lag(message):
     if len(parts) < 2 or not parts[1].isdigit():
         telegram_bot.reply_to(
             message, 
-            "<blockquote><b>❌ SAI CÚ PHÁP</b>\n━━━━━━━━━━━━━━━━━━━━\n💡 Dùng: <code>/lag [teamcode]</code>\n📌 Ví dụ: <code>/lag 1234567</code></blockquote>", 
+            "<blockquote><b>SAI CÚ PHÁP</b>\n━━━━━━━━━━━━━━━━━━━━\nDùng: <code>/lag [teamcode]</code>\nVí dụ: <code>/lag 1234567</code></blockquote>", 
             parse_mode='HTML'
         )
         return
@@ -2648,7 +2605,7 @@ def handle_telegram_lag(message):
     if len(team_code) != 7:
         telegram_bot.reply_to(
             message, 
-            f"<blockquote><b>❌ TEAMCODE PHẢI 7 CHỮ SỐ</b>\n━━━━━━━━━━━━━━━━━━━━\n🔴 Teamcode: <code>{team_code}</code> ({len(team_code)} số)\n📌 Ví dụ: <code>/lag 1234567</code></blockquote>", 
+            f"<blockquote><b>TEAMCODE PHẢI 7 CHỮ SỐ</b>\n━━━━━━━━━━━━━━━━━━━━\nTeamcode: <code>{team_code}</code> ({len(team_code)} số)\nVí dụ: <code>/lag 1234567</code></blockquote>", 
             parse_mode='HTML'
         )
         return
@@ -2667,7 +2624,7 @@ def handle_telegram_lag(message):
     if len(available_bots) < 2:
         telegram_bot.reply_to(
             message, 
-            f"<blockquote><b>⚠️ KHÔNG ĐỦ 2 BOT</b>\n━━━━━━━━━━━━━━━━━━━━\n🔴 Cần <b>2 bot</b>!\n📊 Bot rảnh: <b>{len(available_bots)}</b></blockquote>", 
+            f"<blockquote><b>KHÔNG ĐỦ 2 BOT</b>\n━━━━━━━━━━━━━━━━━━━━\nCần <b>2 bot</b>!\nBot rảnh: <b>{len(available_bots)}</b></blockquote>", 
             parse_mode='HTML'
         )
         return
@@ -2683,7 +2640,7 @@ def handle_telegram_lag(message):
     
     status_msg = telegram_bot.reply_to(
         message, 
-        f"<blockquote><b>🔥 LAG TEAMCODE {team_code_int}</b>\n━━━━━━━━━━━━━━━━━━━━\n🤖 Bot 1: <code>{bot1_name}</code>\n🤖 Bot 2: <code>{bot2_name}</code>\n━━━━━━━━━━━━━━━━━━━━\n⏳ Đang lag không delay...</blockquote>", 
+        f"<blockquote><b>LAG TEAMCODE {team_code_int}</b>\n━━━━━━━━━━━━━━━━━━━━\nBot 1: <code>{bot1_name}</code>\nBot 2: <code>{bot2_name}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐang lag không delay...</blockquote>", 
         parse_mode='HTML'
     )
 
@@ -2697,7 +2654,6 @@ def handle_telegram_lag(message):
         return False
 
     def run_bot1(bot, bot_name, team_code_int):
-        """Bot 1: JOIN → RỜI không delay"""
         try:
             sock = bot.sock39699
             if sock is None:
@@ -2713,10 +2669,9 @@ def handle_telegram_lag(message):
                 else:
                     safe_send(sock, bot._bot.leave_squad(0))
                 count += 1
-                # Không sleep, gửi liên tục
             
             bot.rstatus = (0, 0)
-            print(f"[LAG] ✅ {bot_name} JOIN/RỜI {count} lần!")
+            print(f"[LAG] {bot_name} JOIN/ROI {count} lần!")
             
         except Exception as e:
             print(f"[LAG ERROR] {bot_name}: {e}")
@@ -2724,7 +2679,6 @@ def handle_telegram_lag(message):
             bot.is_busy = False
 
     def run_bot2(bot, bot_name, team_code_int):
-        """Bot 2: VÔ ĐỘI → VÔ TRẬN → RỜI không delay"""
         try:
             sock = bot.sock39699
             if sock is None:
@@ -2742,10 +2696,9 @@ def handle_telegram_lag(message):
                 else:
                     safe_send(sock, bot._bot.leave_squad(0))
                 count += 1
-                # Không sleep, gửi liên tục
             
             bot.rstatus = (0, 0)
-            print(f"[LAG] ✅ {bot_name} VÔ ĐỘI+VÔ TRẬN+RỜI {count} lần!")
+            print(f"[LAG] {bot_name} VO DOI+VO TRAN+ROI {count} lần!")
             
         except Exception as e:
             print(f"[LAG ERROR] {bot_name}: {e}")
@@ -2764,7 +2717,7 @@ def handle_telegram_lag(message):
         
         try:
             telegram_bot.edit_message_text(
-                f"<blockquote><b>✅ LAG TEAMCODE {team_code_int} HOÀN TẤT</b>\n━━━━━━━━━━━━━━━━━━━━\n🤖 Bot 1: <code>{bot1_name}</code> (JOIN/RỜI)\n🤖 Bot 2: <code>{bot2_name}</code> (VÔ ĐỘI+VÔ TRẬN+RỜI)\n━━━━━━━━━━━━━━━━━━━━\n🔥 KHÔNG DELAY! GỬI LIÊN TỤC!</blockquote>",
+                f"<blockquote><b>LAG TEAMCODE {team_code_int} HOÀN TẤT</b>\n━━━━━━━━━━━━━━━━━━━━\nBot 1: <code>{bot1_name}</code> (JOIN/ROI)\nBot 2: <code>{bot2_name}</code> (VO DOI+VO TRAN+ROI)\n━━━━━━━━━━━━━━━━━━━━\nKHÔNG DELAY! GỬI LIÊN TỤC!</blockquote>",
                 chat_id=message.chat.id,
                 message_id=status_msg.message_id,
                 parse_mode='HTML'
@@ -2778,13 +2731,13 @@ def handle_telegram_lag(message):
 @async_telegram
 def telegram_add_bot(message):
     if not is_telegram_admin(message.from_user.id):
-        telegram_bot.reply_to(message, "❌ Bạn không có quyền sử dụng lệnh này!")
+        telegram_bot.reply_to(message, "Bạn không có quyền sử dụng lệnh này!")
         return
           
     try:
         parts = message.text.split()
         if len(parts) < 2:
-            telegram_bot.reply_to(message, "❌ Sai cú pháp!\nSử dụng: /addbot <token>")
+            telegram_bot.reply_to(message, "Sai cú pháp!\nSử dụng: /addbot <token>")
             return
         
         token = parts[1]
@@ -2793,13 +2746,13 @@ def telegram_add_bot(message):
         if result["status"]:
             bot_id = result["bot_id"]
             TCPbot.bots[bot_id].start()
-            response = f"✅ Thêm bot thành công!\nBot ID: {bot_id}\nToken: {token[:20]}..."
+            response = f"Thêm bot thành công!\nBot ID: {bot_id}\nToken: {token[:20]}..."
         else:
-            response = f"❌ Thêm bot thất bại!\nLý do: {result['message']}"
+            response = f"Thêm bot thất bại!\nLý do: {result['message']}"
         
         telegram_bot.reply_to(message, response)
     except Exception as e:
-        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
+        telegram_bot.reply_to(message, f"Lỗi: {str(e)}")
         
 @telegram_bot.message_handler(commands=['msg'])
 @check_group_only
@@ -2814,7 +2767,7 @@ def handle_msg(message):
         if len(parts) < 3:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n💡 Dùng: <code>/msg [teamcode] [nội dung]</code></blockquote>",
+                "<blockquote><b>SAI CÚ PHÁP</b>\nDùng: <code>/msg [teamcode] [nội dung]</code></blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -2823,7 +2776,7 @@ def handle_msg(message):
         except:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ LỖI</b>\n🔴 Teamcode phải là số!</blockquote>",
+                "<blockquote><b>LỖI</b>\nTeamcode phải là số!</blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -2832,7 +2785,7 @@ def handle_msg(message):
         if not bots:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>⚠️ HỆ THỐNG QUÁ TẢI</b>\n🔴 Không có bot nào rảnh! Vui lòng đợi...</blockquote>",
+                "<blockquote><b>HỆ THỐNG QUÁ TẢI</b>\nKhông có bot nào rảnh! Vui lòng đợi...</blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -2845,7 +2798,7 @@ def handle_msg(message):
             bot.sock39801.send(bot._bot.send_object(payload, message.chat.id, None))
             telegram_bot.reply_to(
                 message,
-                f"<blockquote><b>✅ GỬI TIN NHẮN THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\n🎯 <b>Teamcode:</b> <code>{tcode}</code>\n💬 <b>Nội dung:</b> <i>{msg_content}</i>\n🤖 <b>Bot:</b> <code>{getattr(bot, 'nickname', f'Bot #{bot.botid}')}</code>\n━━━━━━━━━━━━━━━━━━━━\n⚡ Đã gửi tin nhắn tới đội !</blockquote>",
+                f"<blockquote><b>GỬI TIN NHẮN THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\nTeamcode: <code>{tcode}</code>\nNội dung: <i>{msg_content}</i>\nBot: <code>{getattr(bot, 'nickname', f'Bot #{bot.botid}')}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐã gửi tin nhắn tới đội !</blockquote>",
                 parse_mode="HTML"
             )
         finally:
@@ -2855,9 +2808,9 @@ def handle_msg(message):
             bot.is_busy = False
         telegram_bot.reply_to(
             message,
-            f"<blockquote><b>✅ GỬI TIN NHẮN THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\n🎯 <b>Teamcode:</b> <code>{tcode}</code>\n💬 <b>Nội dung:</b> <i>{msg_content}</i>\n🤖 <b>Bot:</b> <code>{getattr(bot, 'nickname', f'Bot #{bot.botid}')}</code>\n━━━━━━━━━━━━━━━━━━━━\n⚡ Đã gửi tin nhắn tới đội !</blockquote>",
-                parse_mode="HTML"
-            )
+            f"<blockquote><b>GỬI TIN NHẮN THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\nTeamcode: <code>{tcode}</code>\nNội dung: <i>{msg_content}</i>\nBot: <code>{getattr(bot, 'nickname', f'Bot #{bot.botid}')}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐã gửi tin nhắn tới đội !</blockquote>",
+            parse_mode="HTML"
+        )
                 
 @telegram_bot.message_handler(commands=['rd'])
 @check_group_only
@@ -2872,8 +2825,8 @@ def handle_telegram_rd(message):
         if len(parts) < 3:
             telegram_bot.reply_to(
                 message,
-                f"<blockquote><b>❌ SAI CÚ PHÁP LỆNH</b>\n"
-                f"💡 <i>Vui lòng nhập theo định dạng:</i>\n"
+                f"<blockquote><b>SAI CÚ PHÁP LỆNH</b>\n"
+                f"<i>Vui lòng nhập theo định dạng:</i>\n"
                 f"<code>/rd [mã phòng] [uid1 uid2]</code></blockquote>",
                 parse_mode="HTML"
             )
@@ -2882,7 +2835,7 @@ def handle_telegram_rd(message):
         if not parts[1].isdigit():
             telegram_bot.reply_to(
                 message, 
-                "<blockquote>❌ LỖI: Mã phòng bắt buộc phải là ký tự số!</blockquote>",
+                "<blockquote>LỖI: Mã phòng bắt buộc phải là ký tự số!</blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -2898,7 +2851,7 @@ def handle_telegram_rd(message):
         if not target_uids:
             telegram_bot.reply_to(
                 message, 
-                "<blockquote>❌ LỖI: Danh sách UID mục tiêu không hợp lệ!</blockquote>",
+                "<blockquote>LỖI: Danh sách UID mục tiêu không hợp lệ!</blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -2907,9 +2860,9 @@ def handle_telegram_rd(message):
         if not bots:
             telegram_bot.reply_to(
                 message,
-                f"<blockquote><b>⚠️ HỆ THỐNG QUÁ TẢI</b>\n"
-                f"🔴 Không thể kích hoạt múa S7 cho phòng <code>{team_code}</code>.\n"
-                f"🤖 Hiện tại không có Bot nào rảnh. Vui lòng đợi trong giây lát!</blockquote>",
+                f"<blockquote><b>HỆ THỐNG QUÁ TẢI</b>\n"
+                f"Không thể kích hoạt múa S7 cho phòng <code>{team_code}</code>.\n"
+                f"Hiện tại không có Bot nào rảnh. Vui lòng đợi trong giây lát!</blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -2945,7 +2898,7 @@ def handle_telegram_rd(message):
         
         msg = telegram_bot.reply_to(
             message,
-            f"<blockquote><b>⚡ BOT ĐANG TIẾN HÀNH MÚA RANDOM</b>\n━━━━━━━━━━━━━━━━\n🎯 Team: <code>{team_code}</code>\n🤖 Bot: <code>{bot_name}</code>\n👥 Mục tiêu: {uid_list_str}\n━━━━━━━━━━━━━━━━\n⏳ Đang xử lý...</blockquote>",
+            f"<blockquote><b>BOT ĐANG TIẾN HÀNH MÚA RANDOM</b>\n━━━━━━━━━━━━━━━━\nTeam: <code>{team_code}</code>\nBot: <code>{bot_name}</code>\nMục tiêu: {uid_list_str}\n━━━━━━━━━━━━━━━━\nĐang xử lý...</blockquote>",
             parse_mode="HTML"
         )
         
@@ -2979,7 +2932,7 @@ def handle_telegram_rd(message):
                     pass
                 try:
                     telegram_bot.edit_message_text(
-                        f"<blockquote><b>✅ HOÀN TẤT</b>\n━━━━━━━━━━━━━━━━\n🎯 Team: <code>{team_code}</code>\n🤖 Bot: <code>{bot_name}</code>\n👥 Mục tiêu: {uid_list_str}\n━━━━━━━━━━━━━━━━\n⚡ Đã thực hiện xong tiến trình múa random!</blockquote>",
+                        f"<blockquote><b>HOÀN TẤT</b>\n━━━━━━━━━━━━━━━━\nTeam: <code>{team_code}</code>\nBot: <code>{bot_name}</code>\nMục tiêu: {uid_list_str}\n━━━━━━━━━━━━━━━━\nĐã thực hiện xong tiến trình múa random!</blockquote>",
                         chat_id=message.chat.id,
                         message_id=msg.message_id,
                         parse_mode="HTML"
@@ -2994,7 +2947,7 @@ def handle_telegram_rd(message):
                     pass
                 try:
                     telegram_bot.edit_message_text(
-                        f"<blockquote><b>❌ LỖI</b>\n🔴 {str(e)}</blockquote>",
+                        f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
                         chat_id=message.chat.id,
                         message_id=msg.message_id,
                         parse_mode="HTML"
@@ -3009,7 +2962,7 @@ def handle_telegram_rd(message):
     except Exception as e:
         telegram_bot.reply_to(
             message,
-            f"<blockquote>❌ LỖI HỆ THỐNG: {str(e)[:50]}</blockquote>",
+            f"<blockquote>LỖI HỆ THỐNG: {str(e)[:50]}</blockquote>",
             parse_mode="HTML"
         )
                 
@@ -3025,7 +2978,7 @@ def handle_telegram_hdco_cmd(message):
     if len(parts) < 3:
         telegram_bot.reply_to(
             message,
-            "<blockquote><b>❌ SAI CÚ PHÁP</b>\n💡 Dùng: <code>/hdco [teamcode] [uid1 uid2]</code></blockquote>",
+            "<blockquote><b>SAI CÚ PHÁP</b>\nDùng: <code>/hdco [teamcode] [uid1 uid2]</code></blockquote>",
             parse_mode="HTML"
         )
         return
@@ -3035,7 +2988,7 @@ def handle_telegram_hdco_cmd(message):
     except:
         telegram_bot.reply_to(
             message,
-            "<blockquote><b>❌ LỖI</b>\n🔴 Teamcode phải là số!</blockquote>",
+            "<blockquote><b>LỖI</b>\nTeamcode phải là số!</blockquote>",
             parse_mode="HTML"
         )
         return
@@ -3050,7 +3003,7 @@ def handle_telegram_hdco_cmd(message):
     if not custom_uids:
         telegram_bot.reply_to(
             message,
-            "<blockquote><b>❌ LỖI</b>\n🔴 Cần ít nhất 1 UID!</blockquote>",
+            "<blockquote><b>LỖI</b>\nCần ít nhất 1 UID!</blockquote>",
             parse_mode="HTML"
         )
         return
@@ -3059,7 +3012,7 @@ def handle_telegram_hdco_cmd(message):
     if not bots:
         telegram_bot.reply_to(
             message,
-            "<blockquote><b>⚠️ QUÁ TẢI</b>\n🔴 Không có bot rảnh!</blockquote>",
+            "<blockquote><b>QUÁ TẢI</b>\nKhông có bot rảnh!</blockquote>",
             parse_mode="HTML"
         )
         return
@@ -3072,7 +3025,7 @@ def handle_telegram_hdco_cmd(message):
     
     msg = telegram_bot.reply_to(
         message,
-        f"<blockquote><b>⚡ BOT ĐANG TIẾN HÀNH MÚA HÀNH ĐỘNG CỔ</b>\n━━━━━━━━━━━━━━━━\n🎯 Team: <code>{tc}</code>\n🤖 Bot: <code>{bot_name}</code>\n👥 Mục tiêu: {uid_list_str}\n━━━━━━━━━━━━━━━━\n⏳ Đang xử lý...</blockquote>",
+        f"<blockquote><b>BOT ĐANG TIẾN HÀNH MÚA HÀNH ĐỘNG CỔ</b>\n━━━━━━━━━━━━━━━━\nTeam: <code>{tc}</code>\nBot: <code>{bot_name}</code>\nMục tiêu: {uid_list_str}\n━━━━━━━━━━━━━━━━\nĐang xử lý...</blockquote>",
         parse_mode="HTML"
     )
     
@@ -3113,7 +3066,7 @@ def handle_telegram_hdco_cmd(message):
                 pass
             try:
                 telegram_bot.edit_message_text(
-                    f"<blockquote><b>✅ HOÀN TẤT</b>\n━━━━━━━━━━━━━━━━\n🎯 Team: <code>{tc}</code>\n🤖 Bot: <code>{bot_name}</code>\n👥 Mục tiêu: {uid_list_str}\n━━━━━━━━━━━━━━━━\n⚡ Đã thực hiện xong tiến trình múa hành động cổ!</blockquote>",
+                    f"<blockquote><b>HOÀN TẤT</b>\n━━━━━━━━━━━━━━━━\nTeam: <code>{tc}</code>\nBot: <code>{bot_name}</code>\nMục tiêu: {uid_list_str}\n━━━━━━━━━━━━━━━━\nĐã thực hiện xong tiến trình múa hành động cổ!</blockquote>",
                     chat_id=message.chat.id,
                     message_id=msg.message_id,
                     parse_mode="HTML"
@@ -3124,7 +3077,7 @@ def handle_telegram_hdco_cmd(message):
             print("HDCO ERROR:", e)
             try:
                 telegram_bot.edit_message_text(
-                    f"<blockquote><b>❌ LỖI</b>\n🔴 {str(e)}</blockquote>",
+                    f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
                     chat_id=message.chat.id,
                     message_id=msg.message_id,
                     parse_mode="HTML"
@@ -3148,7 +3101,7 @@ def handle_telegram_rngau_cmd(message):
     if len(parts) < 3:
         telegram_bot.reply_to(
             message,
-            "<blockquote><b>❌ SAI CÚ PHÁP</b>\n💡 Dùng: <code>/rngau [teamcode] [uid1 uid2]</code></blockquote>",
+            "<blockquote><b>SAI CÚ PHÁP</b>\nDùng: <code>/rngau [teamcode] [uid1 uid2]</code></blockquote>",
             parse_mode="HTML"
         )
         return
@@ -3158,7 +3111,7 @@ def handle_telegram_rngau_cmd(message):
     except:
         telegram_bot.reply_to(
             message,
-            "<blockquote><b>❌ LỖI</b>\n🔴 Teamcode phải là số!</blockquote>",
+            "<blockquote><b>LỖI</b>\nTeamcode phải là số!</blockquote>",
             parse_mode="HTML"
         )
         return
@@ -3173,7 +3126,7 @@ def handle_telegram_rngau_cmd(message):
     if not custom_uids:
         telegram_bot.reply_to(
             message,
-            "<blockquote><b>❌ LỖI</b>\n🔴 Cần ít nhất 1 UID!</blockquote>",
+            "<blockquote><b>LỖI</b>\nCần ít nhất 1 UID!</blockquote>",
             parse_mode="HTML"
         )
         return
@@ -3182,7 +3135,7 @@ def handle_telegram_rngau_cmd(message):
     if not bots:
         telegram_bot.reply_to(
             message,
-            "<blockquote><b>⚠️ QUÁ TẢI</b>\n🔴 Không có bot rảnh!</blockquote>",
+            "<blockquote><b>QUÁ TẢI</b>\nKhông có bot rảnh!</blockquote>",
             parse_mode="HTML"
         )
         return
@@ -3195,7 +3148,7 @@ def handle_telegram_rngau_cmd(message):
     
     msg = telegram_bot.reply_to(
         message,
-        f"<blockquote><b>⚡ BOT ĐANG TIẾN HÀNH BẬT HÀNH ĐỘNG NGẦU </b>\n━━━━━━━━━━━━━━━━\n🎯 Team: <code>{tc}</code>\n🤖 Bot: <code>{bot_name}</code>\n👥 Mục tiêu: {uid_list_str}\n━━━━━━━━━━━━━━━━\n⏳ Đang xử lý...</blockquote>",
+        f"<blockquote><b>BOT ĐANG TIẾN HÀNH BẬT HÀNH ĐỘNG NGẦU</b>\n━━━━━━━━━━━━━━━━\nTeam: <code>{tc}</code>\nBot: <code>{bot_name}</code>\nMục tiêu: {uid_list_str}\n━━━━━━━━━━━━━━━━\nĐang xử lý...</blockquote>",
         parse_mode="HTML"
     )
     
@@ -3236,7 +3189,7 @@ def handle_telegram_rngau_cmd(message):
                 pass
             try:
                 telegram_bot.edit_message_text(
-                    f"<blockquote><b>✅ HOÀN TẤT</b>\n━━━━━━━━━━━━━━━━\n🎯 Team: <code>{tc}</code>\n🤖 Bot: <code>{bot_name}</code>\n👥 Mục tiêu: {uid_list_str}\n━━━━━━━━━━━━━━━━\n⚡ Đã thực hiện xong tiến trình múa hành động ngầu!</blockquote>",
+                    f"<blockquote><b>HOÀN TẤT</b>\n━━━━━━━━━━━━━━━━\nTeam: <code>{tc}</code>\nBot: <code>{bot_name}</code>\nMục tiêu: {uid_list_str}\n━━━━━━━━━━━━━━━━\nĐã thực hiện xong tiến trình múa hành động ngầu!</blockquote>",
                     chat_id=message.chat.id,
                     message_id=msg.message_id,
                     parse_mode="HTML"
@@ -3247,7 +3200,7 @@ def handle_telegram_rngau_cmd(message):
             print("RNGAU ERROR:", e)
             try:
                 telegram_bot.edit_message_text(
-                    f"<blockquote><b>❌ LỖI</b>\n🔴 {str(e)}</blockquote>",
+                    f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
                     chat_id=message.chat.id,
                     message_id=msg.message_id,
                     parse_mode="HTML"
@@ -3264,7 +3217,7 @@ def handle_telegram_rngau_cmd(message):
 @async_telegram
 def reset_all_bots(message):
     if not is_telegram_admin(message.from_user.id):
-        telegram_bot.reply_to(message, "❌ Không có quyền!")
+        telegram_bot.reply_to(message, "Không có quyền!")
         return
     
     count = 0
@@ -3275,7 +3228,7 @@ def reset_all_bots(message):
         bot.start()
         count += 1
     
-    telegram_bot.reply_to(message, f"✅ Đã reset {count} bot!")
+    telegram_bot.reply_to(message, f"Đã reset {count} bot!")
         
 @telegram_bot.message_handler(commands=['s7'])
 @check_group_only
@@ -3289,9 +3242,9 @@ def handle_telegram_s7_cmd(message):
     if len(parts) < 3:
         telegram_bot.reply_to(
             message,
-            "<blockquote><b>❌ SAI CÚ PHÁP</b>\n"
-            "💡 Dùng: <code>/s7 [teamcode] [uid1 uid2]</code>\n"
-            "📌 Ví dụ: <code>/s7 1234567 16104663154 123456789</code></blockquote>",
+            "<blockquote><b>SAI CÚ PHÁP</b>\n"
+            "Dùng: <code>/s7 [teamcode] [uid1 uid2]</code>\n"
+            "Ví dụ: <code>/s7 1234567 16104663154 123456789</code></blockquote>",
             parse_mode="HTML"
         )
         return
@@ -3301,7 +3254,7 @@ def handle_telegram_s7_cmd(message):
     except:
         telegram_bot.reply_to(
             message,
-            "<blockquote><b>❌ LỖI</b>\n🔴 Teamcode phải là số!</blockquote>",
+            "<blockquote><b>LỖI</b>\nTeamcode phải là số!</blockquote>",
             parse_mode="HTML"
         )
         return
@@ -3316,7 +3269,7 @@ def handle_telegram_s7_cmd(message):
     if not custom_uids:
         telegram_bot.reply_to(
             message,
-            "<blockquote><b>❌ LỖI</b>\n🔴 Cần ít nhất 1 UID!</blockquote>",
+            "<blockquote><b>LỖI</b>\nCần ít nhất 1 UID!</blockquote>",
             parse_mode="HTML"
         )
         return
@@ -3325,7 +3278,7 @@ def handle_telegram_s7_cmd(message):
     if not bots:
         telegram_bot.reply_to(
             message,
-            "<blockquote><b>⚠️ QUÁ TẢI</b>\n🔴 Không có bot rảnh!</blockquote>",
+            "<blockquote><b>QUÁ TẢI</b>\nKhông có bot rảnh!</blockquote>",
             parse_mode="HTML"
         )
         return
@@ -3338,13 +3291,13 @@ def handle_telegram_s7_cmd(message):
     
     msg = telegram_bot.reply_to(
         message,
-        f"<blockquote><b>⚡ BOT ĐANG TIẾN HÀNH MÚA S7</b>\n"
+        f"<blockquote><b>BOT ĐANG TIẾN HÀNH MÚA S7</b>\n"
         f"━━━━━━━━━━━━━━━━\n"
-        f"🎯 Team: <code>{tc}</code>\n"
-        f"🤖 Bot: <code>{bot_name}</code>\n"
-        f"👥 Mục tiêu: {uid_list_str}\n"
+        f"Team: <code>{tc}</code>\n"
+        f"Bot: <code>{bot_name}</code>\n"
+        f"Mục tiêu: {uid_list_str}\n"
         f"━━━━━━━━━━━━━━━━\n"
-        f"⏳ Đang xử lý...</blockquote>",
+        f"Đang xử lý...</blockquote>",
         parse_mode="HTML"
     )
     
@@ -3385,13 +3338,13 @@ def handle_telegram_s7_cmd(message):
                 pass
             try:
                 telegram_bot.edit_message_text(
-                    f"<blockquote><b>✅ HOÀN TẤT</b>\n"
+                    f"<blockquote><b>HOÀN TẤT</b>\n"
                     f"━━━━━━━━━━━━━━━━\n"
-                    f"🎯 Team: <code>{tc}</code>\n"
-                    f"🤖 Bot: <code>{bot_name}</code>\n"
-                    f"👥 Mục tiêu: {uid_list_str}\n"
+                    f"Team: <code>{tc}</code>\n"
+                    f"Bot: <code>{bot_name}</code>\n"
+                    f"Mục tiêu: {uid_list_str}\n"
                     f"━━━━━━━━━━━━━━━━\n"
-                    f"⚡ Đã thực hiện xong tiến trình múa s7!</blockquote>",
+                    f"Đã thực hiện xong tiến trình múa s7!</blockquote>",
                     chat_id=message.chat.id,
                     message_id=msg.message_id,
                     parse_mode="HTML"
@@ -3401,7 +3354,7 @@ def handle_telegram_s7_cmd(message):
         except Exception as e:
             try:
                 telegram_bot.edit_message_text(
-                    f"<blockquote><b>❌ LỖI</b>\n🔴 {str(e)}</blockquote>",
+                    f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
                     chat_id=message.chat.id,
                     message_id=msg.message_id,
                     parse_mode="HTML"
@@ -3433,11 +3386,11 @@ def tele_check(message):
         user_id = int(message.from_user.id)
         
         if user_id not in ADMIN_IDS:
-            telegram_bot.reply_to(message, "❌ Không có quyền sử dụng lệnh này")
+            telegram_bot.reply_to(message, "Không có quyền sử dụng lệnh này")
             return
         
         if not TCPbot.bots:
-            telegram_bot.reply_to(message, "❌ Không có bot nào trong hệ thống")
+            telegram_bot.reply_to(message, "Không có bot nào trong hệ thống")
             return
         
         online_count = 0
@@ -3459,12 +3412,12 @@ def tele_check(message):
                 else:
                     free_count += 1
         
-        text = "<blockquote><b>📊 BẢNG TRẠNG THÁI BOT</b>\n"
-        text += f"📌 Tổng bot: <b>{total_count}</b>\n"
-        text += f"🟢 Online: <b>{online_count}</b>\n"
-        text += f"🔴 Offline: <b>{offline_count}</b>\n"
-        text += f"🟢 Rảnh: <b>{free_count}</b>\n"
-        text += f"🟡 Bận: <b>{busy_count}</b>\n"
+        text = "<blockquote><b>BẢNG TRẠNG THÁI BOT</b>\n"
+        text += f"Tổng bot: <b>{total_count}</b>\n"
+        text += f"Online: <b>{online_count}</b>\n"
+        text += f"Offline: <b>{offline_count}</b>\n"
+        text += f"Rảnh: <b>{free_count}</b>\n"
+        text += f"Bận: <b>{busy_count}</b>\n"
         text += f"</blockquote>\n\n"
         
         for bid, bot in TCPbot.bots.items():
@@ -3474,13 +3427,13 @@ def tele_check(message):
             is_busy = getattr(bot, 'is_busy', False)
             
             if not running:
-                status = "🔴 Offline"
-                activity = "❌ Tắt"
+                status = "Offline"
+                activity = "Tắt"
             else:
-                status = "🟢 Online"
-                activity = "🟡 Bận" if is_busy else "✅ Rảnh"
+                status = "Online"
+                activity = "Bận" if is_busy else "Rảnh"
             
-            text += f"<blockquote><b>🤖 Bot {bid}</b>\n"
+            text += f"<blockquote><b>Bot {bid}</b>\n"
             text += f"├ Tên: {nickname}\n"
             text += f"├ UID: <code>{uid_bot}</code>\n"
             text += f"├ Trạng thái: {status}\n"
@@ -3505,7 +3458,7 @@ def handle_telegram_rinv(message):
         if len(parts) < 2:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n💡 Dùng: <code>/rinv [uid]</code>\n📌 Ví dụ: <code>/rinv 123456789</code></blockquote>",
+                "<blockquote><b>SAI CÚ PHÁP</b>\nDùng: <code>/rinv [uid]</code>\nVí dụ: <code>/rinv 123456789</code></blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -3514,7 +3467,7 @@ def handle_telegram_rinv(message):
         if not target_uid.isdigit():
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ LỖI</b>\n🔴 UID phải là số!</blockquote>",
+                "<blockquote><b>LỖI</b>\nUID phải là số!</blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -3523,7 +3476,7 @@ def handle_telegram_rinv(message):
         if not bots:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>⚠️ BOT BẬN</b>\n🔴 Không có bot nào rảnh để xử lý!</blockquote>",
+                "<blockquote><b>BOT BẬN</b>\nKhông có bot nào rảnh để xử lý!</blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -3534,7 +3487,7 @@ def handle_telegram_rinv(message):
 
         msg = telegram_bot.reply_to(
             message,
-            f"<blockquote><b>⚡ ĐANG SPAM ROOM</b>\n━━━━━━━━━━━━━━━━━━━━\n🎯 <b>UID:</b> <code>{target_uid}</code>\n🤖 <b>Bot:</b> <code>{bot_name}</code>\n━━━━━━━━━━━━━━━━━━━━\n⏳ Đang xử lý...</blockquote>",
+            f"<blockquote><b>ĐANG SPAM ROOM</b>\n━━━━━━━━━━━━━━━━━━━━\nUID: <code>{target_uid}</code>\nBot: <code>{bot_name}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐang xử lý...</blockquote>",
             parse_mode="HTML"
         )
 
@@ -3547,7 +3500,7 @@ def handle_telegram_rinv(message):
                 if not room_id:
                     try:
                         telegram_bot.edit_message_text(
-                            "<blockquote><b>⚠️ KHÔNG TÌM THẤY PHÒNG</b>\n🔴 UID không có trong phòng!</blockquote>",
+                            "<blockquote><b>KHÔNG TÌM THẤY PHÒNG</b>\nUID không có trong phòng!</blockquote>",
                             chat_id=message.chat.id,
                             message_id=msg.message_id,
                             parse_mode="HTML"
@@ -3571,7 +3524,7 @@ def handle_telegram_rinv(message):
                     if (i + 1) % 20 == 0 or i == 122:
                         try:
                             telegram_bot.edit_message_text(
-                                f"<blockquote><b>⚡ ĐANG SPAM ROOM</b>\n━━━━━━━━━━━━━━━━━━━━\n🎯 <b>UID:</b> <code>{target_uid}</code>\n🏠 <b>Room ID:</b> <code>{room_id}</code>\n🤖 <b>Bot:</b> <code>{bot_name}</code>\n🔄 <b>Tiến độ:</b> <code>{i+1}/123</code>\n✅ <b>Thành công:</b> <code>{success_count}</code>\n❌ <b>Thất bại:</b> <code>{fail_count}</code>\n━━━━━━━━━━━━━━━━━━━━\n⏳ Đang xử lý...</blockquote>",
+                                f"<blockquote><b>ĐANG SPAM ROOM</b>\n━━━━━━━━━━━━━━━━━━━━\nUID: <code>{target_uid}</code>\nRoom ID: <code>{room_id}</code>\nBot: <code>{bot_name}</code>\nTiến độ: <code>{i+1}/123</code>\nThành công: <code>{success_count}</code>\nThất bại: <code>{fail_count}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐang xử lý...</blockquote>",
                                 chat_id=message.chat.id,
                                 message_id=msg.message_id,
                                 parse_mode="HTML"
@@ -3581,7 +3534,7 @@ def handle_telegram_rinv(message):
 
                 try:
                     telegram_bot.edit_message_text(
-                        f"<blockquote><b>✅ SPAM ROOM HOÀN TẤT</b>\n━━━━━━━━━━━━━━━━━━━━\n🎯 <b>UID:</b> <code>{target_uid}</code>\n🏠 <b>Room ID:</b> <code>{room_id}</code>\n🤖 <b>Bot:</b> <code>{bot_name}</code>\n🔄 <b>Tổng:</b> <code>123</code>\n✅ <b>Thành công:</b> <code>{success_count}</code>\n❌ <b>Thất bại:</b> <code>{fail_count}</code>\n━━━━━━━━━━━━━━━━━━━━\n⚡ Đã spam xong!</blockquote>",
+                        f"<blockquote><b>SPAM ROOM HOÀN TẤT</b>\n━━━━━━━━━━━━━━━━━━━━\nUID: <code>{target_uid}</code>\nRoom ID: <code>{room_id}</code>\nBot: <code>{bot_name}</code>\nTổng: <code>123</code>\nThành công: <code>{success_count}</code>\nThất bại: <code>{fail_count}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐã spam xong!</blockquote>",
                         chat_id=message.chat.id,
                         message_id=msg.message_id,
                         parse_mode="HTML"
@@ -3592,7 +3545,7 @@ def handle_telegram_rinv(message):
             except Exception as e:
                 try:
                     telegram_bot.edit_message_text(
-                        f"<blockquote><b>❌ LỖI</b>\n🔴 {str(e)}</blockquote>",
+                        f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
                         chat_id=message.chat.id,
                         message_id=msg.message_id,
                         parse_mode="HTML"
@@ -3607,19 +3560,19 @@ def handle_telegram_rinv(message):
     except Exception as e:
         telegram_bot.reply_to(
             message,
-            f"<blockquote><b>❌ LỖI</b>\n🔴 {str(e)}</blockquote>",
+            f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
             parse_mode="HTML"
         )
                 
 def random_colored_text(text):
     colors = [
-        "FF0000",  # đỏ
-        "00FF00",  # xanh lá
+        "FF0000",
+        "00FF00",
         "FFFF00",
-  "00FFFF",
-  "0000FF",
-  "FF00FF",
-  "FF66FF"   # vàng
+        "00FFFF",
+        "0000FF",
+        "FF00FF",
+        "FF66FF"
     ]
 
     color = random.choice(colors)
@@ -3646,7 +3599,7 @@ def handle_telegram_hc(message):
         if len(parts) < 2:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n💡 Dùng: <code>/dc [teamcode]</code>\n📌 Ví dụ: <code>/dc 1234567</code></blockquote>",
+                "<blockquote><b>SAI CÚ PHÁP</b>\nDùng: <code>/dc [teamcode]</code>\nVí dụ: <code>/dc 1234567</code></blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -3655,7 +3608,7 @@ def handle_telegram_hc(message):
         if not team_code.isdigit():
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ LỖI</b>\n🔴 Teamcode phải là số!</blockquote>",
+                "<blockquote><b>LỖI</b>\nTeamcode phải là số!</blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -3666,7 +3619,7 @@ def handle_telegram_hc(message):
         if not bots:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>⚠️ HỆ THỐNG QUÁ TẢI</b>\n🔴 Không có bot rảnh!</blockquote>",
+                "<blockquote><b>HỆ THỐNG QUÁ TẢI</b>\nKhông có bot rảnh!</blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -3677,7 +3630,7 @@ def handle_telegram_hc(message):
         
         msg = telegram_bot.reply_to(
             message,
-            f"<blockquote><b>⚡ ĐANG MÚA S7</b>\n━━━━━━━━━━━━━━━━━━━━\n🎯 <b>Teamcode:</b> <code>{team_code}</code>\n🤖 <b>Bot:</b> <code>{bot_name}</code>\n━━━━━━━━━━━━━━━━━━━━\n⏳ Đang xử lý...</blockquote>",
+            f"<blockquote><b>ĐANG MÚA S7</b>\n━━━━━━━━━━━━━━━━━━━━\nTeamcode: <code>{team_code}</code>\nBot: <code>{bot_name}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐang xử lý...</blockquote>",
             parse_mode="HTML"
         )
         
@@ -3722,7 +3675,7 @@ def handle_telegram_hc(message):
                 sock.sendall(bot._bot.leave_squad(0))
                 
                 telegram_bot.edit_message_text(
-                    f"<blockquote><b>✅ MÚA S7 THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\n🎯 <b>Teamcode:</b> <code>{team_code}</code>\n🤖 <b>Bot:</b> <code>{bot_name}</code>\n👥 <b>Số UID:</b> <code>{len(ids)}</code>\n━━━━━━━━━━━━━━━━━━━━\n⚡ Đã múa xong!</blockquote>",
+                    f"<blockquote><b>MÚA S7 THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\nTeamcode: <code>{team_code}</code>\nBot: <code>{bot_name}</code>\nSố UID: <code>{len(ids)}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐã múa xong!</blockquote>",
                     chat_id=message.chat.id,
                     message_id=msg.message_id,
                     parse_mode="HTML"
@@ -3735,7 +3688,7 @@ def handle_telegram_hc(message):
                     pass
                     
                 telegram_bot.edit_message_text(
-                    f"<blockquote><b>❌ MÚA S7 THẤT BẠI</b>\n━━━━━━━━━━━━━━━━━━━━\n🔴 <b>Lỗi:</b> {str(e)}\n━━━━━━━━━━━━━━━━━━━━\n💡 Kiểm tra lại teamcode!</blockquote>",
+                    f"<blockquote><b>MÚA S7 THẤT BẠI</b>\n━━━━━━━━━━━━━━━━━━━━\nLỗi: {str(e)}\n━━━━━━━━━━━━━━━━━━━━\nKiểm tra lại teamcode!</blockquote>",
                     chat_id=message.chat.id,
                     message_id=msg.message_id,
                     parse_mode="HTML"
@@ -3748,7 +3701,7 @@ def handle_telegram_hc(message):
     except Exception as e:
         telegram_bot.reply_to(
             message,
-            f"<blockquote><b>❌ LỖI</b>\n🔴 {str(e)}</blockquote>",
+            f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
             parse_mode="HTML"
         )
 
@@ -3759,9 +3712,9 @@ def handle_telegram_ghost(message):
     if len(parts) < 2 or not parts[1].isdigit():
         telegram_bot.reply_to(
             message,
-            "<blockquote><b>❌ SAI CÚ PHÁP</b>\n"
-            "💡 <code>/ghost [teamcode] [tên]</code>\n"
-            "📌 Ví dụ: <code>/ghost 1234567 zan</code></blockquote>",
+            "<blockquote><b>SAI CÚ PHÁP</b>\n"
+            "<code>/ghost [teamcode] [tên]</code>\n"
+            "Ví dụ: <code>/ghost 1234567 zan</code></blockquote>",
             parse_mode='HTML'
         )
         return
@@ -3770,13 +3723,12 @@ def handle_telegram_ghost(message):
     custom_name = parts[2] if len(parts) > 2 else "Tiktok: @nqbinhan_"
     
     if not team_code.isdigit():
-        telegram_bot.reply_to(message, "<blockquote><b>❌ LỖI</b>\nTeamcode phải là số!</blockquote>", parse_mode='HTML')
+        telegram_bot.reply_to(message, "<blockquote><b>LỖI</b>\nTeamcode phải là số!</blockquote>", parse_mode='HTML')
         return
     
     team_code_int = int(team_code)
-    clean_name = custom_name  # Không lọc gì hết
+    clean_name = custom_name
     
-    # Lấy bot rảnh
     bot = None
     for b in TCPbot.bots.values():
         if b.running_event.is_set() and b.sock39699:
@@ -3786,19 +3738,19 @@ def handle_telegram_ghost(message):
                     break
     
     if not bot:
-        telegram_bot.reply_to(message, "<blockquote><b>⚠️ KHÔNG CÓ BOT RẢNH</b></blockquote>", parse_mode='HTML')
+        telegram_bot.reply_to(message, "<blockquote><b>KHÔNG CÓ BOT RẢNH</b></blockquote>", parse_mode='HTML')
         return
     
     bot.is_busy = True
     
     status_msg = telegram_bot.reply_to(
         message,
-        f"<blockquote><b>✅ GHOST THÀNH CÔNG TEAMCODE {team_code_int} !</b>\n"
+        f"<blockquote><b>GHOST THÀNH CÔNG TEAMCODE {team_code_int} !</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"🎯 Teamcode: <code>{team_code_int}</code>\n"
-        f"📛 Tên hiển thị: <code>{clean_name}</code>\n"
+        f"Teamcode: <code>{team_code_int}</code>\n"
+        f"Tên hiển thị: <code>{clean_name}</code>\n"
         f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"⚡ Đã ghost thành công!</blockquote>",
+        f"Đã ghost thành công!</blockquote>",
         parse_mode='HTML'
     )
     
@@ -3809,7 +3761,6 @@ def handle_telegram_ghost(message):
             bot.sock39699.sendall(bot._bot.join_squad(team_code_int))
             time.sleep(1.5)
             
-            # ====== Ghost trực tiếp ======
             colors = ["[FF0000]", "[00FF00]", "[0000FF]", "[FFFF00]", "[FF00FF]", "[00FFFF]"]
             color = random.choice(colors)
             
@@ -3830,7 +3781,6 @@ def handle_telegram_ghost(message):
             bot.sock39699.sendall(ghost_packet)
             time.sleep(1)
             
-            # Rời team
             bot.sock39699.sendall(bot._bot.leave_squad(0))
             
             bot.is_busy = False
@@ -3856,7 +3806,7 @@ def handle_telegram_spamall(message):
         if len(parts) < 2:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n💡 Dùng: <code>/spamall [uid]</code>\n📌 Ví dụ: <code>/spamall 123456789</code></blockquote>",
+                "<blockquote><b>SAI CÚ PHÁP</b>\nDùng: <code>/spamall [uid]</code>\nVí dụ: <code>/spamall 123456789</code></blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -3865,16 +3815,15 @@ def handle_telegram_spamall(message):
         if not target_uid.isdigit():
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ LỖI</b>\n🔴 UID phải là số!</blockquote>",
+                "<blockquote><b>LỖI</b>\nUID phải là số!</blockquote>",
                 parse_mode="HTML"
             )
             return
         
-        # ====== KIỂM TRA UID TỪ 8-11 SỐ ======
         if len(target_uid) < 8 or len(target_uid) > 11:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ UID KHÔNG HỢP LỆ</b>\n🔴 UID phải có từ 8-11 chữ số!</blockquote>",
+                "<blockquote><b>UID KHÔNG HỢP LỆ</b>\nUID phải có từ 8-11 chữ số!</blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -3883,7 +3832,7 @@ def handle_telegram_spamall(message):
         if not bots:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>⚠️ BOT BẬN</b>\n🔴 Không có bot nào rảnh để xử lý!</blockquote>",
+                "<blockquote><b>BOT BẬN</b>\nKhông có bot nào rảnh để xử lý!</blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -3896,7 +3845,7 @@ def handle_telegram_spamall(message):
 
         msg = telegram_bot.reply_to(
             message,
-            f"<blockquote><b>⚡ ĐANG SPAM ALL BADGE</b>\n━━━━━━━━━━━━━━━━━━━━\n🎯 <b>UID:</b> <code>{target_uid}</code>\n📛 <b>Loại:</b> <code>5 TÍCH</code>\n🤖 <b>Bot:</b> <code>{bot_name}</code>\n━━━━━━━━━━━━━━━━━━━━\n⏳ Đang xử lý...</blockquote>",
+            f"<blockquote><b>ĐANG SPAM ALL BADGE</b>\n━━━━━━━━━━━━━━━━━━━━\nUID: <code>{target_uid}</code>\nLoại: <code>5 TÍCH</code>\nBot: <code>{bot_name}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐang xử lý...</blockquote>",
             parse_mode="HTML"
         )
 
@@ -3905,11 +3854,9 @@ def handle_telegram_spamall(message):
                 total_success = 0
                 total_fail = 0
 
-                # 5 badge, mỗi badge spam 10 lần
                 for badge_idx, badge_value in enumerate(badge_values, 1):
                     for i in range(10):
                         try:
-                            # Tạo packet join squad
                             join_packet = bot._bot.request_join_squad(int(target_uid))
                             bot.sock39699.sendall(join_packet)
                             total_success += 1
@@ -3919,12 +3866,11 @@ def handle_telegram_spamall(message):
                             total_fail += 1
                             print(f"[SPAMALL] Lỗi: {e}")
                         
-                        # Cập nhật mỗi 5 lần
                         if (badge_idx * 10 + i) % 5 == 0:
                             try:
                                 done = (badge_idx - 1) * 10 + i + 1
                                 telegram_bot.edit_message_text(
-                                    f"<blockquote><b>⚡ ĐANG SPAM ALL BADGE</b>\n━━━━━━━━━━━━━━━━━━━━\n🎯 <b>UID:</b> <code>{target_uid}</code>\n📛 <b>tích:</b> <code>{badge_idx}/5</code>\n🔄 <b>Đã spam:</b> <code>{done}/50</code>\n✅ <b>Thành công:</b> <code>{total_success}</code>\n❌ <b>Thất bại:</b> <code>{total_fail}</code>\n🤖 <b>Bot:</b> <code>{bot_name}</code>\n━━━━━━━━━━━━━━━━━━━━\n⏳ Đang xử lý...</blockquote>",
+                                    f"<blockquote><b>ĐANG SPAM ALL BADGE</b>\n━━━━━━━━━━━━━━━━━━━━\nUID: <code>{target_uid}</code>\nTích: <code>{badge_idx}/5</code>\nĐã spam: <code>{done}/50</code>\nThành công: <code>{total_success}</code>\nThất bại: <code>{total_fail}</code>\nBot: <code>{bot_name}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐang xử lý...</blockquote>",
                                     chat_id=message.chat.id,
                                     message_id=msg.message_id,
                                     parse_mode="HTML"
@@ -3941,7 +3887,7 @@ def handle_telegram_spamall(message):
 
                 try:
                     telegram_bot.edit_message_text(
-                        f"<blockquote><b>✅ SPAM ALL BADGE HOÀN TẤT</b>\n━━━━━━━━━━━━━━━━━━━━\n🎯 <b>UID:</b> <code>{target_uid}</code>\n📛 <b>Loại:</b> <code>5 TÍCH</code>\n🔄 <b>Tổng:</b> <code>50</code>\n✅ <b>Thành công:</b> <code>{total_success}</code>\n❌ <b>Thất bại:</b> <code>{total_fail}</code>\n🤖 <b>Bot:</b> <code>{bot_name}</code>\n━━━━━━━━━━━━━━━━━━━━\n⚡ Đã spam xong!</blockquote>",
+                        f"<blockquote><b>SPAM ALL BADGE HOÀN TẤT</b>\n━━━━━━━━━━━━━━━━━━━━\nUID: <code>{target_uid}</code>\nLoại: <code>5 TÍCH</code>\nTổng: <code>50</code>\nThành công: <code>{total_success}</code>\nThất bại: <code>{total_fail}</code>\nBot: <code>{bot_name}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐã spam xong!</blockquote>",
                         chat_id=message.chat.id,
                         message_id=msg.message_id,
                         parse_mode="HTML"
@@ -3952,7 +3898,7 @@ def handle_telegram_spamall(message):
             except Exception as e:
                 try:
                     telegram_bot.edit_message_text(
-                        f"<blockquote><b>❌ LỖI</b>\n🔴 {str(e)}</blockquote>",
+                        f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
                         chat_id=message.chat.id,
                         message_id=msg.message_id,
                         parse_mode="HTML"
@@ -3967,7 +3913,7 @@ def handle_telegram_spamall(message):
     except Exception as e:
         telegram_bot.reply_to(
             message,
-            f"<blockquote><b>❌ LỖI</b>\n🔴 {str(e)}</blockquote>",
+            f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
             parse_mode="HTML"
         )
                       
@@ -3980,43 +3926,43 @@ def telegram_service(message):
         return
     
     msg = f"""
-📦 BẢNG GIÁ DỊCH VỤ
+<blockquote><b>BẢNG GIÁ DỊCH VỤ</b>
 ━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. BOT THƯỜNG:
+<b>1. BOT THƯỜNG:</b>
 ├ 1 ngày: 10k
 ├ 1 tuần: 50k
 └ 1 tháng: 120k
 
-5. BOT TÊN RIÊNG:
+<b>5. BOT TÊN RIÊNG:</b>
 ├ 1 ngày: 15k
 ├ 1 tuần: 60k
 └ 1 tháng: 150k
 
-2. BOT QUÂN ĐOÀN (nhiều người sử dụng được):
+<b>2. BOT QUÂN ĐOÀN (nhiều người sử dụng được):</b>
 ├ 1 ngày: 15k
 ├ 1 tuần: 65k
 └ 1 tháng: 170k
 
-3. CAPCUT PRO:
+<b>3. CAPCUT PRO:</b>
 └ 50/1 tháng
 
-4. WINK:
+<b>4. WINK:</b>
 ├ 1 tuần: 60k
 ├ 2 tuần: 100k
 └ 3 tuần: 130k
 
 ━━━━━━━━━━━━━━━━━━━━━━━━
-📩 có nhu cầu liên hệ admin: @zanbackj
+có nhu cầu liên hệ admin: @zanbackj</blockquote>
 """
-    telegram_bot.reply_to(message, msg)
+    telegram_bot.reply_to(message, msg, parse_mode="HTML")
                                  
 @telegram_bot.message_handler(commands=['getlink'])
 @check_group_only
 @async_telegram
 def get_group_link(message):
     if message.from_user.id != ADMIN_ID:
-        telegram_bot.reply_to(message, "❌ Không có quyền!")
+        telegram_bot.reply_to(message, "Không có quyền!")
         return
     
     group_ids = []
@@ -4028,10 +3974,10 @@ def get_group_link(message):
             pass
     
     if not group_ids:
-        telegram_bot.reply_to(message, "📭 Chưa có group nào!")
+        telegram_bot.reply_to(message, "Chưa có group nào!")
         return
     
-    result = "<b>📋 DANH SÁCH GROUP:</b>\n───────────────────────\n"
+    result = "<b>DANH SÁCH GROUP:</b>\n───────────────────────\n"
     
     for gid in group_ids:
         try:
@@ -4050,7 +3996,7 @@ def get_group_link(message):
             result += f"   ID: <code>{gid}</code>\n"
             result += f"   Link: {link}\n\n"
         except Exception as e:
-            result += f"❌ <code>{gid}</code> - Lỗi: {str(e)[:30]}\n\n"
+            result += f"<code>{gid}</code> - Lỗi: {str(e)[:30]}\n\n"
     
     telegram_bot.reply_to(message, result, parse_mode="HTML")
         
@@ -4067,7 +4013,7 @@ def handle_info(message):
         if len(args) < 2:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n💡 Dùng: <code>/info [UID]</code></blockquote>",
+                "<blockquote><b>SAI CÚ PHÁP</b>\nDùng: <code>/info [UID]</code></blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -4076,14 +4022,14 @@ def handle_info(message):
         if not uid.isdigit():
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ LỖI</b>\n🔴 UID phải là số!</blockquote>",
+                "<blockquote><b>LỖI</b>\nUID phải là số!</blockquote>",
                 parse_mode="HTML"
             )
             return
         
         msg = telegram_bot.reply_to(
             message,
-            "<blockquote>⏳ Đang tra cứu thông tin...</blockquote>",
+            "<blockquote>Đang tra cứu thông tin...</blockquote>",
             parse_mode="HTML"
         )
         
@@ -4092,7 +4038,7 @@ def handle_info(message):
         
         if response.status_code != 200:
             telegram_bot.edit_message_text(
-                f"<blockquote><b>❌ LỖI API</b>\n🔴 HTTP {response.status_code}</blockquote>",
+                f"<blockquote><b>LỖI API</b>\nHTTP {response.status_code}</blockquote>",
                 chat_id=message.chat.id,
                 message_id=msg.message_id,
                 parse_mode="HTML"
@@ -4103,7 +4049,7 @@ def handle_info(message):
         
         if not data.get('success'):
             telegram_bot.edit_message_text(
-                f"<blockquote><b>❌ LỖI</b>\n🔴 {data.get('error', 'Unknown error')}</blockquote>",
+                f"<blockquote><b>LỖI</b>\n{data.get('error', 'Unknown error')}</blockquote>",
                 chat_id=message.chat.id,
                 message_id=msg.message_id,
                 parse_mode="HTML"
@@ -4126,25 +4072,25 @@ def handle_info(message):
                 return str(timestamp)
         
         reply = f"""
-<blockquote><b>📊 THÔNG TIN NGƯỜI CHƠI</b>
+<blockquote><b>THÔNG TIN NGƯỜI CHƠI</b>
 ━━━━━━━━━━━━━━━━━━━━
-👤 <b>Tên:</b> <code>{basic.get('nickname', 'N/A')}</code>
-🆔 <b>UID:</b> <code>{basic.get('account_id', 'N/A')}</code>
-🌍 <b>Khu vực:</b> <code>{basic.get('region', 'N/A')}</code>
-🎖 <b>Cấp độ:</b> <code>{basic.get('level', 'N/A')}</code>
-❤️ <b>Lượt thích:</b> <code>{basic.get('liked', 'N/A')}</code>
-🏆 <b>Hạng BR:</b> <code>{basic.get('rank', 'N/A')}</code>
-🏆 <b>Hạng CS:</b> <code>{basic.get('cs_rank', 'N/A')}</code>
-💯 <b>Điểm uy tín:</b> <code>{credit.get('credit_score', 'N/A')}</code>
-✍️ <b>Tiểu sử:</b> <i>{social.get('signature', 'Không có')}</i>
+<b>Tên:</b> <code>{basic.get('nickname', 'N/A')}</code>
+<b>UID:</b> <code>{basic.get('account_id', 'N/A')}</code>
+<b>Khu vực:</b> <code>{basic.get('region', 'N/A')}</code>
+<b>Cấp độ:</b> <code>{basic.get('level', 'N/A')}</code>
+<b>Lượt thích:</b> <code>{basic.get('liked', 'N/A')}</code>
+<b>Hạng BR:</b> <code>{basic.get('rank', 'N/A')}</code>
+<b>Hạng CS:</b> <code>{basic.get('cs_rank', 'N/A')}</code>
+<b>Điểm uy tín:</b> <code>{credit.get('credit_score', 'N/A')}</code>
+<b>Tiểu sử:</b> <i>{social.get('signature', 'Không có')}</i>
 ━━━━━━━━━━━━━━━━━━━━
-<b>🏠 CLAN:</b>
+<b>CLAN:</b>
 ├ <b>Tên:</b> <code>{clan.get('clan_name', 'Không có')}</code>
 ├ <b>ID:</b> <code>{clan.get('clan_id', 'N/A')}</code>
 ├ <b>Level:</b> <code>{clan.get('clan_level', 'N/A')}</code>
 └ <b>Thành viên:</b> <code>{clan.get('member_num', 0)}/{clan.get('capacity', 0)}</code>
 ━━━━━━━━━━━━━━━━━━━━
-<b>🐾 PET:</b>
+<b>PET:</b>
 ├ <b>Tên:</b> <code>{pet.get('name', 'Không có')}</code>
 ├ <b>Level:</b> <code>{pet.get('level', 'N/A')}</code>
 └ <b>Skin ID:</b> <code>{pet.get('skin_id', 'N/A')}</code>
@@ -4160,14 +4106,14 @@ def handle_info(message):
         
     except requests.exceptions.Timeout:
         telegram_bot.edit_message_text(
-            "<blockquote><b>❌ LỖI</b>\n🔴 API không phản hồi, vui lòng thử lại sau.</blockquote>",
+            "<blockquote><b>LỖI</b>\nAPI không phản hồi, vui lòng thử lại sau.</blockquote>",
             chat_id=message.chat.id,
             message_id=msg.message_id,
             parse_mode="HTML"
         )
     except Exception as e:
         telegram_bot.edit_message_text(
-            f"<blockquote><b>❌ LỖI</b>\n🔴 {str(e)}</blockquote>",
+            f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
             chat_id=message.chat.id,
             message_id=msg.message_id,
             parse_mode="HTML"
@@ -4178,7 +4124,7 @@ def handle_info(message):
 @async_telegram
 def handle_telegram_add_user(message):
     if not is_telegram_admin(message.from_user.id):
-        telegram_bot.reply_to(message, "<pre>❌ TỪ CHỐI TRUY CẬP\n🔴 Bạn không có quyền hạn Admin để sử dụng lệnh này!</pre>")
+        telegram_bot.reply_to(message, "<pre>TỪ CHỐI TRUY CẬP\nBạn không có quyền hạn Admin để sử dụng lệnh này!</pre>")
         return
     
     try:
@@ -4186,23 +4132,23 @@ def handle_telegram_add_user(message):
         parts = message.text.strip().split()
         if len(parts) < 4:
             error_msg = (
-                f"<pre>❌ SAI CÚ PHÁP LỆNH QUẢN TRỊ\n"
-                f"💡 Định dạng lẻ: /add [bot id] [uid] [thời gian]\n"
-                f"💡 Định dạng all: /add all [uid] [thời gian]\n\n"
-                f"📌 Ví dụ:\n"
-                f"➜ /add 1 12345678 30d\n"
-                f"➜ /add all 12345678 30d</pre>"
+                f"<pre>SAI CÚ PHÁP LỆNH QUẢN TRỊ\n"
+                f"Định dạng lẻ: /add [bot id] [uid] [thời gian]\n"
+                f"Định dạng all: /add all [uid] [thời gian]\n\n"
+                f"Ví dụ:\n"
+                f"/add 1 12345678 30d\n"
+                f"/add all 12345678 30d</pre>"
             )
             telegram_bot.reply_to(message, error_msg)
             return
         
         is_add_all = (parts[1].lower() == "all")
         if not is_add_all and not parts[1].isdigit():
-            telegram_bot.reply_to(message, "<pre>❌ Lỗi: Bot ID phải là số hoặc chữ 'all'!</pre>")
+            telegram_bot.reply_to(message, "<pre>Lỗi: Bot ID phải là số hoặc chữ 'all'!</pre>")
             return
         
         if not parts[2].isdigit():
-            telegram_bot.reply_to(message, "<pre>❌ Lỗi: UID Game phải là ký tự số!</pre>")
+            telegram_bot.reply_to(message, "<pre>Lỗi: UID Game phải là ký tự số!</pre>")
             return
         
         add_uid = int(parts[2].strip())
@@ -4223,9 +4169,9 @@ def handle_telegram_add_user(message):
         
         if not bots_to_process:
             if is_add_all:
-                fail_msg = "<pre>⚠️ THÔNG BÁO\n🔴 Hệ thống hiện tại không có Bot nào đang online!</pre>"
+                fail_msg = "<pre>THÔNG BÁO\nHệ thống hiện tại không có Bot nào đang online!</pre>"
             else:
-                fail_msg = f"<pre>⚠️ THÔNG BÁO\n🔴 Bot ID {target_bot_id} hiện offline hoặc không có kết nối Database.</pre>"
+                fail_msg = f"<pre>THÔNG BÁO\nBot ID {target_bot_id} hiện offline hoặc không có kết nối Database.</pre>"
             telegram_bot.reply_to(message, fail_msg)
             return
         
@@ -4250,32 +4196,32 @@ def handle_telegram_add_user(message):
         
         if is_add_all:
             done_msg = (
-                f"<pre>✅ TIẾN TRÌNH ADD ALL HOÀN TẤT\n"
+                f"<pre>TIẾN TRÌNH ADD ALL HOÀN TẤT\n"
                 f"───────────────────────\n"
-                f"👤 UID Game: {add_uid}\n"
-                f"⏳ Thời hạn: {duration}\n"
-                f"📊 Thành công: {success_count}/{len(bots_to_process)} Bot</pre>"
+                f"UID Game: {add_uid}\n"
+                f"Thời hạn: {duration}\n"
+                f"Thành công: {success_count}/{len(bots_to_process)} Bot</pre>"
             )
             if failed_bots:
-                done_msg += f"\n⚠️ <i>Thất bại tại: {', '.join(failed_bots)}</i>"
+                done_msg += f"\n<i>Thất bại tại: {', '.join(failed_bots)}</i>"
         else:
             if success_count > 0:
                 done_msg = (
-                    f"<pre>✅ KÍCH HOẠT TÀI KHOẢN THÀNH CÔNG\n"
+                    f"<pre>KÍCH HOẠT TÀI KHOẢN THÀNH CÔNG\n"
                     f"───────────────────────\n"
-                    f"🤖 Hệ thống Bot: {target_bot_id}\n"
-                    f"👤 UID Game: {add_uid}\n"
-                    f"⏳ Thời hạn cấp: {duration}\n"
-                    f"⚙️ Trạng thái: Đã thêm vào danh sách sử dụng bot thành công!</pre>"
+                    f"Hệ thống Bot: {target_bot_id}\n"
+                    f"UID Game: {add_uid}\n"
+                    f"Thời hạn cấp: {duration}\n"
+                    f"Trạng thái: Đã thêm vào danh sách sử dụng bot thành công!</pre>"
                 )
             else:
-                done_msg = f"<pre>❌ THẤT BẠI\n🔴 Không thể thêm UID {add_uid} vào Database của Bot {target_bot_id}.</pre>"
+                done_msg = f"<pre>THẤT BẠI\nKhông thể thêm UID {add_uid} vào Database của Bot {target_bot_id}.</pre>"
         
         telegram_bot.reply_to(message, done_msg)
         
     except Exception as e:
         try:
-            telegram_bot.reply_to(message, f"<pre>❌ LỖI HỆ THỐNG\n🔴 Chi tiết: {str(e)[:50]}</pre>")
+            telegram_bot.reply_to(message, f"<pre>LỖI HỆ THỐNG\nChi tiết: {str(e)[:50]}</pre>")
         except:
             pass
         print("ADD USER ERROR:", e)
@@ -4285,7 +4231,7 @@ def handle_telegram_add_user(message):
 @async_telegram
 def telegram_kb(message):
     if not is_telegram_admin(message.from_user.id):
-        telegram_bot.reply_to(message, "❌ Không có quyền!")
+        telegram_bot.reply_to(message, "Không có quyền!")
         return
     
     try:
@@ -4293,7 +4239,7 @@ def telegram_kb(message):
         if len(parts) < 3:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n💡 Dùng: <code>/kb [botid] [uid]</code>\n📌 Ví dụ: <code>/kb 1 123456789</code></blockquote>",
+                "<blockquote><b>SAI CÚ PHÁP</b>\nDùng: <code>/kb [botid] [uid]</code>\nVí dụ: <code>/kb 1 123456789</code></blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -4310,29 +4256,27 @@ def telegram_kb(message):
             data = result.get('data', {})
             telegram_bot.reply_to(
                 message,
-                f"<blockquote><b>✅ GỬI KẾT BẠN THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\n🤖 <b>Bot:</b> <code>{data.get('bot_name', '')}</code>\n🆔 <b>UID:</b> <code>{uid}</code>\n📩 <b>Trạng thái:</b> {result.get('message')}\n━━━━━━━━━━━━━━━━━━━━\n⚡ Đã gửi qua API!</blockquote>",
+                f"<blockquote><b>GỬI KẾT BẠN THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\nBot: <code>{data.get('bot_name', '')}</code>\nUID: <code>{uid}</code>\nTrạng thái: {result.get('message')}\n━━━━━━━━━━━━━━━━━━━━\nĐã gửi qua API!</blockquote>",
                 parse_mode="HTML"
             )
         else:
             telegram_bot.reply_to(
                 message,
-                f"<blockquote><b>❌ GỬI KẾT BẠN THẤT BẠI</b>\n━━━━━━━━━━━━━━━━━━━━\n🤖 <b>Bot ID:</b> <code>{bot_id}</code>\n🆔 <b>UID:</b> <code>{uid}</code>\n⚠️ <b>Lý do:</b> {result.get('message')}\n━━━━━━━━━━━━━━━━━━━━\n💡 Kiểm tra lại bot!</blockquote>",
+                f"<blockquote><b>GỬI KẾT BẠN THẤT BẠI</b>\n━━━━━━━━━━━━━━━━━━━━\nBot ID: <code>{bot_id}</code>\nUID: <code>{uid}</code>\nLý do: {result.get('message')}\n━━━━━━━━━━━━━━━━━━━━\nKiểm tra lại bot!</blockquote>",
                 parse_mode="HTML"
             )
             
     except Exception as e:
-        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
+        telegram_bot.reply_to(message, f"Lỗi: {str(e)}")
         
 MAX_REG_PER_DAY = 50
 MAX_REG_ADMIN = 9999
 REG_HISTORY_FILE = "reg_history.json"
 LIMITS_FILE = "reg_limits.json"
 
-# ====== LOG ======
 def log_print(msg):
     print(f"[{time.strftime('%H:%M:%S')}] {msg}")
 
-# ====== IMPORT ======
 from zan_fixed import (
     generate_accounts, REGION_LANG, CLIENT_VERSION, RELEASE_VERSION,
     LOGIN_SERVER_URL, guest_register, token_grant, major_register,
@@ -4340,7 +4284,6 @@ from zan_fixed import (
     generate_nickname, generate_password, _build_major_login
 )
 
-# ====== REG HISTORY ======
 def load_reg_history():
     if os.path.exists(REG_HISTORY_FILE):
         try:
@@ -4379,9 +4322,7 @@ def update_user_reg(user_id, count):
     history[user_key]["count"] += count
     save_reg_history(history)
 
-# ====== LẤY GIỚI HẠN REG CỦA USER ======
 def get_user_reg_limit(user_id):
-    """Lấy giới hạn reg của user từ file reg_limits.json"""
     if os.path.exists(LIMITS_FILE):
         try:
             with open(LIMITS_FILE, 'r', encoding='utf-8') as f:
@@ -4397,19 +4338,17 @@ def telegram_reg_account(message):
     user_id = message.from_user.id
     is_admin = is_telegram_admin(user_id)
     
-    # ====== CHỈ ADMIN MỚI ĐƯỢC DÙNG ======
     if not is_admin:
         telegram_bot.reply_to(
             message,
-            "<blockquote><b>❌ TỪ CHỐI TRUY CẬP</b>\n"
+            "<blockquote><b>TỪ CHỐI TRUY CẬP</b>\n"
             "━━━━━━━━━━━━━━━━━━━━\n"
-            "🔴 Chỉ Admin mới có quyền sử dụng lệnh này!\n"
-            "📩 Liên hệ: @zanbackj</blockquote>",
+            "Chỉ Admin mới có quyền sử dụng lệnh này!\n"
+            "Liên hệ: @zanbackj</blockquote>",
             parse_mode="HTML"
         )
         return
     
-    # ====== CHECK GROUP ======
     if not check_user_in_group(user_id):
         send_warn_join_group(message)
         return
@@ -4419,14 +4358,14 @@ def telegram_reg_account(message):
         if len(args) < 4:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n"
+                "<blockquote><b>SAI CÚ PHÁP</b>\n"
                 "━━━━━━━━━━━━━━━━━━━━\n"
-                "💡 <code>/reg [số_lượng] [region] [tên]</code>\n\n"
-                "📌 <b>Ví dụ:</b>\n"
+                "<code>/reg [số_lượng] [region] [tên]</code>\n\n"
+                "<b>Ví dụ:</b>\n"
                 "<code>/reg 10 VN zan</code>\n\n"
-                "🌍 <b>Region hỗ trợ:</b>\n"
+                "<b>Region hỗ trợ:</b>\n"
                 "<code>VN, TH, ID, SG, MY, IN, PK, BD, RU, BR, EU, NA, ME, TW</code>\n\n"
-                "📊 <b>Giới hạn Admin:</b> <code>{}</code> acc/lần</blockquote>".format(MAX_REG_ADMIN),
+                "<b>Giới hạn Admin:</b> <code>{}</code> acc/lần</blockquote>".format(MAX_REG_ADMIN),
                 parse_mode="HTML"
             )
             return
@@ -4435,14 +4374,13 @@ def telegram_reg_account(message):
         region = args[2].upper()
         name = args[3]
         
-        # ====== KIỂM TRA TÊN ======
         if len(name) < 1:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ TÊN QUÁ NGẮN</b>\n"
+                "<blockquote><b>TÊN QUÁ NGẮN</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"🔴 Tên phải có ít nhất <b>1</b> ký tự!\n"
-                f"💡 Vui lòng nhập tên hợp lệ.</blockquote>",
+                f"Tên phải có ít nhất <b>1</b> ký tự!\n"
+                f"Vui lòng nhập tên hợp lệ.</blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -4450,11 +4388,11 @@ def telegram_reg_account(message):
         if len(name) > 8:
             telegram_bot.reply_to(
                 message,
-                f"<blockquote><b>❌ TÊN QUÁ DÀI</b>\n"
+                f"<blockquote><b>TÊN QUÁ DÀI</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"🔴 Tên chỉ được tối đa <b>8</b> ký tự!\n"
-                f"📌 Tên hiện tại: <code>{name}</code> ({len(name)} ký tự)\n"
-                f"💡 Vui lòng rút gọn tên (tối đa 8 ký tự).</blockquote>",
+                f"Tên chỉ được tối đa <b>8</b> ký tự!\n"
+                f"Tên hiện tại: <code>{name}</code> ({len(name)} ký tự)\n"
+                f"Vui lòng rút gọn tên (tối đa 8 ký tự).</blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -4462,12 +4400,12 @@ def telegram_reg_account(message):
         if " " in name:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ TÊN CÓ KHOẢNG CÁCH</b>\n"
+                "<blockquote><b>TÊN CÓ KHOẢNG CÁCH</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"🔴 Tên <b>KHÔNG ĐƯỢC</b> có khoảng cách!\n"
-                f"📌 Tên hiện tại: <code>{name}</code>\n"
-                f"💡 Vui lòng nhập tên viết liền, không dấu cách.\n"
-                f"📌 Ví dụ: <code>zan</code>, <code>vip</code>, <code>ff</code></blockquote>",
+                f"Tên <b>KHÔNG ĐƯỢC</b> có khoảng cách!\n"
+                f"Tên hiện tại: <code>{name}</code>\n"
+                f"Vui lòng nhập tên viết liền, không dấu cách.\n"
+                f"Ví dụ: <code>zan</code>, <code>vip</code>, <code>ff</code></blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -4475,10 +4413,10 @@ def telegram_reg_account(message):
         if region not in REGION_LANG:
             telegram_bot.reply_to(
                 message,
-                f"<blockquote><b>❌ REGION KHÔNG HỢP LỆ</b>\n"
+                f"<blockquote><b>REGION KHÔNG HỢP LỆ</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"🌍 Hỗ trợ: <code>{', '.join(REGION_LANG.keys())}</code>\n"
-                f"📌 Ví dụ: <code>/reg 10 VN zan</code></blockquote>",
+                f"Hỗ trợ: <code>{', '.join(REGION_LANG.keys())}</code>\n"
+                f"Ví dụ: <code>/reg 10 VN zan</code></blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -4486,8 +4424,8 @@ def telegram_reg_account(message):
         if count < 1:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ LỖI</b>\n"
-                f"🔴 Số lượng phải lớn hơn 0!</blockquote>",
+                "<blockquote><b>LỖI</b>\n"
+                f"Số lượng phải lớn hơn 0!</blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -4495,21 +4433,21 @@ def telegram_reg_account(message):
         if count > MAX_REG_ADMIN:
             telegram_bot.reply_to(
                 message,
-                f"<blockquote><b>❌ LỖI</b>\n"
-                f"🔴 Admin chỉ được reg tối đa <code>{MAX_REG_ADMIN}</code> acc/lần!</blockquote>",
+                f"<blockquote><b>LỖI</b>\n"
+                f"Admin chỉ được reg tối đa <code>{MAX_REG_ADMIN}</code> acc/lần!</blockquote>",
                 parse_mode="HTML"
             )
             return
         
         msg = telegram_bot.reply_to(
             message,
-            f"<blockquote><b>⏳ ĐANG TẠO TÀI KHOẢN</b>\n"
+            f"<blockquote><b>ĐANG TẠO TÀI KHOẢN</b>\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"📦 Số lượng: <code>{count}</code>\n"
-            f"🌍 Region: <code>{region}</code>\n"
-            f"👤 Prefix: <code>{name}</code>\n"
+            f"Số lượng: <code>{count}</code>\n"
+            f"Region: <code>{region}</code>\n"
+            f"Prefix: <code>{name}</code>\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"⏳ Vui lòng chờ...</blockquote>",
+            f"Vui lòng chờ...</blockquote>",
             parse_mode="HTML"
         )
         
@@ -4548,13 +4486,13 @@ def telegram_reg_account(message):
                     file_bytes.name = "accounts.json"
                     
                     caption = (
-                        f"<blockquote><b>✅ ADMIN REG THÀNH CÔNG</b>\n"
+                        f"<blockquote><b>ADMIN REG THÀNH CÔNG</b>\n"
                         f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"📦 Đã tạo: <code>{len(results)}/{count}</code> acc\n"
-                        f"🌍 Region: <code>{region}</code>\n"
-                        f"👤 Prefix: <code>{name}</code>\n"
+                        f"Đã tạo: <code>{len(results)}/{count}</code> acc\n"
+                        f"Region: <code>{region}</code>\n"
+                        f"Prefix: <code>{name}</code>\n"
                         f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"📥 File: <code>accounts.json</code></blockquote>"
+                        f"File: <code>accounts.json</code></blockquote>"
                     )
                     
                     telegram_bot.send_document(
@@ -4575,18 +4513,18 @@ def telegram_reg_account(message):
                         
                         keyboard = InlineKeyboardMarkup()
                         keyboard.add(
-                            InlineKeyboardButton("✅ Có (1 bot)", callback_data="addbot_yes"),
-                            InlineKeyboardButton("✅ Có (ALL bot)", callback_data="addbot_all"),
-                            InlineKeyboardButton("❌ Không", callback_data="addbot_no")
+                            InlineKeyboardButton("Có (1 bot)", callback_data="addbot_yes"),
+                            InlineKeyboardButton("Có (ALL bot)", callback_data="addbot_all"),
+                            InlineKeyboardButton("Không", callback_data="addbot_no")
                         )
                         telegram_bot.send_message(
                             message.chat.id,
-                            f"<blockquote><b>🔗 KẾT NỐI BOT TCP?</b>\n"
+                            f"<blockquote><b>KẾT NỐI BOT TCP?</b>\n"
                             f"━━━━━━━━━━━━━━━━━━━━\n"
-                            f"🤖 Số lượng: <code>{len(tokens)}</code> acc\n"
-                            f"📌 Chọn 'Có (1 bot)' để thêm 1 bot\n"
-                            f"📌 Chọn 'Có (ALL bot)' để thêm tất cả\n"
-                            f"📌 Chọn 'Không' để hủy</blockquote>",
+                            f"Số lượng: <code>{len(tokens)}</code> acc\n"
+                            f"Chọn 'Có (1 bot)' để thêm 1 bot\n"
+                            f"Chọn 'Có (ALL bot)' để thêm tất cả\n"
+                            f"Chọn 'Không' để hủy</blockquote>",
                             parse_mode="HTML",
                             reply_markup=keyboard
                         )
@@ -4594,9 +4532,9 @@ def telegram_reg_account(message):
                 else:
                     telegram_bot.send_message(
                         message.chat.id,
-                        "<blockquote><b>❌ KHÔNG TẠO ĐƯỢC ACCOUNT</b>\n"
+                        "<blockquote><b>KHÔNG TẠO ĐƯỢC ACCOUNT</b>\n"
                         f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"🔴 Vui lòng thử lại sau!</blockquote>",
+                        f"Vui lòng thử lại sau!</blockquote>",
                         parse_mode="HTML"
                     )
                     
@@ -4605,8 +4543,8 @@ def telegram_reg_account(message):
                 traceback.print_exc()
                 telegram_bot.send_message(
                     message.chat.id,
-                    f"<blockquote><b>❌ LỖI</b>\n"
-                    f"🔴 {str(e)}</blockquote>",
+                    f"<blockquote><b>LỖI</b>\n"
+                    f"{str(e)}</blockquote>",
                     parse_mode="HTML"
                 )
         
@@ -4615,29 +4553,27 @@ def telegram_reg_account(message):
     except ValueError:
         telegram_bot.reply_to(
             message,
-            "<blockquote><b>❌ LỖI</b>\n"
-            f"🔴 Số lượng phải là số nguyên!</blockquote>",
+            "<blockquote><b>LỖI</b>\n"
+            f"Số lượng phải là số nguyên!</blockquote>",
             parse_mode="HTML"
         )
     except Exception as e:
         telegram_bot.reply_to(
             message,
-            f"<blockquote><b>❌ LỖI</b>\n"
-            f"🔴 {str(e)}</blockquote>",
+            f"<blockquote><b>LỖI</b>\n"
+            f"{str(e)}</blockquote>",
             parse_mode="HTML"
         )
                             
-# ====== CALLBACK CHO ADD BOT ======
 @telegram_bot.callback_query_handler(func=lambda call: call.data in ["addbot_yes", "addbot_no", "addbot_all"])
 def callback_addbot(call):
     try:
         user_id = call.from_user.id
         
-        # ====== KIỂM TRA ADMIN ======
         if not is_telegram_admin(user_id):
             telegram_bot.answer_callback_query(
                 call.id, 
-                "❌ Bạn không phải admin để thực hiện yêu cầu này!",
+                "Bạn không phải admin để thực hiện yêu cầu này!",
                 show_alert=True
             )
             return
@@ -4646,7 +4582,7 @@ def callback_addbot(call):
         
         if call.data == "addbot_no":
             telegram_bot.edit_message_text(
-                "<blockquote><b>✅ ĐÃ HỦY KẾT NỐI</b>\n"
+                "<blockquote><b>ĐÃ HỦY KẾT NỐI</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n"
                 f"Không thêm bot TCP vào hệ thống.</blockquote>",
                 chat_id=call.message.chat.id,
@@ -4660,10 +4596,10 @@ def callback_addbot(call):
         
         if not tokens:
             telegram_bot.edit_message_text(
-                "<blockquote><b>❌ LỖI</b>\n"
+                "<blockquote><b>LỖI</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"🔴 Không lấy được access token!\n"
-                f"💡 Vui lòng thử lại lệnh /reg</blockquote>",
+                f"Không lấy được access token!\n"
+                f"Vui lòng thử lại lệnh /reg</blockquote>",
                 chat_id=call.message.chat.id,
                 message_id=call.message.message_id,
                 parse_mode="HTML"
@@ -4671,7 +4607,6 @@ def callback_addbot(call):
             telegram_bot.answer_callback_query(call.id, "Lỗi token!")
             return
         
-        # ====== THÊM 1 BOT ======
         if call.data == "addbot_yes":
             token = tokens[0] if tokens else None
             if not token:
@@ -4685,12 +4620,12 @@ def callback_addbot(call):
                 TCPbot.bots[bot_id].start()
                 
                 telegram_bot.edit_message_text(
-                    f"<blockquote><b>✅ THÊM 1 BOT THÀNH CÔNG</b>\n"
+                    f"<blockquote><b>THÊM 1 BOT THÀNH CÔNG</b>\n"
                     f"━━━━━━━━━━━━━━━━━━━━\n"
-                    f"🤖 Bot ID: <code>{bot_id}</code>\n"
-                    f"🔑 Token: <code>{token[:20]}...</code>\n"
+                    f"Bot ID: <code>{bot_id}</code>\n"
+                    f"Token: <code>{token[:20]}...</code>\n"
                     f"━━━━━━━━━━━━━━━━━━━━\n"
-                    f"⚡ Bot đã được thêm vào hệ thống!</blockquote>",
+                    f"Bot đã được thêm vào hệ thống!</blockquote>",
                     chat_id=call.message.chat.id,
                     message_id=call.message.message_id,
                     parse_mode="HTML"
@@ -4698,16 +4633,15 @@ def callback_addbot(call):
                 telegram_bot.answer_callback_query(call.id, "Thêm bot thành công!")
             else:
                 telegram_bot.edit_message_text(
-                    f"<blockquote><b>❌ THÊM BOT THẤT BẠI</b>\n"
+                    f"<blockquote><b>THÊM BOT THẤT BẠI</b>\n"
                     f"━━━━━━━━━━━━━━━━━━━━\n"
-                    f"🔴 Lý do: {result['message']}</blockquote>",
+                    f"Lý do: {result['message']}</blockquote>",
                     chat_id=call.message.chat.id,
                     message_id=call.message.message_id,
                     parse_mode="HTML"
                 )
                 telegram_bot.answer_callback_query(call.id, "Thêm bot thất bại!")
         
-        # ====== THÊM ALL BOT ======
         elif call.data == "addbot_all":
             success_count = 0
             fail_count = 0
@@ -4724,27 +4658,25 @@ def callback_addbot(call):
                     fail_count += 1
             
             telegram_bot.edit_message_text(
-                f"<blockquote><b>✅ THÊM ALL BOT THÀNH CÔNG</b>\n"
+                f"<blockquote><b>THÊM ALL BOT THÀNH CÔNG</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"✅ Thành công: <code>{success_count}</code> bot\n"
-                f"❌ Thất bại: <code>{fail_count}</code> bot\n"
-                f"🤖 Bot IDs: <code>{', '.join(map(str, bot_ids))}</code>\n"
+                f"Thành công: <code>{success_count}</code> bot\n"
+                f"Thất bại: <code>{fail_count}</code> bot\n"
+                f"Bot IDs: <code>{', '.join(map(str, bot_ids))}</code>\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"⚡ Tất cả bot đã được thêm vào hệ thống!</blockquote>",
+                f"Tất cả bot đã được thêm vào hệ thống!</blockquote>",
                 chat_id=call.message.chat.id,
                 message_id=call.message.message_id,
                 parse_mode="HTML"
             )
             telegram_bot.answer_callback_query(call.id, f"Thêm {success_count} bot thành công!")
         
-        # Xóa token tạm
         if user_id in temp_tokens:
             del temp_tokens[user_id]
             
     except Exception as e:
         telegram_bot.answer_callback_query(call.id, f"Lỗi: {str(e)}")
 
-# ====== LỆNH CHECKALLREG (BỎ HTML) ======
 @telegram_bot.message_handler(commands=['checkallreg'])
 @async_telegram
 def telegram_checkallreg(message):
@@ -4754,7 +4686,7 @@ def telegram_checkallreg(message):
     
     try:
         if not is_telegram_admin(message.from_user.id):
-            telegram_bot.reply_to(message, "❌ KHÔNG CÓ QUYỀN - Chỉ admin mới dùng được!")
+            telegram_bot.reply_to(message, "KHÔNG CÓ QUYỀN - Chỉ admin mới dùng được!")
             return
         
         history = load_reg_history()
@@ -4764,10 +4696,10 @@ def telegram_checkallreg(message):
                 limits_data = json.load(f)
         
         if not history:
-            telegram_bot.reply_to(message, "📭 CHƯA CÓ DỮ LIỆU REG - Chưa có ai reg account!")
+            telegram_bot.reply_to(message, "CHƯA CÓ DỮ LIỆU REG - Chưa có ai reg account!")
             return
         
-        text = "📊 DANH SÁCH REG CỦA TẤT CẢ USER\n"
+        text = "DANH SÁCH REG CỦA TẤT CẢ USER\n"
         text += "━━━━━━━━━━━━━━━━━━━━\n\n"
         
         today = get_today()
@@ -4803,7 +4735,7 @@ def telegram_checkallreg(message):
         user_list.sort(key=lambda x: x["count"], reverse=True)
         
         if not user_list:
-            text += "📭 Hôm nay chưa có ai reg!\n"
+            text += "Hôm nay chưa có ai reg!\n"
         else:
             for i, u in enumerate(user_list, 1):
                 text += f"{i}. {u['name']} {u['username']}\n"
@@ -4812,8 +4744,8 @@ def telegram_checkallreg(message):
                 text += f"   Ngày: {u['date']}\n\n"
         
         text += "━━━━━━━━━━━━━━━━━━━━\n"
-        text += f"📦 Tổng reg hôm nay: {total_reg} accounts\n"
-        text += f"👥 Tổng user: {len(user_list)} người"
+        text += f"Tổng reg hôm nay: {total_reg} accounts\n"
+        text += f"Tổng user: {len(user_list)} người"
         
         if len(text) > 4000:
             import io
@@ -4828,10 +4760,9 @@ def telegram_checkallreg(message):
             telegram_bot.reply_to(message, text)
         
     except Exception as e:
-        telegram_bot.reply_to(message, f"❌ LỖI: {str(e)}")
+        telegram_bot.reply_to(message, f"LỖI: {str(e)}")
 
 
-# ====== LỆNH CHECKREG (BỎ HTML) ======
 @telegram_bot.message_handler(commands=['checkreg'])
 @async_telegram
 def telegram_checkreg(message):
@@ -4883,7 +4814,7 @@ def telegram_checkreg(message):
             user_name = target_name
             username = ""
         
-        text = f"📊 THÔNG TIN REG\n"
+        text = f"THÔNG TIN REG\n"
         text += f"━━━━━━━━━━━━━━━━━━━━\n"
         text += f"User: {user_name} {username}\n"
         text += f"ID: {target_id}\n"
@@ -4923,10 +4854,9 @@ def telegram_checkreg(message):
         telegram_bot.reply_to(message, text)
         
     except Exception as e:
-        telegram_bot.reply_to(message, f"❌ LỖI: {str(e)}")
+        telegram_bot.reply_to(message, f"LỖI: {str(e)}")
 
 
-# ====== LỆNH TOPREG (BỎ HTML) ======
 @telegram_bot.message_handler(commands=['topreg'])
 @async_telegram
 def telegram_topreg(message):
@@ -4938,7 +4868,7 @@ def telegram_topreg(message):
         history = load_reg_history()
         
         if not history:
-            telegram_bot.reply_to(message, "📭 Chưa có dữ liệu reg!")
+            telegram_bot.reply_to(message, "Chưa có dữ liệu reg!")
             return
         
         user_stats = {}
@@ -4952,7 +4882,7 @@ def telegram_topreg(message):
         
         sorted_users = sorted(user_stats.items(), key=lambda x: x[1], reverse=True)[:10]
         
-        text = "🏆 TOP 10 USER REG NHIỀU NHẤT\n"
+        text = "TOP 10 USER REG NHIỀU NHẤT\n"
         text += "━━━━━━━━━━━━━━━━━━━━\n\n"
         
         for i, (uid, count) in enumerate(sorted_users, 1):
@@ -4964,7 +4894,7 @@ def telegram_topreg(message):
                 name = "Unknown"
                 username = ""
             
-            medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
+            medal = "1." if i == 1 else "2." if i == 2 else "3." if i == 3 else f"{i}."
             text += f"{medal} {name} {username}\n"
             text += f"   {count} accounts\n"
             text += f"   UID: {uid}\n\n"
@@ -4972,17 +4902,16 @@ def telegram_topreg(message):
         telegram_bot.reply_to(message, text)
         
     except Exception as e:
-        telegram_bot.reply_to(message, f"❌ LỖI: {str(e)}")
+        telegram_bot.reply_to(message, f"LỖI: {str(e)}")
                 
-# ====== LỆNH /addreg ======
 @telegram_bot.message_handler(commands=['addreg'])
 def telegram_addreg(message):
     if not is_telegram_admin(message.from_user.id):
         telegram_bot.reply_to(
             message,
-            "<b>❌ KHÔNG CÓ QUYỀN</b>\n"
+            "<b>KHÔNG CÓ QUYỀN</b>\n"
             "━━━━━━━━━━━━━━━━━━━━\n"
-            "🔴 Bạn không có quyền sử dụng lệnh này!",
+            "Bạn không có quyền sử dụng lệnh này!",
             parse_mode="HTML"
         )
         return
@@ -4992,15 +4921,15 @@ def telegram_addreg(message):
         if len(args) < 2:
             telegram_bot.reply_to(
                 message,
-                "<b>❌ SAI CÚ PHÁP</b>\n"
+                "<b>SAI CÚ PHÁP</b>\n"
                 "━━━━━━━━━━━━━━━━━━━━\n"
-                "💡 <code>/addreg @username [số_lượng]</code>\n"
-                "💡 <code>/addreg user_id [số_lượng]</code>\n\n"
-                "📌 <b>Ví dụ:</b>\n"
+                "<code>/addreg @username [số_lượng]</code>\n"
+                "<code>/addreg user_id [số_lượng]</code>\n\n"
+                "<b>Ví dụ:</b>\n"
                 "<code>/addreg @zanbackj 100</code>\n"
                 "<code>/addreg 123456789 50</code>\n\n"
-                "📊 <b>Mặc định:</b> 50 acc/ngày\n"
-                "🔄 Reset vào 00:00 hàng ngày",
+                "<b>Mặc định:</b> 50 acc/ngày\n"
+                "Reset vào 00:00 hàng ngày",
                 parse_mode="HTML"
             )
             return
@@ -5018,7 +4947,6 @@ def telegram_addreg(message):
             except:
                 limit = 50
         
-        # Xử lý target
         user_id = None
         user_name = target
         
@@ -5031,10 +4959,10 @@ def telegram_addreg(message):
             except Exception as e:
                 telegram_bot.reply_to(
                     message,
-                    f"<b>❌ KHÔNG TÌM THẤY USER</b>\n"
+                    f"<b>KHÔNG TÌM THẤY USER</b>\n"
                     f"━━━━━━━━━━━━━━━━━━━━\n"
-                    f"🔴 Username <code>{target}</code> không tồn tại!\n"
-                    f"💡 User phải đã từng chat với bot.",
+                    f"Username <code>{target}</code> không tồn tại!\n"
+                    f"User phải đã từng chat với bot.",
                     parse_mode="HTML"
                 )
                 return
@@ -5049,9 +4977,9 @@ def telegram_addreg(message):
             except:
                 telegram_bot.reply_to(
                     message,
-                    f"<b>❌ ID KHÔNG HỢP LỆ</b>\n"
+                    f"<b>ID KHÔNG HỢP LỆ</b>\n"
                     f"━━━━━━━━━━━━━━━━━━━━\n"
-                    f"🔴 <code>{target}</code> không phải ID Telegram hợp lệ!",
+                    f"<code>{target}</code> không phải ID Telegram hợp lệ!",
                     parse_mode="HTML"
                 )
                 return
@@ -5059,15 +4987,14 @@ def telegram_addreg(message):
         if not user_id:
             telegram_bot.reply_to(
                 message,
-                "<b>❌ KHÔNG TÌM THẤY USER</b>\n"
+                "<b>KHÔNG TÌM THẤY USER</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"🔴 Không xác định được user!\n"
-                f"💡 Reply tin nhắn của user: <code>/addreg 100</code>",
+                f"Không xác định được user!\n"
+                f"Reply tin nhắn của user: <code>/addreg 100</code>",
                 parse_mode="HTML"
             )
             return
         
-        # Lưu giới hạn
         limits_data = {}
         if os.path.exists(LIMITS_FILE):
             try:
@@ -5085,17 +5012,16 @@ def telegram_addreg(message):
         with open(LIMITS_FILE, "w", encoding="utf-8") as f:
             json.dump(limits_data, f, indent=2, ensure_ascii=False)
         
-        # Thông báo cho user
         try:
             telegram_bot.send_message(
                 user_id,
-                f"<b>✅ ĐÃ CẬP NHẬT GIỚI HẠN REG</b>\n"
+                f"<b>ĐÃ CẬP NHẬT GIỚI HẠN REG</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"👤 Bạn có thể tạo <code>{limit}</code> account mỗi ngày!\n"
-                f"📊 Giới hạn mới: <code>{limit}</code> acc/ngày\n"
+                f"Bạn có thể tạo <code>{limit}</code> account mỗi ngày!\n"
+                f"Giới hạn mới: <code>{limit}</code> acc/ngày\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"🔄 Reset vào 00:00 hàng ngày\n"
-                f"📌 Dùng /reg để tạo account",
+                f"Reset vào 00:00 hàng ngày\n"
+                f"Dùng /reg để tạo account",
                 parse_mode="HTML"
             )
         except:
@@ -5103,21 +5029,21 @@ def telegram_addreg(message):
         
         telegram_bot.reply_to(
             message,
-            f"<b>✅ ĐÃ CẬP NHẬT GIỚI HẠN REG</b>\n"
+            f"<b>ĐÃ CẬP NHẬT GIỚI HẠN REG</b>\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"👤 User: <code>{user_name}</code>\n"
-            f"🆔 ID: <code>{user_id}</code>\n"
-            f"📊 Giới hạn mới: <code>{limit}</code> acc/ngày\n"
+            f"User: <code>{user_name}</code>\n"
+            f"ID: <code>{user_id}</code>\n"
+            f"Giới hạn mới: <code>{limit}</code> acc/ngày\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"📩 Đã gửi thông báo cho user!",
+            f"Đã gửi thông báo cho user!",
             parse_mode="HTML"
         )
         
     except Exception as e:
         telegram_bot.reply_to(
             message,
-            f"<b>❌ LỖI</b>\n"
-            f"🔴 {str(e)}",
+            f"<b>LỖI</b>\n"
+            f"{str(e)}",
             parse_mode="HTML"
         )
                      
@@ -5145,16 +5071,15 @@ def save_telegram_user(chat_id):
 def auto_save_group_id(message):
     save_telegram_chat(message.chat.id, TELE_GROUPS_FILE)
 
-# ====== LỆNH /TB ======
 @telegram_bot.message_handler(commands=['tb'])
 def telegram_broadcast(message):
     if message.from_user.id not in ADMIN_ID:
-        telegram_bot.reply_to(message, "❌ Bạn không có quyền sử dụng lệnh này!")
+        telegram_bot.reply_to(message, "Bạn không có quyền sử dụng lệnh này!")
         return
 
     msg_text = message.text.split(maxsplit=1)
     if len(msg_text) < 2:
-        telegram_bot.reply_to(message, f"⚠️ THÔNG BÁO LỖI\nVui lòng nhập nội dung.\nVí dụ: /tb Thông báo bảo trì hệ thống")
+        telegram_bot.reply_to(message, f"THÔNG BÁO LỖI\nVui lòng nhập nội dung.\nVí dụ: /tb Thông báo bảo trì hệ thống")
         return
         
     broadcast_content = msg_text[1]
@@ -5176,16 +5101,15 @@ def telegram_broadcast(message):
             pass
 
     if not user_ids and not group_ids:
-        telegram_bot.reply_to(message, f"📭 DANH SÁCH TRỐNG\nKhông tìm thấy ID người dùng hoặc ID nhóm nào.")
+        telegram_bot.reply_to(message, f"DANH SÁCH TRỐNG\nKhông tìm thấy ID người dùng hoặc ID nhóm nào.")
         return
 
-    telegram_bot.reply_to(message, f"⏳ ĐANG TIẾN HÀNH\nĐang gửi tới {len(user_ids)} người dùng và {len(group_ids)} nhóm...")
+    telegram_bot.reply_to(message, f"ĐANG TIẾN HÀNH\nĐang gửi tới {len(user_ids)} người dùng và {len(group_ids)} nhóm...")
 
     user_success = 0
     group_success = 0
     fail_count = 0
     
-    # ====== CHỈ GỬI NỘI DUNG, KHÔNG CÓ TÊN ADMIN ======
     formatted_msg = f"<b>{broadcast_content}</b>"
 
     for user_id in user_ids:
@@ -5205,12 +5129,12 @@ def telegram_broadcast(message):
             fail_count += 1
 
     report = (
-        f"📊 KẾT QUẢ GỬI TIN (BROADCAST)\n"
+        f"KẾT QUẢ GỬI TIN (BROADCAST)\n"
         f"───────────────────────\n"
-        f"👤 Thành công User: {user_success}\n"
-        f"👥 Thành công Group: {group_success}\n"
-        f"❌ Thất bại (Block/Kích): {fail_count}\n"
-        f"🌐 Tổng số mục tiêu: {len(user_ids) + len(group_ids)}"
+        f"Thành công User: {user_success}\n"
+        f"Thành công Group: {group_success}\n"
+        f"Thất bại (Block/Kích): {fail_count}\n"
+        f"Tổng số mục tiêu: {len(user_ids) + len(group_ids)}"
     )
     telegram_bot.send_message(ADMIN_ID[0], report)
                        
@@ -5219,7 +5143,7 @@ ADMIN_IDSK = [8722607800]
 @telegram_bot.message_handler(commands=['cbrs', 'checkusers'])
 def telegram_check_users(message):
     if message.from_user.id not in ADMIN_IDSK:
-        telegram_bot.reply_to(message, "❌ Bạn không có quyền sử dụng lệnh này!")
+        telegram_bot.reply_to(message, "Bạn không có quyền sử dụng lệnh này!")
         return
     
     user_ids = []
@@ -5243,12 +5167,12 @@ def telegram_check_users(message):
     
     report = f"""
 <blockquote>
-<b>📊 DANH SÁCH NGƯỜI DÙNG</b>
+<b>DANH SÁCH NGƯỜI DÙNG</b>
 ───────────────────────
-👤 <b>Tổng User:</b> <code>{total_users}</code>
-👥 <b>Tổng Group:</b> <code>{total_groups}</code>
+<b>Tổng User:</b> <code>{total_users}</code>
+<b>Tổng Group:</b> <code>{total_groups}</code>
 ───────────────────────
-<b>📋 DANH SÁCH USER:</b>
+<b>DANH SÁCH USER:</b>
 """
     
     if user_ids:
@@ -5261,14 +5185,14 @@ def telegram_check_users(message):
             except:
                 report += f"{i}. <code>{uid}</code> (Không truy cập được)\n"
     else:
-        report += "📭 Chưa có user nào!\n"
+        report += "Chưa có user nào!\n"
     
     if len(user_ids) > 50:
         report += f"\n... và {len(user_ids) - 50} user khác"
     
     report += f"""
 ───────────────────────
-📋 <b>DANH SÁCH GROUP:</b>
+<b>DANH SÁCH GROUP:</b>
 """
     
     if group_ids:
@@ -5280,7 +5204,7 @@ def telegram_check_users(message):
             except:
                 report += f"{i}. <code>{gid}</code> (Không truy cập được)\n"
     else:
-        report += "📭 Chưa có group nào!\n"
+        report += "Chưa có group nào!\n"
     
     if len(group_ids) > 20:
         report += f"\n... và {len(group_ids) - 20} group khác"
@@ -5289,35 +5213,34 @@ def telegram_check_users(message):
     
     telegram_bot.reply_to(message, report, parse_mode="HTML")
     
-# ====== LỆNH /price TRONG TELEGRAM ======
 @telegram_bot.message_handler(commands=['price', 'gia', 'banggiao'])
 def price_cmd(message):
     text = """
-🔥 <b>BẢNG GIÁ DỊCH VỤ BOT FF</b>
+<b>BẢNG GIÁ DỊCH VỤ BOT FF</b>
 ━━━━━━━━━━━━━━━━━━━━
 
-🤖 <b>BOT TEAM 5-6 (MÚA S7):</b>
+<b>BOT TEAM 5-6 (MÚA S7):</b>
 ├ 1 ngày: 10k
 ├ 1 tuần: 40k
 └ 1 tháng: 100k
 
-👑 <b>BOT TÊN RIÊNG THEO YÊU CẦU:</b>
+<b>BOT TÊN RIÊNG THEO YÊU CẦU:</b>
 ├ 1 tuần: 60k
 └ 1 tháng: 120k
 
-🛡️ <b>BOT QUÂN ĐOÀN (NHIỀU NGƯỜI DÙNG):</b>
+<b>BOT QUÂN ĐOÀN (NHIỀU NGƯỜI DÙNG):</b>
 ├ 1 tuần: 65k
 ├ 1 tháng: 120k
 └ 3 tháng: 236k
 
 ━━━━━━━━━━━━━━━━━━━━
-✅ <b>ƯU ĐÃI ĐẶC BIỆT:</b>
-📌 Càng thuê lâu dài giá càng rẻ
-🟢 Bot online 24/7, hoạt động liên tục
-🔄 Hỗ trợ đổi tên bot theo yêu cầu
+<b>ƯU ĐÃI ĐẶC BIỆT:</b>
+Càng thuê lâu dài giá càng rẻ
+Bot online 24/7, hoạt động liên tục
+Hỗ trợ đổi tên bot theo yêu cầu
 
 ━━━━━━━━━━━━━━━━━━━━
-📩 Liên hệ mua: @zanbackj
+Liên hệ mua: @zanbackj
     """
     
     telegram_bot.reply_to(message, text, parse_mode="HTML")
@@ -5330,7 +5253,7 @@ def handle_telegram_kick(message):
     if len(parts) < 2 or not parts[1].isdigit():
         telegram_bot.reply_to(
             message, 
-            "<blockquote><b>❌ SAI CÚ PHÁP</b>\n━━━━━━━━━━━━━━━━━━━━\n💡 Dùng: <code>/kick [teamcode]</code>\n📌 Ví dụ: <code>/kick 1234567</code>\n━━━━━━━━━━━━━━━━━━━━\n⛔ Teamcode phải là 7 chữ số!</blockquote>", 
+            "<blockquote><b>SAI CÚ PHÁP</b>\n━━━━━━━━━━━━━━━━━━━━\nDùng: <code>/kick [teamcode]</code>\nVí dụ: <code>/kick 1234567</code>\n━━━━━━━━━━━━━━━━━━━━\nTeamcode phải là 7 chữ số!</blockquote>", 
             parse_mode='HTML'
         )
         return
@@ -5341,7 +5264,7 @@ def handle_telegram_kick(message):
     if not bots:
         telegram_bot.reply_to(
             message, 
-            "<blockquote><b>⚠️ KHÔNG CÓ BOT RẢNH</b>\n━━━━━━━━━━━━━━━━━━━━\n🔴 Tất cả bot đang bận hoặc offline.\n💡 Vui lòng thử lại sau!\n</blockquote>", 
+            "<blockquote><b>KHÔNG CÓ BOT RẢNH</b>\n━━━━━━━━━━━━━━━━━━━━\nTất cả bot đang bận hoặc offline.\nVui lòng thử lại sau!\n</blockquote>", 
             parse_mode='HTML'
         )
         return
@@ -5351,7 +5274,7 @@ def handle_telegram_kick(message):
         
     status_msg = telegram_bot.reply_to(
         message, 
-        f"<blockquote><b>🔄 ĐANG KICK TEAM</b>\n━━━━━━━━━━━━━━━━━━━━\n🎯 <b>Teamcode:</b> <code>{team_code_int}</code>\n🤖 <b>Bot:</b> <code>{getattr(bot, 'nickname', f'Bot #{bot.botid}')}</code>\n━━━━━━━━━━━━━━━━━━━━\n⏳ Đang xử lý!</blockquote>", 
+        f"<blockquote><b>ĐANG KICK TEAM</b>\n━━━━━━━━━━━━━━━━━━━━\nTeamcode: <code>{team_code_int}</code>\nBot: <code>{getattr(bot, 'nickname', f'Bot #{bot.botid}')}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐang xử lý!</blockquote>", 
         parse_mode='HTML'
     )
 
@@ -5376,7 +5299,7 @@ def handle_telegram_kick(message):
         bot.is_busy = False
         
         telegram_bot.edit_message_text(
-            f"<blockquote><b>✅ KICK TEAM THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\n🎯 <b>Teamcode:</b> <code>{team_code_int}</code>\n🤖 <b>Bot:</b> <code>{getattr(bot, 'nickname', f'Bot #{bot.botid}')}</code>\n━━━━━━━━━━━━━━━━━━━━\n⚡ Đã kick xong team!</blockquote>",
+            f"<blockquote><b>KICK TEAM THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\nTeamcode: <code>{team_code_int}</code>\nBot: <code>{getattr(bot, 'nickname', f'Bot #{bot.botid}')}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐã kick xong team!</blockquote>",
             chat_id=message.chat.id,
             message_id=status_msg.message_id,
             parse_mode='HTML'
@@ -5386,15 +5309,16 @@ def handle_telegram_kick(message):
         bot.rstatus = (0, 0)
         bot.is_busy = False
         telegram_bot.edit_message_text(
-            f"<blockquote><b>❌ KICK TEAM THẤT BẠI</b>\n━━━━━━━━━━━━━━━━━━━━\n🎯 <b>Teamcode:</b> <code>{team_code_int}</code>\n🔴 <b>Lỗi:</b> {str(e)}\n━━━━━━━━━━━━━━━━━━━━\n💡 Kiểm tra lại teamcode hoặc bot!</blockquote>",
+            f"<blockquote><b>KICK TEAM THẤT BẠI</b>\n━━━━━━━━━━━━━━━━━━━━\nTeamcode: <code>{team_code_int}</code>\nLỗi: {str(e)}\n━━━━━━━━━━━━━━━━━━━━\nKiểm tra lại teamcode hoặc bot!</blockquote>",
             chat_id=message.chat.id,
             message_id=status_msg.message_id,
             parse_mode='HTML'
         )                               
+
 @telegram_bot.message_handler(commands=['kball'])
 def telegram_kb_all(message):
     if not is_telegram_admin(message.from_user.id):
-        telegram_bot.reply_to(message, "❌ Không có quyền!")
+        telegram_bot.reply_to(message, "Không có quyền!")
         return
     
     try:
@@ -5402,7 +5326,7 @@ def telegram_kb_all(message):
         if len(parts) < 2:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n💡 Dùng: <code>/kball [uid]</code>\n📌 Ví dụ: <code>/kball 123456789</code></blockquote>",
+                "<blockquote><b>SAI CÚ PHÁP</b>\nDùng: <code>/kball [uid]</code>\nVí dụ: <code>/kball 123456789</code></blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -5418,29 +5342,29 @@ def telegram_kb_all(message):
             data = result.get('data', {})
             results = data.get('results', [])
             
-            msg = f"<blockquote><b>✅ GỬI KẾT BẠN ALL THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\n🆔 <b>UID:</b> <code>{uid}</code>\n✅ <b>Thành công:</b> {data.get('success', 0)}/{data.get('total_bots', 0)}\n━━━━━━━━━━━━━━━━━━━━\n"
+            msg = f"<blockquote><b>GỬI KẾT BẠN ALL THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\nUID: <code>{uid}</code>\nThành công: {data.get('success', 0)}/{data.get('total_bots', 0)}\n━━━━━━━━━━━━━━━━━━━━\n"
             
             for r in results:
-                status = "✅" if r.get('success') else "❌"
+                status = "OK" if r.get('success') else "FAIL"
                 msg += f"{status} <b>{r.get('bot_name')}</b>: {r.get('message')}\n"
             
-            msg += "━━━━━━━━━━━━━━━━━━━━\n⚡ Đã gửi qua API!</blockquote>"
+            msg += "━━━━━━━━━━━━━━━━━━━━\nĐã gửi qua API!</blockquote>"
             
             telegram_bot.reply_to(message, msg, parse_mode="HTML")
         else:
             telegram_bot.reply_to(
                 message,
-                f"<blockquote><b>❌ GỬI KẾT BẠN ALL THẤT BẠI</b>\n━━━━━━━━━━━━━━━━━━━━\n🆔 <b>UID:</b> <code>{uid}</code>\n⚠️ <b>Lý do:</b> {result.get('message')}\n━━━━━━━━━━━━━━━━━━━━\n💡 Kiểm tra lại!</blockquote>",
+                f"<blockquote><b>GỬI KẾT BẠN ALL THẤT BẠI</b>\n━━━━━━━━━━━━━━━━━━━━\nUID: <code>{uid}</code>\nLý do: {result.get('message')}\n━━━━━━━━━━━━━━━━━━━━\nKiểm tra lại!</blockquote>",
                 parse_mode="HTML"
             )
             
     except Exception as e:
-        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
+        telegram_bot.reply_to(message, f"Lỗi: {str(e)}")
 
 @telegram_bot.message_handler(commands=['xkb'])
 def telegram_xkb(message):
     if not is_telegram_admin(message.from_user.id):
-        telegram_bot.reply_to(message, "❌ Bạn không có quyền sử dụng lệnh này!")
+        telegram_bot.reply_to(message, "Bạn không có quyền sử dụng lệnh này!")
         return
     
     try:
@@ -5448,7 +5372,7 @@ def telegram_xkb(message):
         if len(parts) < 3:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n💡 Dùng: <code>/xkb [bot_id] [uid]</code>\n📌 Ví dụ: <code>/xkb 1 123456789</code></blockquote>",
+                "<blockquote><b>SAI CÚ PHÁP</b>\nDùng: <code>/xkb [bot_id] [uid]</code>\nVí dụ: <code>/xkb 1 123456789</code></blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -5465,23 +5389,23 @@ def telegram_xkb(message):
             data = result.get('data', {})
             telegram_bot.reply_to(
                 message,
-                f"<blockquote><b>✅ HỦY KẾT BẠN THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\n🤖 <b>Bot:</b> <code>{data.get('bot_name', '')}</code>\n🆔 <b>UID:</b> <code>{uid}</code>\n📩 <b>Trạng thái:</b> {result.get('message')}\n━━━━━━━━━━━━━━━━━━━━\n⚡ Đã hủy qua API!</blockquote>",
+                f"<blockquote><b>HỦY KẾT BẠN THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\nBot: <code>{data.get('bot_name', '')}</code>\nUID: <code>{uid}</code>\nTrạng thái: {result.get('message')}\n━━━━━━━━━━━━━━━━━━━━\nĐã hủy qua API!</blockquote>",
                 parse_mode="HTML"
             )
         else:
             telegram_bot.reply_to(
                 message,
-                f"<blockquote><b>❌ HỦY KẾT BẠN THẤT BẠI</b>\n━━━━━━━━━━━━━━━━━━━━\n🤖 <b>Bot ID:</b> <code>{bot_id}</code>\n🆔 <b>UID:</b> <code>{uid}</code>\n⚠️ <b>Lý do:</b> {result.get('message')}\n━━━━━━━━━━━━━━━━━━━━\n💡 Kiểm tra lại bot!</blockquote>",
+                f"<blockquote><b>HỦY KẾT BẠN THẤT BẠI</b>\n━━━━━━━━━━━━━━━━━━━━\nBot ID: <code>{bot_id}</code>\nUID: <code>{uid}</code>\nLý do: {result.get('message')}\n━━━━━━━━━━━━━━━━━━━━\nKiểm tra lại bot!</blockquote>",
                 parse_mode="HTML"
             )
             
     except Exception as e:
-        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
+        telegram_bot.reply_to(message, f"Lỗi: {str(e)}")
         
 @telegram_bot.message_handler(commands=['xkball'])
 def telegram_xkb_all(message):
     if not is_telegram_admin(message.from_user.id):
-        telegram_bot.reply_to(message, "❌ Không có quyền!")
+        telegram_bot.reply_to(message, "Không có quyền!")
         return
     
     try:
@@ -5489,7 +5413,7 @@ def telegram_xkb_all(message):
         if len(parts) < 2:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n💡 Dùng: <code>/xkball [uid]</code>\n📌 Ví dụ: <code>/xkball 123456789</code></blockquote>",
+                "<blockquote><b>SAI CÚ PHÁP</b>\nDùng: <code>/xkball [uid]</code>\nVí dụ: <code>/xkball 123456789</code></blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -5505,24 +5429,24 @@ def telegram_xkb_all(message):
             data = result.get('data', {})
             results = data.get('results', [])
             
-            msg = f"<blockquote><b>✅ HỦY KẾT BẠN ALL THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\n🆔 <b>UID:</b> <code>{uid}</code>\n✅ <b>Thành công:</b> {data.get('success', 0)}/{data.get('total_bots', 0)}\n━━━━━━━━━━━━━━━━━━━━\n"
+            msg = f"<blockquote><b>HỦY KẾT BẠN ALL THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\nUID: <code>{uid}</code>\nThành công: {data.get('success', 0)}/{data.get('total_bots', 0)}\n━━━━━━━━━━━━━━━━━━━━\n"
             
             for r in results:
-                status = "✅" if r.get('success') else "❌"
+                status = "OK" if r.get('success') else "FAIL"
                 msg += f"{status} <b>{r.get('bot_name')}</b>: {r.get('message')}\n"
             
-            msg += "━━━━━━━━━━━━━━━━━━━━\n⚡ Đã hủy qua API!</blockquote>"
+            msg += "━━━━━━━━━━━━━━━━━━━━\nĐã hủy qua API!</blockquote>"
             
             telegram_bot.reply_to(message, msg, parse_mode="HTML")
         else:
             telegram_bot.reply_to(
                 message,
-                f"<blockquote><b>❌ HỦY KẾT BẠN ALL THẤT BẠI</b>\n━━━━━━━━━━━━━━━━━━━━\n🆔 <b>UID:</b> <code>{uid}</code>\n⚠️ <b>Lý do:</b> {result.get('message')}\n━━━━━━━━━━━━━━━━━━━━\n💡 Kiểm tra lại!</blockquote>",
+                f"<blockquote><b>HỦY KẾT BẠN ALL THẤT BẠI</b>\n━━━━━━━━━━━━━━━━━━━━\nUID: <code>{uid}</code>\nLý do: {result.get('message')}\n━━━━━━━━━━━━━━━━━━━━\nKiểm tra lại!</blockquote>",
                 parse_mode="HTML"
             )
             
     except Exception as e:
-        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
+        telegram_bot.reply_to(message, f"Lỗi: {str(e)}")
                 
 @telegram_bot.message_handler(commands=['isbanned'])
 @check_group_only
@@ -5537,7 +5461,7 @@ def telegram_isbanned(message):
         if len(args) < 2:
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ INVALID SYNTAX</b>\n💡 Use: <code>/isbanned [uid]</code>\n📌 Example: <code>/isbanned 123456789</code></blockquote>",
+                "<blockquote><b>SAI CÚ PHÁP</b>\nDùng: <code>/isbanned [uid]</code>\nVí dụ: <code>/isbanned 123456789</code></blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -5546,14 +5470,14 @@ def telegram_isbanned(message):
         if not uid.isdigit():
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ ERROR</b>\n🔴 UID must be a number!</blockquote>",
+                "<blockquote><b>LỖI</b>\nUID phải là số!</blockquote>",
                 parse_mode="HTML"
             )
             return
         
         msg = telegram_bot.reply_to(
             message,
-            f"<blockquote><b>📡 CHECKING BAN STATUS</b>\n━━━━━━━━━━━━━━━━━━━━\n🎯 <b>UID:</b> <code>{uid}</code>\n━━━━━━━━━━━━━━━━━━━━\n⏳ Processing...</blockquote>",
+            f"<blockquote><b>ĐANG KIỂM TRA BAN</b>\n━━━━━━━━━━━━━━━━━━━━\nUID: <code>{uid}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐang xử lý...</blockquote>",
             parse_mode="HTML"
         )
         
@@ -5563,19 +5487,19 @@ def telegram_isbanned(message):
                 
                 if is_banned:
                     response = (
-                        f"<blockquote><b>🆔 UID: {uid}</b>\n"
+                        f"<blockquote><b>UID: {uid}</b>\n"
                         f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"📌 <b>Status:</b> 🚫 BANNED\n"
+                        f"<b>Status:</b> BANNED\n"
                         f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"⚠️ This account has been banned!</blockquote>"
+                        f"Tài khoản này đã bị ban!</blockquote>"
                     )
                 else:
                     response = (
-                        f"<blockquote><b>🆔 UID: {uid}</b>\n"
+                        f"<blockquote><b>UID: {uid}</b>\n"
                         f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"📌 <b>Status:</b> ✅ NOT BANNED\n"
+                        f"<b>Status:</b> KHÔNG BỊ BAN\n"
                         f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"✅ This account is active!</blockquote>"
+                        f"Tài khoản này đang hoạt động!</blockquote>"
                     )
                 
                 telegram_bot.edit_message_text(
@@ -5587,7 +5511,7 @@ def telegram_isbanned(message):
                 
             except Exception as e:
                 telegram_bot.edit_message_text(
-                    f"<blockquote><b>❌ ERROR</b>\n🔴 {str(e)}</blockquote>",
+                    f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
                     chat_id=message.chat.id,
                     message_id=msg.message_id,
                     parse_mode="HTML"
@@ -5598,21 +5522,21 @@ def telegram_isbanned(message):
     except Exception as e:
         telegram_bot.reply_to(
             message,
-            f"<blockquote><b>❌ ERROR</b>\n🔴 {str(e)}</blockquote>",
+            f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
             parse_mode="HTML"
         )
                                            
 @telegram_bot.message_handler(commands=['addid'])
 def telegram_addid(message):
     if not is_telegram_admin(message.from_user.id):
-        telegram_bot.reply_to(message, "❌ Không có quyền!")
+        telegram_bot.reply_to(message, "Không có quyền!")
         return
 
     parts = message.text.split()
     if len(parts) < 4:
         telegram_bot.reply_to(
             message,
-            "<blockquote><b>❌ SAI CÚ PHÁP</b>\n💡 Dùng: <code>/addid [botid] [uid] [time]</code>\n📌 Ví dụ: <code>/addid 1 123456 7d</code></blockquote>",
+            "<blockquote><b>SAI CÚ PHÁP</b>\nDùng: <code>/addid [botid] [uid] [time]</code>\nVí dụ: <code>/addid 1 123456 7d</code></blockquote>",
             parse_mode="HTML"
         )
         return
@@ -5623,14 +5547,14 @@ def telegram_addid(message):
         timee = parts[3]
 
         if bid not in TCPbot.bots:
-            telegram_bot.reply_to(message, "❌ Bot không tồn tại!")
+            telegram_bot.reply_to(message, "Bot không tồn tại!")
             return
 
         import re
         if not re.match(r'^\d+[hdwmy]$', timee.lower()):
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>❌ SAI ĐỊNH DẠNG TIME</b>\n💡 Dùng: <code>1h</code> <code>1d</code> <code>7d</code> <code>1w</code> <code>1m</code></blockquote>",
+                "<blockquote><b>SAI ĐỊNH DẠNG TIME</b>\nDùng: <code>1h</code> <code>1d</code> <code>7d</code> <code>1w</code> <code>1m</code></blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -5671,30 +5595,30 @@ def telegram_addid(message):
 
         telegram_bot.reply_to(
             message,
-            f"<blockquote><b>✅ THÊM QUYỀN THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\n🤖 <b>Bot ID:</b> <code>{bid}</code>\n👤 <b>UID:</b> <code>{uid}</code>\n⏳ <b>Time:</b> <code>{timee}</code>\n━━━━━━━━━━━━━━━━━━━━\n⚡ Đã thêm thành công!</blockquote>",
+            f"<blockquote><b>THÊM QUYỀN THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\nBot ID: <code>{bid}</code>\nUID: <code>{uid}</code>\nTime: <code>{timee}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐã thêm thành công!</blockquote>",
             parse_mode="HTML"
         )
 
     except Exception as e:
-        telegram_bot.reply_to(message, f"<blockquote><b>❌ LỖI</b>\n🔴 {str(e)}</blockquote>", parse_mode="HTML")
+        telegram_bot.reply_to(message, f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>", parse_mode="HTML")
                            
 @telegram_bot.message_handler(commands=['del'])
 def telegram_delete_user(message):
     if not is_telegram_admin(message.from_user.id):
-        telegram_bot.reply_to(message, "❌ Bạn không có quyền sử dụng lệnh này!")
+        telegram_bot.reply_to(message, "Bạn không có quyền sử dụng lệnh này!")
         return
     
     try:
         parts = message.text.split()
         if len(parts) < 3:
-            telegram_bot.reply_to(message, "❌ Sai cú pháp! Cú pháp chuẩn: /del <bot_id> <uid>")
+            telegram_bot.reply_to(message, "Sai cú pháp! Cú pháp chuẩn: /del <bot_id> <uid>")
             return
         
         bot_id = int(parts[1])
         uid = int(parts[2])
         
         if bot_id not in TCPbot.bots:
-            telegram_bot.reply_to(message, f"❌ Không tìm thấy bot ID {bot_id} trong hệ thống!")
+            telegram_bot.reply_to(message, f"Không tìm thấy bot ID {bot_id} trong hệ thống!")
             return
         
         target_bot = TCPbot.bots[bot_id]
@@ -5704,40 +5628,39 @@ def telegram_delete_user(message):
         
         if result:
             msg = (
-                f"🗑️ Đã xóa quyền sử dụng thành công!\n"
+                f"Đã xóa quyền sử dụng thành công!\n"
                 f"━━━━━━━━━━━━━━━━━━\n"
-                f"🤖 Bot ID: {bot_id}\n"
-                f"📛 Name bot: {bot_name}\n"
-                f"👤 UID: {uid}"
+                f"Bot ID: {bot_id}\n"
+                f"Name bot: {bot_name}\n"
+                f"UID: {uid}"
             )
             telegram_bot.reply_to(message, msg)
         else:
-            telegram_bot.reply_to(message, "❌ Xóa người dùng thất bại hoặc không tìm thấy dữ liệu trên bot này!")
+            telegram_bot.reply_to(message, "Xóa người dùng thất bại hoặc không tìm thấy dữ liệu trên bot này!")
             
     except ValueError:
-        telegram_bot.reply_to(message, "❌ Bot ID và UID phải là số nguyên!")
+        telegram_bot.reply_to(message, "Bot ID và UID phải là số nguyên!")
     except Exception as e:
-        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
+        telegram_bot.reply_to(message, f"Lỗi: {str(e)}")
               
 @telegram_bot.message_handler(commands=['delbot'])
 def telegram_del_bot(message):
     if not is_telegram_admin(message.from_user.id):
-        telegram_bot.reply_to(message, "❌ Bạn không có quyền sử dụng lệnh này!")
+        telegram_bot.reply_to(message, "Bạn không có quyền sử dụng lệnh này!")
         return
     
     try:
         parts = message.text.split()
         if len(parts) < 2:
-            telegram_bot.reply_to(message, "❌ Sai cú pháp!\nSử dụng: /delbot <bot_id> hoặc /delbot all")
+            telegram_bot.reply_to(message, "Sai cú pháp!\nSử dụng: /delbot <bot_id> hoặc /delbot all")
             return
         
         target = parts[1]
         
-        # ====== XÓA ALL BOT ======
         if target.lower() == "all":
             bot_list = list(TCPbot.bots.keys())
             if not bot_list:
-                telegram_bot.reply_to(message, "📭 Không có bot nào để xóa!")
+                telegram_bot.reply_to(message, "Không có bot nào để xóa!")
                 return
             
             count = 0
@@ -5751,46 +5674,45 @@ def telegram_del_bot(message):
             
             telegram_bot.reply_to(
                 message,
-                f"<blockquote><b>🗑️ ĐÃ XÓA TẤT CẢ BOT</b>\n"
+                f"<blockquote><b>ĐÃ XÓA TẤT CẢ BOT</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"✅ Đã xóa <code>{count}</code> bot\n"
-                f"📦 Tổng: <code>{len(bot_list)}</code> bot\n"
+                f"Đã xóa <code>{count}</code> bot\n"
+                f"Tổng: <code>{len(bot_list)}</code> bot\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"⚡ Tất cả bot đã bị xóa!</blockquote>",
+                f"Tất cả bot đã bị xóa!</blockquote>",
                 parse_mode="HTML"
             )
             return
         
-        # ====== XÓA 1 BOT ======
         bid = int(target)
         result = TCPbot.delete_bot(bid) 
         
         if result == "RES_OK":
-            response = f"🗑️ Xóa bot thành công!\nBot ID: {bid} đã được loại bỏ và dừng hoạt động."
+            response = f"Xóa bot thành công!\nBot ID: {bid} đã được loại bỏ và dừng hoạt động."
         elif result == "RES_BOT_NOT_FOUND":
-            response = f"❌ Xóa bot thất bại!\nLý do: Không tìm thấy Bot ID {bid} trong hệ thống."
+            response = f"Xóa bot thất bại!\nLý do: Không tìm thấy Bot ID {bid} trong hệ thống."
         elif result == "RES_BOT_BUSY":
-            response = f"⏳ Xóa bot thất bại!\nLý do: Bot {bid} đang bận xử lý tiến trình khác, không thể dừng."
+            response = f"Xóa bot thất bại!\nLý do: Bot {bid} đang bận xử lý tiến trình khác, không thể dừng."
         else:
-            response = f"❌ Lỗi không xác định: {result}"
+            response = f"Lỗi không xác định: {result}"
         
         telegram_bot.reply_to(message, response)
         
     except ValueError:
-        telegram_bot.reply_to(message, "❌ Thất bại: Bot ID phải là một số hoặc 'all'!")
+        telegram_bot.reply_to(message, "Thất bại: Bot ID phải là một số hoặc 'all'!")
     except Exception as e:
-        telegram_bot.reply_to(message, f"❌ Lỗi khi xóa bot: {str(e)}")
+        telegram_bot.reply_to(message, f"Lỗi khi xóa bot: {str(e)}")
                 
 @telegram_bot.message_handler(commands=['addadmin'])
 def telegram_add_admin(message):
     if not is_telegram_admin(message.from_user.id):
-        telegram_bot.reply_to(message, "❌ Bạn không có quyền sử dụng lệnh này!")
+        telegram_bot.reply_to(message, "Bạn không có quyền sử dụng lệnh này!")
         return
     
     try:
         parts = message.text.split()
         if len(parts) < 3:
-            telegram_bot.reply_to(message, "❌ Sai cú pháp!\nSử dụng: /addadmin <bot_id|all> <uid>")
+            telegram_bot.reply_to(message, "Sai cú pháp!\nSử dụng: /addadmin <bot_id|all> <uid>")
             return
         
         target = parts[1]
@@ -5804,26 +5726,26 @@ def telegram_add_admin(message):
                         count += 1
                 except:
                     pass
-            telegram_bot.reply_to(message, f"✅ Đã thêm UID {uid} vào {count} bot")
+            telegram_bot.reply_to(message, f"Đã thêm UID {uid} vào {count} bot")
             return         
         
         bot_id = int(target)
         if bot_id not in TCPbot.bots:
-            telegram_bot.reply_to(message, f"❌ Không tìm thấy bot ID {bot_id}")
+            telegram_bot.reply_to(message, f"Không tìm thấy bot ID {bot_id}")
             return
         
         result = AdminManager.add_admin(bot_id, uid)
         if result:
-            response = f"✅ Đã thêm admin UID {uid} cho bot ID {bot_id} thành công!"
+            response = f"Đã thêm admin UID {uid} cho bot ID {bot_id} thành công!"
         else:
-            response = f"❌ Thêm admin thất bại! UID {uid} có thể đã là admin."
+            response = f"Thêm admin thất bại! UID {uid} có thể đã là admin."
         
         telegram_bot.reply_to(message, response)
         
     except ValueError:
-        telegram_bot.reply_to(message, "❌ Bot ID và UID phải là số!")
+        telegram_bot.reply_to(message, "Bot ID và UID phải là số!")
     except Exception as e:
-        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
+        telegram_bot.reply_to(message, f"Lỗi: {str(e)}")
         
 TCPbot = BOTMNG()
 app = Flask(__name__)
@@ -5860,12 +5782,10 @@ def add_uid():
         bid = int(bid)
         uid = int(uid)
         
-        # Kiểm tra định dạng time
         import re
         if not re.match(r'^\d+[hdwmy]$', timee.lower()):
             return "RES_INVALID_TIME", 201
         
-        # Thêm trực tiếp vào database bằng SQL
         import sqlite3
         db_path = f"bot_{bid}.db"
         
@@ -5873,7 +5793,6 @@ def add_uid():
             conn = sqlite3.connect(db_path)
             cursor = conn.cursor()
             
-            # Tạo bảng
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS access (
                     uid INTEGER PRIMARY KEY,
@@ -5881,7 +5800,6 @@ def add_uid():
                 )
             ''')
             
-            # Lưu timee dạng chuỗi
             cursor.execute(
                 'INSERT OR REPLACE INTO access (uid, expire_time) VALUES (?, ?)',
                 (uid, timee)
@@ -5890,17 +5808,14 @@ def add_uid():
             conn.commit()
             conn.close()
             
-            # Reload lại access cho bot
             if bid in TCPbot.bots:
                 bot = TCPbot.bots[bid]
                 if hasattr(bot, 'load_access'):
                     bot.load_access()
-                # Hoặc cập nhật trực tiếp vào bot_config
                 if hasattr(bot, 'bot_config'):
                     if 'access_bot' not in bot.bot_config:
                         bot.bot_config['access_bot'] = []
                     
-                    # Kiểm tra và cập nhật
                     found = False
                     for u in bot.bot_config['access_bot']:
                         if u.get('uid') == uid:
@@ -5941,7 +5856,6 @@ def add_bot():
     if not token: 
         return "RES_INVALID", 201
     
-    # Kiểm tra token trước khi thêm
     try:
         from ReQAPI import FreeFireAPI
         test = FreeFireAPI().get(token, is_emulator=False)
@@ -5971,7 +5885,6 @@ def api_lag():
     if len(str(tc)) != 7:
         return jsonify({"success": False, "message": "tc must be 7 digits"}), 400
     
-    # Tìm bot rảnh
     bot = None
     for b in TCPbot.bots.values():
         if (b.running_event.is_set() and 
@@ -6097,7 +6010,6 @@ def api_kb_get():
             
         bot_uid = getattr(bot, 'botid', '')
         
-        # Gửi kết bạn trực tiếp 
         try:
             def encrypt_uid(x):
                 dec = ['80','81','82','83','84','85','86','87','88','89','8a','8b','8c','8d','8e','8f','90','91','92','93','94','95','96','97','98','99','9a','9b','9c','9d','9e','9f','a0','a1','a2','a3','a4','a5','a6','a7','a8','a9','aa','ab','ac','ad','ae','af','b0','b1','b2','b3','b4','b5','b6','b7','b8','b9','ba','bb','bc','bd','be','bf','c0','c1','c2','c3','c4','c5','c6','c7','c8','c9','ca','cb','cc','cd','ce','cf','d0','d1','d2','d3','d4','d5','d6','d7','d8','d9','da','db','dc','dd','de','df','e0','e1','e2','e3','e4','e5','e6','e7','e8','e9','ea','eb','ec','ed','ee','ef','f0','f1','f2','f3','f4','f5','f6','f7','f8','f9','fa','fb','fc','fd','fe','ff']
@@ -6213,7 +6125,6 @@ def api_kb_all_get():
         success_count = 0
         online_bots = 0
         
-        # Hàm mã hóa UID
         def encrypt_uid(x):
             dec = ['80','81','82','83','84','85','86','87','88','89','8a','8b','8c','8d','8e','8f','90','91','92','93','94','95','96','97','98','99','9a','9b','9c','9d','9e','9f','a0','a1','a2','a3','a4','a5','a6','a7','a8','a9','aa','ab','ac','ad','ae','af','b0','b1','b2','b3','b4','b5','b6','b7','b8','b9','ba','bb','bc','bd','be','bf','c0','c1','c2','c3','c4','c5','c6','c7','c8','c9','ca','cb','cc','cd','ce','cf','d0','d1','d2','d3','d4','d5','d6','d7','d8','d9','da','db','dc','dd','de','df','e0','e1','e2','e3','e4','e5','e6','e7','e8','e9','ea','eb','ec','ed','ee','ef','f0','f1','f2','f3','f4','f5','f6','f7','f8','f9','fa','fb','fc','fd','fe','ff']
             xxx = ['1','01','02','03','04','05','06','07','08','09','0a','0b','0c','0d','0e','0f','10','11','12','13','14','15','16','17','18','19','1a','1b','1c','1d','1e','1f','20','21','22','23','24','25','26','27','28','29','2a','2b','2c','2d','2e','2f','30','31','32','33','34','35','36','37','38','39','3a','3b','3c','3d','3e','3f','40','41','42','43','44','45','46','47','48','49','4a','4b','4c','4d','4e','4f','50','51','52','53','54','55','56','57','58','59','5a','5b','5c','5d','5e','5f','60','61','62','63','64','65','66','67','68','69','6a','6b','6c','6d','6e','6f','70','71','72','73','74','75','76','77','78','79','7a','7b','7c','7d','7e','7f']
@@ -6851,16 +6762,16 @@ def ping_api_keep_alive():
     while True:
         try:
             resp = requests.get(url, timeout=10)
-            print(f"[PING] ✅ {url} - Status: {resp.status_code}")
+            print(f"[PING] {url} - Status: {resp.status_code}")
         except Exception as e:
-            print(f"[PING] ❌ Lỗi: {e}")
+            print(f"[PING] Lỗi: {e}")
         
         time.sleep(600) 
 
 def start_ping_thread():
     thread = threading.Thread(target=ping_api_keep_alive, daemon=True)
     thread.start()
-    print("[PING] ✅ Đã khởi động thread ping API mỗi 10 phút!")
+    print("[PING] Đã khởi động thread ping API mỗi 10 phút!")
     
 if __name__ == "__main__":
     start_auto_like
