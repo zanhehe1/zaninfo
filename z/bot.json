@@ -155,6 +155,44 @@
       "active-clan": true,
       "botid": 18349993711,
       "nickname": "zanメgay²⁴⁸⁷⁷"
+    },
+    {
+      "bot_id": 9,
+      "auth_bot_login": {
+        "access_token": "37e372357399790560eadcd69dbcd85adacbbd0262c580710fe1d4ed117d6764"
+      },
+      "access_bot": [
+        {
+          "uid": 16104663154,
+          "expire": "2054-02-12 09:48:18"
+        },
+        {
+          "uid": 3391643669,
+          "expire": "2029-06-23 05:36:39"
+        }
+      ],
+      "active-clan": true,
+      "botid": 9894466256,
+      "nickname": "nq quy."
+    },
+    {
+      "bot_id": 10,
+      "auth_bot_login": {
+        "access_token": "39a915a7b7f613ff31963949522ead78530505a50512d7edef0031c0f5fe6f43"
+      },
+      "access_bot": [
+        {
+          "uid": 3391643669,
+          "expire": "2029-06-23 09:52:29"
+        },
+        {
+          "uid": 16104663154,
+          "expire": "2054-02-12 09:52:40"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18364095641,
+      "nickname": "ngquyメ⁶⁷¹⁶²⁷"
     }
   ]
 }
