@@ -2,9 +2,9 @@ import threading, json, socket, time, random, datetime, aiohttp, asyncio, os, st
 import datetime as dt
 import string
 import lib
-from zandev.lib import *
-from zandev.GPackGEN import *
-from zandev.ReQAPI import *
+from lib import *
+from GPackGEN import *
+from ReQAPI import *
 from flask import Flask, jsonify, request 
 from functools import wraps
 import threading
