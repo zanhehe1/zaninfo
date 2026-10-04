@@ -388,30 +388,29 @@ class FreeFireTCP:
         print(f"[Bot {self.botid}] Lỗi: {e}")
 
  def C1200(self, data, client):
-   try:
-       data = data1200(data)
-       if not data.valid:
-           return False
-       uid, cid, type = data.uid, data.cid, data.type
-       if uid is None or cid is None:
-           return False
-       if self.botid is None:
-           return False
-       try:
-           botid_int = int(self.botid)
-       except (ValueError, TypeError):
-           return False
-       if botid_int in [cid, uid]:
-           return False
-       message, name = data.message, data.name
-       idlist = [u["uid"] for u in self.bot_config.get("access_bot", [])]
-       is_admin = (uid in idlist) or (uid == ADMIN_ID)
-       if not message:
-           return False
-       return False
-   except Exception as e:
-       print(f"[C1200 ERROR] {e}")
-       self.rstatus, self.ids = (0, 0), []
+    try:
+        data = data1200(data)
+        if not data.valid:
+            return False
+        uid, cid, type = data.uid, data.cid, data.type
+        if uid is None or cid is None:
+            return False
+        if self.botid is None:
+            return False
+        try:
+            botid_int = int(self.botid)
+        except (ValueError, TypeError):
+            return False
+        if botid_int in [cid, uid]:
+            return False
+        message, name = data.message, data.name
+        idlist = [u["uid"] for u in self.bot_config.get("access_bot", [])]
+        is_admin = (uid in idlist) or (uid == ADMIN_ID)
+        if not message:
+            return False
+        return False
+    except Exception as e:
+        self.rstatus, self.ids = (0, 0), []
 
                         
    if is_admin and message.startswith("@"):
