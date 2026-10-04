@@ -1,42 +1,160 @@
 {
   "bots": [
     {
-      "bot_id": 1,
+      "bot_id": 2,
       "auth_bot_login": {
-        "access_token": "4bd3cc80b55ed61f92ed3dc11931ab4802ea9352183269bfe75c30c02399e280"
+        "access_token": "8005897475:zanxgay_83b5f8cf092d9b73b51f"
       },
       "access_bot": [
         {
-          "uid": 16104663154,
-          "expire": "2054-02-14 06:15:45"
+          "uid": 15154234185,
+          "expire": "2054-02-18 22:07:29"
+        },
+        {
+          "uid": 17455970354,
+          "expire": "2026-10-24 09:53:48"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18437422847,
+      "nickname": "zanメluong³¹²"
+    },
+    {
+      "bot_id": 4,
+      "auth_bot_login": {
+        "access_token": "ca57020f77ed9fe5012bd160de95c6a781d88c8ef689bf7145ee25a297af2a7e"
+      },
+      "access_bot": [
+        {
+          "uid": 3391643669,
+          "expire": "2027-01-11 16:49:33"
+        },
+        {
+          "uid": 15154234185,
+          "expire": "2054-02-18 22:07:53"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18442279970,
+      "nickname": "ngquyメ⁷⁰¹²⁵³"
+    },
+    {
+      "bot_id": 5,
+      "auth_bot_login": {
+        "access_token": "d7fe56bd2611090abb35a2e1b26027351d691977712a384fe61de4c93d405b63"
+      },
+      "access_bot": [
+        {
+          "uid": 3391643669,
+          "expire": "2027-01-11 16:49:43"
+        },
+        {
+          "uid": 15154234185,
+          "expire": "2054-02-18 22:08:02"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18442284615,
+      "nickname": "ngquyメ⁷⁹¹²⁵³"
+    },
+    {
+      "bot_id": 6,
+      "auth_bot_login": {
+        "access_token": "fd0dba2c5aebbabec3584775d0e2d3b8475ded4ac9c1fa7fe8b04cdd43eddd1b"
+      },
+      "access_bot": [
+        {
+          "uid": 3391643669,
+          "expire": "2027-01-11 16:49:51"
+        },
+        {
+          "uid": 15154234185,
+          "expire": "2054-02-18 22:08:31"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18442280034,
+      "nickname": "ngquyメ⁶¹¹⁷⁹⁷"
+    },
+    {
+      "bot_id": 7,
+      "auth_bot_login": {
+        "access_token": "749d37cb7d12a2007541354f830eafba8828127cc53e68b0554bae95aee1e00e"
+      },
+      "access_bot": [
+        {
+          "uid": 449224166,
+          "expire": "2029-06-29 18:05:19"
+        },
+        {
+          "uid": 15154234185,
+          "expire": "2054-02-18 22:08:23"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18443115934,
+      "nickname": "TkietwHtuan⁶"
+    },
+    {
+      "bot_id": 8,
+      "auth_bot_login": {
+        "access_token": "cbd17c3d5b26067b1160c4585d8e6ccfe44e5fb7a56ea1a982f33ec885efef5b"
+      },
+      "access_bot": [
+        {
+          "uid": 15154234185,
+          "expire": "2054-02-18 22:08:31"
         },
         {
           "uid": 17595099156,
-          "expire": "2029-06-25 06:16:49"
+          "expire": "2029-06-29 21:12:48"
+        },
+        {
+          "uid": 3149450847,
+          "expire": "2027-01-11 21:13:10"
         }
       ],
       "active-clan": true,
-      "botid": 18382187452,
-      "nickname": "huyiunhí⁰³¹⁹"
+      "botid": 18444245474,
+      "nickname": "đệquaghuj⁴⁷⁸"
     },
     {
-      "bot_id": 2,
+      "bot_id": 9,
       "auth_bot_login": {
-        "access_token": "8a9caf3220b0a7b2d650c293e451211fb9533fcbb49b16ddd4d6c8e37a64f5db"
+        "access_token": "4230a2ab3a174bba6f09abab3a2c19702f5fc2595d7a2233a54dc5429b2a0bd6"
       },
       "access_bot": [
         {
-          "uid": 16104663154,
-          "expire": "2054-02-14 06:20:57"
+          "uid": 15154234185,
+          "expire": "2054-02-18 22:22:17"
         },
         {
-          "uid": 3391643669,
-          "expire": "2029-06-25 06:21:38"
+          "uid": 14592977412,
+          "expire": "2029-06-29 22:22:20"
         }
       ],
       "active-clan": true,
-      "botid": 18382249654,
-      "nickname": "ngquyメ⁸⁶⁵²⁸⁰"
+      "botid": 18446337401,
+      "nickname": "bihbelphif⁶⁷"
+    },
+    {
+      "bot_id": 10,
+      "auth_bot_login": {
+        "access_token": "b6ed625b2d2fd42646530daf24397a33a2f74011aae6ee97eb202ee876283e84"
+      },
+      "access_bot": [
+        {
+          "uid": 15154234185,
+          "expire": "2054-02-18 22:35:47"
+        },
+        {
+          "uid": 1231324134,
+          "expire": "2027-01-11 22:36:13"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18446482458,
+      "nickname": "dtuan¹⁶⁵²⁶¹⁴"
     }
   ]
 }
