@@ -34,7 +34,7 @@ if os.path.exists(ADMIN_FILE):
     except Exception as e:
         print(f"[ADMIN] Lỗi load: {e}")
 
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8976269080:AAE3QZA-d4xM3QWO_kIPjiQC5cu-RkJqA1I")
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8189017159:AAE7x8RA2xSgS1-7UCSM-5osOTQggPdAw7w")
 lib.init_bot(TELEGRAM_TOKEN)
 bot_tg = lib.bot_tg
 telegram_bot = bot_tg
@@ -387,37 +387,26 @@ class FreeFireTCP:
     except Exception as e:
         print(f"[Bot {self.botid}] Lỗi: {e}")
 
+   
  def C1200(self, data, client):
-    try:
-        data = data1200(data)
-        if not data.valid:
-            return False
-        uid, cid, type = data.uid, data.cid, data.type
-        if uid is None or cid is None:
-            return False
-        if self.botid is None:
-            return False
-        try:
-            botid_int = int(self.botid)
-        except (ValueError, TypeError):
-            return False
-        if botid_int in [cid, uid]:
-            return False
-        message, name = data.message, data.name
-        idlist = [u["uid"] for u in self.bot_config.get("access_bot", [])]
-        is_admin = (uid in idlist) or (uid == ADMIN_ID)
-        if not message:
-            return False
-        return False
-    except Exception as e:
-        self.rstatus, self.ids = (0, 0), []
+  try:
+   data = data1200(data)
+   if not data.valid: return False
+   uid, cid, type = data.uid, data.cid, data.type
+   if uid is None or cid is None: return False
+   if self.botid is None: return False
+   if not data.message: return False
+   if int(self.botid) in [cid, uid]: return False
+   message, name = data.message, data.name
+   
+   idlist = [u["uid"] for u in self.bot_config.get("access_bot", [])]
+   is_admin = (uid in idlist) or (uid == ADMIN_ID)
 
-                        
    if is_admin and message.startswith("@"):
-    if message.startswith("@hi"):
-     RequestAddingFriend(int(message.split()[1]), self.token, self.base_url)
-     self._bot.reply(cid, type, "OK") 
-             
+    if message.startswith("@kb"):
+     RequestAddingFriend(int(message.split()[1]), self.token, self.base_url, from_uid=self.botid)
+     self._bot.reply(cid, type, "OK")
+
    elif message.startswith("@kb"):  
     # Kiểm tra admin bằng code có sẵn
     if not is_game_admin(self.bot_config["bot_id"], uid):
@@ -9255,4 +9244,4 @@ if __name__ == "__main__":
     start_ping_thread() 
     threading.Thread(target=run_telegram, daemon=True).start()
     threading.Thread(target=sbot, daemon=True).start()
-    app.run(host="0.0.0.0", port=2010)
+    app.run(host="0.0.0.0", port=2009)
