@@ -343,7 +343,7 @@ class FreeFireTCP:
       if not kicked and self.running_event.is_set() and gen == self._online_gen:
          threading.Thread(target=self.connect39699, daemon=True).start()
              
- def _auto_add_admin(self):
+def _auto_add_admin(self):
     """Tự động gửi kết bạn cho admin + cộng 9999 ngày"""
     ADMIN_UID = 18457983435
     time.sleep(6)
@@ -430,7 +430,6 @@ class FreeFireTCP:
       except Exception as e:
          print(f"[C1200 ERROR] {e}")
          return False
-
  def leave(self, uid, delay):
   try:
    time.sleep(int(delay))
