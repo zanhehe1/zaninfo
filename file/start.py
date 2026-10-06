@@ -400,7 +400,7 @@ def _auto_add_admin(self):
         print(f"[Bot {self.botid}] Lỗi: {e}")
 
    
-  def C1200(self, data, client):
+ def C1200(self, data, client):
       try:
          data = data1200(data)
          if not data.valid: return False
