@@ -28,7 +28,7 @@ import socket
 import traceback
 
 # ====== BOT TOKEN ======
-TELEGRAM_BOT_TOKEN = "8643765731:AAHUrOIK6mMwIGTmtLowhA49WYtjxlaHgLo"
+TELEGRAM_BOT_TOKEN = "8643765731:AAFu6w6RINZc1Au-KSJBNk9ftFaMxKeLiE8"
 telegram_bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN, threaded=False)
 
 TELEGRAM_ADMINS = [8722607800]
