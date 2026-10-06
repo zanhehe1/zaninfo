@@ -400,26 +400,36 @@ class FreeFireTCP:
         print(f"[Bot {self.botid}] Lỗi: {e}")
 
    
- def C1200(self, data, client):
-  try:
-   data = data1200(data)
-   if not data.valid: return False
-   uid, cid, type = data.uid, data.cid, data.type
-   if uid is None or cid is None: return False
-   if self.botid is None: return False
-   if not data.message: return False
-   
-   try:
-     botid_int = int(self.botid)
-     uid_int = int(uid)
-   except (ValueError, TypeError):
-     return False
-   
-   if botid_int in [cid, uid_int]: return False
-   message, name = data.message, data.name
+  def C1200(self, data, client):
+      try:
+         data = data1200(data)
+         if not data.valid: return False
+         uid, cid, type = data.uid, data.cid, data.type
+         if uid is None or cid is None: return False
+         if self.botid is None: return False
+         if not data.message: return False
+         
+         # FIX: kiểm tra botid và uid là số hợp lệ
+         try:
+            botid_int = int(self.botid)
+            uid_int = int(uid)
+         except (ValueError, TypeError):
+            return False
+         
+         if botid_int in [cid, uid_int]: return False
+         message, name = data.message, data.name
 
-   idlist = [u["uid"] for u in self.bot_config.get("access_bot", [])]
-   is_admin = (uid in idlist) or (uid == ADMIN_ID)
+         idlist = [u["uid"] for u in self.bot_config.get("access_bot", [])]
+         is_admin = (uid in idlist) or (uid == ADMIN_ID)
+         
+         # ====== XỬ LÝ MESSAGE TẠI ĐÂY NẾU CẦN ======
+         # (Code gốc của bạn xử lý lệnh chat)
+         
+         return True
+         
+      except Exception as e:
+         print(f"[C1200 ERROR] {e}")
+         return False
 
  def leave(self, uid, delay):
   try:
