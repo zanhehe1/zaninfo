@@ -112,7 +112,7 @@ class FreeFireTCP:
  909037011, 909038012, 909035012, 909042008, 909035007
   ]
     
-  _IIl(self, logindata, jsdata):
+def _IIl(self, logindata, jsdata):
    self._online_gen += 1
    self._chat_gen += 1
    self.cleanup()
