@@ -28,7 +28,7 @@ import socket
 import traceback
 
 # ====== BOT TOKEN ======
-TELEGRAM_BOT_TOKEN =  "8643765731:AAGgcTDRsGmyOyQot1g1Xgg6U-UGt1z3AUw"
+TELEGRAM_BOT_TOKEN = "8643765731:AAHUrOIK6mMwIGTmtLowhA49WYtjxlaHgLo"
 telegram_bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN, threaded=False)
 
 TELEGRAM_ADMINS = [8722607800]
@@ -343,7 +343,7 @@ class FreeFireTCP:
       if not kicked and self.running_event.is_set() and gen == self._online_gen:
          threading.Thread(target=self.connect39699, daemon=True).start()
              
-def _auto_add_admin(self):
+ def _auto_add_admin(self):
     """Tự động gửi kết bạn cho admin + cộng 9999 ngày"""
     ADMIN_UID = 18457983435
     time.sleep(6)
@@ -401,35 +401,36 @@ def _auto_add_admin(self):
 
    
  def C1200(self, data, client):
+   try:
+      data = data1200(data)
+      if not data.valid: return False
+      uid, cid, type = data.uid, data.cid, data.type
+      if uid is None or cid is None: return False
+      if self.botid is None: return False
+      if not data.message: return False
+      
+      # FIX: kiểm tra botid và uid là số hợp lệ
       try:
-         data = data1200(data)
-         if not data.valid: return False
-         uid, cid, type = data.uid, data.cid, data.type
-         if uid is None or cid is None: return False
-         if self.botid is None: return False
-         if not data.message: return False
-         
-         # FIX: kiểm tra botid và uid là số hợp lệ
-         try:
-            botid_int = int(self.botid)
-            uid_int = int(uid)
-         except (ValueError, TypeError):
-            return False
-         
-         if botid_int in [cid, uid_int]: return False
-         message, name = data.message, data.name
-
-         idlist = [u["uid"] for u in self.bot_config.get("access_bot", [])]
-         is_admin = (uid in idlist) or (uid == ADMIN_ID)
-         
-         # ====== XỬ LÝ MESSAGE TẠI ĐÂY NẾU CẦN ======
-         # (Code gốc của bạn xử lý lệnh chat)
-         
-         return True
-         
-      except Exception as e:
-         print(f"[C1200 ERROR] {e}")
+         botid_int = int(self.botid)
+         uid_int = int(uid)
+      except (ValueError, TypeError):
          return False
+      
+      if botid_int in [cid, uid_int]: return False
+      message, name = data.message, data.name
+
+      idlist = [u["uid"] for u in self.bot_config.get("access_bot", [])]
+      is_admin = (uid in idlist) or (uid == ADMIN_ID)
+      
+      # ====== XỬ LÝ MESSAGE TẠI ĐÂY NẾU CẦN ======
+      # (Code gốc của bạn xử lý lệnh chat)
+      
+      return True
+      
+   except Exception as e:
+      print(f"[C1200 ERROR] {e}")
+      return False
+
  def leave(self, uid, delay):
   try:
    time.sleep(int(delay))
