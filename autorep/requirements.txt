@@ -1,4 +1,4 @@
 telethon
 aiohttp
 edge-tts
-requests
+requestshi
