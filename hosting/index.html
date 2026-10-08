@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zan Hosting Panel</title>
+<link rel="stylesheet" href="/static/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+<!-- Background animation -->
+<div class="bg-animated">
+  <div class="blob"></div>
+  <div class="blob"></div>
+  <div class="blob"></div>
+</div>
+
+<!-- HEADER -->
+<header class="topbar">
+  <div class="brand">
+    <img src="https://ui-avatars.com/api/?name=Z&background=3b82f6&color=fff&size=64" class="avatar">
+    <div>
+      <div class="brand-name">ZAN HOSTING</div>
+      <div class="brand-sub">Node: <span id="node-id">de27.spaceify.eu</span></div>
+    </div>
+  </div>
+  <div class="nav">
+    <button class="nav-btn active"><i class="fas fa-home"></i> Home</button>
+    <button class="nav-btn danger"><i class="fas fa-sign-out-alt"></i> Logout</button>
+  </div>
+</header>
+
+<!-- INFO BAR -->
+<div class="info-bar">
+  <div class="info-item">
+    <div class="info-label">THỜI GIAN</div>
+    <div class="info-value" id="clock">--:--:--</div>
+    <div class="info-sub" id="date">--/--/----</div>
+  </div>
+  <div class="info-item">
+    <div class="info-label">THỜI TIẾT</div>
+    <div class="info-value">☀️ 28°C</div>
+    <div class="info-sub">Việt Nam</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- CONTROL BUTTONS -->
+  <div class="controls">
+    <button class="btn start" onclick="startBot()"><i class="fas fa-play"></i> START</button>
+    <button class="btn stop" onclick="stopBot()"><i class="fas fa-stop"></i> STOP</button>
+    <button class="btn restart" onclick="restartBot()"><i class="fas fa-redo"></i> RESTART</button>
+    <button class="btn clear" onclick="clearConsole()"><i class="fas fa-trash"></i> CLEAR</button>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab(event,'console')">Console</button>
+    <button class="tab" onclick="switchTab(event,'files')">Files</button>
+    <button class="tab" onclick="switchTab(event,'ping')">Ping Monitor</button>
+  </div>
+
+  <!-- TAB CONSOLE -->
+  <div class="tab-content active" id="tab-console">
+    <div class="console" id="console">
+      <div class="console-line info">[SYSTEM] Đang tải console...</div>
+    </div>
+    <div class="cmd-bar">
+      <span class="cmd-prompt">$</span>
+      <input type="text" id="cmdInput" placeholder="Type command..." onkeydown="if(event.key==='Enter')sendCmd()">
+      <button class="send-btn" onclick="sendCmd()"><i class="fas fa-paper-plane"></i> SEND</button>
+    </div>
+  </div>
+
+  <!-- TAB FILES -->
+  <div class="tab-content" id="tab-files">
+    <div class="upload-zone" id="uploadZone">
+      <i class="fas fa-cloud-upload-alt"></i>
+      <div class="upload-text">Kéo thả file vào đây hoặc <span class="link">chọn file</span></div>
+      <input type="file" id="fileInput" hidden multiple>
+    </div>
+    <div class="files-actions">
+      <button class="btn-small" onclick="createBot()"><i class="fas fa-plus"></i> Tạo Bot Mới</button>
+      <button class="btn-small" onclick="refreshFiles()"><i class="fas fa-sync"></i> Refresh</button>
+    </div>
+    <div class="files-list" id="filesList">
+      <div class="empty">Chưa có file nào</div>
+    </div>
+  </div>
+
+  <!-- TAB PING -->
+  <div class="tab-content" id="tab-ping">
+    <div class="stats-grid">
+      <div class="stat">
+        <div class="stat-label">TRẠNG THÁI</div>
+        <div class="stat-value wait" id="ping-status"><span class="pulse"></span> Đang chờ</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">HTTP CODE</div>
+        <div class="stat-value" id="ping-code">-</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">THỜI GIAN</div>
+        <div class="stat-value" id="ping-elapsed">-</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">TỔNG LẦN</div>
+        <div class="stat-value" id="ping-total">0</div>
+      </div>
+    </div>
+    <div class="controls-small">
+      <button class="btn-small" onclick="pingNow()"><i class="fas fa-bolt"></i> Ping Ngay</button>
+      <button class="btn-small" onclick="loadPingLogs()"><i class="fas fa-sync"></i> Refresh</button>
+    </div>
+    <div class="ping-log" id="ping-log">
+      <div class="empty">Chưa có log</div>
+    </div>
+  </div>
+
+  <!-- BOT BAR -->
+  <div class="bot-bar">
+    <div class="bot-item">
+      <div class="bot-label">ADDRESS</div>
+      <div class="bot-value blue">de27.spaceify.eu:26005</div>
+    </div>
+    <div class="bot-item">
+      <div class="bot-label">STATUS</div>
+      <div class="bot-value green" id="bot-status"><span class="pulse"></span> Running</div>
+    </div>
+    <div class="bot-item">
+      <div class="bot-label">RAM USAGE</div>
+      <div class="bot-value" id="ram">110.5 MB</div>
+    </div>
+    <div class="bot-item">
+      <div class="bot-label">UPTIME</div>
+      <div class="bot-value" id="uptime">0h 1m 1s</div>
+    </div>
+  </div>
+</div>
+
+<script src="/static/script.js"></script>
+</body>
+</html>
