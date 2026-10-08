@@ -34,7 +34,7 @@ if os.path.exists(ADMIN_FILE):
     except Exception as e:
         print(f"[ADMIN] Lỗi load: {e}")
 
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8976269080:AAF78FEmuFZwrZJQJ2WDY8v3DyeQhSOXxLo")
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8976269080:AAGq9SoxrVD-Ddx5I7svsP4pqnUxmuzVCTA")
 lib.init_bot(TELEGRAM_TOKEN)
 bot_tg = lib.bot_tg
 telegram_bot = bot_tg
