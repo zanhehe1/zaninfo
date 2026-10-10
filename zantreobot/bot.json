@@ -85,7 +85,7 @@
         },
         {
           "uid": 18457983435,
-          "expire": "2054-02-24 11:07:41"
+          "expire": "2054-02-24 05:16:37"
         }
       ],
       "active-clan": true,
@@ -226,7 +226,7 @@
       "access_bot": [
         {
           "uid": 18457983435,
-          "expire": "2054-02-24 11:12:15"
+          "expire": "2054-02-24 05:16:37"
         },
         {
           "uid": 509485248,
@@ -293,6 +293,14 @@
       "active-clan": true,
       "botid": 18479348192,
       "nickname": "cmej mayf⁹⁰⁰"
+    },
+    {
+      "bot_id": 17,
+      "auth_bot_login": {
+        "access_token": "8738e454430fb7bed2fff5b80feaf478895598354e00c76d914018c3ba29f201"
+      },
+      "access_bot": [],
+      "active-clan": true
     }
   ]
-}
+}p
