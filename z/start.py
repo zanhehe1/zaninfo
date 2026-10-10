@@ -2607,6 +2607,7 @@ Developer: @zanxgay
             "g18": 909038012,
             "m4a1": 909039011,
             "aug": 909054004,
+            "awm": 909055007,
         }
 
         if len(parts) == 2 and parts[1].lower() == "list":
