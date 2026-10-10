@@ -300,6 +300,47 @@
         "access_token": "8738e454430fb7bed2fff5b80feaf478895598354e00c76d914018c3ba29f201"
       },
       "access_bot": [],
+      "active-clan": true,
+      "botid": 18517916296,
+      "nickname": "tuilatipo⁰"
+    },
+    {
+      "bot_id": 18,
+      "auth_bot_login": {
+        "access_token": "f6197652d39ee687a18e25cc5ced4c467167e57e7f3d38a980f2590adc7cafb1"
+      },
+      "access_bot": [
+        {
+          "uid": 281100969,
+          "expire": "2029-07-05 11:10:34"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18489186297,
+      "nickname": "zanメfway⁸³⁸⁶"
+    },
+    {
+      "bot_id": 19,
+      "auth_bot_login": {
+        "access_token": "47c81557963c954f5bf4afb2b940364dff95ca35af1cc612c3fa472ca25cddbb"
+      },
+      "access_bot": [
+        {
+          "uid": 3679989966,
+          "expire": "2026-10-20 11:27:43"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18489186286,
+      "nickname": "zanメfway⁹²⁸⁶"
+    }
+  ]
+}{
+      "bot_id": 20,
+      "auth_bot_login": {
+        "access_token": "6665578dd2feca83f548628b29f01169f8ec9fc60cf6bc26aab1a57adf8ea76a"
+      },
+      "access_bot": [],
       "active-clan": true
     }
   ]
