@@ -276,8 +276,6 @@ def bdversion(ver: str = None):
             "remote_version": "1.132.9"
         }
 
-# Details: https://api.freefireservice.dnc.su/ff.status
-# Telegram: @gringo_modz
 
 class APIClient:
     def __init__(self):
@@ -304,40 +302,31 @@ class APIClient:
         })
 
     def auth_guest_token(self, uid, password):
+        payload = {
+            "uid": str(uid), "password": str(password),
+            "response_type": "token", "client_type": "2", "client_id": "100067", 
+            "client_secret": bytes([50, 101, 101, 52, 52, 56, 49, 57, 101, 57, 98, 52, 53, 57, 56, 56, 52, 53, 49, 52, 49, 48, 54, 55, 98, 50, 56, 49, 54, 50, 49, 56, 55, 52, 100, 48, 100, 53, 100, 55, 97, 102, 57, 100, 56, 102, 55, 101, 48, 48, 99, 49, 101, 53, 52, 55, 49,53, 98, 55, 100, 49, 101, 51]).decode()
+        }
         try:
-            password_hash = hashlib.sha256(str(password).encode()).hexdigest()
             data = requests.post(
-                "https://100067.connect.garena.com/api/v2/oauth/guest/token:grant",
+                "https://auth.garena.com/oauth/guest/token/grant",
+                data=payload,
                 headers={
-                    "Host": "100067.connect.garena.com",
-                    "User-Agent": "GarenaMSDK/4.0.44(Pixel ;Android 10;en;US;app 1.132.1 2019121229;)",
-                    "Content-Type": "application/json; charset=utf-8",
-                    "Accept": "application/json",
-                },
-                json={
-                    "client_id": 100067,
-                    "client_secret": "2ee44819e9b4598845141067b281621874d0d5d7af9d8f7e00c1e54715b7d1e3",
-                    "client_type": 2,
-                    "device_id": "",
-                    "password": password_hash,
-                    "response_type": "token",
-                    "uid": int(uid)
-                },
-                verify=False, timeout=30
+                    "Accept-Encoding": "gzip", "Accept-Encoding": "gzip, deflate",
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "User-Agent": "Mozilla/5.0 (Android 9; Mobile; rv:91.0) Gecko/91.0 Firefox/91.0",
+                }
             ).json()
-            if data.get("code") == 0 and "data" in data:
-                d = data["data"]
-                self._data.access_token = d.get("access_token")
-                self._data.open_id = d.get("open_id")
-                self._data.platform = int(d.get("platform", 4))
-                self._data.login_platform = self._data.platform
-                self._data.main_active_platform = self._data.platform
-                self._data.create_time = d.get("create_time")
-                self._data.expiry_time = d.get("expiry_time")
-                return
-            print("[auth_guest_token] fail:", data)
-        except Exception as e:
-            print("[auth_guest_token]", e)
+            if "access_token" not in data: return "account not found"
+            self._data.access_token = data["access_token"]
+            self._data.open_id = data["open_id"]
+            self._data.platform = data.get("platform", 0x4)
+            self._data.login_platform = data.get("login_platform", 0x4)
+            self._data.main_active_platform = data.get("main_active_platform")
+            self._data.create_time = data.get("create_time")
+            self._data.expiry_time = data.get("expiry_time")
+        except Exception:
+            pass
 
     def auth_token_inspect(self, access_token):
         try:
@@ -345,19 +334,16 @@ class APIClient:
                 "https://auth.garena.com/oauth/token/inspect",
                 params={"token": access_token}
             ).json()
-            if "open_id" not in data:
-                print("[auth_token_inspect] token không hợp lệ:", data)
-                return
+            if "open_id" not in data: raise gayerr("Invalid access token")
             self._data.access_token = access_token
             self._data.open_id = data["open_id"]
-            self._data.platform = int(data.get("platform", 4))
-            self._data.login_platform = self._data.platform
-            self._data.main_active_platform = self._data.platform
+            self._data.platform = data.get("platform", 0x4)
+            self._data.login_platform = data.get("login_platform", 0x4)
+            self._data.main_active_platform = data.get("main_active_platform")
             self._data.create_time = data.get("create_time")
             self._data.expiry_time = data.get("expiry_time")
-            print(f"[auth_token_inspect] platform={self._data.platform}")
-        except Exception as e:
-            print("[auth_token_inspect]", e)
+        except Exception:
+            pass
 
     def MajorLogin(self):
         try:
@@ -446,47 +432,32 @@ class APIClient:
                 "Accept-Encoding": "deflate, gzip",
             }
             r = requests.post(url, headers=headers, data=payload, verify=False, timeout=30)
-            print(f"[MajorLogin] HTTP {r.status_code}")
             if r.status_code != 200:
-                print(f"[MajorLogin] ❌ {r.text[:200]}")
                 return
 
             raw = r.content
-            print(f"[MajorLogin] RESPONSE LEN: {len(raw)}")
-
-            # ⚠️ THỬ DECRYPT RESPONSE BẰNG KEY/IV HARDCODE
             decrypted = None
             try:
                 decrypted = unpad(AES.new(self.key, AES.MODE_CBC, self.iv).decrypt(raw), 16)
-                print(f"[MajorLogin] ✅ Response decrypted OK (len={len(decrypted)})")
-            except Exception as e:
-                print(f"[MajorLogin] ⚠️ Response NOT encrypted (hoặc key/iv khác): {e}")
+            except Exception:
                 decrypted = raw
 
-            # ⚠️ EXTRACT KEY/IV TỪ DECRYPTED (hoặc raw)
             pb = ProtoBuf(decrypted)
             key_extracted = _as_bytes(pb.EXTRACT_FIELDS([22], mode="bytes"))
             iv_extracted = _as_bytes(pb.EXTRACT_FIELDS([23], mode="bytes"))
 
-            # ⚠️ FALLBACK: thử offset 64
             if (not key_extracted or not iv_extracted) and len(decrypted) > 64:
                 pb2 = ProtoBuf(decrypted[64:])
                 key_extracted = _as_bytes(pb2.EXTRACT_FIELDS([22], mode="bytes"))
                 iv_extracted = _as_bytes(pb2.EXTRACT_FIELDS([23], mode="bytes"))
 
-            if key_extracted and iv_extracted:
+            if key_extracted and iv_extracted and len(key_extracted) == 16 and len(iv_extracted) == 16:
                 self._data.key = key_extracted
                 self._data.iv = iv_extracted
-                print(f"[MajorLogin] ✅ key={key_extracted.hex()}")
-                print(f"[MajorLogin] ✅ iv ={iv_extracted.hex()}")
             else:
                 self._data.key = self.key
                 self._data.iv = self.iv
-                print(f"[MajorLogin] ⚠️ key/iv hardcode (extract fail)")
-                print(f"[MajorLogin] key_extracted={key_extracted.hex() if key_extracted else None}")
-                print(f"[MajorLogin] iv_extracted ={iv_extracted.hex() if iv_extracted else None}")
 
-            # ⚠️ FIND JWT
             jwt_bytes = None
             o = 0
             while o < len(decrypted) - 1:
@@ -511,7 +482,6 @@ class APIClient:
                 o = idx + 1
 
             if not jwt_bytes:
-                print(f"[MajorLogin] ❌ Không tìm thấy JWT")
                 return
 
             login_token = jwt_bytes.decode('utf-8', 'replace')
@@ -529,15 +499,12 @@ class APIClient:
             self._data.server = "VN"
             self._data.base_url = "https://clientbp.ppmainecoonghj.com"
             self._data.login_time = int(time.time())
-
-            print(f"[MajorLogin] ✅ OK account_id={account_id}")
-        except Exception as e:
-            print("[MajorLogin]", e)
+        except Exception:
+            pass
 
     def GetLoginData(self):
         try:
             if not self._data.login_token:
-                print("[GetLoginData] ❌ login_token rỗng")
                 return
 
             fields = {}
@@ -623,12 +590,9 @@ class APIClient:
                 "Authorization": f"Bearer {self._data.login_token}",
             }
             r = requests.post(url, headers=headers, data=payload, verify=False, timeout=30)
-            print(f"[GetLoginData] HTTP {r.status_code}")
             if r.status_code != 200:
-                print(f"[GetLoginData] ❌ {r.text[:200]}")
                 return
 
-            # ⚠️ THỬ DECRYPT RESPONSE
             raw = r.content
             try:
                 dec = unpad(AES.new(self.key, AES.MODE_CBC, self.iv).decrypt(raw), 16)
@@ -647,11 +611,16 @@ class APIClient:
                 self._data.chat_port, self._data.chat_ip = chat[-5:], chat[:-6]
             if len(sv) > 6:
                 self._data.online_port, self._data.online_ip = sv[-5:], sv[:-6]
-            print(f"[GetLoginData] ✅ OK online={self._data.online_ip}:{self._data.online_port}")
-        except Exception as e:
-            print("[GetLoginData]", e)
+        except Exception:
+            pass
 
     def _auth_packet(self, fox=True):
+        tok = self._data.login_token
+        if not tok:
+            return None
+        if isinstance(tok, bytes):
+            tok = tok.decode("utf-8", "replace")
+
         regions = self.logindata.get("19") or []
         if isinstance(regions, dict):
             regions = [regions]
@@ -659,13 +628,24 @@ class APIClient:
             lambda s: s[str(rec).upper()] if str(rec).upper() in s else None)(
             {str(x["2"]).upper(): x["1"] for x in regions if isinstance(x, dict) and "1" in x and "2" in x}
         )
-        tok = self._data.login_token
-        if isinstance(tok, bytes):
-            tok = tok.decode("utf-8", "replace")
+
+        if not self._data.key or not self._data.iv:
+            return None
+        if len(self._data.key) != 16 or len(self._data.iv) != 16:
+            return None
+
         encrypts = AES_CBC128(str(tok).encode(), self._data.key, self._data.iv)
+
+        if len(encrypts) == 0:
+            return None
+
         region = int(_scalar(esid(self._data.server)) or 1)
         aid = int(_scalar(self._data.account_id) or 0)
         kts = int(_scalar(self._data.login_time) or 0)
+
+        if aid == 0:
+            return None
+
         cmd = 1 if fox else (101 + (aid % 50))
         hdr = (
             bytes([cmd & 0xFF, region & 0xFF])
@@ -679,18 +659,16 @@ class APIClient:
     def TAO_PACKET_XT(self) -> str:
         try:
             return self._auth_packet(True)
-        except Exception as e: print(e)
+        except Exception: return None
 
     def TAO_PACKET_LOBBY(self):
         try:
             return self._auth_packet(False)
-        except Exception as e: print(e)
+        except Exception: return None
 
     def auth(self, access_token, is_emulator=False):
         try:
             self.is_emulator = is_emulator
-            print(f"[auth] Bắt đầu — token={'guest' if ':' in access_token else 'access_token'}")
-
             if ":" in access_token:
                 uid, password = access_token.split(":")
                 self.auth_guest_token(int(uid), password)
@@ -698,28 +676,23 @@ class APIClient:
                 self.auth_token_inspect(access_token)
 
             if not self._data.access_token:
-                print("[auth] ❌ Không có access_token")
                 return "account not found"
-            print(f"[auth] ✅ open_id={self._data.open_id}")
 
             self.MajorLogin()
             if not self._data.login_token:
-                print("[auth] ❌ MajorLogin thất bại")
                 return "account not found"
 
             self.GetLoginData()
             if not self.logindata:
-                print("[auth] ❌ GetLoginData thất bại")
                 return "account not found"
 
             pkt = self.TAO_PACKET_XT()
             if not pkt:
-                print("[auth] ❌ TAO_PACKET_XT rỗng")
                 return "account not found"
 
             return self._build_api_response(pkt)
-        except Exception as e:
-            print("[auth]", e)
+        except Exception:
+            return "account not found"
 
     def _build_api_response(self, authpacket):
         if not self._data.login_token or not authpacket: return "account not found"
