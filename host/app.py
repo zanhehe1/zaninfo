@@ -17,10 +17,15 @@ SCRIPT_PATH = RUNTIME_DIR / 'main.py'
 LOG_PATH = RUNTIME_DIR / 'bot.log'
 MAX_UPLOAD = 2 * 1024 * 1024
 
-app = Flask(__name__)
-app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'change-this-secret-before-deploying')
-app.config['MAX_CONTENT_LENGTH'] = MAX_UPLOAD
-ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', '')
+app = Flask(name)
+
+app.secret_key = os.environ.get(‘FLASK_SECRET_KEY’)
+
+if not app.secret_key:
+raise RuntimeError(“Thiếu FLASK_SECRET_KEY trong Environment Variables!”)
+
+app.config[‘MAX_CONTENT_LENGTH’] = MAX_UPLOAD
+ADMIN_PASSWORD = os.environ.get(‘ADMIN_PASSWORD’, ‘’)
 process = None
 process_lock = threading.Lock()
 
