@@ -30,8 +30,11 @@ MAX_UPLOAD = 2 * 1024 * 1024
 
 app = Flask(__name__)
 
-# SECRET_KEY phải được cấu hình trong Environment của Render.
-app.secret_key = os.environ.get("FLASK_SECRET_KEY")
+# SUA: Dung default neu khong co env var
+app.secret_key = os.environ.get(
+    "FLASK_SECRET_KEY",
+    "zan_default_secret_key_change_me_in_production_2026"
+)
 
 if not app.secret_key:
     raise RuntimeError(
@@ -44,7 +47,8 @@ app.config["SESSION_COOKIE_SECURE"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["PERMANENT_SESSION_LIFETIME"] = 3600
 
-ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
+# SUA: Default password la "admin123" neu khong co env var
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
 
 process = None
 process_lock = threading.Lock()
