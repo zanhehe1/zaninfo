@@ -9062,7 +9062,7 @@ def ping_api_keep_alive():
         except Exception as e:
             print(f"[PING] ❌ Lỗi: {e}")
         
-        time.sleep(600) 
+        time.sleep(660) 
 
 def start_ping_thread():
     thread = threading.Thread(target=ping_api_keep_alive, daemon=True)
