@@ -272,16 +272,6 @@
       "nickname": "cmej mayf⁹⁰⁰"
     },
     {
-      "bot_id": 17,
-      "auth_bot_login": {
-        "access_token": "8738e454430fb7bed2fff5b80feaf478895598354e00c76d914018c3ba29f201"
-      },
-      "access_bot": [],
-      "active-clan": true,
-      "botid": 18517916296,
-      "nickname": "tuilatipo⁰"
-    },
-    {
       "bot_id": 18,
       "auth_bot_login": {
         "access_token": "f6197652d39ee687a18e25cc5ced4c467167e57e7f3d38a980f2590adc7cafb1"
@@ -312,29 +302,6 @@
       "nickname": "zanメfway⁶⁵⁵⁰"
     },
     {
-      "bot_id": 21,
-      "auth_bot_login": {
-        "access_token": "88edd42f0c513b04df3677040991106583934506625abbfa7e8d4eaae51862ec"
-      },
-      "access_bot": [
-        {
-          "uid": 18457983435,
-          "expire": "2054-02-24 14:23:45"
-        },
-        {
-          "uid": 923576628,
-          "expire": "2026-10-11 14:27:10"
-        },
-        {
-          "uid": 12110784257,
-          "expire": "2026-10-11 14:48:08"
-        }
-      ],
-      "active-clan": true,
-      "botid": 18489169830,
-      "nickname": "zanメfway⁸¹⁰⁸"
-    },
-    {
       "bot_id": 22,
       "auth_bot_login": {
         "access_token": "8066095826:EAD0744627E548676E137D21F236DF4F66A4F45605AB92A00482E84CBA1AE7FE"
@@ -343,6 +310,21 @@
       "active-clan": true,
       "botid": 18527632675,
       "nickname": "@thao2ngon."
+    },
+    {
+      "bot_id": 23,
+      "auth_bot_login": {
+        "access_token": "dfa332cf3bd52b572dba7efcf70698ecc8d2eeeb4159040a7bf963ba6b633a21"
+      },
+      "access_bot": [
+        {
+          "uid": 4272925991,
+          "expire": "2026-10-18 12:12:49"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18551485853,
+      "nickname": "zanメfgayx⁷⁸³"
     }
   ]
 }
