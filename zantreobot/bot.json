@@ -325,6 +325,24 @@
       "active-clan": true,
       "botid": 18551485853,
       "nickname": "zanメfgayx⁷⁸³"
+    },
+    {
+      "bot_id": 24,
+      "auth_bot_login": {
+        "access_token": "dfd2c99ab9b7685d2ed56853c648012392170bf970818b736e2e47e850c6d104"
+      },
+      "access_bot": [],
+      "active-clan": true,
+      "botid": 18558313864,
+      "nickname": "tuilatipo⁰⁸"
+    },
+    {
+      "bot_id": 25,
+      "auth_bot_login": {
+        "access_token": "6627cb2d7e73d7b6b368a549e3ce5e078cd396bc8b98f8d121453f3c057d8108"
+      },
+      "access_bot": [],
+      "active-clan": true
     }
   ]
 }
