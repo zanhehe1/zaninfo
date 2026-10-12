@@ -291,6 +291,7 @@ header.top{position:sticky;top:0;z-index:30;background:rgba(18,5,6,.82);backdrop
       <div class="logs-actions">
         <label class="log-search"><i class="fa-solid fa-magnifying-glass"></i><input id="log-q" type="search" placeholder="Tìm trong log..."></label>
         <select id="log-level" aria-label="Lọc mức log"><option value="all">Tất cả mức</option><option value="error">Lỗi</option><option value="warning">Cảnh báo</option><option value="success">Thành công</option><option value="info">Thông tin</option></select>
+        <button class="btn line log-btn" id="log-copy-btn" onclick="copyLogs()"><i class="fa-regular fa-copy"></i> Sao chép log</button>
         <button class="btn line log-btn" id="log-scroll-btn" onclick="scrollLogsToBottom()"><i class="fa-solid fa-arrow-down"></i> Mới nhất</button>
       </div>
     </div>
@@ -586,6 +587,39 @@ function renderLogs() {
   if (shouldScroll) box.scrollTop = box.scrollHeight;
 }
 function scrollLogsToBottom() { autoScrollLogs = true; const box = $('log-list'); box.scrollTop = box.scrollHeight; }
+async function copyLogs() {
+  const q = ($('log-q')?.value || '').trim().toLowerCase();
+  const level = $('log-level')?.value || 'all';
+  const filtered = dashboardLogs.filter(log =>
+    (level === 'all' || String(log.level || 'info').toLowerCase() === level) &&
+    (!q || `${log.time || ''} ${log.level || ''} ${log.message || ''} ${log.uid || ''}`.toLowerCase().includes(q))
+  );
+  if (!filtered.length) return toast('Không có log để sao chép', true);
+  const text = filtered.map(log => {
+    const lv = String(log.level || 'info').toUpperCase();
+    const uid = log.uid ? ` [UID ${log.uid}]` : '';
+    return `[${log.time || '--:--:--'}] [${lv}]${uid} ${log.message || ''}`;
+  }).join('\n');
+  const btn = $('log-copy-btn');
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const area = document.createElement('textarea');
+      area.value = text; area.setAttribute('readonly', '');
+      area.style.position = 'fixed'; area.style.opacity = '0'; area.style.pointerEvents = 'none';
+      document.body.appendChild(area); area.select(); area.setSelectionRange(0, area.value.length);
+      const ok = document.execCommand('copy'); area.remove();
+      if (!ok) throw new Error('clipboard unavailable');
+    }
+    const original = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã sao chép';
+    toast(`Đã sao chép ${filtered.length} dòng log`);
+    setTimeout(() => { if (btn.isConnected) btn.innerHTML = original; }, 1800);
+  } catch (e) {
+    toast('Không sao chép được. Hãy mở Dashboard bằng HTTPS rồi thử lại.', true);
+  }
+}
 $('log-q').addEventListener('input', () => { lastLogRenderKey = ''; renderLogs(); });
 $('log-level').addEventListener('change', () => { lastLogRenderKey = ''; renderLogs(); });
 $('log-list').addEventListener('scroll', () => { const box = $('log-list'); autoScrollLogs = box.scrollHeight - box.scrollTop - box.clientHeight < 45; });
