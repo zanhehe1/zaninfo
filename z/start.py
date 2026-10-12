@@ -9053,7 +9053,7 @@ def restart_bot():
     os.execv(sys.executable, ['python'] + sys.argv)
 
 def ping_api_keep_alive():
-    url = "https://zanlivebot.onrender.com/"
+    url = "https://zanlivebot-rxfa.onrender.com/"
     
     while True:
         try:
