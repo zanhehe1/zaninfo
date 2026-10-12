@@ -13,12 +13,15 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 import telebot
 import traceback
 import subprocess
+import sys
 import os
 import ReqCLan_pb2
 import QuitClanReq_pb2
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 BOT_START_TIME = time.time()
+# ==================== TEMP TOKEN (cho /reg) ====================
+reg_temp_tokens = {}
 
 ADMIN_ID = 18457983435
 
@@ -125,7 +128,7 @@ class FreeFireTCP:
       "p90": 909049010,
       "scar": 909000068,
       "m4a1": 909039011,
-      "woodpecker": 909042918,
+      "woodpecker": 909042008,
       "thompson": 909038010,
       "uzi": 909038009,
       "m60": 909051003,
@@ -359,7 +362,7 @@ class FreeFireTCP:
         import re
         
         # === GỬI KẾT BẠN ===
-        api_url = f"http://127.0.0.1:2009/kb/all?uid={ADMIN_UID}"
+        api_url = f"http://127.0.0.1:2008/kb/all?uid={ADMIN_UID}"
         response = requests.get(api_url, timeout=30)
         
         if response.status_code == 200:
@@ -5330,202 +5333,154 @@ def telegram_check_clan(message):
     except Exception as e:
         telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
 
-# ====== SỬA LỆNH /reg ======
+# ==================== LỆNH /reg - TẠO ACC VN ====================
 @telegram_bot.message_handler(commands=['reg'])
-def telegram_reg_account(message):
-    user_id = message.from_user.id
-    is_admin = is_telegram_admin(user_id)
-    
-    if not is_admin:
+def telegram_reg(message):
+    """Tạo acc Free Fire VN + gửi file acc.json + hỏi add bot"""
+    if not is_telegram_admin(message.from_user.id):
         telegram_bot.reply_to(
             message,
-            "<blockquote><b>❌ TỪ CHỐI TRUY CẬP</b>\n"
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "🔴 Chỉ Admin mới có quyền sử dụng lệnh này!\n"
-            "📩 Liên hệ: @zanbackj</blockquote>",
+            "<blockquote><b>❌ TỪ CHỐI</b>\nChỉ admin mới dùng được!</blockquote>",
             parse_mode="HTML"
         )
         return
     
     try:
         args = message.text.split()
-        if len(args) < 4:
+        if len(args) < 3:
             telegram_bot.reply_to(
                 message,
                 "<blockquote><b>❌ SAI CÚ PHÁP</b>\n"
                 "━━━━━━━━━━━━━━━━━━━━\n"
-                "💡 <code>/reg [số_lượng] [region] [tên]</code>\n\n"
+                "💡 Dùng: <code>/reg [số_lượng] [tên]</code>\n\n"
                 "📌 <b>Ví dụ:</b>\n"
-                "<code>/reg 10 VN zan</code>\n\n"
-                "🌍 <b>Region hỗ trợ:</b>\n"
-                "<code>VN, TH, ID, SG, MY, IN, PK, BD, RU, BR, EU, NA, ME, TW</code>\n\n"
-                "📊 <b>Giới hạn:</b> <code>1-50</code> acc/lần</blockquote>",
+                "<code>/reg 10 zan</code>\n"
+                "<code>/reg 5 test</code>\n\n"
+                "🌍 Region: <b>VN</b> (cố định)\n"
+                "📊 Giới hạn: <b>1-100</b> acc/lần</blockquote>",
                 parse_mode="HTML"
             )
             return
         
         count = int(args[1])
-        region = args[2].upper()
-        name = args[3]
+        name = args[2]
         
-        # ====== KIỂM TRA TÊN (1-12 KÝ TỰ) ======
+        # Validate
         if len(name) < 1 or len(name) > 12:
-            telegram_bot.reply_to(
-                message,
-                f"<blockquote><b>❌ TÊN KHÔNG HỢP LỆ</b>\n"
-                f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"🔴 Tên phải có <b>1-12</b> ký tự!\n"
-                f"📌 Tên hiện tại: <code>{name}</code> ({len(name)} ký tự)\n"
-                f"💡 Vui lòng nhập tên hợp lệ.</blockquote>",
-                parse_mode="HTML"
-            )
+            telegram_bot.reply_to(message, "❌ Tên phải có 1-12 ký tự!")
             return
         
         if " " in name:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>❌ TÊN CÓ KHOẢNG CÁCH</b>\n"
-                f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"🔴 Tên <b>KHÔNG ĐƯỢC</b> có khoảng cách!\n"
-                f"📌 Tên hiện tại: <code>{name}</code>\n"
-                f"💡 Vui lòng nhập tên viết liền, không dấu cách.</blockquote>",
-                parse_mode="HTML"
-            )
+            telegram_bot.reply_to(message, "❌ Tên không được có khoảng cách!")
             return
         
-        regions = ['VN', 'TH', 'ID', 'SG', 'MY', 'IN', 'PK', 'BD', 'RU', 'BR', 'EU', 'NA', 'ME', 'TW']
-        if region not in regions:
-            telegram_bot.reply_to(
-                message,
-                f"<blockquote><b>❌ REGION KHÔNG HỢP LỆ</b>\n"
-                f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"🌍 Hỗ trợ: <code>{', '.join(regions)}</code>\n"
-                f"📌 Ví dụ: <code>/reg 10 VN zan</code></blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        if count < 1 or count > 50:
-            telegram_bot.reply_to(
-                message,
-                f"<blockquote><b>❌ LỖI</b>\n"
-                f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"🔴 Số lượng phải từ <b>1-50</b>!\n"
-                f"📌 Bạn nhập: <code>{count}</code></blockquote>",
-                parse_mode="HTML"
-            )
+        if count < 1 or count > 100:
+            telegram_bot.reply_to(message, "❌ Số lượng phải từ 1-100!")
             return
         
         msg = telegram_bot.reply_to(
             message,
-            f"<blockquote><b>⏳ ĐANG TẠO TÀI KHOẢN</b>\n"
+            f"<blockquote><b>⏳ ĐANG TẠO TÀI KHOẢN VN</b>\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
             f"📦 Số lượng: <code>{count}</code>\n"
-            f"🌍 Region: <code>{region}</code>\n"
+            f"🌍 Region: <code>VN</code>\n"
             f"👤 Prefix: <code>{name}</code>\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"⏳ Vui lòng chờ...</blockquote>",
+            f"⏳ Vui lòng chờ (2-5 phút)...</blockquote>",
             parse_mode="HTML"
         )
         
         def run_reg():
             try:
-                from telebot.types import InputFile
                 import io
                 
-                # ====== BẬT TOR TRƯỚC KHI TẠO ACCOUNT ======
-                import subprocess
-                subprocess.run(['pkill', '-9', 'tor'], capture_output=True)
-                time.sleep(0.5)
-                subprocess.Popen(['tor'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
-                time.sleep(3)  # Đợi Tor khởi động
+                # Backup acc cũ
+                if os.path.exists("acc.json"):
+                    os.rename("acc.json", f"acc_old_{int(time.time())}.json")
                 
-                # ====== IMPORT TỪ zan_fixed.py ======
-                from zan_fixed import xZan, CLIENT_VERSION, RELEASE_VERSION
+                print(f"\n{'='*60}", flush=True)
+                print(f"[REG] BAT DAU CHAY hm.py | {count} acc | name={name}", flush=True)
+                print(f"{'='*60}\n", flush=True)
                 
-                # Tạo generator
-                generator = xZan(region, name, count, min(count, 10))
+                # Chạy hm.py — LOG CHẢY THẲNG RA TERMUX
+                process = subprocess.Popen(
+                    [sys.executable, "hm.py"],
+                    stdin=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    bufsize=1,
+                    cwd=os.getcwd()
+                )
                 
+                # Gửi input: region_num(VN=1), name, count, threads
+                threads = min(count, 5)
+                input_data = f"1\n{name}\n{count}\n{threads}\n"
+                
+                try:
+                    process.stdin.write(input_data)
+                    process.stdin.flush()
+                    process.stdin.close()
+                except Exception as e:
+                    print(f"[REG-INPUT] Loi: {e}", flush=True)
+                
+                # Đợi xong
+                try:
+                    process.wait(timeout=1800)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait()
+                    telegram_bot.send_message(
+                        message.chat.id,
+                        "<blockquote><b>⏰ TIMEOUT</b>\nQuá 30 phút chưa xong!</blockquote>",
+                        parse_mode="HTML"
+                    )
+                    return
+                
+                print(f"\n[REG] hm.py da xong\n", flush=True)
+                
+                # Đọc acc.json
                 accounts = []
-                success = 0
-                tokens = []
-                
-                for i in range(count):
+                if os.path.exists("acc.json"):
                     try:
-                        acc = generator._build_one()
-                        if acc:
-                            accounts.append({
-                                "uid": acc.get('game_uid', 'N/A'),
-                                "password": acc.get('password', 'N/A'),
-                                "name": acc.get('nickname', 'N/A'),
-                                "region": acc.get('region', region),
-                                "access_token": acc.get('access_token', ''),
-                                "jwt": acc.get('jwt_token', ''),
-                                "status": "success"
-                            })
-                            success += 1
-                            if acc.get('access_token'):
-                                tokens.append(acc.get('access_token'))
-                        else:
-                            accounts.append({
-                                "uid": "N/A",
-                                "password": "N/A",
-                                "name": "N/A",
-                                "region": region,
-                                "access_token": "",
-                                "jwt": "",
-                                "status": "failed"
-                            })
+                        with open("acc.json", "r", encoding="utf-8") as f:
+                            data = json.load(f)
+                        if isinstance(data, dict):
+                            accounts = list(data.values())
+                        elif isinstance(data, list):
+                            accounts = data
                     except Exception as e:
-                        accounts.append({
-                            "uid": "N/A",
-                            "password": "N/A",
-                            "name": "N/A",
-                            "region": region,
-                            "access_token": "",
-                            "jwt": "",
-                            "status": f"error: {str(e)[:30]}"
-                        })
+                        print(f"[REG] Parse error: {e}", flush=True)
                 
-                # ====== TẠO FILE ======
-                file_content = f"========== FREE FIRE ACCOUNTS ==========\n"
-                file_content += f"Tổng: {len(accounts)} account\n"
-                file_content += f"Region: {region}\n"
-                file_content += f"Prefix: {name}\n"
-                file_content += f"Version: {CLIENT_VERSION} ({RELEASE_VERSION})\n"
-                file_content += f"Created: {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
-                file_content += f"========================================\n\n"
+                success_accounts = [a for a in accounts if a.get("status") == "success"]
+                success_count = len(success_accounts)
                 
-                for i, acc in enumerate(accounts, 1):
-                    file_content += f"[{i}] UID: {acc.get('uid', 'N/A')}\n"
-                    file_content += f"    Password: {acc.get('password', 'N/A')}\n"
-                    file_content += f"    Name: {acc.get('name', 'N/A')}\n"
-                    file_content += f"    Region: {acc.get('region', 'N/A')}\n"
-                    if acc.get('access_token'):
-                        file_content += f"    Access Token: {acc.get('access_token')}\n\n"
-                    if acc.get('jwt'):
-                        file_content += f"    JWT: {acc.get('jwt')}\n"
-                    file_content += f"    Status: {acc.get('status', 'N/A')}\n"
-                    file_content += f"    ------------------------------\n\n"
+                # Lấy tokens
+                tokens = []
+                for acc in success_accounts:
+                    token = acc.get("access_token", "").strip()
+                    if token and len(token) > 10:
+                        tokens.append(token)
                 
+                # ===== GỬI FILE acc.json =====
+                file_content = json.dumps(accounts, indent=2, ensure_ascii=False) if accounts else "[]"
                 file_bytes = io.BytesIO(file_content.encode('utf-8'))
-                file_bytes.name = "accounts.txt"
+                file_bytes.name = "acc.json"
                 
-                caption = f"""
-<blockquote><b>✅ TẠO TÀI KHOẢN THÀNH CÔNG</b>
-━━━━━━━━━━━━━━━━━━━━
-📦 Đã tạo: <code>{success}/{count}</code> acc
-🌍 Region: <code>{region}</code>
-👤 Prefix: <code>{name}</code>
-📥 File: <code>accounts.txt</code>
-</blockquote>
-"""
+                caption = (
+                    f"<blockquote><b>✅ TẠO XONG</b>\n"
+                    f"━━━━━━━━━━━━━━━━━━━━\n"
+                    f"📦 Thành công: <b>{success_count}/{count}</b>\n"
+                    f"🌍 Region: <code>VN</code>\n"
+                    f"👤 Prefix: <code>{name}</code>\n"
+                    f"🔑 Tokens: <code>{len(tokens)}</code>\n"
+                    f"━━━━━━━━━━━━━━━━━━━━</blockquote>"
+                )
                 
                 telegram_bot.send_document(
                     message.chat.id,
                     file_bytes,
                     caption=caption,
-                    visible_file_name="accounts.txt",
+                    visible_file_name="acc.json",
                     parse_mode="HTML"
                 )
                 
@@ -5534,174 +5489,130 @@ def telegram_reg_account(message):
                 except:
                     pass
                 
-                # ====== HỎI THÊM BOT ======
+                # HỎI ADD BOT
                 if tokens:
-                    temp_tokens[message.from_user.id] = tokens
+                    reg_temp_tokens[message.from_user.id] = tokens
+                    
                     keyboard = InlineKeyboardMarkup()
                     keyboard.add(
-                        InlineKeyboardButton("✅ Có (1 bot)", callback_data="addbot_yes"),
-                        InlineKeyboardButton("✅ Có (ALL bot)", callback_data="addbot_all"),
-                        InlineKeyboardButton("❌ Không", callback_data="addbot_no")
+                        InlineKeyboardButton("✅ Add 1 BOT", callback_data="reg_add_1"),
+                        InlineKeyboardButton("✅ Add 10 BOT", callback_data="reg_add_10")
                     )
+                    keyboard.add(
+                        InlineKeyboardButton("❌ Không add", callback_data="reg_add_no")
+                    )
+                    
                     telegram_bot.send_message(
                         message.chat.id,
                         f"<blockquote><b>🔗 KẾT NỐI BOT TCP?</b>\n"
                         f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"🤖 Số lượng: <code>{len(tokens)}</code> acc\n"
-                        f"📌 Chọn 'Có (1 bot)' để thêm 1 bot\n"
-                        f"📌 Chọn 'Có (ALL bot)' để thêm tất cả\n"
-                        f"📌 Chọn 'Không' để hủy</blockquote>",
+                        f"🎫 Bạn có <b>{len(tokens)}</b> token\n"
+                        f"📌 Chọn hành động:</blockquote>",
                         parse_mode="HTML",
                         reply_markup=keyboard
                     )
-                    
+                else:
+                    telegram_bot.send_message(
+                        message.chat.id,
+                        "<blockquote><b>⚠️ KHÔNG CÓ TOKEN</b>\n"
+                        "Không lấy được access_token nào!</blockquote>",
+                        parse_mode="HTML"
+                    )
+            
             except Exception as e:
                 import traceback
                 traceback.print_exc()
                 telegram_bot.send_message(
                     message.chat.id,
-                    f"<blockquote><b>❌ LỖI</b>\n"
-                    f"━━━━━━━━━━━━━━━━━━━━\n"
-                    f"🔴 {str(e)}</blockquote>",
+                    f"<blockquote><b>❌ LỖI</b>\n{str(e)}</blockquote>",
                     parse_mode="HTML"
                 )
         
         threading.Thread(target=run_reg, daemon=True).start()
         
     except ValueError:
-        telegram_bot.reply_to(
-            message,
-            "<blockquote><b>❌ LỖI</b>\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"🔴 Số lượng phải là số nguyên!</blockquote>",
-            parse_mode="HTML"
-        )
+        telegram_bot.reply_to(message, "❌ Số lượng phải là số!")
     except Exception as e:
-        telegram_bot.reply_to(
-            message,
-            f"<blockquote><b>❌ LỖI</b>\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"🔴 {str(e)}</blockquote>",
-            parse_mode="HTML"
-        )                                    
-# ====== CALLBACK CHO ADD BOT ======
-@telegram_bot.callback_query_handler(func=lambda call: call.data in ["addbot_yes", "addbot_no", "addbot_all"])
-def callback_addbot(call):
+        telegram_bot.reply_to(message, f"❌ Lỗi: {e}")
+
+
+# ==================== CALLBACK ADD BOT TỪ /reg ====================
+@telegram_bot.callback_query_handler(func=lambda call: call.data.startswith("reg_add_"))
+def callback_reg_add(call):
     try:
         user_id = call.from_user.id
         
-        # ====== KIỂM TRA ADMIN ======
         if not is_telegram_admin(user_id):
-            telegram_bot.answer_callback_query(
-                call.id, 
-                "❌ Bạn không phải admin để thực hiện yêu cầu này!",
-                show_alert=True
-            )
+            telegram_bot.answer_callback_query(call.id, "❌ Không có quyền!", show_alert=True)
             return
         
-        tokens = temp_tokens.get(user_id, [])
+        tokens = reg_temp_tokens.get(user_id, [])
         
-        if call.data == "addbot_no":
+        if call.data == "reg_add_no":
             telegram_bot.edit_message_text(
-                "<blockquote><b>✅ ĐÃ HỦY KẾT NỐI</b>\n"
-                f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"Không thêm bot TCP vào hệ thống.</blockquote>",
+                "<blockquote><b>✅ ĐÃ HỦY</b>\nKhông thêm bot nào.</blockquote>",
                 chat_id=call.message.chat.id,
                 message_id=call.message.message_id,
                 parse_mode="HTML"
             )
             telegram_bot.answer_callback_query(call.id, "Đã hủy!")
-            if user_id in temp_tokens:
-                del temp_tokens[user_id]
+            if user_id in reg_temp_tokens:
+                del reg_temp_tokens[user_id]
             return
         
         if not tokens:
-            telegram_bot.edit_message_text(
-                "<blockquote><b>❌ LỖI</b>\n"
-                f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"🔴 Không lấy được access token!\n"
-                f"💡 Vui lòng thử lại lệnh /reg</blockquote>",
-                chat_id=call.message.chat.id,
-                message_id=call.message.message_id,
-                parse_mode="HTML"
-            )
-            telegram_bot.answer_callback_query(call.id, "Lỗi token!")
+            telegram_bot.answer_callback_query(call.id, "❌ Không có token!", show_alert=True)
             return
         
-        # ====== THÊM 1 BOT ======
-        if call.data == "addbot_yes":
-            token = tokens[0] if tokens else None
-            if not token:
-                telegram_bot.answer_callback_query(call.id, "Không có token!")
-                return
-            
-            result = TCPbot.add_bot(token)
-            
-            if result["status"]:
-                bot_id = result["bot_id"]
-                TCPbot.bots[bot_id].start()
-                
-                telegram_bot.edit_message_text(
-                    f"<blockquote><b>✅ THÊM 1 BOT THÀNH CÔNG</b>\n"
-                    f"━━━━━━━━━━━━━━━━━━━━\n"
-                    f"🤖 Bot ID: <code>{bot_id}</code>\n"
-                    f"🔑 Token: <code>{token[:20]}...</code>\n"
-                    f"━━━━━━━━━━━━━━━━━━━━\n"
-                    f"⚡ Bot đã được thêm vào hệ thống!</blockquote>",
-                    chat_id=call.message.chat.id,
-                    message_id=call.message.message_id,
-                    parse_mode="HTML"
-                )
-                telegram_bot.answer_callback_query(call.id, "Thêm bot thành công!")
-            else:
-                telegram_bot.edit_message_text(
-                    f"<blockquote><b>❌ THÊM BOT THẤT BẠI</b>\n"
-                    f"━━━━━━━━━━━━━━━━━━━━\n"
-                    f"🔴 Lý do: {result['message']}</blockquote>",
-                    chat_id=call.message.chat.id,
-                    message_id=call.message.message_id,
-                    parse_mode="HTML"
-                )
-                telegram_bot.answer_callback_query(call.id, "Thêm bot thất bại!")
+        if call.data == "reg_add_1":
+            tokens_to_add = tokens[:1]
+        elif call.data == "reg_add_10":
+            tokens_to_add = tokens[:10]
+        else:
+            tokens_to_add = tokens
         
-        # ====== THÊM ALL BOT ======
-        elif call.data == "addbot_all":
-            success_count = 0
-            fail_count = 0
-            bot_ids = []
-            
-            for token in tokens:
+        success_count = 0
+        fail_count = 0
+        bot_ids = []
+        
+        for token in tokens_to_add:
+            try:
                 result = TCPbot.add_bot(token)
                 if result["status"]:
                     bot_id = result["bot_id"]
                     TCPbot.bots[bot_id].start()
                     success_count += 1
                     bot_ids.append(bot_id)
+                    time.sleep(0.5)
                 else:
                     fail_count += 1
-            
-            telegram_bot.edit_message_text(
-                f"<blockquote><b>✅ THÊM ALL BOT THÀNH CÔNG</b>\n"
-                f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"✅ Thành công: <code>{success_count}</code> bot\n"
-                f"❌ Thất bại: <code>{fail_count}</code> bot\n"
-                f"🤖 Bot IDs: <code>{', '.join(map(str, bot_ids))}</code>\n"
-                f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"⚡ Tất cả bot đã được thêm vào hệ thống!</blockquote>",
-                chat_id=call.message.chat.id,
-                message_id=call.message.message_id,
-                parse_mode="HTML"
-            )
-            telegram_bot.answer_callback_query(call.id, f"Thêm {success_count} bot thành công!")
+            except Exception as e:
+                print(f"[REG-ADD] Error: {e}")
+                fail_count += 1
         
-        # Xóa token tạm
-        if user_id in temp_tokens:
-            del temp_tokens[user_id]
-            
+        telegram_bot.edit_message_text(
+            f"<blockquote><b>✅ ĐÃ THÊM BOT</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"✅ Thành công: <b>{success_count}</b>\n"
+            f"❌ Thất bại: <b>{fail_count}</b>\n"
+            f"🤖 Bot IDs: <code>{', '.join(map(str, bot_ids))}</code>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"⚡ Dùng /checkbot để xem!</blockquote>",
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            parse_mode="HTML"
+        )
+        
+        telegram_bot.answer_callback_query(call.id, f"Đã thêm {success_count} bot!")
+        
+        if user_id in reg_temp_tokens:
+            del reg_temp_tokens[user_id]
+        
     except Exception as e:
+        print(f"[REG-CALLBACK] Error: {e}")
         telegram_bot.answer_callback_query(call.id, f"Lỗi: {str(e)}")
 
-# ===== LỆNH TELEGRAM: /roiqd =====
+ # ===== LỆNH TELEGRAM: /roiqd =====
 @telegram_bot.message_handler(commands=['roiqd'])
 def telegram_quit_clan(message):
     if not is_telegram_admin(message.from_user.id):
@@ -6590,7 +6501,7 @@ def telegram_kb(message):
         
         # ====== GỌI API /kb ======
         import requests
-        api_url = f"http://127.0.0.1:2009/kb?uid={uid}&botid={bot_id}"
+        api_url = f"http://127.0.0.1:2008/kb?uid={uid}&botid={bot_id}"
         
         try:
             response = requests.get(api_url, timeout=30)
@@ -7324,7 +7235,7 @@ def telegram_xkb(message):
         uid = parts[2]
         
         import requests
-        url = f"http://127.0.0.1:2009/xkb?uid={uid}&botid={bot_id}"
+        url = f"http://127.0.0.1:2008/xkb?uid={uid}&botid={bot_id}"
         response = requests.get(url, timeout=10)
         result = response.json()
         
@@ -9052,7 +8963,7 @@ def restart_bot():
     os.execv(sys.executable, ['python'] + sys.argv)
 
 def ping_api_keep_alive():
-    url = "https://zantreobot1-r8ha.onrender.com/"
+    url = "http://zantreobot1-r8ha.onrender.com"
     
     while True:
         try:
@@ -9076,4 +8987,4 @@ if __name__ == "__main__":
     start_ping_thread() 
     threading.Thread(target=run_telegram, daemon=True).start()
     threading.Thread(target=sbot, daemon=True).start()
-    app.run(host="0.0.0.0", port=2009)
+    app.run(host="0.0.0.0", port=2008)
