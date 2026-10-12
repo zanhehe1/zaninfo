@@ -171,6 +171,19 @@ header.top{position:sticky;top:0;z-index:30;background:rgba(18,5,6,.82);backdrop
 .skel{height:300px;border-radius:var(--r);border:1px solid var(--line);background:linear-gradient(100deg,var(--s1) 30%,var(--s3) 50%,var(--s1) 70%);background-size:300% 100%;animation:sh 1.4s infinite}
 @keyframes sh{from{background-position:100% 0}to{background-position:-100% 0}}
 
+/* Live log console */
+.logs-panel{margin:0 0 calc(42px + var(--sab));border:1px solid var(--line-2);border-radius:20px;overflow:hidden;background:linear-gradient(155deg,rgba(29,10,12,.98),rgba(13,7,9,.98));box-shadow:0 18px 50px rgba(0,0,0,.18)}
+.logs-head{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:19px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap;background:linear-gradient(100deg,rgba(245,193,75,.08),transparent 70%)}
+.logs-title{display:flex;align-items:center;gap:12px}.logs-icon{width:42px;height:42px;display:grid;place-items:center;border:1px solid var(--line-2);border-radius:13px;background:rgba(245,193,75,.08);color:var(--gold);font-size:17px}
+.logs-title h2{font-size:17px;color:var(--text)}.logs-title p{font-size:12px;color:var(--muted);margin-top:3px}
+.logs-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.log-search{position:relative;display:block}.log-search i{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted)}
+.log-search input,.logs-actions select{height:38px;border:1px solid var(--line-2);border-radius:10px;background:#17090b;color:var(--text);font-size:12px;outline:none}.log-search input{width:190px;padding:0 12px 0 32px}.logs-actions select{padding:0 10px;max-width:140px}.log-search input:focus,.logs-actions select:focus{border-color:var(--gold)}.log-btn{height:38px;padding:0 12px;font-size:12px}
+.logs-meta{display:flex;justify-content:space-between;align-items:center;padding:10px 18px;font-size:11px;color:var(--muted);border-bottom:1px solid rgba(245,193,75,.08)}.logs-meta i{margin-right:5px}.live-label{color:var(--green);font-weight:800;letter-spacing:.12em;font-size:10px}.live-label i{font-size:7px;animation:pulse 1.5s infinite}
+.log-list{max-height:390px;overflow:auto;padding:8px 12px 12px;scrollbar-width:thin;scrollbar-color:rgba(245,193,75,.3) transparent;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.log-row{display:grid;grid-template-columns:72px 74px minmax(0,1fr);gap:10px;align-items:start;padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.035);border-radius:7px;font-size:11.5px;line-height:1.55;animation:logIn .18s ease-out}.log-row:hover{background:rgba(255,255,255,.025)}.log-time{color:#8e7c7c;font-variant-numeric:tabular-nums;padding-top:1px}.log-badge{display:inline-flex;justify-content:center;align-items:center;border-radius:5px;padding:2px 6px;font-family:'Be Vietnam Pro',sans-serif;font-size:9px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}.log-badge.info{color:var(--blue);background:rgba(124,182,255,.1)}.log-badge.success{color:var(--green);background:rgba(74,222,128,.1)}.log-badge.warning{color:var(--amber);background:rgba(255,171,61,.1)}.log-badge.error{color:var(--red);background:rgba(255,107,107,.12)}.log-message{color:#e8d9d3;white-space:pre-wrap;overflow-wrap:anywhere}.log-row.error{background:rgba(255,107,107,.035)}.log-row.error .log-message{color:#ffb1b1}.log-row.success .log-message{color:#c5f8d7}.logs-empty{display:flex;align-items:center;justify-content:center;gap:10px;min-height:105px;color:var(--muted);font:13px 'Be Vietnam Pro',sans-serif}.logs-empty i{color:var(--gold)}
+@keyframes logIn{from{opacity:.45;transform:translateY(3px)}to{opacity:1;transform:none}}
+@media(max-width:720px){.logs-head{padding:15px}.logs-actions{width:100%}.log-search{flex:1;min-width:130px}.log-search input{width:100%}.logs-actions select{flex:1}.log-btn{flex:none}.log-row{grid-template-columns:56px 62px minmax(0,1fr);gap:7px;padding:8px 5px;font-size:10.5px}.log-list{padding:6px}.logs-title h2{font-size:15px}.logs-title p{max-width:230px}}
+
 /* Bulk bar */
 .bulk{position:fixed;left:50%;bottom:calc(18px + var(--sab));transform:translate(-50%,160%);display:flex;align-items:center;gap:12px;padding:10px 12px 10px 18px;border-radius:16px;border:1px solid var(--line-2);background:var(--s3);box-shadow:0 16px 40px rgba(0,0,0,.6);z-index:40;transition:transform .3s cubic-bezier(.2,.9,.3,1);font-size:14px;font-weight:600}
 .bulk.show{transform:translate(-50%,0)}
@@ -271,6 +284,19 @@ header.top{position:sticky;top:0;z-index:30;background:rgba(18,5,6,.82);backdrop
     <div class="grid" id="accounts-container"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
     <aside class="board" id="board"></aside>
   </div>
+
+  <section class="logs-panel">
+    <div class="logs-head">
+      <div class="logs-title"><span class="logs-icon"><i class="fa-solid fa-terminal"></i></span><div><h2>Nhật ký hoạt động</h2><p>Log bot cập nhật trực tiếp · Giữ lại 150 sự kiện gần nhất</p></div></div>
+      <div class="logs-actions">
+        <label class="log-search"><i class="fa-solid fa-magnifying-glass"></i><input id="log-q" type="search" placeholder="Tìm trong log..."></label>
+        <select id="log-level" aria-label="Lọc mức log"><option value="all">Tất cả mức</option><option value="error">Lỗi</option><option value="warning">Cảnh báo</option><option value="success">Thành công</option><option value="info">Thông tin</option></select>
+        <button class="btn line log-btn" id="log-scroll-btn" onclick="scrollLogsToBottom()"><i class="fa-solid fa-arrow-down"></i> Mới nhất</button>
+      </div>
+    </div>
+    <div class="logs-meta"><span><i class="fa-solid fa-circle-nodes"></i> <b id="log-count">0</b> sự kiện</span><span class="live-label"><i class="fa-solid fa-circle"></i> LIVE</span></div>
+    <div class="log-list" id="log-list"><div class="logs-empty"><i class="fa-solid fa-hourglass-start"></i><span>Đang chờ log từ bot...</span></div></div>
+  </section>
 </main>
 
 <div class="bulk" id="bulk"><span id="bulk-n">0 đã chọn</span><button class="btn ghost" onclick="clearSel()">Bỏ chọn</button><button class="btn danger" onclick="askBulkDelete()"><i class="fa-solid fa-trash"></i> Xóa</button></div>
@@ -329,6 +355,7 @@ const TARGET = 21;
 const startedAt = Date.now();
 
 let accounts = [], filter = 'all', query = '', lastKey = '', selected = new Set(), pendingDelete = null, serverUp = null;
+let dashboardLogs = [], lastLogRenderKey = '', autoScrollLogs = true;
 
 /* ---------- status mapping ---------- */
 function info(a) {
@@ -336,7 +363,7 @@ function info(a) {
   if (st === 'COMPLETED_LV21' || st === 'COMPLETED') return { k: 'done', t: 'Đã xong', g: 'done' };
   if (st === 'BANNED') return { k: 'ban', t: 'Bị cấm', g: 'ban' };
   if (st === 'OFFLINE' || st === 'ERROR' || st === 'STOPPED') return { k: 'off', t: 'Ngoại tuyến', g: 'off' };
-  if (st === 'SEARCHING') return { k: 'wait', t: 'Tìm thấy trận', g: 'online' };
+  if (st === 'SEARCHING') return { k: 'wait', t: 'Đang tìm trận', g: 'wait' };
   if (st === 'CONNECTING') return { k: 'wait', t: 'Đang kết nối', g: 'online' };
   return { k: 'farm', t: 'Đang cày', g: 'farm' };
 }
@@ -536,11 +563,39 @@ function setConn(ok) {
   const c = $('conn'); c.className = 'pill ' + (ok ? 'ok' : 'off');
   $('conn-t').textContent = ok ? 'Bot Online' : 'Mất kết nối';
 }
+function renderLogs() {
+  const q = ($('log-q')?.value || '').trim().toLowerCase();
+  const level = $('log-level')?.value || 'all';
+  const filtered = dashboardLogs.filter(log => (level === 'all' || String(log.level || 'info').toLowerCase() === level) && (!q || `${log.time || ''} ${log.level || ''} ${log.message || ''} ${log.uid || ''}`.toLowerCase().includes(q)));
+  const key = JSON.stringify([filtered, q, level]);
+  if (key === lastLogRenderKey) return;
+  const box = $('log-list');
+  const shouldScroll = autoScrollLogs && (box.scrollHeight - box.scrollTop - box.clientHeight < 70 || box.scrollTop === 0);
+  lastLogRenderKey = key;
+  $('log-count').textContent = fmt(filtered.length);
+  if (!filtered.length) {
+    box.innerHTML = `<div class="logs-empty"><i class="fa-solid fa-magnifying-glass"></i><span>${dashboardLogs.length ? 'Không có log phù hợp bộ lọc.' : 'Đang chờ log từ bot...'}</span></div>`;
+    return;
+  }
+  box.innerHTML = filtered.map(log => {
+    const lv = ['success','warning','error','info'].includes(String(log.level || '').toLowerCase()) ? String(log.level).toLowerCase() : 'info';
+    const label = ({success:'OK',warning:'WARN',error:'ERROR',info:'INFO'})[lv];
+    const message = log.uid ? `[UID ${log.uid}] ${log.message || ''}` : (log.message || '');
+    return `<div class="log-row ${lv}"><time class="log-time">${esc(log.time || '--:--:--')}</time><span class="log-badge ${lv}">${label}</span><div class="log-message">${esc(message)}</div></div>`;
+  }).join('');
+  if (shouldScroll) box.scrollTop = box.scrollHeight;
+}
+function scrollLogsToBottom() { autoScrollLogs = true; const box = $('log-list'); box.scrollTop = box.scrollHeight; }
+$('log-q').addEventListener('input', () => { lastLogRenderKey = ''; renderLogs(); });
+$('log-level').addEventListener('change', () => { lastLogRenderKey = ''; renderLogs(); });
+$('log-list').addEventListener('scroll', () => { const box = $('log-list'); autoScrollLogs = box.scrollHeight - box.scrollTop - box.clientHeight < 45; });
+
 async function fetchStats(manual) {
   if (manual) for (const el of [$('refresh-btn').querySelector('i'), $('top-rot')]) { el.style.transition = 'transform .6s'; el.style.transform = `rotate(${(el._r = (el._r || 0) + 360)}deg)`; }
   try {
     const res = await fetch('/api/stats'); const data = await res.json();
     accounts = (data.accounts || []).map(a => ({ ...a, uid: String(a.uid ?? '') }));
+    dashboardLogs = Array.isArray(data.logs) ? data.logs : []; lastLogRenderKey = ''; renderLogs();
     const online = accounts.filter(isOnline).length, farm = accounts.filter(a => info(a).g === 'farm').length;
     const totalMatches = Number(data.total_matches || 0), totalExp = Number(data.total_gained_exp || 0);
     countTo('stat-total-accounts', Number(data.total_accounts ?? accounts.length));
