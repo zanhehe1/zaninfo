@@ -175,7 +175,7 @@
       "access_bot": [
         {
           "uid": 18457983435,
-          "expire": "2054-02-25 10:25:04"
+          "expire": "2054-02-25 13:20:04"
         },
         {
           "uid": 3391643669,
@@ -223,6 +223,25 @@
       "active-clan": true,
       "botid": 18551139231,
       "nickname": "quyquangメ³⁰⁸"
+    },
+    {
+      "bot_id": 16,
+      "auth_bot_login": {
+        "access_token": "be168dee3ebc70993a80162375b3aff1f4f03154d5b7ba697c2dd3308d55cdd6"
+      },
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-02-25 14:02:31"
+        },
+        {
+          "uid": 449224166,
+          "expire": "2029-07-06 14:02:45"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18558124344,
+      "nickname": "kid htuan"
     }
   ]
 }
