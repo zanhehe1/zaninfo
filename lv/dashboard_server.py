@@ -16,7 +16,7 @@ class BotState:
     def __init__(self):
         self.accounts: Dict[str, Dict[str, Any]] = {}
         self.logs: List[Dict[str, Any]] = []
-        self.max_logs = 200
+        self.max_logs = 500
         self.total_matches = 0
         self.total_gained_exp = 0
         self.start_time = time.time()
@@ -140,8 +140,9 @@ async def handle_get_stats(request: web.Request) -> web.Response:
         "total_matches": bot_state.total_matches,
         "total_gained_exp": bot_state.total_gained_exp,
         "accounts": accounts_data,
-        "logs": bot_state.logs[-60:],
-        "uptime": int(time.time() - bot_state.start_time)
+        "logs": bot_state.logs[-150:],
+        "uptime": int(time.time() - bot_state.start_time),
+        "uptime_seconds": int(time.time() - bot_state.start_time)
     })
 
 
