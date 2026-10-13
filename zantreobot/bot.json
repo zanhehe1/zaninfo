@@ -161,7 +161,7 @@
       "access_bot": [
         {
           "uid": 18457983435,
-          "expire": "2054-02-24 11:11:51"
+          "expire": "2054-02-27 06:58:33"
         },
         {
           "uid": 567154695,
@@ -321,6 +321,54 @@
       "active-clan": true,
       "botid": 18590373128,
       "nickname": "accclonexxz⁷"
+    },
+    {
+      "bot_id": 25,
+      "auth_bot_login": {
+        "access_token": "49ed4a15563cab2943a01d90d13cd31cd790961e5496ebfd02a474ad4bd7c891"
+      },
+      "access_bot": [],
+      "active-clan": true,
+      "botid": 18628014799,
+      "nickname": "tuilatipo⁵⁶³"
+    },
+    {
+      "bot_id": 28,
+      "auth_bot_login": {
+        "access_token": "cf1d0aca28db72b5afea0da8445d9e568b382b1a8626c966e1d2b80f41432865"
+      },
+      "access_bot": [
+        {
+          "uid": 3679989966,
+          "expire": "2026-11-12 09:37:24"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18580342136,
+      "nickname": "zanxgayhh⁷⁷⁰"
+    },
+    {
+      "bot_id": 29,
+      "auth_bot_login": {
+        "access_token": "6e97b5193e379a3d99445e9b878b0842b7795d611a960455c4b964fe1b1e9b5a"
+      },
+      "access_bot": [
+        {
+          "uid": 14504771471,
+          "expire": "2026-10-15 10:21:35"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18637589177,
+      "nickname": "ước bị đâm²⁵"
+    },
+    {
+      "bot_id": 30,
+      "auth_bot_login": {
+        "access_token": "fd2ba5fa67b5dbcd45f4ad0981a1bee48871abaa2cdb02dc78e8be191c61bfee"
+      },
+      "access_bot": [],
+      "active-clan": true
     }
   ]
 }
