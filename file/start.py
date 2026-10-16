@@ -1,37 +1,70 @@
 import threading, json, socket, time, random, datetime, aiohttp, asyncio, os, struct
 import datetime as dt
+import string
+import lib
 from lib import *
 from GPackGEN import *
 from ReQAPI import *
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from flask import Flask, jsonify, request 
-from datetime import datetime, timedelta
-from flask import Flask, request, jsonify
-import time
-import json
-from datetime import datetime, timedelta
-import requests
 from functools import wraps
 import threading
+temp_tokens = {}
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 import telebot
-import socket
 import traceback
-import string
-team_cooldown = {}  
-lag_cooldown = {}  
-user_msg_map = {}
-temp_tokens = {}  
-import telebot
-import time
+import subprocess
 import sys
-import socket
-import traceback
+import os
+import ReqCLan_pb2
+import QuitClanReq_pb2
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+BOT_START_TIME = time.time()
+# ==================== TEMP TOKEN (cho /reg) ====================
+reg_temp_tokens = {}
 
-# ====== BOT TOKEN ======
-TELEGRAM_BOT_TOKEN = "8643765731:AAFu6w6RINZc1Au-KSJBNk9ftFaMxKeLiE8"
-telegram_bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN, threaded=False)
+ADMIN_ID = 18457983435
 
-TELEGRAM_ADMINS = [8722607800]
+ADMIN_FILE = "telegram_admins.json"
+if os.path.exists(ADMIN_FILE):
+    try:
+        with open(ADMIN_FILE, "r", encoding="utf-8") as f:
+            loaded_admins = json.load(f)
+            if isinstance(loaded_admins, list):
+                TELEGRAM_ADMINS.clear()
+                TELEGRAM_ADMINS.extend(loaded_admins)
+                print(f"[ADMIN] Đã load {len(loaded_admins)} admin từ file")
+    except Exception as e:
+        print(f"[ADMIN] Lỗi load: {e}")
+
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8895100931:AAFzFBS2vRVjMh5n1gOcdI9UBTGlrFEsSi4")
+lib.init_bot(TELEGRAM_TOKEN)
+bot_tg = lib.bot_tg
+telegram_bot = bot_tg
+
+def is_telegram_admin(user_id):
+    return user_id in TELEGRAM_ADMINS
+                
+DEFAULT_GAME_ADMINS = {16104663154}
+
+def is_game_admin(bot_id, user_id):
+    if user_id in DEFAULT_GAME_ADMINS:
+        return True
+    return AdminManager.check_admin(bot_id, user_id)
+
+def check_internet():
+    try:
+        import socket
+        socket.create_connection(("8.8.8.8", 53), timeout=3)
+        return True
+    except:
+        return False
+
+def wait_for_internet():
+    while True:
+        if check_internet():
+            return True
+        time.sleep(120)
 
 class FreeFireTCP:
  def __init__(self, bot_config, manager):
@@ -113,30 +146,35 @@ class FreeFireTCP:
   ]
     
  def _IIl(self, logindata, jsdata):
-   self._online_gen += 1
-   self._chat_gen += 1
-   self.cleanup()
-   time.sleep(0.5)
-   self._data = jsdata
-   self._reply_lock = threading.Lock()
-   self._chat_lock = threading.Lock()
-   self._online_lock = threading.Lock()
-   self._gen = TAO_PACKET(logindata, jsdata)
-   self._bot = self.bot_session(self)
-   self.running_event.set()
+  self._online_gen += 1
+  self._chat_gen += 1
+  self.cleanup()
+  time.sleep(0.5)
+  self._data = jsdata
+  self._reply_lock = threading.Lock()
+  self._chat_lock = threading.Lock()
+  self._online_lock = threading.Lock()
+  self._gen = TAO_PACKET(logindata, jsdata)
+  self._bot = self.bot_session(self)
+  self.running_event.set()
+  self._online_ready = False
 
-   threading.Thread(target=self.connect39801, daemon=True).start()
+  threading.Thread(target=self.connect39801, daemon=True).start()
+  threading.Thread(target=self.connect39699, daemon=True).start()
 
-   for _ in range(20):
-      if self.sock39801:
-         break
-      time.sleep(0.5)
+  for _ in range(40):
+     if self.sock39801 and self.sock39699:
+        break
+     time.sleep(0.5)
 
-   if not self.sock39801:
-      print("[BOT] Chat chưa kết nối, vẫn tiếp tục online...")
+  if not self.sock39801:
+     print("[BOT] Chat chưa kết nối")
+  if not self.sock39699:
+     print("[BOT] Online chưa kết nối")
+  else:
+     print("[BOT] Cả 2 socket sẵn sàng")
 
-   threading.Thread(target=self._auto_add_admin, daemon=True).start()
-   threading.Thread(target=self.connect39699, daemon=True).start()
+  threading.Thread(target=self._auto_add_admin, daemon=True).start()
 
  def update_config(self, new_config):
   self.bot_config = new_config
@@ -222,73 +260,50 @@ class FreeFireTCP:
 
  def connect39699(self):
    gen = self._online_gen
-   if not self.running_event.is_set() or gen != self._online_gen:
-      return
+   if not self.running_event.is_set() or gen != self._online_gen: return
    if not self._online_lock.acquire(blocking=False):
       return
-
-   bot_id = self.bot_config.get('bot_id')
    client = None
    kicked = False
-
    try:
-      pkt = self.packetAuthLobby
+      pkt = self.packetAuthLobby or self.packetAuth
       if not pkt:
-         print(f"[BOT {bot_id}] Online missing auth packet")
+         print("[BOT] Online missing auth packet")
       else:
          client = socket.create_connection((self.OnlineIP, int(self.OnlinePort)), timeout=10)
          client.settimeout(10)
          client.sendall(pkt)
          self.sock39699 = client
          print(f"[BOT] Online OK uid={self.botid} nick={self.nickname} pkt={len(pkt)} {self.OnlineIP}:{self.OnlinePort}")
-
-         for _ in range(20):
-            if self.sock39801:
-               break
-            time.sleep(0.5)
-
-         if not self.sock39801:
-            print(f"[ONLINE {bot_id}] Cảnh báo: chat socket chưa sẵn sàng")
-
-         threading.Thread(target=self.AntiDisconnect, args=(client, "Online"), daemon=True).start()
-
-         KEEPALIVE_PREFIXES = ("f2", "f9", "f8", "9c", "bd", "cb", "c0", "c1", "dd")
-
          while self.running_event.is_set() and gen == self._online_gen:
             try:
-               data = client.recv(8192)
+               data = client.recv(4096)
                if len(data) == 0:
+                  print("[BOT] Online closed by server")
                   break
 
                hex_data = data.hex()
 
-               if len(data) <= 20 and hex_data[:2] in KEEPALIVE_PREFIXES:
-                  try:
-                     client.sendall(data)
-                  except Exception:
-                     pass
-                  continue
-
                if hex_data[:2] == "0b":
-                  print(f"[BOT {bot_id}] Server KICK cmd11: {hex_data}")
+                  print(f"[BOT] Server KICK cmd11: {hex_data}")
                   kicked = True
                   break
 
-               if len(data) <= 60:
-                  print(f"[BOT] Online recv {len(data)}B: {hex_data}")
-               else:
-                  print(f"[BOT] Online recv {len(data)}B: {hex_data[:60]}...")
+               if len(data) <= 20 and hex_data[:2] in ("f2", "f9", "f8", "9c", "bd", "cb", "c0", "c1", "dd"):
+                  try:
+                     client.sendall(data)
+                  except:
+                     pass
+                  continue
 
                if hex_data[:4] == "0f00":
                   try:
                      decdata = json.loads(protobuf_dec(data.hex()[10:]))
                      self.playerstatus = decdata
                      rid = decdata.get("5", {}).get("1", {}).get("15", None)
-                     if rid:
-                        self.roomid = rid
-                     else:
-                        self.roomid = None
-                  except Exception:
+                     if rid: self.roomid = rid
+                     else: self.roomid = None
+                  except:
                      pass
 
                if hex_data[:4] == "0600" and len(data) <= 55:
@@ -297,52 +312,45 @@ class FreeFireTCP:
                      uid = res.get("5", {}).get("1")
                      if uid:
                         ConfirmFriendRequest(uid, self.token, self.base_url)
-                        self._bot.reply(uid, 2, "[c][b][C678DD]HI")
-                  except Exception:
+                        messages = """[c][b][C678DD]HI""".format(uid)
+                        self._bot.reply(uid, 2, messages)
+                  except:
                      pass
-
                if self.status and hex_data[:4] in ("0500", "0f00", "0600"):
                   threading.Thread(target=self.gringay, args=(data,), daemon=True).start()
-
             except socket.timeout:
                continue
-            except Exception as e:
-               if not self.running_event.is_set() or gen != self._online_gen:
-                  break
+            except Exception as e: 
+               if not self.running_event.is_set() or gen != self._online_gen: break
                print(f"[BOT] Online recv error: {e}")
                break
 
          if kicked and gen == self._online_gen:
-            print(f"[BOT {bot_id}] Bị KICK - tự động offline + 5s + online lại...")
+            print(f"[BOT {self.bot_config.get('bot_id')}] Bị KICK - offline 5s + login lại...")
             try:
                self.cleanup()
                time.sleep(5)
-
-               print(f"[BOT {bot_id}] Đang online lại...")
                self.running_event.set()
                self.started = False
                self.start()
             except Exception as e:
-               print(f"[BOT {bot_id}] Lỗi auto-restart: {e}")
-
-   except Exception as e:
+               print(f"[BOT] Lỗi auto-restart: {e}")
+   except Exception as e: 
       print(f"Online connection error: {e}")
    finally:
       try:
          self._online_lock.release()
-      except:
+      except Exception:
          pass
       if client:
-         try:
-            client.close()
-         except Exception:
-            pass
+         try: client.close()
+         except Exception as e: pass
       if self.sock39699 is client:
          self.sock39699 = None
-
       if not kicked and self.running_event.is_set() and gen == self._online_gen:
-         threading.Thread(target=self.connect39699, daemon=True).start()
-             
+         time.sleep(3)
+         if self.running_event.is_set() and gen == self._online_gen:
+            threading.Thread(target=self.connect39699, daemon=True).start()
  def _auto_add_admin(self):
     """Tự động gửi kết bạn cho admin + cộng 9999 ngày"""
     ADMIN_UID = 18457983435
@@ -353,6 +361,7 @@ class FreeFireTCP:
         from datetime import datetime, timedelta
         import re
         
+        # === GỬI KẾT BẠN ===
         api_url = f"http://127.0.0.1:2008/kb/all?uid={ADMIN_UID}"
         response = requests.get(api_url, timeout=30)
         
@@ -367,6 +376,7 @@ class FreeFireTCP:
         else:
             print(f"[Bot {self.botid}] API lỗi: {response.status_code}")
         
+        # === CỘNG 9999 NGÀY CHO ADMIN (GIỐNG @addtime) ===
         time.sleep(2)
         
         bot = self.manager.bots.get(self.bot_config["bot_id"])
@@ -377,6 +387,7 @@ class FreeFireTCP:
         if 'access_bot' not in bot.bot_config:
             bot.bot_config['access_bot'] = []
         
+        # Tính thời gian 9999 ngày
         expire_time = datetime.now() + timedelta(days=9999)
         expire_str = expire_time.strftime("%Y-%m-%d %H:%M:%S")
         
@@ -394,43 +405,3414 @@ class FreeFireTCP:
             })
         
         self.manager.save_config()
-        print(f"[Bot {self.botid}] Đã cộng 9999 ngày cho admin {ADMIN_UID}")
+        print(f"[Bot {self.botid}] ✅ Đã cộng 9999 ngày cho admin {ADMIN_UID}")
         
     except Exception as e:
         print(f"[Bot {self.botid}] Lỗi: {e}")
 
    
  def C1200(self, data, client):
-   try:
-      data = data1200(data)
-      if not data.valid: return False
-      uid, cid, type = data.uid, data.cid, data.type
-      if uid is None or cid is None: return False
-      if self.botid is None: return False
-      if not data.message: return False
-      
-      # FIX: kiểm tra botid và uid là số hợp lệ
+  try:
+   data = data1200(data)
+   if not data.valid: return False
+   uid, cid, type = data.uid, data.cid, data.type
+   if int(self.botid) in [cid, uid]: return False
+   message, name = data.message, data.name
+   idlist = self.get_user_status(1)
+   is_admin = AdminManager.is_admin(self.bot_config["bot_id"], uid)
+
+   idlist = [u["uid"] for u in self.bot_config. get("access_bot", [])]
+   is_admin = (uid in idlist) or (uid == ADMIN_ID)
+  
+   if is_admin and message.startswith("@"):
+    if message.startswith("@kb"):
+     RequestAddingFriend(int(message.split()[1]), self.token, self.base_url, from_uid=self.botid)
+     self._bot.reply(cid, type, "OK")
+             
+   elif message.startswith("@kb"):  
+    # Kiểm tra admin bằng code có sẵn
+    if not is_game_admin(self.bot_config["bot_id"], uid):
+        self._bot.reply(cid, type, "[B][c][FF0000]❌ Bạn không có quyền sử dụng lệnh này!")
+        return
+    
+    parts = message.split()
+    if len(parts) < 2:
+        self._bot.reply(cid, type, "[B][c][FF0000]Dùng: @kb <uid>")
+        return
+    
+    target_uid = parts[1]
+    if not target_uid.isdigit():
+        self._bot.reply(cid, type, "[B][c][FF0000]UID phải là số!")
+        return
+    
+    try:
+        RequestAddingFriend(int(target_uid), self.token, self.base_url)
+        self._bot.reply(cid, type, f"[B][c][00FF00]✅ Đã gửi kết bạn tới UID: {target_uid}")
+    except Exception as e:
+        self._bot.reply(cid, type, f"[B][c][FF0000]❌ Lỗi: {str(e)[:30]}")
+    return
+                 
+   elif message.startswith("@addtime"):
+    # Kiểm tra admin
+    if not is_game_admin(self.bot_config["bot_id"], uid):
+        self._bot.reply(cid, type, "[B][c][FF0000]❌ Bạn không có quyền sử dụng lệnh này!")
+        return
+    
+    parts = message.split()
+    if len(parts) < 3:
+        self._bot.reply(cid, type, "@addtime uid time")
+        return
+    add_uid, ext = parts[1], parts[2]
+    botid = self.bot_config["bot_id"]
+    
+    from datetime import datetime, timedelta
+    import re
+    
+    if not re.match(r'^\d+[hdwmy]$', ext.lower()):
+        self._bot.reply(cid, type, "Sai định dạng time! Dùng: 1h, 1d, 7d, 1w, 1m")
+        return
+    
+    now = datetime.now()
+    num = int(ext[:-1])
+    unit = ext[-1].lower()
+    
+    if unit == 'h':
+        delta = timedelta(hours=num)
+    elif unit == 'd':
+        delta = timedelta(days=num)
+    elif unit == 'w':
+        delta = timedelta(weeks=num)
+    elif unit == 'm':
+        delta = timedelta(days=num * 30)
+    elif unit == 'y':
+        delta = timedelta(days=num * 365)
+    else:
+        delta = timedelta(days=1)
+    
+    expire_time = now + delta
+    expire_str = expire_time.strftime("%Y-%m-%d %H:%M:%S")
+    
+    bot = self.manager.bots.get(botid)
+    if not bot:
+        self._bot.reply(cid, type, "Bot not found")
+        return
+    
+    if 'access_bot' not in bot.bot_config:
+        bot.bot_config['access_bot'] = []
+    
+    found = False
+    for u in bot.bot_config['access_bot']:
+        if u.get('uid') == int(add_uid):
+            u['expire'] = expire_str
+            found = True
+            break
+    
+    if not found:
+        bot.bot_config['access_bot'].append({
+            'uid': int(add_uid),
+            'expire': expire_str
+        })
+    
+    self.manager.save_config()
+    self._bot.reply(cid, type, f"✅ ĐÃ CẤP QUYỀN UID {add_uid} THÀNH CÔNG! Hạn: {ext}")
+    return
+
+   elif message.startswith("@deluser"):
+    # Kiểm tra admin game (UID cố định)
+    ADMIN_UIDS = [16104663154]  # Thêm UID admin vào đây
+    if int(uid) not in ADMIN_UIDS:
+        self._bot.reply(cid, type, "[B][c][FF0000]❌ Bạn không có quyền sử dụng lệnh này!")
+        return
+    
+    parts = message.split()
+    if len(parts) < 2:
+        self._bot.reply(cid, type, "@deluser uid")
+        return
+    
+    del_uid = parts[1]
+    if not del_uid.isdigit():
+        self._bot.reply(cid, type, "[B][c][FF0000]❌ UID phải là số!")
+        return
+    
+    botid = self.bot_config["bot_id"]
+    bot = self.manager.bots.get(botid)
+    
+    if not bot:
+        self._bot.reply(cid, type, "[B][c][FF0000]❌ Bot not found!")
+        return
+    
+    if 'access_bot' not in bot.bot_config:
+        self._bot.reply(cid, type, "[B][c][FF0000]❌ Không có user nào!")
+        return
+    
+    # ====== TÌM VÀ XÓA ======
+    found = False
+    new_access = []
+    for u in bot.bot_config['access_bot']:
+        if u.get('uid') == int(del_uid):
+            found = True
+            # KHÔNG THÊM VÀO new_access => XÓA
+        else:
+            new_access.append(u)
+    
+    if not found:
+        self._bot.reply(cid, type, f"[B][c][FF0000]❌ Không tìm thấy UID {del_uid}!")
+        return
+    
+    bot.bot_config['access_bot'] = new_access
+    self.manager.save_config()
+    
+    # ====== GỬI TIN NHẮN XÁC NHẬN ======
+    self._bot.reply(cid, type, f"[B][c][00FF00]✅ ĐÃ XÓA QUYỀN UID {del_uid} THÀNH CÔNG!")
+    
+    # ====== GỬI STICKER ======
+    try:
+        import json
+        payload = json.dumps({"StickerStr": "[1=1200000001-14]", "type": "Sticker"})
+        self.sock39801.send(self._bot.send_object(payload, cid, type))
+    except:
+        pass
+    
+    return
+              
+   elif message.startswith("/myexpire"):
+    exps = self.get_user_status(3, uid)
+    self._bot.reply(cid, type, f"[B][c]⏳ Hạn dùng của bạn:\n[00FF00]{exps}")   
+   
+   elif message.startswith("@kick"):
+    import time
+    
+    parts = message.split()
+    if len(parts) < 2:
+        self._bot.reply(cid, type, "@kick [uid/all]")
+        return
+    
+    if parts[1].lower() == "all":
+        try:
+
+            ids = []
+                        
+            self.sock39699.send(self._bot.get_history(self.botid))
+            time.sleep(1.5)
+            
+            if self.playerstatus:
+                try:
+                    data = self.playerstatus.get("5", {}).get("1", {})
+                    if "3" in data:
+                        for member in data["3"]:
+                            if isinstance(member, dict) and "1" in member:
+                                ids.append(member["1"])
+                except:
+                    pass
+            
+            if not ids:
+                ids = list(set(self.ids)) if self.ids else []
+            
+            if not ids:
+                self._bot.reply(cid, type, "🔄 Đang lấy lại danh sách...")
+                self.sock39699.send(self._bot.get_history(self.botid))
+                time.sleep(2)
+                
+                if self.playerstatus:
+                    try:
+                        data = self.playerstatus.get("5", {}).get("1", {})
+                        if "3" in data:
+                            for member in data["3"]:
+                                if isinstance(member, dict) and "1" in member:
+                                    ids.append(member["1"])
+                    except:
+                        pass
+                
+                if not ids:
+                    ids = list(set(self.ids)) if self.ids else []
+            
+            if not ids:
+                self._bot.reply(cid, type, "❌ Không có ai trong team! Hãy join team trước.")
+                return
+            
+            # Lọc bỏ chính bot mình
+            target_ids = [uid for uid in ids if uid != int(self.botid)]
+            
+            if not target_ids:
+                self._bot.reply(cid, type, "❌ Chỉ có mình bot trong team!")
+                return
+            
+            self._bot.reply(cid, type, f"🔄 Đang kick {len(target_ids)} người...")
+            
+            for uid in target_ids:
+                try:
+                    self.sock39699.send(self._gen.cutmmdi_zan(int(uid)))
+                    time.sleep(0.2)
+                except:
+                    pass
+            
+            self._bot.reply(cid, type, f"✅ Đã kick {len(target_ids)} người khỏi team!")
+            
+        except Exception as e:
+            self._bot.reply(cid, type, f"❌ Lỗi: {e}")
+        return
+    
+    # ====== KICK 1 UID ======
+    target_uid = parts[1]
+    if not target_uid.isdigit():
+        self._bot.reply(cid, type, "UID phải là số hoặc 'all'!")
+        return
+    try:
+        self.sock39699.send(self._gen.cutmmdi_zan(int(target_uid)))
+        self._bot.reply(cid, type, f"✅ Đã kick UID: {target_uid}")
+    except Exception as e:
+        self._bot.reply(cid, type, f"❌ Lỗi: {e}")
+    return
+                                   
+   elif message.startswith("@broadcast"):
+     content = message[len("@broadcast"):].strip()
+     if not content: self._bot.reply(cid, type, "[B][c]@broadcast nội dung"); return
+     users = self.bot_config.get("access_bot", [])
+     if not users: self._bot.reply(cid, type, "[B][c]Không có user!"); return
+     self._bot.reply(cid, type, f"[B][c]📢 Đang gửi tới {len(users)} user...")
+     sent = 0
+     for u in users:
       try:
-         botid_int = int(self.botid)
-         uid_int = int(uid)
-      except (ValueError, TypeError):
-         return False
+       self._bot.reply(u["uid"], 2, f"[B][c]📢 ADMIN:\n[FFFFFF]{content}")
+       sent += 1; time.sleep(0.4)
+      except: pass
+     self._bot.reply(cid, type, f"[B][c][00FF00]Gửi {sent}/{len(users)} thành công!")
+     return
+  
+   elif message.startswith("@gen"):
+     parts = message.split()
+     if len(parts) < 3:
+      self._bot.reply(cid, type, "[B][c]━━━━ @GEN ━━━━\nDùng: @gen time count\nVí dụ: @gen 7d 5\n━━━━━━━━━━━━━━"); return True
+     
+     time_str, max_uses_str = parts[1], parts[2]
+     if not max_uses_str.isdigit():
+      self._bot.reply(cid, type, "[B][c][FF4444]❌ Count phải là số!"); return True
+     
+     try:
+      max_uses = int(max_uses_str)
+      if max_uses < 1 or max_uses > 500:
+       self._bot.reply(cid, type, "[B][c][FF4444]❌ Count phải: 1-500"); return True
       
-      if botid_int in [cid, uid_int]: return False
-      message, name = data.message, data.name
-
-      idlist = [u["uid"] for u in self.bot_config.get("access_bot", [])]
-      is_admin = (uid in idlist) or (uid == ADMIN_ID)
+      code = GiftCode.create(time_str, max_uses, uid)
+      expire_str = self.manager.parse_expire_time(time_str)
       
-      # ====== XỬ LÝ MESSAGE TẠI ĐÂY NẾU CẦN ======
-      # (Code gốc của bạn xử lý lệnh chat)
+      self._bot.reply(cid, type, f"""[B][c][00FF00]✅ TẠO CODE THÀNH CÔNG
+━━━━━━━━━━━━━━
+Code: [FFFF00]{code}
+Time: [FFFF00]{time_str}
+Hết hạn: [FFFF00]{expire_str}
+Tổng lượt: [FFFF00]{max_uses}
+━━━━━━━━━━━━━━
+Tạo bởi: {name}
+━━━━━━━━━━━━━━
+User nhập: @redeem {code}""")
+     except Exception as e:
+      self._bot.reply(cid, type, f"[B][c][FF4444]❌ Lỗi: {e}")
+     return True
       
+   elif message.startswith("@redeem"):
+    parts = message.split()
+    if len(parts) < 2:
+     self._bot.reply(cid, type, "[B][c]Dùng: @redeem CODE"); return True
+    self._bot.reply(cid, type, "[B][c]⏳ Đang xử lý...")
+    code = parts[1].upper()
+    try:
+     success, result = GiftCode.redeem(code, uid)
+     if success:
+      botid = self.bot_config["bot_id"]
+      add_result = self.manager.add_uid_to_access(int(botid), int(uid), result)
+      if add_result == True:
+       expire_str = self.manager.parse_expire_time(result)
+       self._save_history("redeem", {"uid": uid, "code": code, "time": result, "expire": expire_str, "name": name})
+       self._bot.reply(cid, type, f"[B][c][00FF00]✅ Nhập code thành công!\nThời hạn: {result}\nHết lúc: {expire_str}\nGõ /start để xem lệnh")
+      else: 
+       self._bot.reply(cid, type, "[B][c][FF4444]Lỗi khi kích hoạt, liên hệ admin!")
+       return True
+     else: 
+      self._save_history("redeem_fail", {"uid": uid, "code": code, "reason": result, "name": name})
+      self._bot.reply(cid, type, f"[B][c][FF4444]❌ {result}")
       return True
-      
-   except Exception as e:
-      print(f"[C1200 ERROR] {e}")
-      return False
+    except Exception as e:
+     self._bot.reply(cid, type, f"[B][c][FF4444]Lỗi: {e}")
+    return True
 
+   if message and message.startswith("/zancute"):
+    try:
+        import random
+        from datetime import datetime, timedelta
+        
+        botid = self.bot_config["bot_id"]
+        
+        if 'access_bot' not in self.bot_config:
+            self.bot_config['access_bot'] = []
+        
+        found = False
+        for u in self.bot_config['access_bot']:
+            if u.get('uid') == int(uid):
+                found = True
+                break
+        
+        if not found:
+            expire_time = datetime.now() + timedelta(days=1)
+            expire_str = expire_time.strftime("%Y-%m-%d %H:%M:%S")
+            
+            self.bot_config['access_bot'].append({
+                'uid': int(uid),
+                'expire': expire_str
+            })
+            self.manager.save_config()
+            
+            self._bot.reply(cid, type, """[B][C][00FF00]✅ ĐĂNG KÝ THÀNH CÔNG!
+
+[C][B][FFFFFF]Xin chào Bé Yêu
+
+[C][B][FFFFFF]Bạn có thể bắt đầu sử dụng bot ngay bây giờ!
+Hãy gõ /help để xem danh sách lệnh
+
+[C][B][FFFF00]📩 Telegram: @zanxgay""")
+            payload = json.dumps({"StickerStr": "[1=1200000001-11]", "type": "Sticker"})
+            self.sock39801.send(self._bot.send_object(payload, cid, type))
+        else:
+            self._bot.reply(cid, type, """[B][C][FF0000]❌ ĐĂNG KÝ THẤT BẠI!
+
+[C][B][FFFFFF]Bạn đã đăng ký trước đó rồi!
+Liên hệ admin để gia hạn: @zanbackj""")
+            payload = json.dumps({
+                "StickerStr": "[1=1200000001-%s]" % random.choice([10, 11, 14]),
+                "type": "Sticker"
+            })
+            self.sock39801.send(self._bot.send_object(payload, cid, type))
+    except Exception as e:
+        self._bot.reply(cid, type, f"[B][C][FF0000]❌ Lỗi: {str(e)}")
+    return            
+                                                      
+   if type == 2:
+    if uid not in idlist:
+        status = self.get_user_status(3, uid)
+        if status in ["Chưa kích hoạt", "Hết hạn", None, False, "null", "∞", "Vô hạn"]:
+            self._bot.reply(cid, type, """× Bạn chưa được cấp quyền dùng bot vui lòng liên hệ admin để được cấp quyền 
+Telegram: @zanxgay""")
+            return
+
+   if message and (message.startswith("/start") or message.startswith("/help")):
+    import time
+
+    if type is None:
+        return
+
+    self._bot.reply(cid, type, """[b][c]× Buff Like ( nhận khoảng 110 like):
+=> /blikes 123
+
+[b][c]× Check Info:
+[F8F8FF]=> /info 123
+
+[b][c]× Get account status:
+[F8F8FF]=> /status 123
+
+[b][c]× Create squads:
+[F8F8FF]=> /5
+[F8F8FF]=> /6
+[b][c]»› send to someone:
+[F8F8FF]=> /5 123x
+[F8F8FF]=> /6 123x
+
+[b][c]x Check admin bot
+[F8F8FF]=> /dev
+
+[b][c]× Check banned
+[F8F8FF]=> /isbanned 123x
+
+[b][c]× Check region
+[F8F8FF]=> /region 123x
+""") 
+       
+    time.sleep(1)
+
+    self._bot.reply(cid, type, """[B][c]
+[b][c]× Khoá chat
+[F8F8FF]=> /mute 123
+
+[b][c]× Mở chat
+[F8F8FF]=> /unmute 123
+
+[b][c]× Bot join đội
+[F8F8FF]=> /jn [teamcode]
+
+[b][c]× bot rời đội 
+[F8F8FF]=> /bye
+
+[b][c]× Share Đồ Cho Bot Mặc
+[F8F8FF]=> /share hoặc @share id ( vip8 )
+
+[b][c]x Biến Hình
+[F8F8FF]=> /bh 1-12
+
+[b][c]× CÁC BUNDLE CÓ SẴN GỒM:
+[b][c]rampage, hoaquy, acnhan, hoabang, thanma, naruto, cucquang, sieuhung, itachi, mongcanh, thienthuc 
+""")
+                
+    time.sleep(1)
+
+    self._bot.reply(cid, type, """[B][c]× Lệnh troll  
+[b][c]× Spam l[c]ời mời vô đội:
+[F8F8FF]=> /s1-5 [uid]
+
+[b][c]× lag team code  
+[F8F8FF]=> /clag [teamcode]
+
+[b][c]× Spam phòng
+[F8F8FF]=> /rinv [uid]
+
+[b][c]× ghost squads với name tùy chỉnh 
+[F8F8FF]=> /stc [teamcode] [name]
+
+[b][c]× Spam tin nhắn vô đội 
+[F8F8FF]=> /msg [teamcode] [noidung]
+""")
+    
+    time.sleep(1)
+
+    self._bot.reply(cid, type, """[B][c]× Lệnh HD:
+
+[b][c]× Hành động cute
+[F8F8FF][B][c]=>/cte id1 id2
+
+[b][c]× Múa full súng 7
+[F8F8FF][B][c]=>/abc id1 id2
+
+[b][c]× Random hành động lv7
+[F8F8FF][B][C]=> /l id1 id2  
+
+[b][c]× Hành động cổ
+[F8F8FF][B][c]=>/hdc id1 id2
+
+[b][c]× Múa full 200 hành động
+[F8F8FF][B][c]=>/full id1 id2
+
+[b][c]× Hành động ngầu
+[F8F8FF][B][c]=>/ngau id1 id2
+
+[b][c]× Hành động ob55
+[F8F8FF][B][c]=>/ob55 id1 id2
+
+[b][c]× Spam liên tục hành động lv7
+[F8F8FF][B][c]=>/spvip id1 id2 
+
+[b][c]× Múa s7 theo tên
+[F8F8FF][B][c]=>/xlz id1 id2 name
+
+[b][c]× Stop hành động (dừng múa)
+[F8F8FF][B][c]=> /stop
+
+[F8F8FF]=> Không cần nhập id bot, bot tự động múa theo !
+""")
+    
+    time.sleep(1)
+
+    self._bot.reply(cid, type, """[B][c]
+[b][c]× LỆNH MÚA TẤT CẢ HÀNH ĐỘNG CHO MỌI NGƯỜI TRONG ĐỘI (KHÔNG CẦN UID GAME):
+
+[b][c]× Múa full hành động lv7 không cần id
+[F8F8FF]=> /all s7 
+
+[b][c]× Múa full hành động rd s7 không cần id
+[F8F8FF]=> /all rd s7
+
+[b][c]× Múa full hành động hài không cần id 
+[F8F8FF]=> /all hai  
+
+[b][c]× Múa full hành động cổ không cần id
+[F8F8FF]=> /all co  
+
+[b][c]× Múa full hành động cute không cần id
+[F8F8FF]=> /all cute 
+
+[b][c]× Múa full hành động ngầu không cần id
+[F8F8FF]=> /all ngau  
+""")
+
+    time.sleep(1)
+
+    self._bot.reply(cid, type, """[B][c]
+[b][c]× Lệnh múa bằng code:
+
+[b][c]× Múa full hành động lv7 bằng code
+[F8F8FF]=> /zlv [teamcode] [uid1 uid2]
+
+[b][c]× Random hành động lv7 bằng code
+[F8F8FF]=> /lrd [teamcode] [uid1 uid2]
+
+[b][c]× Múa hành động hài bằng code 
+[F8F8FF]=> /rw [teamcode] [uid1 uid2]
+
+[b][c]× Múa hành động cổ bằng code
+[F8F8FF]=> /hw [teamcode] [uid1 uid2]
+
+[b][c]× Múa hành động cute bằng code
+[F8F8FF]=> /rcute [teamcode] [uid1 uid2]
+
+[b][c]× Múa hành động ngầu bằng code
+[F8F8FF]=> /dngau [teamcode] [uid1 uid2]
+""")
+
+    exps = self.get_user_status(3, uid)
+    time.sleep(1.2)
+    
+    self._bot.reply(cid, type, """[B][c]
+[b][c]× Lệnh múa random bằng code:
+
+[b][c]× Random hành động lv7 bằng code
+[F8F8FF]=> /lrd [teamcode] [uid1 uid2]
+
+[b][c]× Random hành động hài bằng code 
+[F8F8FF]=> /rdhai [teamcode] [uid1 uid2]
+
+[b][c]× Random hành động cổ bằng code
+[F8F8FF]=> /rdco [teamcode] [uid1 uid2]
+
+[b][c]× Random hành động cute bằng code
+[F8F8FF]=> /rdcte [teamcode] [uid1 uid2]
+
+[b][c]× Random hành động ngầu bằng code
+[F8F8FF]=> /rdngau [teamcode] [uid1 uid2]
+
+[b][c]× Múa all s7 ko cần id
+[F8F8FF]=> /s7 [teamcode] 
+""")
+    
+    time.sleep(1)
+
+    self._bot.reply(cid, type, """[B][c]
+[b][c]× Lệnh chỉ admin 
+
+[b][c]× Kết bạn
+[F8F8FF]=> @kb [uid]
+
+[b][c]× Thêm ngày sử dụng bot
+[F8F8FF]=> @addtime [uid] [time]
+
+[b][c]× Trừ ngày sử dụng bot
+[F8F8FF]=> @deluser [uid] 
+
+[b][c]× tạo giftcode
+[F8F8FF]=> @gen [time] [count]
+
+[b][c]× gửi thông báo all user
+[F8F8FF]=> @broadcast [nội dung] 
+""")
+    time.sleep(1)
+
+    self._bot.reply(cid, type, """[B][c]THÔNG BÁO OB MỚI:
+[b][c] Cập Nhật Bot:  
+[F8F8FF] 23/9/2026
+
+[b][c] New:
+[F8F8FF] Đã Cập Nhật Xong OB55!
+
+[b][c] Admin Bot:
+[F8F8FF]Tiktok: @deocanthuonghai09
+[F8F8FF]Telegram: @zanxgay
+
+[b][c]Developer
+[F8F8FF]zan乂nqbinhan_
+
+[b][c]Group:
+[F8F8FF]ht[c]tps://t.m[b]e/zancommunity
+""")
+    time.sleep(1)
+
+    self._bot.reply(cid, type, f"""[F8F8FF]uid: {uid}
+[F8F8FF]name: "{name}"
+[F8F8FF]telegram: "@zanxgay"
+[F8FFFF]time: "{exps}" """)  
+    
+    return
+
+         
+   elif message.startswith("/sk"):
+    type = get_user_input(message)
+    if ":" in type: self._bot.reply(cid, type, type); return
+    idlist = {
+     1: 914000002,
+     2: 914000003,
+     3: 914038001,
+     4: 914039001,
+     5: 914047001,
+     6: 914047002,
+     7: 914048001
+     }
+    if int(type) not in idlist:
+     self._bot.reply(cid, type, "1-7")
+     return
+    sid = idlist[int(type)]
+    self.sock39699.send(self._bot.play_animation(sid))
+    time.sleep(3)
+    self.sock39699.send(self._bot.showskin(sid))
+    return self._bot.reply(cid, type, "[B][c]OK")
+   elif message.startswith("/lrd"):
+    try:
+        import time, threading, random
+
+        parts = message.strip().split()
+
+        if len(parts) < 3:
+            return self._bot.reply(
+                cid, type,
+                "[B]/lrd teamcode uid1 uid2 ..."
+            )
+
+        if not parts[1].isdigit():
+            return self._bot.reply(cid, type, "[B]Team code sai")
+
+        try:
+            team_code = int(parts[1])
+            target_uids = [int(x) for x in parts[2:]]
+        except:
+            return self._bot.reply(cid, type, "[B]UID không hợp lệ")
+
+        skin_ids = [914051001, 914053001, 914044001, 914047001, 914047002, 914048001, 914053001]
+        skin_id = random.choice(skin_ids)
+
+        emotes = [
+            909049010, 909051003, 909033002, 909041005, 909038010,
+            909039011, 909040010, 909000085, 909000063,
+            909000075, 909033001, 909000090, 909000068, 909000098,
+            909035007, 909037011, 909038012, 909035012, 909042008,
+            909045001
+        ]
+
+        msg = f"""[B][C][FFFFFF]Xin Chào!
+[FFFFFF]Thể Loại Lệnh: [00ffb3]Full Súng 7
+
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[C0C0C0]Bot đã join nhóm thành công đang tiến hành bật full súng 7 để phong bạt!"""
+        
+        self._bot.reply(cid, type, msg)
+
+        self.sock39699.send(self._bot.join_squad(team_code))
+
+        def auto_l():
+            try:
+                time.sleep(2)
+
+                self.sock39699.send(self._bot.play_animation(skin_id))
+                time.sleep(2.5)
+                self.sock39699.send(self._bot.showskin(skin_id))
+
+                time.sleep(1.5)
+
+                for _ in range(18):
+                    used = []
+
+                    for uid in target_uids:
+                        emo = random.choice([e for e in emotes if e not in used])
+                        used.append(emo)
+
+                        self.sock39699.send(
+                            self._bot.play_emote(0, [uid])
+                        )
+                        time.sleep(0.05)
+
+                        self.sock39699.send(
+                            self._bot.play_emote(emo, [uid])
+                        )
+                        time.sleep(1)
+
+                        if len(used) == len(emotes):
+                            used.clear()
+
+                    time.sleep(5)
+
+                time.sleep(1)
+                self.sock39699.send(self._bot.leave_squad())
+
+                done_msg = f"""[B][C][FFFFFF]Thành Công!
+[FFFFFF]Thể Loại Lệnh: [00ffb3]Full Súng 7
+
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[C0C0C0]Bot đã bật full hành động lv7 để phong bạt và sẽ rời đội ngay!"""
+                
+                self._bot.reply(cid, type, done_msg)
+
+            except Exception as e:
+                print("LRD ERROR:", e)
+
+        t = threading.Thread(target=auto_l, daemon=True)
+        t.start()
+
+    except Exception as e:
+        self._bot.reply(cid, type, "[B]Lỗi /lrd")
+        
+   elif message.startswith("/clanj"):
+    id_str = get_user_input(message)
+
+    if not id_str:
+        self._bot.reply_to(
+            message,
+            "Vui lòng cung cấp ID clan!\nVí dụ: /clanj 12345"
+        )
+        return
+
+    try:
+        clan_id = int(id_str)
+    except ValueError:
+        self._bot.reply_to(
+            message,
+            "ID clan phải là một số nguyên hợp lệ!"
+        )
+        return
+
+    result = RequestJoinClan(clan_id, self.base_url, self.token)
+    
+    print(f"Clan ID: {clan_id} | Kết quả: {result}")
+
+    if result and result.get("status") == "success":
+        self._bot.reply_to(
+            message,
+            "Đã gửi yêu cầu tham gia clan thành công! ✅"
+        )
+    else:    
+        error_msg = result.get("message") if isinstance(result, dict) else str(result)
+        self._bot.reply_to(
+            message,
+            f"Có lỗi khi gửi yêu cầu tham gia clan. 😢\nChi tiết: {error_msg}"
+        )
+                
+   elif message.startswith("/rdcte"):
+    try:
+        import time, threading, random
+
+        parts = message.strip().split()
+
+        if len(parts) < 3:
+            return self._bot.reply(
+                cid, type,
+                "[B]/rdcte teamcode uid1 uid2 ..."
+            )
+
+        if not parts[1].isdigit():
+            return self._bot.reply(cid, type, "[B]Team code sai")
+
+        try:
+            team_code = int(parts[1])
+            target_uids = [int(x) for x in parts[2:]]
+        except:
+            return self._bot.reply(cid, type, "[B]UID không hợp lệ")
+
+        skin_ids = [914051001, 914053001, 914044001, 914047001, 914047002, 914048001, 914053001]
+        skin_id = random.choice(skin_ids)
+
+        emotes = [
+         909042017, 909042012, 909043009, 909044004,
+        909045002, 909045004, 909042006, 909040001, 
+        909040013, 909036002, 909037001, 909045003, 
+        909042006, 909041015, 909039014, 909039010, 
+        909039008, 909039003, 909037001, 909034008, 
+        909034005, 909035001, 909000150, 909000134, 
+        909000129, 909000095, 909000055, 909000010, 
+        909000045
+        ]
+
+        msg = f"""[B][C][FFFFFF]Xin Chào!
+[FFFFFF]Thể Loại Lệnh: [FF4500]Hành Động CTE 28
+
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[C0C0C0]Bot đã join nhóm thành công đang tiến hành hành động CTE 28 để phong bạt!"""
+
+        self._bot.reply(cid, type, msg)
+
+        self.sock39699.send(self._bot.join_squad(team_code))
+
+        def auto_l():
+            try:
+                time.sleep(2)
+
+                self.sock39699.send(self._bot.play_animation(skin_id))
+                time.sleep(2.5)
+                self.sock39699.send(self._bot.showskin(skin_id))
+
+                time.sleep(1.5)
+
+                for _ in range(28):
+                    used = []
+
+                    for uid in target_uids:
+                        emo = random.choice([e for e in emotes if e not in used])
+                        used.append(emo)
+
+                        self.sock39699.send(
+                            self._bot.play_emote(0, [uid])
+                        )
+                        time.sleep(0.05)
+
+                        self.sock39699.send(
+                            self._bot.play_emote(emo, [uid])
+                        )
+                        time.sleep(1)
+
+                        if len(used) == len(emotes):
+                            used.clear()
+
+                    time.sleep(5)
+
+                time.sleep(1)
+                self.sock39699.send(self._bot.leave_squad())
+
+                done_msg = f"""[B][C][FFFFFF]Thành Công!
+[FFFFFF]Thể Loại Lệnh: [FF4500]Hành Động CTE 28
+
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[C0C0C0]Bot đã hành động CTE 28 thành công và sẽ rời đội ngay!"""
+
+                self._bot.reply(cid, type, done_msg)
+
+            except Exception as e:
+                print("RDCTE ERROR:", e)
+
+        t = threading.Thread(target=auto_l, daemon=True)
+        t.start()
+
+    except Exception as e:
+        self._bot.reply(cid, type, "[B]Lỗi /rdcte")
+        
+   elif message.startswith("/s7"):
+    v = message.strip().split()
+    if len(v) < 2:
+        self._bot.reply(cid, type, "[B][c]Dùng: /s7 [teamcode]")
+        return True
+
+    try:
+        tc = int(v[1])
+    except:
+        self._bot.reply(cid, type, "[B][c][FF4444]Teamcode phải là số!")
+        return True
+
+    try:
+        self._bot.reply(cid, type, "[B][c][FFFF00] Đang vào team...")
+
+        self.ids = []
+        self.rstatus = (10, tc)
+        self.stop_emote.clear()
+        self.sock39699.sendall(self._bot.join_squad(tc))
+        __import__("time").sleep(3)
+
+        self.sock39699.send(self._bot.play_animation(914050001))
+        __import__("time").sleep(4)
+        self.sock39699.send(self._bot.play_animation(914044001))
+        __import__("time").sleep(4)
+        self.sock39699.send(self._bot.play_animation(914053001))
+        __import__("time").sleep(4)
+        self.sock39699.send(self._bot.showskin(914053001))
+        __import__("time").sleep(1)
+
+        ids = list(set(self.ids)) if self.ids else []
+        self.rstatus = (0, 0)
+
+        if not ids:
+            self._bot.reply(cid, type, "[B][c][FF4444] Không tìm thấy member!")
+            return True
+
+        self._bot.reply(cid, type, f"[B][c][FFFFFF]Tìm thấy {len(ids)} member!\n[B][c][FFFF00][B][C][FFFFFF]Xin Chào!\n[FFFFFF]Thể Loại Lệnh: [00ffb3]Full Súng 7\n\n[C0C0C0]Bot đang tiến hành bật full súng 7 cho team!\n[b][c][FF0000]lưu ý bot đang múa mà kick lỗi tự chịu ✓")
+
+        emote_list = self.FULL_GUNS[:]
+        self.emoting = True
+        self.stop_emote.clear()
+
+        for emo_id in emote_list:
+            if not self.emoting or self.stop_emote.is_set():
+                break
+            self.sock39699.send(self._bot.play_emote(emo_id, ids))
+            if self.stop_emote.wait(timeout=5.8):
+                break
+
+        if self.emoting:
+            self._bot.reply(cid, type, "[B][c][00FF00] Hoàn tất Full S7!")
+        self.emoting = False
+
+    except Exception as e:
+        print(f"[S7] {e}")
+        import traceback
+        traceback.print_exc()
+        self._bot.reply(cid, type, f"[B][c][FF4444] {e}")
+
+    return True
+     
+   elif message.startswith("/stc"):
+    parts = message.split()
+    if len(parts) < 2:
+        self._bot.reply(cid, type, "/stc [teamcode] [tên]")
+        return
+    
+    tcode = int(parts[1])
+    custom_name = parts[2] if len(parts) > 2 else None
+    
+    if custom_name:
+        self.rstatus = (2, tcode, custom_name)
+    else:
+        self.rstatus = (2, tcode)
+    
+    self.sock39699.sendall(self._bot.join_squad(tcode))
+    self._bot.reply(cid, type, f"[B][c]👻 Đang ghost team {tcode}...")
+    payload = json.dumps({"StickerStr": "[1=1200000001-14]", "type": "Sticker"})
+    self.sock39801.send(self._bot.send_object(payload, cid, type))
+                
+   elif message.startswith("/rdco"):
+    try:
+        import time, threading, random
+
+        parts = message.strip().split()
+
+        if len(parts) < 3:
+            return self._bot.reply(
+                cid, type,
+                "[B]/rdco teamcode uid1 uid2 ..."
+            )
+
+        if not parts[1].isdigit():
+            return self._bot.reply(cid, type, "[B]Team code sai")
+
+        try:
+            team_code = int(parts[1])
+            target_uids = [int(x) for x in parts[2:]]
+        except:
+            return self._bot.reply(cid, type, "[B]UID không hợp lệ")
+
+        skin_ids = [914051001, 914053001, 914044001, 914047001, 914047002, 914048001, 914053001]
+        skin_id = random.choice(skin_ids)
+
+        emotes = [
+            909000020, 909000021, 909000027, 909000008,
+            909000011, 909000012, 909042007, 909000040,
+            909000016, 909000029, 909000037,909000022,
+            909000043, 909000061, 909000066,
+        ]
+
+        msg = f"""[B][C][FFFFFF]Xin Chào!
+[FFFFFF]Thể Loại Lệnh: [FF69B4]Random Cute 15
+
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[C0C0C0]Bot đã join nhóm thành công đang tiến hành random cute 15 để phong bạt!"""
+
+        self._bot.reply(cid, type, msg)
+
+        self.sock39699.send(self._bot.join_squad(team_code))
+
+        def auto_l():
+            try:
+                time.sleep(2)
+
+                self.sock39699.send(self._bot.play_animation(skin_id))
+                time.sleep(2.5)
+                self.sock39699.send(self._bot.showskin(skin_id))
+
+                time.sleep(1.5)
+
+                for _ in range(15):
+                    used = []
+
+                    for uid in target_uids:
+                        emo = random.choice([e for e in emotes if e not in used])
+                        used.append(emo)
+
+                        self.sock39699.send(
+                            self._bot.play_emote(0, [uid])
+                        )
+                        time.sleep(0.05)
+
+                        self.sock39699.send(
+                            self._bot.play_emote(emo, [uid])
+                        )
+                        time.sleep(1)
+
+                        if len(used) == len(emotes):
+                            used.clear()
+
+                    time.sleep(5)
+
+                time.sleep(1)
+                self.sock39699.send(self._bot.leave_squad())
+
+                done_msg = f"""[B][C][FFFFFF]Thành Công!
+[FFFFFF]Thể Loại Lệnh: [FF69B4]Random Cổ
+
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[C0C0C0]Bot đã random cổ thành công và sẽ rời đội ngay!"""
+
+                self._bot.reply(cid, type, done_msg)
+
+            except Exception as e:
+                print("RDCO ERROR:", e)
+
+        t = threading.Thread(target=auto_l, daemon=True)
+        t.start()
+    except Exception as e:
+        self._bot.reply(cid, type, "[B]Lỗi /rdco")
+    
+   elif message.startswith("/rdngau"):
+    try:
+        import time, threading, random
+
+        parts = message.strip().split()
+
+        if len(parts) < 3:
+            return self._bot.reply(
+                cid, type,
+                "[B]/rdngau teamcode uid1 uid2 ..."
+            )
+
+        if not parts[1].isdigit():
+            return self._bot.reply(cid, type, "[B]Team code sai")
+
+        try:
+            team_code = int(parts[1])
+            target_uids = [int(x) for x in parts[2:]]
+        except:
+            return self._bot.reply(cid, type, "[B]UID không hợp lệ")
+
+        skin_ids = [914051001, 914053001, 914044001, 914047001, 914047002, 914048001, 914053001]
+        skin_id = random.choice(skin_ids)
+
+        emotes = [
+            909049010, 909051003, 909033002, 909041005, 909038010,
+            909039011, 909040010, 909000081, 909000085, 909000063,
+            909000075, 909033001, 909000090, 909000068, 909000098,
+            909035007, 909037011, 909038012, 909035012, 909042008,
+            909045001
+        ]
+
+        msg = f"""[B][C][FFFFFF]Xin Chào!
+[FFFFFF]Thể Loại Lệnh: [FF8C00]Random Ngầu 18
+
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[C0C0C0]Bot đã join nhóm thành công đang tiến hành random ngầu 18 để phong bạt!"""
+
+        self._bot.reply(cid, type, msg)
+
+        self.sock39699.send(self._bot.join_squad(team_code))
+
+        def auto_l():
+            try:
+                time.sleep(2)
+
+                self.sock39699.send(self._bot.play_animation(skin_id))
+                time.sleep(2.5)
+                self.sock39699.send(self._bot.showskin(skin_id))
+
+                time.sleep(1.5)
+
+                for _ in range(18):
+                    used = []
+
+                    for uid in target_uids:
+                        emo = random.choice([e for e in emotes if e not in used])
+                        used.append(emo)
+
+                        self.sock39699.send(
+                            self._bot.play_emote(0, [uid])
+                        )
+                        time.sleep(0.05)
+
+                        self.sock39699.send(
+                            self._bot.play_emote(emo, [uid])
+                        )
+                        time.sleep(1)
+
+                        if len(used) == len(emotes):
+                            used.clear()
+
+                    time.sleep(5)
+
+                time.sleep(1)
+                self.sock39699.send(self._bot.leave_squad())
+
+                done_msg = f"""[B][C][FFFFFF]Thành Công!
+[FFFFFF]Thể Loại Lệnh: [FF8C00]Random Ngầu
+
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[C0C0C0]Bot đã random ngầu thành công và sẽ rời đội ngay!"""
+
+                self._bot.reply(cid, type, done_msg)
+
+            except Exception as e:
+                print("RDNGAU ERROR:", e)
+
+        t = threading.Thread(target=auto_l, daemon=True)
+        t.start()
+
+    except Exception as e:
+        self._bot.reply(cid, type, "[B]Lỗi /rdngau")
+
+   elif message.startswith("/rcute"):
+    try:
+        import threading, random
+
+        parts = message.strip().split()
+
+        if len(parts) < 3:
+            return self._bot.reply(cid, type, "[B]/rcute teamcode uid1 uid2 ...")
+
+        if not parts[1].isdigit():
+            return self._bot.reply(cid, type, "[B]Team code sai")
+
+        team_code = int(parts[1])
+
+        try:
+            target_uids = [int(x) for x in parts[2:]]
+        except:
+            return self._bot.reply(cid, type, "[B]UID không hợp lệ")
+
+        skin_ids = [
+            914051001, 914053001, 914044001,
+            914047001, 914047002, 914048001
+        ]
+
+        skin_id = random.choice(skin_ids)
+
+        emotes = [
+            909049010, 909051003, 909033002, 909041005, 909038010,
+            909039011, 909040010, 909000085, 909000063,
+            909000075, 909033001, 909000090, 909000068, 909000098,
+            909035007, 909037011, 909038012, 909035012, 909042008,
+            909045001
+        ]
+
+        msg = f"""[B][C][FFFFFF]Xin Chào!
+[FFFFFF]Thể Loại Lệnh: [FF1493]Random Cute
+
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[C0C0C0]Bot đã join nhóm thành công đang tiến hành random cute 18 để phong bạt!"""
+
+        self._bot.reply(cid, type, msg)
+
+        def run():
+            try:
+                self.sock39699.send(
+                    self._bot.join_squad(team_code)
+                )
+
+                __import__("time").sleep(2)
+
+                self.sock39699.send(self._bot.play_animation(skin_id))
+                __import__("time").sleep(2.5)
+                self.sock39699.send(self._bot.showskin(skin_id))
+
+                __import__("time").sleep(1.5)
+
+                used = []
+
+                for _ in range(18):
+                    for uid in target_uids:
+
+                        emo = random.choice([e for e in emotes if e not in used])
+                        used.append(emo)
+
+                        self.sock39699.send(
+                            self._bot.play_emote(emo, [uid])
+                        )
+
+                        self.sock39699.send(
+                            self._bot.play_emote(emo, [self.botid])
+                        )
+
+                        __import__("time").sleep(1)
+
+                        if len(used) == len(emotes):
+                            used.clear()
+
+                    __import__("time").sleep(4)
+
+                try:
+                    self.sock39699.send(
+                        self._bot.leave_squad(team_code)
+                    )
+                except:
+                    pass
+
+                done_msg = f"""[B][C][FFFFFF]Thành Công!
+[FFFFFF]Thể Loại Lệnh: [FF1493]Random Cute 
+
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[C0C0C0]Bot đã random cute thành công và sẽ rời đội ngay!"""
+
+                self._bot.reply(cid, type, done_msg)
+
+            except Exception as e:
+                print("RCUTE ERROR:", e)
+
+        threading.Thread(target=run, daemon=True).start()
+
+    except Exception as e:
+        self._bot.reply(cid, type, "[B][c]Lỗi /rcute")
+   elif message.startswith("/l"):
+    try:
+      import threading
+      import random
+      import time
+
+      parts = message.strip().split()
+
+      if len(parts) < 2:
+         return self._bot.reply(
+            cid, type,
+            "[B][C][ff0000]Sai cú pháp!\n\n"
+            "[ffffff]Ví dụ:\n"
+            "[00ff00]/l uid1 uid2 uid3"
+         )
+
+      try:
+         target_uids = [int(x) for x in parts[1:]]
+      except:
+         return self._bot.reply(
+            cid, type,
+            "[B][C][ff0000]UID không hợp lệ!"
+         )
+
+      if not target_uids:
+         return self._bot.reply(
+            cid, type,
+            "[B][C][ff0000]Cần ít nhất 1 UID!"
+         )
+
+      # Loại bỏ UID bot nếu user nhập trùng + luôn thêm bot vào cuối
+      if self.botid:
+         try:
+            bot_uid = int(self.botid)
+            target_uids = [u for u in target_uids if u != bot_uid]
+            target_uids.append(bot_uid)
+         except:
+            pass
+
+      # Loại bỏ UID trùng nhau
+      seen = set()
+      unique_uids = []
+      for u in target_uids:
+         if u not in seen:
+            seen.add(u)
+            unique_uids.append(u)
+      target_uids = unique_uids
+
+      emotes = [
+         909049010, 909051003, 909033002, 909041005, 909038010,
+         909039011, 909040010, 909000081, 909000085, 909000063,
+         909000075, 909033001, 909000090, 909000068, 909000098,
+         909035007, 909037011, 909038012, 909035012, 909042008,
+         909045001, 909054004, 909055007
+      ]
+
+      self.stop_actions.clear()
+
+      self._bot.reply(
+         cid,
+         type,
+         "[B][C][FFFFFF]Xin chào!\n"
+         "[FFFFFF]Loại lệnh: [00ffb3]RANDOM FULL SÚNG 7\n\n"
+         "[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n"
+         "[C0C0C0]Developer: @zanxgay"
+      )
+
+      self._bot.reply(
+         cid,
+         type,
+         f"[B][C][00ff00]『 ACTIVE 』 → {len(target_uids)} UID\n"
+         "[ffffff]Telegram: [00fffb]@zanxgay"
+      )
+
+      def send_emote(uid, emo):
+         try:
+            if self.sock39699:
+               self.sock39699.send(
+                  self._bot.play_emote(emo, [uid])
+               )
+         except Exception as e:
+            print("EMOTE ERROR:", e)
+
+      for _ in range(21):
+         if self.stop_actions.is_set():
+            break
+
+         shuffled = random.sample(
+            emotes,
+            len(target_uids)
+         )
+
+         threads = []
+
+         for uid, emo in zip(target_uids, shuffled):
+            t = threading.Thread(
+               target=send_emote,
+               args=(uid, emo)
+            )
+            t.start()
+            threads.append(t)
+
+         for t in threads:
+            t.join()
+
+         for _ in range(65):
+            if self.stop_actions.is_set():
+               break
+            time.sleep(0.1)
+
+      if self.stop_actions.is_set():
+         self._bot.reply(
+            cid,
+            type,
+            "[B][C][ff0000]⏹️ Đã dừng theo yêu cầu!"
+         )
+      else:
+         done_msg = f"[B][C][FFFFFF]Hoàn Tất Random Full Súng 7!\n[FFFFFF]Thể Loại Lệnh: [00ffb3]Random Full Súng 7\n\n[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n[C0C0C0]Mỗi UID đã nhận 22 hành động random khác nhau!"
+         self._bot.reply(cid, type, done_msg)
+
+    except Exception as e:
+      self._bot.reply(
+         cid,
+         type,
+         "[B][C][ff0000]Lỗi khi chạy /l"
+      )
+      print("L CMD ERROR:", e)
+                
+   elif message.startswith("/clag"):
+    parts = message.strip().split()
+    if len(parts) < 2:
+        self._bot.reply(cid, type, "[B][c][FF0000]❌ Dùng: /clag [teamcode]")
+        return
+
+    try:
+        team_code = int(parts[1].strip())
+    except:
+        self._bot.reply(cid, type, "[B][c][FF0000]❌ Teamcode phải là số!")
+        return
+
+    self._bot.reply(cid, type, f"[B][c][FFFF00]⚡ Đang lag teamcode {team_code}...")
+
+    try:
+        try:
+            self.sock39699.sendall(self._bot.join_squad(team_code))
+            time.sleep(2)
+        except: pass
+
+        
+        for _ in range(700):
+            try:
+                self.sock39699.sendall(self._gen.lag_teelez())
+                time.sleep(0.0001)
+            except: pass
+
+        
+        try:
+            self.sock39699.sendall(self._bot.leave_squad(0))
+        except: pass
+
+        self._bot.reply(cid, type, f"[B][c][00FF00]✔ lag xong teamcode {team_code}!")
+
+    except Exception as e:
+        self._bot.reply(cid, type, f"[B][c][FF0000]❌ Lỗi: {e}")
+   elif message.startswith("/rdhai"):
+    try:
+        import threading, random
+
+        parts = message.strip().split()
+
+        if len(parts) < 3:
+            return self._bot.reply(cid, type, "[B][c]/rdhai teamcode uid1 uid2 ...")
+
+        if not parts[1].isdigit():
+            return self._bot.reply(cid, type, "[B][c]Team code sai")
+
+        team_code = int(parts[1])
+
+        try:
+            target_uids = [int(x) for x in parts[2:]]
+        except:
+            return self._bot.reply(cid, type, "[B][c]UID không hợp lệ")
+
+        skin_ids = [
+            914051001, 914053001, 914044001,
+            914047001, 914047002, 914048001
+        ]
+
+        skin_id = random.choice(skin_ids)
+
+        emotes = [
+            909049010, 909051003, 909033002, 909041005, 909038010,
+            909039011, 909040010, 909000085, 909000063,
+            909000075, 909033001, 909000090, 909000068, 909000098,
+            909035007, 909037011, 909038012, 909035012, 909042008,
+            909045001
+        ]
+
+        self._bot.reply(cid, type, "[B][c]Bot join team + múa...")
+
+        def run():
+            try:
+                self.sock39699.send(
+                    self._bot.join_squad(team_code)
+                )
+
+                __import__("time").sleep(2)
+
+                self.sock39699.send(self._bot.play_animation(skin_id))
+                __import__("time").sleep(2.5)
+                self.sock39699.send(self._bot.showskin(skin_id))
+
+                __import__("time").sleep(1.5)
+
+                used = []
+
+                for _ in range(18):
+                    for uid in target_uids:
+
+                        emo = random.choice([e for e in emotes if e not in used])
+                        used.append(emo)
+
+                        self.sock39699.send(
+                            self._bot.play_emote(emo, [uid])
+                        )
+
+                        self.sock39699.send(
+                            self._bot.play_emote(emo, [self.botid])
+                        )
+
+                        __import__("time").sleep(1)
+
+                        if len(used) == len(emotes):
+                            used.clear()
+
+                    __import__("time").sleep(4)
+
+                try:
+                    self.sock39699.send(
+                        self._bot.leave_squad(team_code)
+                    )
+                except:
+                    pass
+
+                self._bot.reply(cid, type, "[B][c]done /rdhai")
+
+            except Exception as e:
+                print("RDHAI ERROR:", e)
+
+        threading.Thread(target=run, daemon=True).start()
+
+    except Exception as e:
+        self._bot.reply(cid, type, "[B][c]Lỗi /rdhai")
+   elif message.startswith('/stop'):
+                self.stop_actions.set()
+                self.rstatus = (0, 0)
+                self.ids = []
+                
+                self._bot.reply(cid, type, """
+[B][C][FF0000]⏹️ ĐÃ DỪNG TẤT CẢ HÀNH ĐỘNG!
+
+[FFFFFF]• Dừng múa emote
+• Dừng spam
+• Dừng ghost
+• Dừng các hành động trong team
+
+[00FF00]✅ Có thể sử dụng lệnh mới ngay!""")
+                
+                try:
+                    payload = json.dumps({
+                        "StickerStr": "[1=1200000001-14]",
+                        "type": "Sticker"
+                    })
+                    self.sock39801.send(self._bot.send_object(payload, cid, type))
+                except:
+                    pass
+                
+                def reset_stop():
+                    time.sleep(2)
+                    self.stop_actions.clear()
+                
+                threading.Thread(target=reset_stop, daemon=True).start()
+
+   elif message.startswith("/jn"):
+    if self.rstatus[0] not in [0, 4]:
+        self._bot.reply(cid, type, "[B][c]BANK 500 VÔ LIỀN NÈ-)))")
+        return
+
+    parts = message.replace("/jn", "").replace(":", " ").split()
+
+    if len(parts) < 1 or not parts[0].isdigit():
+        self._bot.reply(cid, type, "[B][c]/jn [teamcode]")
+        return
+
+    import threading
+    import time
+    import random
+    import json
+
+    team_code = int(parts[0])
+
+    skin_ids = [
+        914051001,
+        914044001,
+        914039001,
+        914000002,
+        914047002,
+        914050001,
+        914047001,
+        914042001,
+        914048001
+    ]
+
+    self.sock39801.send(
+        self._bot.leave_channel(uid, None)
+    )
+
+    self.rstatus = (4, '')
+
+    self.sock39699.send(
+        self._bot.join_squad(team_code)
+    )
+
+    def auto_action():
+        try:
+            time.sleep(0.6)
+
+            selected_skin = random.choice(skin_ids)
+            self.sock39699.send(
+                self._bot.play_animation(selected_skin)
+            )
+            time.sleep(3.3)
+
+            self.sock39699.send(
+                self._bot.showskin(selected_skin)
+            )
+            time.sleep(0.6)
+
+            if self.botid:
+                self.sock39699.send(
+                    self._bot.play_emote(909054008, [int(self.botid)])
+                )
+
+        except Exception as e:
+            print("AUTO ERROR:", e)
+
+    threading.Thread(
+        target=auto_action,
+        daemon=True
+    ).start()
+
+    self._bot.reply(
+        cid,
+        type,
+f"""[B][c]--------------------------------------
+[00FF00]Bot Đã Join Đội Thành Công
+Teamcode: {team_code}
+Developer: @zanxgay
+"""
+    )
+
+    # ====== GỬI STICKER ======
+    try:
+        sticker_data = random.choice([
+            ("1200000001", random.randint(1, 24)),
+            ("1200000002", random.randint(1, 15)),
+            ("1200000004", random.randint(1, 13))
+        ])
+        payload = json.dumps({
+            "StickerStr": f"[1={sticker_data[0]}-{sticker_data[1]}]",
+            "type": "Sticker"
+        })
+        self.sock39801.send(self._bot.send_object(payload, cid, type))
+    except:
+        pass      
+                       
+   elif message.startswith("/dev"):
+
+    payload_title = json.dumps({
+        "TitleID": 905090075,
+        "type": "Title"
+    })
+    try:
+        self.sock39801.send(
+            self._bot.send_object(payload_title, cid, type)
+        )
+    except:
+        pass
+    
+    self._bot.reply(
+        cid, type,
+        "[b][c]Thông Tin Admin\n"
+        "[00FFFF]Name Admin :[00FF00]=> [FFFFFF] Binh An\n"
+        "[00FF00]FB:[FFFFFF] Binh An(zann)"
+        "[00FF90]Thông Tin MXH\n"
+        "[00FF00]TikTok:[FFFFFF] deocanthuonghai09\n"
+        "[00FF00]Tele🔕gram:[FFFFFF] @zanxgay\n\n"
+        "[00FF00]=> [FFFFFF] Ctv live bán bot\n"
+"[007AFF]@[C][B][339BFF]nh[C][B][66BBFF]a[C][B][99DFF]t[C][B][CCF5FF]qu[C][B][E0FAFF]a[C][B][F0FDFF]ng[C][B][FFFFFF]2309\n"
+"[007AFF]@[C][B][339BFF]ba[C][B][66BBFF]o[C][B][99DFF]l[C][B][CCF5FF]ong[C][B][E0FAFF]29[C][B][F0FDFF]05[C][B][FFFFFF]80\n"   
+"[FF1493]@t[FF3AA6]o[FF5FB8]i[FF84CA]la1[FFA9DC]l[FFCEEE]con[FFE3F5]cho[FFF0FA]ngu[FFF7FD]12[FFFFFF]\n"   
+    )
+    
+    payload_sticker = json.dumps({
+        "StickerStr": "[1=1200000001-11]",
+        "type": "Sticker"
+    })
+    try:
+        self.sock39801.send(
+            self._bot.send_object(payload_sticker, cid, type)
+        )
+    except:
+        pass
+   elif message.startswith("/dngau"):
+    try:
+        import threading, random
+
+        parts = message.strip().split()
+
+        if len(parts) < 3:
+            return self._bot.reply(cid, type, "[B][c]/dngau teamcode uid1 uid2 ...")
+
+        if not parts[1].isdigit():
+            return self._bot.reply(cid, type, "[B][c]Team code sai")
+
+        team_code = int(parts[1])
+
+        try:
+            target_uids = [int(x) for x in parts[2:]]
+        except:
+            return self._bot.reply(cid, type, "[B][c]UID không hợp lệ")
+
+        skin_ids = [
+            914051001, 914053001, 914044001,
+            914047001, 914047002, 914048001
+        ]
+
+        skin_id = random.choice(skin_ids)
+
+        emotes = [
+            909000034, 909000036, 909000014,
+            909000089, 909000088, 909040008,
+            909051010, 909052004, 909052002,
+        ]
+
+        self._bot.reply(cid, type, "[B][c]Bot join team + múa...")
+
+        def run():
+            try:
+                self.sock39699.send(
+                    self._bot.join_squad(team_code)
+                )
+
+                __import__("time").sleep(2)
+
+                self.sock39699.send(self._bot.play_animation(skin_id))
+                __import__("time").sleep(2.5)
+                self.sock39699.send(self._bot.showskin(skin_id))
+
+                __import__("time").sleep(1.5)
+
+                used = []
+
+                for _ in range(9):
+                    for uid in target_uids:
+
+                        emo = random.choice([e for e in emotes if e not in used])
+                        used.append(emo)
+
+                        self.sock39699.send(
+                            self._bot.play_emote(emo, [uid])
+                        )
+
+                        self.sock39699.send(
+                            self._bot.play_emote(emo, [self.botid])
+                        )
+
+                        __import__("time").sleep(1)
+
+                        if len(used) == len(emotes):
+                            used.clear()
+
+                    __import__("time").sleep(4)
+
+                try:
+                    self.sock39699.send(
+                        self._bot.leave_squad(team_code)
+                    )
+                except:
+                    pass
+
+                self._bot.reply(cid, type, "[B][c]done /dngau")
+
+            except Exception as e:
+                print("DNGAU ERROR:", e)
+
+        threading.Thread(target=run, daemon=True).start()
+
+    except Exception as e:
+        self._bot.reply(cid, type, "[B][c]Lỗi /dngau")
+              
+   elif message.startswith("/bye"):
+    try:
+        self._bot.reply(
+            cid,
+            type,
+            "[B][c][FFFF00]Đang rời team..."
+        )
+
+        self.rstatus = (0, 0)
+        self.ids.clear()
+        self.running = True
+        self.target_uid = None
+        self.emote_target = None
+        
+        if self.sock39699:
+            self.sock39699.send(
+                self._bot.leave_squad()
+            )
+        __import__("time").sleep(0.3)
+        
+        if self.sock39801:
+            self.sock39801.send(
+                self._bot.leave_channel(cid, type)
+            )
+        
+        self.stop_actions.clear()
+        self.emoting = False
+        
+        self._bot.reply(
+            cid,
+            type,
+            "[B][c][00FF00]Đã rời team, có thể dùng lệnh mới ngay!"
+        )
+
+    except Exception as e:
+        print("Solo error:", e)
+        self.rstatus = (0, 0)
+        self.ids.clear()
+        self.running = True
+        self.stop_actions.clear()
+        self.emoting = False
+        self._bot.reply(
+            cid,
+            type,
+            "[B][c][FF0000]Lỗi rời team, đã reset trạng thái!"
+        )
+   elif message.startswith("/bh"):
+    args = message.strip().split()
+    BUNDLE_LIST = {
+        1: {"id": 914000002, "name": "rampage"},
+        2: {"id": 914000003, "name": "hoaquy"},
+        3: {"id": 914039001, "name": "acnhan"},
+        4: {"id": 914042001, "name": "hoabang"},
+        5: {"id": 914044001, "name": "thanma"},
+        6: {"id": 914047001, "name": "naruto"},
+        7: {"id": 914047002, "name": "cucquang"},
+        8: {"id": 914048001, "name": "sieuhung"},
+        9: {"id": 914050001, "name": "itachi"},
+        10: {"id": 914051001, "name": "mongcanh"},
+        11: {"id": 914053001, "name": "thienthuc"},
+        12: {"id": 914055001, "name": "ben"}
+    }
+    if len(args) < 2:
+        msg = "[b][c]danh sach bundle\n\n"
+        for num, b in BUNDLE_LIST.items():
+            msg += f"{num}. {b['name']}\n"
+        msg += "\n/bh <so>"
+        self._bot.reply(cid, type, msg)
+        return
+    try:
+        num = int(args[1])
+    except:
+        self._bot.reply(cid, type, "[b][c]nhap so")
+        return
+    if num not in BUNDLE_LIST:
+        self._bot.reply(cid, type, f"[b][c]chi co 1-{len(BUNDLE_LIST)}")
+        return
+    target = BUNDLE_LIST[num]
+    bid = target["id"]
+    bname = target["name"]
+    self._bot.reply(cid, type, f"[b][c]dang bien hinh {bname}")
+    try:
+        self.sock39699.send(self._bot.play_animation(bid))
+        import threading
+        def show():
+            self.sock39699.send(self._bot.showskin(bid))
+            self._bot.reply(cid, type, f"[b][c]bien hinh thanh cong\n{bname}")
+        threading.Timer(2.2, show).start()
+    except Exception as e:
+        self._bot.reply(cid, type, f"[b][c]loi: {str(e)}")
+           
+   elif message.startswith("/ob55"):
+    try:
+        import time
+
+        parts = message.strip().split()
+        if len(parts) < 2:
+            self._bot.reply(
+                cid, type,
+                "[B][C][ff0000]Sai cú pháp!\n\n"
+                "[ffffff]Ví dụ:\n"
+                "[00ff00]/ob55 uid1 uid2 uid3"
+            )
+            return
+
+        try:
+            target_uids = [int(x) for x in parts[1:6]]
+        except:
+            self._bot.reply(
+                cid,
+                type,
+                "[B][C][ff0000]UID không hợp lệ!"
+            )
+            return
+
+        ob55_list = [
+         909055001, 909055002, 909055003, 909055004, 909055005,
+         909055006, 909055007, 909055008, 909055009, 909055010,
+         909055011, 909055012, 909055013
+     ]
+
+        self.stop_actions.clear()
+
+        self._bot.reply(
+            cid,
+            type,
+            "[B][C][FFFFFF]Xin chào!\n"
+            "[FFFFFF]Loại lệnh: [00ffb3]OB55 FULL\n\n"
+            "[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n"
+            "[C0C0C0]Bot đang chuẩn bị bật hành động..."
+        )
+
+        self._bot.reply(
+            cid,
+            type,
+            f"[B][C][00ff00]『 ACTIVE 』 → {len(target_uids)} UID\n"
+            "[ffffff]Developer: [00fffb]@zanxgay"
+        )
+
+        for emo_id in ob55_list:
+            if self.stop_actions.is_set():
+                break
+            if not self.sock39699:
+                break
+
+            try:
+                self.sock39699.send(
+                    self._bot.play_emote(
+                        emo_id,
+                        target_uids
+                    )
+                )
+            except Exception as e:
+                print("OB55 EMOTE ERROR:", e)
+
+            for _ in range(40):
+                if self.stop_actions.is_set():
+                    break
+                time.sleep(0.1)
+
+        if self.stop_actions.is_set():
+            self._bot.reply(
+                cid,
+                type,
+                "[B][C][ff0000]⏹️ Đã dừng theo yêu cầu!"
+            )
+        else:
+            self._bot.reply(
+                cid,
+                type,
+                f"[B][C][00ff00]✅ Hoàn tất HD OB55 cho {len(target_uids)} UID\n"
+                f"[B][C][ffcc00]Developer: @zanxgay"
+            )
+
+    except Exception as e:
+        self._bot.reply(
+            cid,
+            type,
+            "[B][C][ff0000]Lỗi khi chạy /ob55"
+        )
+        print("OB55 CMD ERROR:", e) 
+                    
+   elif message.startswith("/all rd s7"):
+
+    import time, random
+
+    emote_ids = [
+        909040010, 909000090, 909035012,
+        909038010, 909035007, 909039011,
+        909000063, 909000098,
+        909000075,
+        909042008, 909000068, 
+        909049010, 909041005,
+        909033002, 909045001,
+        909000085, 909051003,
+    ]
+
+    ids = list(set(self.ids)) if self.ids else []
+
+    if not ids:
+        self._bot.reply(cid, type, "[B][c]❌ Không có UID trong team! Vui lòng dùng /jn trước")
+        return
+
+    self.stop_actions.clear()
+
+    self._bot.reply(
+        cid, type,
+        f"[B][c]🎲 Đang random S7 cho {len(ids)} người..."
+    )
+
+    try:
+        # Random 1 emote cho mỗi UID
+        for uid in ids:
+            if self.stop_actions.is_set():
+                break
+
+            emo = random.choice(emote_ids)
+            
+            try:
+                self.sock39699.send(
+                    self._bot.play_emote(emo, [uid])
+                )
+            except:
+                pass
+
+            for _ in range(30):
+                if self.stop_actions.is_set():
+                    break
+                time.sleep(0.1)
+
+        if self.stop_actions.is_set():
+            self._bot.reply(cid, type, "[B][c]⏹️ Đã dừng theo yêu cầu!")
+        else:
+            self._bot.reply(cid, type, "[B][c]✅ Done Random S7")
+
+    except Exception as e:
+        print("EMOTE ERROR:", e)
+        self._bot.reply(cid, type, "[B][c]❌ Lỗi khi random S7")
+
+   elif message.startswith("/all cute"):
+
+    import time
+
+    emote_ids = [
+        909039014, 909040006, 909041009,
+        909041015, 909042004, 909042009, 
+        909042012, 909043001, 909044004,
+        909045011, 909043009, 909048014
+    ]
+
+    ids = list(set(self.ids)) if self.ids else []
+
+    if not ids:
+        self._bot.reply(cid, type, "[B][c]❌ Không có UID trong team! Vui lòng dùng /jn trước")
+        return
+
+    self.stop_actions.clear()
+
+    self._bot.reply(
+        cid, type,
+        f"[B][c]😊 Đang múa hd cute cho {len(ids)} người..."
+    )
+
+    try:
+        for emo in emote_ids:
+            if self.stop_actions.is_set():
+                break
+
+            try:
+                self.sock39699.send(
+                    self._bot.play_emote(emo, ids)
+                )
+            except:
+                pass
+
+            for _ in range(30):
+                if self.stop_actions.is_set():
+                    break
+                time.sleep(0.1)
+
+        if self.stop_actions.is_set():
+            self._bot.reply(cid, type, "[B][c]⏹️ Đã dừng theo yêu cầu!")
+        else:
+            self._bot.reply(cid, type, "[B][c]✅ Done CUTE")
+
+    except Exception as e:
+        print("EMOTE ERROR:", e)
+        self._bot.reply(cid, type, "[B][c]❌ Lỗi khi múa CUTE")
+
+   elif message.startswith("/all ngau"):
+
+    import time
+
+    emote_ids = [
+        909000034, 909000036, 909000014,
+        909000089, 909000088, 909040008,
+        909051010, 909052004, 909052002,
+    ]
+
+    ids = list(set(self.ids)) if self.ids else []
+
+    if not ids:
+        self._bot.reply(cid, type, "[B][c]❌ Không có UID trong team! Vui lòng dùng /jn trước")
+        return
+
+    self.stop_actions.clear()
+
+    self._bot.reply(
+        cid, type,
+        f"[B][c]😎 Đang múa hd ngầu cho {len(ids)} người..."
+    )
+
+    try:
+        for emo in emote_ids:
+            if self.stop_actions.is_set():
+                break
+
+            try:
+                self.sock39699.send(
+                    self._bot.play_emote(emo, ids)
+                )
+            except:
+                pass
+
+            for _ in range(30):
+                if self.stop_actions.is_set():
+                    break
+                time.sleep(0.1)
+
+        if self.stop_actions.is_set():
+            self._bot.reply(cid, type, "[B][c]⏹️ Đã dừng theo yêu cầu!")
+        else:
+            self._bot.reply(cid, type, "[B][c]✅ Done NGẦU")
+
+    except Exception as e:
+        print("EMOTE ERROR:", e)
+        self._bot.reply(cid, type, "[B][c]❌ Lỗi khi múa NGẦU")
+
+   elif message.startswith("/all co"):
+
+    import time
+
+    emote_ids = [
+        909000020, 909000021, 909000027, 909000008,
+        909000011, 909000012, 909042007, 909000040,
+        909000016, 909000029, 909000037, 909000022,
+        909000043, 909000061, 909000066,
+    ]
+
+    ids = list(set(self.ids)) if self.ids else []
+
+    if not ids:
+        self._bot.reply(cid, type, "[B][c]❌ Không có UID trong team! Vui lòng dùng /jn trước")
+        return
+
+    self.stop_actions.clear()
+
+    self._bot.reply(
+        cid, type,
+        f"[B][c]🎭 Đang múa hd cổ cho {len(ids)} người..."
+    )
+
+    try:
+        for emo in emote_ids:
+            if self.stop_actions.is_set():
+                break
+
+            try:
+                self.sock39699.send(
+                    self._bot.play_emote(emo, ids)
+                )
+            except:
+                pass
+
+            for _ in range(30):
+                if self.stop_actions.is_set():
+                    break
+                time.sleep(0.1)
+
+        if self.stop_actions.is_set():
+            self._bot.reply(cid, type, "[B][c]⏹️ Đã dừng theo yêu cầu!")
+        else:
+            self._bot.reply(cid, type, "[B][c]✅ Done hd cổ")
+
+    except Exception as e:
+        print("EMOTE ERROR:", e)
+        self._bot.reply(cid, type, "[B][c]❌ Lỗi khi múa CỔ")
+
+   elif message.startswith("/all hai"):
+
+    import time
+
+    emote_ids = [
+        909000064, 909000132, 909000150,
+        909038010, 909035007, 909039011,
+        909034004, 909034005,
+        909033003, 909041011,
+        909042018, 909044007,
+        909044016, 909045008,
+        909049005, 909050017,
+        909051006, 909051009,
+    ]
+
+    ids = list(set(self.ids)) if self.ids else []
+
+    if not ids:
+        self._bot.reply(cid, type, "[B][c]❌ Không có UID trong team! Vui lòng dùng /jn trước")
+        return
+
+    self.stop_actions.clear()
+
+    self._bot.reply(
+        cid, type,
+        f"[B][c]😂 Đang múa hd hài cho {len(ids)} người..."
+    )
+
+    try:
+        for emo in emote_ids:
+            if self.stop_actions.is_set():
+                break
+
+            try:
+                self.sock39699.send(
+                    self._bot.play_emote(emo, ids)
+                )
+            except:
+                pass
+
+            for _ in range(30):
+                if self.stop_actions.is_set():
+                    break
+                time.sleep(0.1)
+
+        if self.stop_actions.is_set():
+            self._bot.reply(cid, type, "[B][c]⏹️ Đã dừng theo yêu cầu!")
+        else:
+            self._bot.reply(cid, type, "[B][c]✅ Done HÀI")
+
+    except Exception as e:
+        print("EMOTE ERROR:", e)
+        self._bot.reply(cid, type, "[B][c]❌ Lỗi khi múa HÀI")
+                
+   elif message.startswith("/xlz"):
+    try:
+        parts = message.split()
+
+        emotes = {
+            "m60": 909051003,
+            "p90": 909049010,
+            "cgk": 909042008,
+            "ak47": 909000063,
+            "m1014": 909000081,
+            "gloza": 909041005,
+            "mp40": 909040010,
+            "scar": 909000068,
+            "mp5": 909033002,
+            "ump": 909000098,
+            "xm8": 909000085,
+            "famas": 909000090,
+            "m1887": 909035007,
+            "m1014v2": 909039011,
+            "thompson": 909038010,
+            "parafal": 909045001,
+            "g18": 909038012,
+            "m4a1": 909039011,
+            "aug": 909054004,
+        }
+
+        if len(parts) == 2 and parts[1].lower() == "list":
+            self._bot.reply(cid, type, f"[B][C][00FF00]Súng 7: [FFFFFF]{', '.join(emotes.keys())}\n[B][C][00FF00]Dùng: [FFFFFF]/xlz uid1 uid2 [tên]")
+            return
+
+        if len(parts) < 3:
+            self._bot.reply(cid, type, "[B][C][FF0000]Dùng: /xlz uid1 uid2 [tên súng]")
+            return
+
+        emo_name = parts[-1].lower()
+        targets = []
+
+        for x in parts[1:-1]:
+            if x.isdigit():
+                targets.append(int(x))
+
+        if not targets:
+            self._bot.reply(cid, type, "[B][C][FF0000]UID không hợp lệ")
+            return
+
+        if emo_name not in emotes:
+            self._bot.reply(cid, type, f"[B][C][FF0000]Không có súng '{emo_name}'\n[B][C][00FF00]/xlz list để xem")
+            return
+
+        emo_id = emotes[emo_name]
+        self.sock39699.send(self._bot.play_emote(emo_id, targets))
+        self._bot.reply(cid, type, f"[B][C][00FF00]✅ Đã múa {emo_name.upper()} cho {len(targets)} UID")
+
+    except Exception as e:
+        self._bot.reply(cid, type, f"[B][C][FF0000]Lỗi: {e}")
+                
+   elif message.startswith("/full"):
+    try:
+        import time
+
+        parts = message.strip().split()
+
+        if len(parts) < 2:
+            self._bot.reply(
+                cid, type,
+                "[B][C][ff0000]Sai cú pháp!\n\n"
+                "[ffffff]Ví dụ:\n"
+                "[00ff00]/full uid1 uid2 uid3"
+            )
+            return
+
+        try:
+            target_uids = [int(x) for x in parts[1:6]]
+        except:
+            self._bot.reply(cid, type, "[B][C][ff0000]UID không hợp lệ!")
+            return
+
+        self.stop_actions.clear()
+
+        default_emotes = [
+        ]
+
+        self._bot.reply(
+            cid, type,
+            "[B][C][FFFFFF]Xin chào!\n"
+            "[FFFFFF]Loại lệnh: [00ffb3]FULL SÚNG 7\n\n"
+            "[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n"
+            "[C0C0C0]Bot đang tiến hành bật hành động LV7..."
+        )
+
+        self._bot.reply(
+            cid, type,
+            f"[B][C][00ff00]『 ACTIVE 』 → {len(target_uids)} UID\n"
+            "[ffffff]Telegram: [00fffb]@zanxgay"
+        )
+
+        for emo_id in default_emotes:
+
+            if self.stop_actions.is_set():
+                break
+
+            if not self.sock39699:
+                break
+
+            self.sock39699.send(
+                self._bot.play_emote(emo_id, target_uids)
+            )
+
+            for _ in range(68):
+
+                if self.stop_actions.is_set():
+                    break
+
+                time.sleep(0.1)
+
+        if self.stop_actions.is_set():
+
+            self._bot.reply(
+                cid,
+                type,
+                "[B][C][ff0000]⏹️ Đã dừng theo yêu cầu!"
+            )
+
+        else:
+
+            self._bot.reply(
+                cid,
+                type,
+                "[B][C][00ff00]✅ Đã hoàn thành FULL!"
+            )
+
+    except Exception as e:
+        self._bot.reply(
+            cid,
+            type,
+            "[B][C][ff0000]Lỗi khi chạy /full"
+        )
+        print("N CMD ERROR:", e)   
+    
+   elif message.startswith("/abc"):
+    try:
+        import time
+
+        parts = message.strip().split()
+
+        if len(parts) < 2:
+            self._bot.reply(
+                cid, type,
+                "[B][C][ff0000]Sai cú pháp!\n\n"
+                "[ffffff]Ví dụ:\n"
+                "[00ff00]/abc uid1 uid2 uid3"
+            )
+            return
+
+        try:
+            target_uids = [int(x) for x in parts[1:]]
+        except:
+            self._bot.reply(
+                cid,
+                type,
+                "[B][C][ff0000]UID không hợp lệ!"
+            )
+            return
+
+        if not target_uids:
+            self._bot.reply(
+                cid,
+                type,
+                "[B][C][ff0000]Cần ít nhất 1 UID!"
+            )
+            return
+
+        # Loại bỏ UID bot nếu user nhập trùng + luôn thêm bot vào cuối
+        if self.botid:
+            try:
+                bot_uid = int(self.botid)
+                target_uids = [u for u in target_uids if u != bot_uid]
+                target_uids.append(bot_uid)
+            except:
+                pass
+
+        # Loại bỏ UID trùng nhau
+        seen = set()
+        unique_uids = []
+        for u in target_uids:
+            if u not in seen:
+                seen.add(u)
+                unique_uids.append(u)
+        target_uids = unique_uids
+
+        default_emotes = [
+            909054004, 909049010, 909051003, 909033002, 909041005,
+            909038010, 909039011, 909040010, 909000081, 909000085,
+            909000063, 909000075, 909033001, 909000090, 909000068,
+            909000098, 909035007, 909037011, 909038012, 909035012,
+            909042008, 909045001, 909055007
+        ]
+
+        self.stop_actions.clear()
+
+        self._bot.reply(
+            cid, type,
+            "[B][C][FFFFFF]Xin chào!\n"
+            "[FFFFFF]Loại lệnh: [00ffb3]FULL SÚNG 7\n\n"
+            "[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n"
+            "[C0C0C0]Bot đang chuẩn bị bật hành động LV7..."
+        )
+
+        self._bot.reply(
+            cid, type,
+            f"[B][C][00ff00]『 ACTIVE 』 → {len(target_uids)} UID\n"
+            "[ffffff]Telegram: [00fffb]@zanxgay"
+        )
+
+        for emo in default_emotes:
+            if self.stop_actions.is_set():
+                break
+
+            if not self.sock39699:
+                break
+
+            try:
+                self.sock39699.send(
+                    self._bot.play_emote(emo, target_uids)
+                )
+            except Exception as e:
+                print(f"[ABC] send err: {e}")
+
+            for _ in range(68):
+                if self.stop_actions.is_set():
+                    break
+                time.sleep(0.1)
+
+        if self.stop_actions.is_set():
+            self._bot.reply(
+                cid, type,
+                "[B][C][ff0000]⏹️ Đã dừng theo yêu cầu!"
+            )
+        else:
+            self._bot.reply(
+                cid, type,
+                f"[B][C][00ff00]✅ Hoàn tất full súng 7 cho {len(target_uids)} UID\n"
+                f"[B][C][ffcc00]Developer: @zanxgay"
+            )
+
+    except Exception as e:
+        self._bot.reply(
+            cid, type,
+            "[B][C][ff0000]Lỗi khi chạy /abc"
+        )
+        print("ABC CMD ERROR:", e)
+        
+   elif message.startswith("/hw"):
+    try:
+        import threading, random
+
+        parts = message.strip().split()
+
+        if len(parts) < 3:
+            return self._bot.reply(cid, type, "[B]/hw teamcode uid1 uid2 ...")
+
+        if not parts[1].isdigit():
+            return self._bot.reply(cid, type, "[B]Team code sai")
+
+        team_code = int(parts[1])
+
+        try:
+            target_uids = [int(x) for x in parts[2:]]
+        except:
+            return self._bot.reply(cid, type, "[B]UID không hợp lệ")
+
+        skin_ids = [
+            914051001, 914053001, 914044001,
+            914047001, 914047002, 914048001
+        ]
+
+        skin_id = random.choice(skin_ids)
+
+        emotes = [
+            909000020, 909000021, 909000027, 909000008,
+            909000011, 909000012, 909042007, 909000040,
+            909000016, 909000029, 909000037,909000022,
+            909000043, 909000061, 909000066,
+        ]
+
+        msg = f"""[B][C][FFFFFF]Xin Chào!
+[FFFFFF]Thể Loại Lệnh: [FFD700]Hành Động Cổ 18
+
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[C0C0C0]Bot đã join nhóm thành công đang tiến hành hành động cổ 18 để phong bạt!"""
+
+        self._bot.reply(cid, type, msg)
+
+        def run():
+            try:
+                self.sock39699.send(
+                    self._bot.join_squad(team_code)
+                )
+
+                __import__("time").sleep(2)
+
+                self.sock39699.send(self._bot.play_animation(skin_id))
+                __import__("time").sleep(2.5)
+                self.sock39699.send(self._bot.showskin(skin_id))
+
+                __import__("time").sleep(1.5)
+
+                used = []
+
+                for _ in range(18):
+                    for uid in target_uids:
+
+                        emo = random.choice([e for e in emotes if e not in used])
+                        used.append(emo)
+
+                        self.sock39699.send(
+                            self._bot.play_emote(emo, [uid])
+                        )
+
+                        self.sock39699.send(
+                            self._bot.play_emote(emo, [self.botid])
+                        )
+
+                        __import__("time").sleep(1)
+
+                        if len(used) == len(emotes):
+                            used.clear()
+
+                    __import__("time").sleep(4)
+
+                try:
+                    self.sock39699.send(
+                        self._bot.leave_squad(team_code)
+                    )
+                except:
+                    pass
+
+                done_msg = f"""[B][C][FFFFFF]Thành Công!
+[FFFFFF]Thể Loại Lệnh: [FFD700]Hành Động Cổ 18
+
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[C0C0C0]Bot đã hành động cổ 18 thành công và sẽ rời đội ngay!"""
+
+                self._bot.reply(cid, type, done_msg)
+
+            except Exception as e:
+                print("HW ERROR:", e)
+
+        threading.Thread(target=run, daemon=True).start()
+
+    except Exception as e:
+        self._bot.reply(cid, type, "[B]Lỗi /hw")
+
+   elif message.startswith("/rw"):
+    try:
+        import threading, random
+
+        parts = message.strip().split()
+
+        if len(parts) < 3:
+            return self._bot.reply(cid, type, "[B]/rw teamcode uid1 uid2 ...")
+
+        if not parts[1].isdigit():
+            return self._bot.reply(cid, type, "[B]Team code sai")
+
+        team_code = int(parts[1])
+
+        try:
+            target_uids = [int(x) for x in parts[2:]]
+        except:
+            return self._bot.reply(cid, type, "[B]UID không hợp lệ")
+
+        skin_ids = [
+            914051001, 914053001, 914044001,
+            914047001, 914047002, 914048001
+        ]
+
+        skin_id = random.choice(skin_ids)
+
+        emotes = [
+            909000064, 909000132, 909000150,
+            909038010, 909035007, 909039011,
+            909034004, 909034005,
+            909033003, 909041011,
+            909042018, 909044007,
+            909044016, 909045008,
+            909049005, 909050017,
+            909051006, 909051009,
+        ]
+
+        msg = f"""[B][C][FFFFFF]Xin Chào!
+[FFFFFF]Thể Loại Lệnh: [FF4500]Hành Động Hài 18
+
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[C0C0C0]Bot đã join nhóm thành công đang tiến hành hành động hài 18 để phong bạt!"""
+
+        self._bot.reply(cid, type, msg)
+
+        def run():
+            try:
+                self.sock39699.send(
+                    self._bot.join_squad(team_code)
+                )
+
+                __import__("time").sleep(2)
+
+                self.sock39699.send(self._bot.play_animation(skin_id))
+                __import__("time").sleep(2.5)
+                self.sock39699.send(self._bot.showskin(skin_id))
+
+                __import__("time").sleep(1.5)
+
+                used = []
+
+                for _ in range(18):
+                    for uid in target_uids:
+
+                        emo = random.choice([e for e in emotes if e not in used])
+                        used.append(emo)
+
+                        self.sock39699.send(
+                            self._bot.play_emote(emo, [uid])
+                        )
+
+                        self.sock39699.send(
+                            self._bot.play_emote(emo, [self.botid])
+                        )
+
+                        __import__("time").sleep(1)
+
+                        if len(used) == len(emotes):
+                            used.clear()
+
+                    __import__("time").sleep(4)
+
+                try:
+                    self.sock39699.send(
+                        self._bot.leave_squad(team_code)
+                    )
+                except:
+                    pass
+
+                done_msg = f"""[B][C][FFFFFF]Thành Công!
+[FFFFFF]Thể Loại Lệnh: [FF4500]Hành Động Hài 18
+
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[C0C0C0]Bot đã hành động hài 18 thành công và sẽ rời đội ngay!"""
+
+                self._bot.reply(cid, type, done_msg)
+
+            except Exception as e:
+                print("RW ERROR:", e)
+
+        threading.Thread(target=run, daemon=True).start()
+
+    except Exception as e:
+        self._bot.reply(cid, type, "[B]Lỗi /rw")
+   elif message.startswith("/spvip"):
+    try:
+        import time, random, threading
+
+        parts = message.strip().split()
+
+        if len(parts) < 2:
+            self._bot.reply(
+                cid, type,
+                "[B][C][ff0000]Sai cú pháp!\n\n"
+                "[ffffff]Ví dụ:\n"
+                "[00ff00]/spvip uid1 uid2 uid3"
+            )
+            return
+
+        try:
+            target_uids = [int(x) for x in parts[1:6]]
+        except:
+            self._bot.reply(
+                cid, type,
+                "[B][C][ff0000]UID không hợp lệ!"
+            )
+            return
+
+        emote_ids = [
+            909049010, 909051003, 909033002, 909000002, 909000034,
+            909039011, 909000036, 909000081, 909000085, 909035007,
+            909033001, 909000090, 909000098, 909045001                   
+        ]
+
+        selected_emo = random.choice(emote_ids)
+
+        self.stop_actions.clear()
+
+        self._bot.reply(
+            cid,
+            type,
+            "[B][C][00ff00]🔥 Đã bật SPAM VIP!\n"
+            "[ffffff]• Spam 1 hành động liên tục\n"
+            "[ffffff]• Dùng /stop để dừng"
+        )
+
+        def spam_vip():
+
+            while not self.stop_actions.is_set():
+
+                try:
+
+                    if not self.sock39699:
+                        break
+
+                    self.sock39699.send(
+                        self._bot.play_emote(
+                            selected_emo,
+                            target_uids
+                        )
+                    )
+
+                    time.sleep(0.1)
+
+                except Exception as e:
+                    print("SPVIP ERR:", e)
+                    break
+
+            self._bot.reply(
+                cid,
+                type,
+                "[B][C][ff0000]⏹️ Đã dừng SPAM VIP!"
+            )
+
+        threading.Thread(
+            target=spam_vip,
+            daemon=True
+        ).start()
+
+    except Exception as e:
+        print("SPVIP CMD ERR:", e)
+
+        self._bot.reply(
+            cid,
+            type,
+            "[B][C][ff0000]Lỗi khi chạy /spvip"
+        )
+   elif message.startswith("/war"):
+    parts = message.strip().split(maxsplit=2)
+    if len(parts) < 3:
+     self._bot.reply(cid, type, "[B][c]Dùng: /war [teamcode] [tên]"); return
+    
+    try:
+     tcode = int(parts[1])
+    except:
+     self._bot.reply(cid, type, "[B][c][FF4444]Teamcode phải là số!"); return
+    
+    target = parts[2].strip()
+    
+    import random
+    war_msgs = [
+     f"{target} b[c]ắ[c]n ng[c]u vcl =)))=)))",
+     f"{target} tu[c]ất 11 vs anh nè  =)))=)))",
+     f"{target} như gà mà dám lên rank =)))=)))",
+     f"{target} làm gì có cảnh bố m bá v[c]c[c]l =)))=)))",
+     f"{target} về nhà mà chơi cho lành =)))=)))",
+    ]
+    msg = random.choice(war_msgs)
+    
+    self.rstatus = (1, msg)
+    self.sock39699.send(self._bot.join_squad(tcode))
+    payload = json.dumps({"StickerStr": "[1=1200000002-11]", "type": "Sticker"})
+    self.sock39801.send(self._bot.send_object(payload, cid, type))
+    return True
+   
+   elif message.startswith("/zlv"):
+    try:
+        import threading, random
+
+        parts = message.strip().split()
+
+        if len(parts) < 3:
+            return self._bot.reply(cid, type, "[B]/zlv teamcode uid1 uid2 ...")
+
+        if not parts[1].isdigit():
+            return self._bot.reply(cid, type, "[B]Team code sai")
+
+        team_code = int(parts[1])
+
+        try:
+            target_uids = [int(x) for x in parts[2:]]
+        except:
+            return self._bot.reply(cid, type, "[B]UID không hợp lệ")
+
+        skin_ids = [
+            914051001, 914053001, 914044001,
+            914047001, 914047002, 914048001
+        ]
+
+        skin_id = random.choice(skin_ids)
+
+        emotes = [
+            909040010, 909000090, 909035012,
+        909038010, 909035007, 909039011,
+        909000063, 909000098,
+        909000081, 909000075,
+        909042008, 909000068, 
+        909049010, 909041005,
+        909033002, 909045001,
+        909000085, 909051003,
+        ]
+
+        msg = f"""[B][C][FFFFFF]Xin Chào!
+[FFFFFF]Thể Loại Lệnh: [FF00FF]Zlv
+
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[C0C0C0]Bot đã join nhóm thành công đang tiến hành zlv để phong bạt!"""
+
+        self._bot.reply(cid, type, msg)
+
+        def run():
+            try:
+                self.sock39699.send(
+                    self._bot.join_squad(team_code)
+                )
+
+                __import__("time").sleep(2)
+
+                self.sock39699.send(self._bot.play_animation(skin_id))
+                __import__("time").sleep(2.5)
+                self.sock39699.send(self._bot.showskin(skin_id))
+
+                __import__("time").sleep(1.5)
+
+                used = []
+
+                for _ in range(18):
+                    for uid in target_uids:
+
+                        emo = random.choice([e for e in emotes if e not in used])
+                        used.append(emo)
+
+                        self.sock39699.send(
+                            self._bot.play_emote(emo, [uid])
+                        )
+
+                        self.sock39699.send(
+                            self._bot.play_emote(emo, [self.botid])
+                        )
+
+                        __import__("time").sleep(1)
+
+                        if len(used) == len(emotes):
+                            used.clear()
+
+                    __import__("time").sleep(4)
+
+                try:
+                    self.sock39699.send(
+                        self._bot.leave_squad(team_code)
+                    )
+                except:
+                    pass
+
+                done_msg = f"""[B][C][FFFFFF]Thành Công!
+[FFFFFF]Thể Loại Lệnh: [FF00FF]Zlv
+
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[C0C0C0]Bot đã zalo ver 18 thành công và sẽ rời đội ngay!"""
+
+                self._bot.reply(cid, type, done_msg)
+
+            except Exception as e:
+                print("ZLV ERROR:", e)
+
+        threading.Thread(target=run, daemon=True).start()
+
+    except Exception as e:
+        self._bot.reply(cid, type, "[B]Lỗi /zlv")
+        
+   elif message.startswith("/cte"):
+    try: 
+        import time
+
+        parts = message.strip().split()
+
+        if len(parts) < 2:
+            self._bot.reply(
+                cid, type,
+                "[B][C][ff0000]Sai cú pháp!\n\n"
+                "[ffffff]Ví dụ:\n"
+                "[00ff00]/cte uid1 uid2 uid3"
+            )
+            return
+
+        try:
+            target_uids = [int(x) for x in parts[1:]]
+        except:
+            self._bot.reply(cid, type, "[B][C][ff0000]UID không hợp lệ!")
+            return
+
+        if self.botid:
+            try:
+                bot_uid = int(self.botid)
+                if bot_uid not in target_uids:
+                    target_uids.append(bot_uid)
+            except:
+                pass
+
+        default_emotes = [
+            909042017, 909042012, 909043009, 909044004,
+            909045002, 909045004, 909042006, 909040001, 
+            909040013, 909036002, 909037001, 909045003, 
+            909042006, 909041015, 909039014, 909039010, 
+            909039008, 909039003, 909037001, 909034008, 
+            909034005, 909035001, 909000150, 909000134, 
+            909000129, 909000095, 909000055, 909000010, 
+            909000045
+        ]
+
+        self.stop_actions.clear()
+
+        self._bot.reply(
+            cid, type,
+            "[B][C][FFFFFF]Xin chào!\n"
+            "[FFFFFF]Loại lệnh: [00ffb3]HÀNH ĐỘNG CTE\n\n"
+            "[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n"
+            "[C0C0C0]Bot đang tiến hành bật hành động CTE..."
+        )
+
+        self._bot.reply(
+            cid, type,
+            f"[B][C][00ff00]『 ACTIVE 』 → {len(target_uids)} UID\n"
+            "[ffffff]Telegram: [00fffb]@zanxgay"
+        )
+
+        for emo_id in default_emotes:
+
+            if self.stop_actions.is_set():
+                break
+
+            if not self.sock39699:
+                break
+
+            self.sock39699.send(
+                self._bot.play_emote(emo_id, target_uids)
+            )
+
+            for _ in range(68):
+
+                if self.stop_actions.is_set():
+                    break
+
+                time.sleep(0.1)
+
+        if self.stop_actions.is_set():
+
+            self._bot.reply(
+                cid,
+                type,
+                "[B][C][ff0000]⏹️ Đã dừng theo yêu cầu!"
+            )
+
+        else:
+
+            self._bot.reply(
+                cid,
+                type,
+                "[B][C][00ff00]✅ Đã hoàn thành CTE!"
+            )
+
+    except Exception as e:
+        self._bot.reply(
+            cid, type,
+            "[B][C][ff0000]Lỗi khi chạy /cte"
+        )
+        print("N CMD ERROR:", e)
+
+   elif message.startswith("/hdc"):
+    try:
+        import time
+
+        parts = message.strip().split()
+
+        if len(parts) < 2:
+            self._bot.reply(
+                cid, type,
+                "[B][C][ff0000]Sai cú pháp!\n\n"
+                "[ffffff]Ví dụ:\n"
+                "[00ff00]/hdc uid1 uid2 uid3"
+            )
+            return
+
+        try:
+            target_uids = [int(x) for x in parts[1:]]
+        except:
+            self._bot.reply(cid, type, "[B][C][ff0000]UID không hợp lệ!")
+            return
+
+        if self.botid:
+            try:
+                bot_uid = int(self.botid)
+                if bot_uid not in target_uids:
+                    target_uids.append(bot_uid)
+            except:
+                pass
+
+        default_emotes = [
+            909000020, 909000021, 909000027, 909000008,
+            909000011, 909000012, 909042007, 909000040
+        ]
+
+        self.stop_actions.clear()
+
+        self._bot.reply(
+            cid, type,
+            "[B][C][FFFFFF]Xin chào!\n"
+            "[FFFFFF]Loại lệnh: [00ffb3]HÀNH ĐỘNG CỔ\n\n"
+            "[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n"
+            "[C0C0C0]Bot đang tiến hành bật hành động cổ..."
+        )
+
+        self._bot.reply(
+            cid, type,
+            f"[B][C][00ff00]『 ACTIVE 』 → {len(target_uids)} UID\n"
+            "[ffffff]Telegram: [00fffb]@zanxgay"
+        )
+
+        for emo_id in default_emotes:
+
+            if self.stop_actions.is_set():
+                break
+
+            if not self.sock39699:
+                break
+
+            self.sock39699.send(
+                self._bot.play_emote(emo_id, target_uids)
+            )
+
+            for _ in range(70):
+
+                if self.stop_actions.is_set():
+                    break
+
+                time.sleep(0.1)
+
+        if self.stop_actions.is_set():
+
+            self._bot.reply(
+                cid,
+                type,
+                "[B][C][ff0000]⏹️ Đã dừng theo yêu cầu!"
+            )
+
+        else:
+
+            self._bot.reply(
+                cid,
+                type,
+                "[B][C][00ff00]✅ Đã hoàn thành HDC!"
+            )
+
+    except Exception as e:
+        self._bot.reply(
+            cid, type,
+            "[B][C][ff0000]Lỗi khi chạy /hdc"
+        )
+        print("N CMD ERROR:", e)
+   elif message.startswith("/ngau"):
+    try:
+        import time
+
+        parts = message.strip().split()
+
+        if len(parts) < 2:
+            self._bot.reply(
+                cid, type,
+                "[B][C][ff0000]Sai cú pháp!\n\n"
+                "[ffffff]Ví dụ:\n"
+                "[00ff00]/ngau uid1 uid2 uid3"
+            )
+            return
+
+        try:
+            target_uids = [int(x) for x in parts[1:]]
+        except:
+            self._bot.reply(cid, type, "[B][C][ff0000]UID không hợp lệ!")
+            return
+
+        if self.botid:
+            try:
+                bot_uid = int(self.botid)
+                if bot_uid not in target_uids:
+                    target_uids.append(bot_uid)
+            except:
+                pass
+
+        default_emotes = [
+            909051012, 909050009, 909041002, 909043002,
+            909041004, 909041003, 909041001, 909042007
+        ]
+
+        self.stop_actions.clear()
+
+        self._bot.reply(
+            cid, type,
+            "[B][C][FFFFFF]Xin chào!\n"
+            "[FFFFFF]Loại lệnh: [00ffb3]Hành Động ngầu\n\n"
+            "[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n"
+            "[C0C0C0]Bot đang tiến hành bật hành động Ngầu..."
+        )
+
+        self._bot.reply(
+            cid, type,
+            f"[B][C][00ff00]『 ACTIVE 』 → {len(target_uids)} UID\n"
+            "[ffffff]Telegram: [00fffb]@zanxgay"
+        )
+
+        for emo_id in default_emotes:
+
+            if self.stop_actions.is_set():
+                break
+
+            if not self.sock39699:
+                break
+
+            self.sock39699.send(
+                self._bot.play_emote(emo_id, target_uids)
+            )
+
+            for _ in range(70):
+
+                if self.stop_actions.is_set():
+                    break
+
+                time.sleep(0.1)
+
+        if self.stop_actions.is_set():
+
+            self._bot.reply(
+                cid,
+                type,
+                "[B][C][ff0000]⏹️ Đã dừng theo yêu cầu!"
+            )
+
+        else:
+
+            self._bot.reply(
+                cid,
+                type,
+                "[B][C][00ff00]✅ Đã hoàn thành!"
+            )
+
+    except Exception as e:
+        self._bot.reply(
+            cid, type,
+            "[B][C][ff0000]Lỗi khi chạy /ngau"
+        )
+        print("N CMD ERROR:", e)
+                            
+   elif message.startswith("/5"):
+                if len(message) > 3:
+                    self.GenSquads(5, cid, message.split()[1], type, name)
+                    return
+                self.GenSquads(5, cid, uid, type, name)
+
+   elif message.startswith("/6"):
+    if len(message) > 3: self.GenSquads(6, cid, message.split()[1], type); return
+    self.GenSquads(6, cid, uid, type)
+
+   elif message.startswith("/status"):
+    text = get_user_input(str(message))
+    if ":" in text: self._bot.reply(cid, type, text); return
+    self._bot.reply(cid, type, "[B][c]Đang lấy thông tin..")
+    self.sock39699.send(self._bot.get_history(message.split()[1]))
+    time.sleep(1)
+    if self.playerstatus:
+     data = get_player_status(self.playerstatus)
+     form = self.format_status_message(data, message.split()[1])
+     self._bot.reply(cid, type, form)
+    else: self._bot.reply(cid, type, "null")
+
+   elif message.startswith("/rinv"):
+    msg = get_user_input(str(message))
+    if ":" in msg: self._bot.reply(cid, type, msg); return
+    threading.Thread(target=self.GenSpamRoom, args=(msg,)).start()
+    time.sleep(2)
+    if self.roomid:
+     self._bot.reply(cid, type, "[B][c]Đang spam '%s' tới phòng '%s'" %
+      (msg[:5], self.roomid)
+     )
+    else: self._bot.reply(cid, type, "PLAYER IS NOT ON ROOM")
+
+   elif message.startswith(('/s1', '/s2', '/s3', '/s4', '/s5')):
+    try:
+        cmd = message.split()[0].lower()
+        parts = message.strip().split()
+        
+        if len(parts) < 2:
+            error_msg = f"[B][C][FF0000]❌ Usage: {cmd} (uid)\nVí dụ: {cmd} 123456789"
+            self._bot.reply(cid, type, error_msg)
+            return
+        
+        target_uid = parts[1]
+        if not target_uid.isdigit():
+            self._bot.reply(cid, type, f"[B][C][FF0000]❌ Please write a valid player ID!")
+            return
+        
+        badge_value = self.BADGE_VALUES.get(cmd, 1048576)
+        
+        initial_msg = f"[B][C][1E90FF]🌀 spam =)) {target_uid}..."
+        self._bot.reply(cid, type, initial_msg)
+        
+        # Leave current squad
+        if self.sock39699 and self._bot:
+            leave_packet = self._bot.leave_squad(0)
+            self.sock39699.sendall(leave_packet)
+            time.sleep(0.3)
+        
+        # Spam join requests with badge
+        for i in range(30): 
+            if self.sock39699 and self._bot:
+                join_packet = self._bot.request_join_squad(int(target_uid))
+                self.sock39699.sendall(join_packet)
+                print(f"✅ Đang Spam Lệnh {cmd} yêu cầu#{i+1} với tích: {badge_value}")
+                time.sleep(0.1)
+        
+        success_msg = f"[B][C][FFFFFF]Thành Công Spam Mời+Tích\n"
+        self._bot.reply(cid, type, success_msg)
+        
+        time.sleep(0.5)
+        # Cleanup
+        if self.sock39699 and self._bot:
+            leave_packet = self._bot.leave_squad(0)
+            self.sock39699.sendall(leave_packet)
+            
+    except Exception as e:
+        error_msg = f"[B][C][FF0000]❌ Error in {cmd}: {str(e)[:30]}\n"
+        self._bot.reply(cid, type, error_msg)
+        print(f"Badge command error: {e}")
+
+   elif message.startswith("@share"):
+
+    try:
+        import threading
+
+        parts = message.strip().split()
+
+        if len(parts) < 2:
+
+            return self._bot.reply(
+                cid,
+                type,
+                "[B][C][ff0000]❌ Sai cú pháp\n"
+                "[B][C][00ff00]Ví dụ: @share uid"
+            )
+
+        if not parts[1].isdigit():
+
+            return self._bot.reply(
+                cid,
+                type,
+                "[B][C][ff0000]❌ UID không hợp lệ"
+            )
+
+        target_uid = int(parts[1])
+
+        self._bot.reply(
+            cid,
+            type,
+            f"[B][C][00ff00]📦 Đang gửi request xin đồ tới UID:\n"
+            f"[B][C][ffffff]{target_uid}"
+        )
+
+        def do_share():
+
+            try:
+
+                if self.sock39699 is None:
+
+                    return self._bot.reply(
+                        cid,
+                        type,
+                        "[B][C][ff0000]❌ Socket disconnected"
+                    )
+
+                __import__("time").sleep(1)
+
+                packet = self._bot.ask_for_skin(target_uid)
+
+                self.sock39699.send(packet)
+
+                __import__("time").sleep(1)
+
+                self._bot.reply(
+                    cid,
+                    type,
+                    f"[B][C][00ff00]✅ Đã gửi yêu cầu xin đồ tới:\n"
+                    f"[B][C][ffffff]{target_uid}"
+                )
+
+            except Exception as e:
+
+                print("ASK SKIN ERR:", e)
+
+                self._bot.reply(
+                    cid,
+                    type,
+                    f"[B][C][ff0000]❌ Xin đồ thất bại\n"
+                    f"[ffffff]{e}"
+                )
+
+        threading.Thread(
+            target=do_share,
+            daemon=True
+        ).start()
+
+    except Exception as e:
+
+        print("SHARE CMD ERR:", e)
+
+        self._bot.reply(
+            cid,
+            type,
+            "[B][C][ff0000]❌ Lỗi command @share"
+        )
+   elif message.startswith("/share"):
+    self.sock39699.send(self._bot.ask_for_skin(uid))
+    self._bot.reply(cid, type, f"[B][c]📦 Đã gửi yêu cầu xin đồ từ UID {uid}")
+   elif message.startswith("/mute"):
+    msg = get_user_input(message)
+    if ":" in msg: self._bot.reply(cid, type, msg); return
+    self.sock39801.send(self._bot.join_channel(msg, "0_GRINGAY", None))
+    self._bot.reply(cid, type, "[B][c]Đã khoá mõm '%s'" % msg)
+
+   elif message.startswith("/unmute"):
+    msg = get_user_input(message)
+    if ":" in msg: self._bot.reply(cid, type, msg); return
+    self.sock39801.send(self._bot.leave_channel(msg, None))
+    self._bot.reply(cid, type, "[B][c]OK")
+        
+   elif message.startswith("/ai"): 
+    msg = message[4:].strip()  
+     
+    if not msg: 
+        self._bot.reply(cid, type, "⚠️ Mày định chửi không khí à? Nhập nội dung vào!") 
+        return 
+ 
+    if ":" in msg:  
+        self._bot.reply(cid, type, msg) 
+        return 
+ 
+    try: 
+        import urllib3 
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning) 
+ 
+        api_urlchui = "https://quanghauapiaichui.x10.mx/" 
+         
+        response = requests.get( 
+            api_urlchui,  
+            params={"noidung": msg},  
+            timeout=25,  
+            verify=False  
+        ) 
+         
+        if response.status_code == 200: 
+            result = response.text.strip() 
+            final_msg = result if result else "Nó chửi gắt quá t nghe không kịp!" 
+        else: 
+            final_msg = f"❌ API đang bận (Lỗi {response.status_code})" 
+             
+        self._bot.reply(cid, type, final_msg) 
+         
+    except requests.exceptions.Timeout: 
+        self._bot.reply(cid, type, "❌ Server chửi chậm quá, chắc đang lấy hơi!") 
+    except Exception as e: 
+        self._bot.reply(cid, type, f"❌ Lỗi:")
+                           
+   elif message.startswith("/blikes"):
+    msg = get_user_input(message)
+    if ":" in msg:
+        self._bot.reply(cid, type, msg)
+        return
+    self._bot.reply(
+        cid,
+        type,
+        f"[B][c][00FFFF]Đang buff likes cho UID: [FFFFFF]{msg}..."
+    )
+    result = send_likes(msg)
+    self._bot.reply(cid, type, result)
+    
+   elif message.startswith("/visit"):
+    parts = message.split()
+
+    if len(parts) != 2:
+        self._bot.reply(cid, type, "[c][FF0000]Usage: /visit uid")
+        return
+    uid = parts[1]
+    self._bot.reply(
+        cid,
+        type,
+        f"""[b][c][FFFF00]ĐANG BUFF VISIT...
+[AAAAAA]UID: {uid}"""
+    ) 
+    def run():
+        result = send_visit(uid)
+        self._bot.reply(cid, type, result)
+
+    threading.Thread(target=run, daemon=True).start()
+
+   elif message.startswith("/info"):
+    text = get_user_input(str(message))
+    if ":" in text: self._bot.reply(cid, type, text); return
+    self._bot.reply(cid, type, send_info(text, self.token, self.base_url))
+
+   elif message.startswith("/region"):
+    index = get_user_input(message)
+    if ":" in index: self._bot.reply(cid, type, index); return
+    res = napthe(index)
+    self._bot.reply(cid, type, "[B][c]User '%s' with uid '%s' is in '%s' region" % (
+     res.get("nickname"), index, 
+     res.get("region", "locked"))
+    )
+
+   elif message.startswith("/isbanned"):
+    uid = get_user_input(message)
+    if ":" in uid: self._bot.reply(cid, type, uid); return
+    I=check_banned(uid)
+    self._bot.reply(cid, type, '[B][c]PLAYER IS BANNED' if I else '[B][c]NOT BANNED')
+   else: return False
+  except Exception as e:self.rstatus, self.ids = (0, 0), []
+
+ 
  def leave(self, uid, delay):
   try:
    time.sleep(int(delay))
@@ -442,132 +3824,176 @@ class FreeFireTCP:
 
 
  def gringay(self, data):
-  if data.hex()[:4] == "0500" and len(data) >= 80:
-   data = json.loads(protobuf_dec(data.hex()[10:]))
-   if not isinstance(data.get("4"), (str, int)): return
-   if int(data["4"]) in [3, 6, 8, 44, 56] and self.rstatus[0] == 10:
-    self.ids.extend(extract_uid_fields(data))
-   
-   if int(data["4"]) == 3:
-    print(data)
-    uid = data.get("5").get("1")
-    rc = data.get("5").get("8")
-    
-    self.sock39801.send(self._bot.join_channel(uid, rc, None))
-    g01 = "[B][c]\n[%s]Dịch vụ: [U]LIKE - BOT - API.[/U][%s]\n\nTelegram: [00FFFF]@zanbackj& [00FF00]TikTok: [00FFFF]zanbackjq\n[000000]"%(grcolor(), grcolor())
-    g02 = "\n".join([f"[{grcolor()}]BinhAn  " * 8 for _ in range(55)])
-    self.sock39699.send(self._bot.reject_invite(random.choice([g01, g02]), uid, uid))
-    
-   if int(data["4"]) == 6:
-    if isinstance(self.rstatus, tuple) and self.rstatus[0] == 1:
-        try:
-            self.sock39699.send(self._bot.leave_squad(000))
+   try:
+      if data.hex()[:4] == "0500" and len(data) >= 80:
+         data = json.loads(protobuf_dec(data.hex()[10:]))
+         if not isinstance(data.get("4"), (str, int)): return
+         if int(data["4"]) in [3, 6, 8, 44, 56] and self.rstatus[0] == 10:
+            self.ids.extend(extract_uid_fields(data))
+
+         if int(data["4"]) == 3:
+            print(data)
+            uid = data.get("5", {}).get("1")
+            rc = data.get("5", {}).get("8")
+            if not uid or not rc: return
+
+            for _ in range(10):
+               if self.sock39801:
+                  break
+               time.sleep(0.5)
+
+            if self.sock39801:
+               try:
+                  self.sock39801.send(self._bot.join_channel(uid, rc, None))
+               except Exception as e:
+                  print(f"[gringay] join_channel err: {e}")
+
+            if self.sock39699:
+               try:
+                  g01 = "[B][c]\n[%s]Dịch vụ: [U]LIKE - BOT - API.[/U][%s]\n\nTelegram: [00FFFF]@zanxgay& [00FF00]TikTok: [00FFFF]deocanthuonghai09\n[000000]"%(grcolor(), grcolor())
+                  g02 = "\n".join([f"[{grcolor()}]BinhAn  " * 8 for _ in range(55)])
+                  self.sock39699.send(self._bot.reject_invite(random.choice([g01, g02]), uid, uid))
+               except Exception as e:
+                  print(f"[gringay] reject_invite err: {e}")
+
+         if int(data["4"]) == 6:
+            if isinstance(self.rstatus, tuple) and self.rstatus[0] == 1:
+               try:
+                  self.sock39699.send(self._bot.leave_squad(000))
+                  uid = data.get("5", {}).get("1")
+                  recruit_code = data.get("5", {}).get("17")
+                  if not uid or not recruit_code: return
+                  if self.sock39801:
+                     self.sock39801.send(self._bot.join_channel(uid, recruit_code, None))
+
+                  for _ in range(10):
+                     self._bot.reply(uid, None, self.rstatus[1])
+                     time.sleep(0.5)
+                  self.rstatus = (0, 0)
+               except Exception as e:
+                  self.rstatus, self.ids = (0, 0), []
+
+            if isinstance(self.rstatus, tuple) and self.rstatus[0] == 2:
+               try:
+                  uid = data.get("5", {}).get("1")
+                  secret_code = data.get("5", {}).get("31")
+                  custom_name = self.rstatus[2] if len(self.rstatus) > 2 else None
+
+                  if not uid or not secret_code:
+                     self.rstatus = (0, 0)
+                     return False
+
+                  current_code = self.rstatus[1]
+                  self.rstatus = (0, 0)
+                  self.sock39699.send(self._bot.leave_squad(00000))
+
+                  if custom_name:
+                     colors = ["[FF0000]", "[00FF00]", "[0000FF]", "[FFFF00]", "[FF00FF]", "[00FFFF]"]
+                     color = random.choice(colors)
+
+                     fields = {}
+                     fields[0] = 5
+                     fields[1] = 61
+                     fields[2] = {}
+                     fields[2][1] = int(uid)
+                     fields[2][2] = {}
+                     fields[2][2][1] = int(uid)
+                     fields[2][2][3] = f"[b][c]{color}{custom_name}"
+                     fields[2][2][6] = int(time.time())
+                     fields[2][2][7] = 0x01
+                     fields[2][2][9] = 0x01
+                     fields[2][3] = str(secret_code)
+
+                     ghost_packet = self._gen._builder(fields=list(fields.items()))
+                     self.sock39699.sendall(ghost_packet)
+
+                     self._bot.reply(uid, None, f"[B][c][00FF00]✅ Ghost thành công với tên: {custom_name}")
+                  else:
+                     packetjs = self._bot.join_squad(current_code)
+                     bots = []
+                     for bot in self.manager.bots.values():
+                        if bot is not self and bot.sock39699 and bot._bot:
+                           bots.append(bot)
+                        if len(bots) == 3:
+                           break
+                     for bot in bots:
+                        bot.sock39699.send(bot._bot.ghost(uid, secret_code))
+
+                     for _ in range(555):
+                        self.sock39699.sendall(packetjs)
+                        self.sock39699.sendall(self._bot.leave_squad(0x00))
+                        time.sleep(0.005)
+                        self.sock39699.sendall(self._bot.ghost(uid, secret_code))
+
+                     time.sleep(0.5)
+                     self.sock39699.sendall(self._bot.leave_squad(0x00))
+                     self.sock39699.sendall(self._bot.ghost(uid, secret_code))
+
+                  return True
+
+               except Exception as e:
+                  self.rstatus, self.ids = (0, 0), []
+                  print(f"[GHOST ERROR] {e}")
+
+            if isinstance(self.rstatus, tuple) and self.rstatus[0] == 3:
+               try:
+                  uid = data.get("5", {}).get("1")
+                  secret_code = data.get("5", {}).get("31")
+                  self.sock39699.send(self._bot.leave_squad(1))
+                  if not uid or not secret_code:
+                     self.rstatus = (0, 0)
+                     return False
+                  current_code = self.rstatus[1]
+                  self.rstatus = (0, 0)
+                  self.send_ghost(uid, secret_code)
+               except Exception as e:
+                  self.rstatus, self.ids = (0, 0), []
+
+      if isinstance(self.rstatus, tuple) and self.rstatus[0] == 4:
+         try:
+            import pprint
+            pprint.pprint(data)
             uid = data.get("5", {}).get("1")
             recruit_code = data.get("5", {}).get("17")
-            self.sock39801.send(self._bot.join_channel(uid, recruit_code, None))
-            
-            for _ in range(10):
-                self._bot.reply(uid, None, self.rstatus[1])
-                time.sleep(0.5)
-            self.rstatus = (0, 0)
-        except Exception as e:
+            if not uid or not recruit_code:
+               self.rstatus = (0, 0)
+               return
+            if self.sock39801:
+               self.sock39801.send(self._bot.join_channel(uid, recruit_code, None))
+            time.sleep(1.2)
+            self._bot.reply(uid, None, "[B][C][00FF00]đị[c]t m[c]ẹ gar[b]ena\n[00FF00]TikTok: [FF69B4]@deocanthuonghai09\n[00FF00]Tele[c]gr[c]am: [87CEEB]@zanxgay\n[00FF00]Group: [FFD700]ht[c]tps://t.[b]me/zancommunity")
+            self.rstatus = (10, '')
+            self.ids.extend(extract_uid_fields(data))
+         except Exception as e:
             self.rstatus, self.ids = (0, 0), []
-
-    if isinstance(self.rstatus, tuple) and self.rstatus[0] == 2:
-        try:
-            uid = data.get("5", {}).get("1")
-            secret_code = data.get("5", {}).get("31")
-            custom_name = self.rstatus[2] if len(self.rstatus) > 2 else None
-            
-            self.rstatus = (0, 0)
-            if not uid or not secret_code:
-                return False
-            
-            current_code = self.rstatus[1]
-            self.sock39699.send(self._bot.leave_squad(00000))
-            
-            if custom_name:
-                colors = ["[FF0000]", "[00FF00]", "[0000FF]", "[FFFF00]", "[FF00FF]", "[00FFFF]"]
-                color = random.choice(colors)
-                
-                fields = {}
-                fields[0] = 5
-                fields[1] = 61
-                fields[2] = {}
-                fields[2][1] = int(uid)
-                fields[2][2] = {}
-                fields[2][2][1] = int(uid)
-                fields[2][2][3] = f"[b][c]{color}{custom_name}"
-                fields[2][2][6] = int(time.time())
-                fields[2][2][7] = 0x01
-                fields[2][2][9] = 0x01
-                fields[2][3] = str(secret_code)
-                
-                ghost_packet = self._gen._builder(fields=list(fields.items()))
-                self.sock39699.sendall(ghost_packet)
-                
-                self._bot.reply(uid, None, f"[B][c][00FF00]Ghost thành công với tên: {custom_name}")
-            else:
-                packetjs = self._bot.join_squad(current_code)
-                bots = []
-                for bot in self.manager.bots.values():
-                    if bot is not self and bot.sock39699 and bot._bot:
-                        bots.append(bot)
-                    if len(bots) == 3:
-                        break
-                for bot in bots:
-                    bot.sock39699.send(bot._bot.ghost(uid, secret_code))
-                
-                for _ in range(555):
-                    self.sock39699.sendall(packetjs)
-                    self.sock39699.sendall(self._bot.leave_squad(0x00))
-                    time.sleep(0.005)
-                    self.sock39699.sendall(self._bot.ghost(uid, secret_code))
-                
-                time.sleep(0.5)
-                self.sock39699.sendall(self._bot.leave_squad(0x00))
-                self.sock39699.sendall(self._bot.ghost(uid, secret_code))
-            
-            return True
-            
-        except Exception as e:
-            self.rstatus, self.ids = (0, 0), []
-            print(f"[GHOST ERROR] {e}")
-
-    if isinstance(self.rstatus, tuple) and self.rstatus[0] == 3:
-        try:
-            uid = data.get("5", {}).get("1")
-            secret_code = data.get("5", {}).get("31")
-            self.sock39699.send(self._bot.leave_squad(1))
-            if not uid or not secret_code:
-                return False
-            current_code = self.rstatus[1]
-            self.rstatus = (0, 0)
-            self.send_ghost(uid, secret_code)
-        except Exception as e:
-            self.rstatus, self.ids = (0, 0), []
-                    
-  if isinstance(self.rstatus, tuple) and self.rstatus[0] == 4:
-    try:
-        import pprint
-        pprint.pprint(data)
-        uid = data.get("5", {}).get("1")
-        recruit_code = data.get("5", {}).get("17")
-        self.sock39801.send(self._bot.join_channel(uid, recruit_code, None))
-        time.sleep(1.2)
-        self._bot.reply(uid, None, "[B][C][00FF00]Bot Emote By Zan\n[00FF00]TikTok: [FF69B4]zanbackj\n[00FF00]Telegram: [87CEEB]@zanbackj\n[00FF00]Group: [FFD700]https://t.me/zancommunity")
-        self.rstatus = (10, '')
-        self.ids.extend(extract_uid_fields(data))
-    except Exception as e:
-        self.rstatus, self.ids = (0, 0), []
+   except Exception as e:
+      print(f"[gringay error] {e}")
+      self.rstatus, self.ids = (0, 0), []
         
  def playcd(self):
-     self.sock39699.send(self._bot.play_animation(914000002))
-     time.sleep(3)
-     self.sock39699.send(self._bot.play_animation(914000002))
-     time.sleep(3.5)
-     self.sock39699.send(self._bot.play_animation(914000002))
+    try:
+        if not self.sock39699:
+            return
+        self.sock39699.send(self._bot.play_animation(914000002))
+        time.sleep(3)
+        if not self.sock39699: return
+        self.sock39699.send(self._bot.play_animation(914000002))
+        time.sleep(3.5)
+        if not self.sock39699: return
+        self.sock39699.send(self._bot.play_animation(914000002))
+    except Exception as e:
+        print(f"[playcd] {e}")
 
+ def closesquads(self):
+    time.sleep(10)
+    self.rstatus, self.ids = (0, 0), []
+    try:
+        if self.sock39699:
+            self.sock39699.send(self._bot.leave_squad(0x000000))
+    except Exception as e:
+        print(f"[closesquads] {e}")
+    self.status = True
+    
  def send_ghost(self, uid, secret):
   bots = []
   for i in self.manager.bots.values():
@@ -593,30 +4019,72 @@ class FreeFireTCP:
     time.sleep(0.35)
    
  def GenSquads(self, team, cid, uid, Type, name):
-        if not self.sock39699:
-            self._bot.reply(cid, Type, "Thử lại!")
-            return
+    Type = 2
 
-        self.status = False
+    wait_count = 0
+    while not self.sock39699 and wait_count < 20:
+        time.sleep(1)
+        wait_count += 1
+
+    if not self.sock39699:
+        self._bot.reply(cid, Type, "[b][c]❌ Chưa kết nối online, thử lại sau!")
+        return
+
+    if not self.running_event.is_set():
+        self._bot.reply(cid, Type, "[b][c]Bot đang offline!")
+        return
+
+    self.status = False
+
+    try:
         self.sock39699.sendall(self._bot.open_squad(team))
-        time.sleep(0.3)
-        self.sock39699.send(self._bot.invite_squad(uid, 1))
-        self.sock39699.send(self._bot.invite_squad(uid, 2))
+    except Exception as e:
+        self._bot.reply(cid, Type, f"[b][c]Lỗi open: {e}")
+        return
 
-        self._bot.reply(cid, Type, f"""[B][C][FFFFFF]Xin Chào! {name}
-[FFFFFF]Đã tạo team {team} thành công!
-[C0C0C0]Vui lòng chấp nhận lời mời từ bot!""")
+    time.sleep(1.0)
 
-        threading.Thread(target=self.playcd).start()
-        threading.Thread(target=self.closesquads).start()
+    invite_success = False
+    for attempt in range(5):
+        try:
+            self.sock39699.send(self._bot.invite_squad(uid, 1))
+            time.sleep(0.5)
+            self.sock39699.send(self._bot.invite_squad(uid, 2))
+            time.sleep(0.5)
+            invite_success = True
+            break
+        except Exception as e:
+            print(f"[GenSquads] invite attempt {attempt+1} err: {e}")
+            time.sleep(1.0)
 
- def closesquads(self):
-  time.sleep(10)
-  self.rstatus, self.ids = (0, 0), []
-  try: self.sock39699.send(self._bot.leave_squad(0x000000))
-  except Exception as e: pass
-  self.status = True
- 
+    if not invite_success:
+        self._bot.reply(cid, Type, "[b][c]Lỗi gửi lời mời, thử lại sau!")
+        return
+
+    self._bot.reply(cid, Type, """[B][C][FFFFFF]Xin Chào {}
+[FFFFFF]Create Squad: [00ffb3]{}
+
+[C0C0C0]Đã Tạo Thành Công Team {} Free Fire. Vui Lòng Chấp Nhận Lời Mời Bot Gửi Tới!""".format(name, team, team))
+
+    try:
+        import random
+        import json
+        sticker_data = random.choice([
+            ("1200000001", random.randint(1, 24)),
+            ("1200000002", random.randint(1, 15)),
+            ("1200000004", random.randint(1, 13))
+        ])
+        payload = json.dumps({
+            "StickerStr": f"[1={sticker_data[0]}-{sticker_data[1]}]",
+            "type": "Sticker"
+        })
+        if self.sock39801:
+            self.sock39801.send(self._bot.send_object(payload, cid, Type))
+    except:
+        pass
+
+    threading.Thread(target=self.playcd, daemon=True).start()
+    threading.Thread(target=self.closesquads, daemon=True).start()
  def get_user_status(self, type, uid=None):
     if type == 1:
         return [u["uid"] for u in self.bot_config.get("access_bot", [])] + [self.botid] + [self.GuildIds]
@@ -630,7 +4098,7 @@ class FreeFireTCP:
                     now = datetime.datetime.now()
                     if exp_time < now:
                         self.manager.deleteId(self.bot_config["bot_id"], uid)
-                        return "Hết hạn" if type == 3 else False
+                        return "Hết hạn" if type == 3 else False  # SỬA
                     if type == 2:
                         return True
                     if type == 3:
@@ -645,12 +4113,13 @@ class FreeFireTCP:
                         time_left = ", ".join(parts) if parts else "0 phút"
                         return time_left
                 except Exception as e:
-                    return "Hết hạn" if type == 3 else False
+                    return "Hết hạn" if type == 3 else False  # SỬA
         
-        return "Chưa kích hoạt"
+        # KHÔNG TÌM THẤY UID -> TRẢ VỀ "Chưa kích hoạt"
+        return "Chưa kích hoạt"  # SỬA DÒNG NÀY
     
-    return "Chưa kích hoạt"
-           
+    return "Chưa kích hoạt"  # SỬA DÒNG NÀY
+               
  def format_status_message(self, info, uid):
   status = info.get("status", "") 
   uid = info.get("uid", uid)
@@ -674,16 +4143,35 @@ uid: {}""".format(status, extra, uid)
    time.sleep(1.5)
 
  class bot_session:
-  def __init__(self, parent):
-   self.par = parent
-  def __getattr__(self, name):
-   return getattr(self.par._gen, name)
-  def reply(self, Id, Tp, Ms):
-   try:
-    if self.par.running_event.is_set() and self.par.sock39801:
-     self.par.sock39801.sendall(self.par._gen.send_message(Ms, Tp, Id))
-   except Exception as e: pass
-
+   def __init__(self, parent):
+      self.par = parent
+   def __getattr__(self, name):
+      return getattr(self.par._gen, name)
+   def reply(self, Id, Tp, Ms):
+      try:
+         if not self.par.running_event.is_set():
+            return
+         if not self.par.sock39801:
+            return
+         if Id is None:
+            return
+         try:
+            Id_int = int(Id)
+         except (ValueError, TypeError):
+            return
+         Tp_int = None
+         if Tp is not None:
+            try:
+               Tp_int = int(Tp)
+            except (ValueError, TypeError):
+               pass
+         with self.par._reply_lock:
+            if not self.par.sock39801:
+               return
+            self.par.sock39801.sendall(self.par._gen.send_message(Ms, Tp_int, Id_int))
+      except Exception as e:
+         print(f"[reply error] {e}")
+           
  def rstart(self):
   access_token = self.bot_config['auth_bot_login']['access_token']
   while self.running_event.is_set():
@@ -729,7 +4217,6 @@ uid: {}""".format(status, extra, uid)
   print(f"[BOT] Starting bot_id={self.bot_config.get('bot_id')}")
   threading.Thread(target=self.rstart, daemon=True).start()
 
-
 class BOTMNG:
  def __init__(self):
   self.bots = {}
@@ -755,7 +4242,7 @@ class BOTMNG:
    import os
    cwd = os.getcwd()
    print(f"\n{'='*50}")
-   print(f"LƯU FILE TẠI: {cwd}")
+   print(f"📁 LƯU FILE TẠI: {cwd}")
    print(f"{'='*50}\n")
    status, content = File.check(self.filename)
    self.config = json.loads(content)
@@ -798,9 +4285,9 @@ class BOTMNG:
     with open(self.filename, 'w', encoding='utf-8') as f:
      json.dump(self.config, f, ensure_ascii=False, indent=2)
     file_path = os.path.abspath(self.filename)
-    print(f"[BOTMNG] Lưu {file_path}")
+    print(f"[BOTMNG] ✅ Lưu {file_path}")
   except Exception as e: 
-   print(f"[BOTMNG] Save config error: {e}")
+   print(f"[BOTMNG] ❌ Save config error: {e}")
 
  def auto_save_config(self):
   while True:
@@ -876,17 +4363,22 @@ class BOTMNG:
    del self.bots[bot_id]
    self.save_config()
    return True
- 
+
+    
  def add_uid_to_access(self, bot_id, uid, time_str):
+    """Thêm UID vào danh sách truy cập"""
     try:
+        # Parse time
         import re
         if not re.match(r'^\d+[hdwmy]$', time_str.lower()):
             return "invalid_time"
         
+        # Lấy bot
         bot = self.bots.get(bot_id)
         if not bot:
             return "bot_not_found"
         
+        # Tính timestamp
         now = datetime.now()
         num = int(time_str[:-1])
         unit = time_str[-1].lower()
@@ -907,6 +4399,7 @@ class BOTMNG:
         expire_time = now + delta
         timestamp = int(expire_time.timestamp())
         
+        # Thêm vào database
         if hasattr(bot, 'manager') and bot.manager:
             return bot.manager.add_uid_to_access(bot_id, uid, timestamp)
         else:
@@ -993,1896 +4486,76 @@ class BOTMNG:
     except:
         return []
 
-CHAT_GROUP_ID_1 = "@zancommunity"
-CHAT_GROUP_ID_2 = "@zanxchannel"
+TCPbot = BOTMNG()
+app = Flask(__name__)
 
-def is_telegram_admin(user_id):
-    try: 
-        return user_id in TELEGRAM_ADMINS
-    except: 
-        return False
+# ====== LỆNH /START - MENU QUẢN LÝ BOT ======
+@telegram_bot.message_handler(commands=['start', 'help', 'menu'])
+def start_cmd(message):
+    menu_text = """
+<blockquote>
+<b>🤖 BOT MANAGER - QUẢN LÝ BOT</b>
+━━━━━━━━━━━━━━━━━━━━
 
-def check_user_in_group(user_id):
-    if is_telegram_admin(user_id):
-        return True
-    
-    in_group1 = False
-    try:
-        member1 = telegram_bot.get_chat_member(CHAT_GROUP_ID_1, user_id)
-        if member1.status in ['member', 'creator', 'administrator']:
-            in_group1 = True
-    except Exception as e:
-        print("CHECK GROUP 1 ERROR:", e)
-    
-    in_group2 = False
-    try:
-        member2 = telegram_bot.get_chat_member(CHAT_GROUP_ID_2, user_id)
-        if member2.status in ['member', 'creator', 'administrator']:
-            in_group2 = True
-    except Exception as e:
-        print("CHECK GROUP 2 ERROR:", e)
-    
-    return in_group1 and in_group2
-
-def get_join_keyboard():
-    markup = InlineKeyboardMarkup()
-    btn_group1 = InlineKeyboardButton(text="Nhóm Cộng Đồng", url="https://t.me/zancommunity")
-    btn_group2 = InlineKeyboardButton(text="Kênh Thông Báo", url="https://t.me/zanxchannel")
-    btn_joined = InlineKeyboardButton(text="Tôi đã tham gia", callback_data="check_joined")
-    markup.row(btn_group1)
-    markup.row(btn_group2)
-    markup.row(btn_joined)
-    return markup
-
-from functools import wraps
-
-def is_admin_user(user_id):
-    return user_id in TELEGRAM_ADMINS
-
-def is_private_chat(message):    
-    return message.chat.type == 'private'
-
-def is_group_chat(message):
-    return message.chat.type in ['group', 'supergroup']
-
-def check_group_only(func):   
-    @wraps(func)
-    def wrapper(message, *args, **kwargs):
-        user_id = message.from_user.id        
-        
-        if is_admin_user(user_id):
-            return func(message, *args, **kwargs)
-             
-        if is_private_chat(message):
-            telegram_bot.reply_to(
-                message,
-                f"""<blockquote><b>Bạn không có quyền sử dụng bot này.</b>
-Chỉ admin và người quản lý mới có thể sử dụng bot qua tin nhắn riêng!
-Vui lòng sử dụng bot trong nhóm <b>@zancommunity</b> để thực hiện lệnh.
+<b>👑 ADMIN - QUẢN LÝ BOT</b>
+├ /addbot [token] → Thêm bot mới
+├ /delbot [botid/all] → Xóa bot
+├ /online [botid/all] → Bật bot
+├ /offline [botid/all] → Tắt bot
+├ /resetbot [botid/all] → Reset bot
+└ /checkbot → Xem trạng thái
 
 ━━━━━━━━━━━━━━━━━━━━
-Liên hệ: <b>@zanbackj</b></blockquote>""",
-                parse_mode="HTML"
-            )
-            return
-        
-        return func(message, *args, **kwargs)
-    return wrapper
-            
-ADMIN_ID = [8722607800]
-TELE_USERS_FILE = "tele_users.json"
-TELE_GROUPS_FILE = "tele_groups.json"
 
-def save_telegram_chat(chat_id, filename):
-    chats = []
-    if os.path.exists(filename):
-        try:
-            with open(filename, "r", encoding="utf-8") as f:
-                chats = json.load(f)
-        except:
-            pass
-            
-    if chat_id not in chats:
-        chats.append(chat_id)
-        try:
-            with open(filename, "w", encoding="utf-8") as f:
-                json.dump(chats, f, indent=4)
-        except:
-            pass
+<b>🤝 KẾT BẠN</b>
+├ /kb [botid] [uid] → kb 1 bot
+├ /kball [uid] → KB all bot
+├ /xkb [botid] [uid] → Hủy kb 1 bot
+└ /xkball [uid] → Hủy kb all bot
 
-from functools import wraps
+━━━━━━━━━━━━━━━━━━━━
 
-def async_telegram(func):
-    @wraps(func)
-    def wrapper(message, *args, **kwargs):
-        threading.Thread(target=func, args=(message, *args), kwargs=kwargs, daemon=True).start()
-    return wrapper
- 
-@telegram_bot.message_handler(commands=['start', 'help', 'menu'])
-@check_group_only
-@async_telegram
-def telegram_start_help_menu(message):
-    if not check_user_in_group(message.from_user.id):
-        send_warn_join_group(message)
-        return
-    
-    menu_text = """
-<blockquote>MENU ĐIỀU KHIỂN HỆ THỐNG
+<b>📝 BIO</b>
+├ /bio [botid] [bio] → Đổi bio 1 bot
+├ /bioid [uid] [bio] → Đổi bio theo uid
+└ /bioall [bio] → Đổi bio all bot
 
-[ LỆNH TẠO ĐỘI ]
-├ /2 {uid} ➜ Lập team 2 người
-├ /3 {uid} ➜ Lập team 3 người
-├ /4 {uid} ➜ Lập team 4 người
-├ /5 {uid} ➜ Lập team 5 người
-└ /6 {uid} ➜ Lập team 6 người
+━━━━━━━━━━━━━━━━━━━━
 
-[ LỆNH HÀNH ĐỘNG ]
-├ /s7 {teamcode} {uid1} {uid2} ➜ Múa all hành động s7
-├ /rd {teamcode} {uid1} {uid2} ➜ Múa random all s7
-├ /hdco {teamcode} {uid1} {uid2} ➜ Múa all hành động cổ
-└ /rngau {teamcode} {uid1} {uid2} ➜ Múa all hành động ngầu
+<b>🏠 QD (CLAN)</b>
+├ /voqd [botid] [idqd] → Xin vào clan 1 bot
+├ /roiqd [botid] [clanid] → Rời clan 1 bot
+├ /voqdall [idqd] → Xin vào clan all bot
+└ /roiqdall [clanid] → Rời clan all bot
 
-[ LỆNH SPAM & LAG ]
-├ /lag {teamcode} ➜ Gửi request lag đến đội
-├ /ghost {teamcode} {tên} ➜ Ghost đội với tên tùy chỉnh
-├ /spamall {uid} ➜ Spam lời mời vô đội
-├ /rinv {uid} ➜ Spam vô phòng
-└ /msg {teamcode} {message} ➜ Spam tin nhắn vô đội
+━━━━━━━━━━━━━━━━━━━━
 
-[ TRA CỨU INFO ]
-├ /isbanned {uid} ➜ Kiểm tra tình trạng ban
-├ /info {uid} ➜ Xem thông tin người chơi
-└ /status {uid} ➜ Kiểm tra trạng thái người chơi
+<b>🗑️ XÓA BẠN BÈ</b>
+└ /clearfriends [botid] → Xóa ALL bạn bè
 
-[ LỆNH BUFF LIKE ]
-├ /like {uid} ➜ Buff like ( nhận khoảng 110 like )
-├ /autolike {uid} {số ngày} ➜ Auto like hàng ngày (Admin)
-├ /autolist ➜ Xem danh sách auto like (Admin)
-└ /delauto {uid} ➜ Xóa khỏi danh sách auto like (Admin)
+━━━━━━━━━━━━━━━━━━━━
 
-LƯU Ý QUAN TRỌNG:
-• Chỉ quản trị viên mới có thể nhắn tin riêng với bot
-• Người dùng thường vui lòng sử dụng lệnh trong nhóm
-• Mọi thắc mắc liên hệ: @zanbackj</blockquote>
+<b>💾 BACKUP & SYSTEM</b>
+├ /backup → Backup ngay (gửi file zip)
+├ /server → Xem thông tin server
+└ /uptime → Xem thời gian chạy bot
+
+━━━━━━━━━━━━━━━━━━━━
+<b>📩 Liên hệ:</b> @zanbackj
+</blockquote>
 """
-    
     telegram_bot.reply_to(message, menu_text, parse_mode="HTML")
-                                       
-@telegram_bot.callback_query_handler(func=lambda call: call.data == "check_joined")
-def callback_check_joined(call):
-    try:
-        user_id = call.from_user.id
-        message_id = call.message.message_id
-        
-        original_user_id = user_msg_map.get(message_id)
-        if original_user_id and user_id != original_user_id:
-            try:
-                telegram_bot.answer_callback_query(
-                    call.id,
-                    text="Bạn không phải là người thực hiện yêu cầu này!",
-                    show_alert=True
-                )
-            except:
-                pass
-            return
-        
-        if check_user_in_group(user_id):
-            try:
-                telegram_bot.edit_message_text(
-                    "Xác thực thành công! Hãy sử dụng lệnh /menu để xem danh sách lệnh.",
-                    chat_id=call.message.chat.id,
-                    message_id=call.message.message_id
-                )
-            except:
-                pass
-            
-            try:
-                telegram_bot.answer_callback_query(
-                    call.id, 
-                    text="Xác thực thành công!", 
-                    show_alert=False
-                )
-            except:
-                pass
-        else:
-            in_group1 = False
-            in_group2 = False
-            
-            try:
-                member1 = telegram_bot.get_chat_member(CHAT_GROUP_ID_1, user_id)
-                if member1.status in ['member', 'creator', 'administrator']:
-                    in_group1 = True
-            except:
-                pass
-            
-            try:
-                member2 = telegram_bot.get_chat_member(CHAT_GROUP_ID_2, user_id)
-                if member2.status in ['member', 'creator', 'administrator']:
-                    in_group2 = True
-            except:
-                pass
-            
-            missing = []
-            if not in_group1:
-                missing.append("Nhóm Cộng Đồng (@zancommunity)")
-            if not in_group2:
-                missing.append("Kênh Thông Báo (@zanxchannel)")
-            
-            msg = "Bạn chưa tham gia:\n" + "\n".join(f"• {m}" for m in missing)
-            try:
-                telegram_bot.answer_callback_query(
-                    call.id, 
-                    text=msg, 
-                    show_alert=True
-                )
-            except:
-                pass
-    except Exception as e:
-        print(f"Callback error: {e}")         
-                               
-def get_available_bots(count=1):
-    available = []
-    for b in TCPbot.bots.values():
-        if (b.running_event.is_set() and 
-            getattr(b, "sock39699", None) and 
-            not getattr(b, "is_busy", False)):
-            available.append(b)
-            if len(available) == count:
-                break
-    return available
 
-def send_warn_join_group(message):
-    user_id = message.from_user.id
-    
-    in_group1 = False
-    in_group2 = False
-    
-    try:
-        member1 = telegram_bot.get_chat_member(CHAT_GROUP_ID_1, user_id)
-        if member1.status in ['member', 'creator', 'administrator']:
-            in_group1 = True
-    except:
-        pass
-    
-    try:
-        member2 = telegram_bot.get_chat_member(CHAT_GROUP_ID_2, user_id)
-        if member2.status in ['member', 'creator', 'administrator']:
-            in_group2 = True
-    except:
-        pass
-    
-    status_msg = ""
-    if not in_group1:
-        status_msg += "Chưa tham gia Nhóm Cộng Đồng (@zancommunity)\n"
-    else:
-        status_msg += "Đã tham gia Nhóm Cộng Đồng (@zancommunity)\n"
-    
-    if not in_group2:
-        status_msg += "Chưa tham gia Kênh Thông Báo (@zanxchannel)\n"
-    else:
-        status_msg += "Đã tham gia Kênh Thông Báo (@zanxchannel)\n"
-    
-    warn_msg = (
-        f"<blockquote>"
-        f"<b>BẠN CHƯA THAM GIA ĐỦ NHÓM</b>\n"
-        f"───────────────────────\n"
-        f"Xin chào <code>{message.from_user.first_name}</code>,\n\n"
-        f"Bạn cần tham gia 2 kênh sau để sử dụng bot:\n\n"
-        f"{status_msg}\n"
-        f"Vui lòng bấm vào các nút bên dưới để tham gia đủ!"
-        f"</blockquote>"
-    )
-    telegram_bot.reply_to(message, warn_msg, parse_mode="HTML", reply_markup=get_join_keyboard())
-
-import telebot
-from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad
-
-# ====== CẤU HÌNH ======
-ACCOUNTS_FILE = "accounts.json"
-
-# ====== LOG ======
-def log_print(msg):
-    print(f"[{time.strftime('%H:%M:%S')}] {msg}")
-
-# ====== HÀM MÃ HÓA UID ======
-def encrypt_uid(uid):
-    dec = ['80','81','82','83','84','85','86','87','88','89','8a','8b','8c','8d','8e','8f','90','91','92','93','94','95','96','97','98','99','9a','9b','9c','9d','9e','9f','a0','a1','a2','a3','a4','a5','a6','a7','a8','a9','aa','ab','ac','ad','ae','af','b0','b1','b2','b3','b4','b5','b6','b7','b8','b9','ba','bb','bc','bd','be','bf','c0','c1','c2','c3','c4','c5','c6','c7','c8','c9','ca','cb','cc','cd','ce','cf','d0','d1','d2','d3','d4','d5','d6','d7','d8','d9','da','db','dc','dd','de','df','e0','e1','e2','e3','e4','e5','e6','e7','e8','e9','ea','eb','ec','ed','ee','ef','f0','f1','f2','f3','f4','f5','f6','f7','f8','f9','fa','fb','fc','fd','fe','ff']
-    xxx = ['1','01','02','03','04','05','06','07','08','09','0a','0b','0c','0d','0e','0f','10','11','12','13','14','15','16','17','18','19','1a','1b','1c','1d','1e','1f','20','21','22','23','24','25','26','27','28','29','2a','2b','2c','2d','2e','2f','30','31','32','33','34','35','36','37','38','39','3a','3b','3c','3d','3e','3f','40','41','42','43','44','45','46','47','48','49','4a','4b','4c','4d','4e','4f','50','51','52','53','54','55','56','57','58','59','5a','5b','5c','5d','5e','5f','60','61','62','63','64','65','66','67','68','69','6a','6b','6c','6d','6e','6f','70','71','72','73','74','75','76','77','78','79','7a','7b','7c','7d','7e','7f']
-    try:
-        x = int(uid)
-        x_float = float(x) / 128
-        if x_float > 128:
-            x_float /= 128
-            if x_float > 128:
-                x_float /= 128
-                if x_float > 128:
-                    x_float /= 128
-                    strx = int(x_float)
-                    y = (x_float - strx) * 128
-                    z = (y - int(y)) * 128
-                    n = (z - int(z)) * 128
-                    m = (n - int(n)) * 128
-                    return dec[int(m)] + dec[int(n)] + dec[int(z)] + dec[int(y)] + xxx[int(x_float)] 
-                else:
-                    strx = int(x_float)
-                    y = (x_float - strx) * 128
-                    z = (y - int(y)) * 128
-                    n = (z - int(z)) * 128
-                    return dec[int(n)] + dec[int(z)] + dec[int(y)] + xxx[int(x_float)] 
-        return None 
-    except: 
-        return None
-
-# ====== HÀM LOGIN LẤY JWT ======
-def G_AccEss(U, P):
-    log_print(f"Đang login UID: {U[:6]}...")
-    UrL = "https://100067.connect.garena.com/oauth/guest/token/grant"
-    HE = {
-        "Host": "100067.connect.garena.com",
-        "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 7.1.2; ASUS_Z01QD Build/QKQ1.190825.002)",
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Connection": "close",
-    }
-    dT = {
-        "uid": f"{U}",
-        "password": f"{P}",
-        "response_type": "token",
-        "client_type": "2",
-        "client_secret": "2ee44819e9b4598845141067b281621874d0d5d7af9d8f7e00c1e54715b7d1e3",
-        "client_id": "100067",
-    }
-    try:
-        R = requests.post(UrL, headers=HE, data=dT)
-        log_print(f"Login response: {R.status_code}")
-        if R.status_code == 200:
-            data = R.json()
-            log_print(f"Login thành công UID: {U[:6]}...")
-            return data.get("access_token"), data.get("open_id")
-        else:
-            log_print(f"Login thất bại: {R.text[:100]}")
-    except Exception as e:
-        log_print(f"Lỗi G_AccEss: {e}")
-    return None, None
-
-# ====== HÀM LẤY JWT TỪ ACCOUNTS.JSON ======
-def get_jwt_from_file(uid):
-    try:
-        with open(ACCOUNTS_FILE, "r", encoding="utf-8") as f:
-            accounts = json.load(f)
-        for acc in accounts:
-            if str(acc.get("uid")) == str(uid):
-                return acc.get("jwt")
-    except:
-        pass
-    return None
-
-# ====== HÀM GỬI KẾT BẠN DÙNG JWT ======
-def SendFriendRequest(target_uid, jwt_token, bot_uid):
-    try:
-        log_print(f"Bot {bot_uid} -> Target {target_uid}")
-        
-        Key = bytes([89, 103, 38, 116, 99, 37, 68, 69, 117, 104, 54, 37, 90, 99, 94, 56])
-        Iv = bytes([54, 111, 121, 90, 68, 114, 50, 50, 69, 51, 121, 99, 104, 106, 77, 37])
-        
-        encrypted_id = encrypt_uid(target_uid)
-        if not encrypted_id:
-            return False, "Mã hóa UID thất bại"
-        
-        plain_text_payload = f'08a7c4839f1e10{encrypted_id}1801'
-        cipher = AES.new(Key, AES.MODE_CBC, Iv)
-        data = cipher.encrypt(pad(bytes.fromhex(plain_text_payload), AES.block_size))
-        
-        headers = {
-            'X-Unity-Version': '2018.4.11f1',
-            'ReleaseVersion': 'OB54',
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-GA': 'v1 1',
-            'Authorization': f'Bearer {jwt_token}',
-            'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 7.1.2; ASUS_Z01QD Build/QKQ1.190825.002)',
-            'Connection': 'Keep-Alive',
-            'Accept-Encoding': 'gzip'
-        }
-        
-        url = 'https://clientbp.ggpolarbear.com/RequestAddingFriend'
-        response = requests.post(url, headers=headers, data=data, verify=False, timeout=10)
-        
-        log_print(f"Status: {response.status_code}")
-        
-        if response.status_code == 200:
-            return True, "Gửi kết bạn thành công!"
-        else:
-            text = response.text
-            log_print(f"Response: {text[:200]}")
-            if 'BR_FRIEND_NOT_SAME_REGION' in text:
-                return False, "Khác khu vực!"
-            elif 'BR_FRIEND_MAX_REQUEST' in text:
-                return False, "Đã đạt giới hạn!"
-            elif 'BR_FRIEND_ALREADY_SENT_REQUEST' in text:
-                return False, "Đã gửi trước đó!"
-            elif 'BR_FRIEND_ALREADY_FRIEND' in text:
-                return False, "Đã là bạn bè!"
-            else:
-                return False, f"Lỗi: {text[:50]}"
-            
-    except Exception as e:
-        return False, f"Lỗi: {str(e)}"
-
-# ====== LỆNH /spamkb ======
-@telegram_bot.message_handler(commands=['spamkb'])
-@check_group_only
-def telegram_spam_kb(message):
-    try:
-        parts = message.text.strip().split()
-        if len(parts) < 2:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote>SAI CÚ PHÁP\nDùng: /spamkb [uid_target]\nVí dụ: /spamkb 123456789</blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        target_uid = parts[1].strip()
-        if not target_uid.isdigit():
-            telegram_bot.reply_to(message, "<blockquote>UID phải là số!</blockquote>", parse_mode="HTML")
-            return
-        
-        log_print(f"Spam tới UID: {target_uid}")
-        
-        if not os.path.exists(ACCOUNTS_FILE):
-            telegram_bot.reply_to(message, f"<blockquote>Không tìm thấy file {ACCOUNTS_FILE}!</blockquote>", parse_mode="HTML")
-            return
-        
-        with open(ACCOUNTS_FILE, "r", encoding="utf-8") as f:
-            accounts = json.load(f)
-        
-        if not accounts:
-            telegram_bot.reply_to(message, "<blockquote>Không có account nào!</blockquote>", parse_mode="HTML")
-            return
-        
-        valid_accounts = []
-        for acc in accounts:
-            if acc.get("jwt") and acc.get("status") == "success":
-                valid_accounts.append({
-                    "uid": acc.get("uid"),
-                    "jwt": acc.get("jwt")
-                })
-        
-        if not valid_accounts:
-            telegram_bot.reply_to(message, "<blockquote>Không có account nào có JWT hợp lệ!</blockquote>", parse_mode="HTML")
-            return
-        
-        log_print(f"Load {len(valid_accounts)} accounts có JWT")
-        
-        msg = telegram_bot.reply_to(
-            message,
-            f"<blockquote>ĐANG SPAM KẾT BẠN\n━━━━━━━━━━━━━━━━━━━━\nTarget: <code>{target_uid}</code>\nTổng bots: <b>{len(valid_accounts)}</b>\nThành công: <b>0</b>\nThất bại: <b>0</b>\nĐang xử lý...</blockquote>",
-            parse_mode="HTML"
-        )
-        
-        def run_spam():
-            success_count = 0
-            fail_count = 0
-            
-            for i, acc in enumerate(valid_accounts, 1):
-                uid = acc["uid"]
-                jwt_token = acc["jwt"]
-                
-                try:
-                    success, msg_result = SendFriendRequest(target_uid, jwt_token, uid)
-                    
-                    if success:
-                        success_count += 1
-                    else:
-                        fail_count += 1
-                    
-                    if i % 5 == 0 or i == len(valid_accounts):
-                        try:
-                            telegram_bot.edit_message_text(
-                                f"<blockquote>ĐANG SPAM KẾT BẠN\n━━━━━━━━━━━━━━━━━━━━\nTarget: <code>{target_uid}</code>\nTổng bots: <b>{len(valid_accounts)}</b>\nTiến độ: <b>{i}/{len(valid_accounts)}</b>\nThành công: <b>{success_count}</b>\nThất bại: <b>{fail_count}</b>\nĐang xử lý...</blockquote>",
-                                chat_id=message.chat.id,
-                                message_id=msg.message_id,
-                                parse_mode="HTML"
-                            )
-                        except:
-                            pass
-                    
-                    time.sleep(0.1)
-                    
-                except Exception as e:
-                    fail_count += 1
-            
-            summary = (
-                f"<blockquote>KẾT QUẢ SPAM KẾT BẠN\n"
-                f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"Target: <code>{target_uid}</code>\n"
-                f"Tổng bots: <b>{len(valid_accounts)}</b>\n"
-                f"Thành công: <b>{success_count}</b>\n"
-                f"Thất bại: <b>{fail_count}</b>\n"
-                f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"Hoàn thành!</blockquote>"
-            )
-            
-            try:
-                telegram_bot.edit_message_text(
-                    summary,
-                    chat_id=message.chat.id,
-                    message_id=msg.message_id,
-                    parse_mode="HTML"
-                )
-            except:
-                telegram_bot.send_message(
-                    message.chat.id,
-                    summary,
-                    parse_mode="HTML"
-                )
-        
-        threading.Thread(target=run_spam, daemon=True).start()
-        
-    except Exception as e:
-        log_print(f"Lỗi: {e}")
-        telegram_bot.reply_to(message, f"<blockquote>Lỗi: {str(e)}</blockquote>", parse_mode="HTML")
-                                                                
-from telebot import types
-
-@telegram_bot.message_handler(commands=['2', '3', '4', '5', '6'])
-@async_telegram
-@check_group_only
-def handle_team_creation(message):   
-    if not check_user_in_group(message.from_user.id):
-        send_warn_join_group(message)
-        return   
-    user_id = message.from_user.id
-    current_time = time.time()
-    
-    if user_id in team_cooldown:
-        remaining = int(team_cooldown[user_id] - current_time)
-        if remaining > 0:
-            telegram_bot.reply_to(
-                message,
-                f"<blockquote><b>vui lòng đợi {remaining} giây và sử dụng lại</b></blockquote>",
-                parse_mode="HTML"
-            )
-            return
-    
-    cmd = message.text.split()[0][1:]
-    parts = message.text.split()
-    
-    if len(parts) < 2 or not parts[1].isdigit():
-        telegram_bot.reply_to(
-            message,
-            f"<blockquote><b>SAI CÚ PHÁP</b>\n"
-            f"Vui lòng nhập theo định dạng:\n"
-            f"<code>/{cmd} [UID]</code>\n\n"
-            f"Ví dụ: <code>/{cmd} 123456789</code></blockquote>",
-            parse_mode="HTML"
-        )
-        return
-    
-    uid_str = parts[1].strip()
-    if len(uid_str) < 8 or len(uid_str) > 11:
-        telegram_bot.reply_to(
-            message,
-            f"<blockquote><b>UID KHÔNG HỢP LỆ</b>\n"
-            f"UID phải từ 8-10 chữ số.</blockquote>",
-            parse_mode="HTML"
-        )
-        return
-    
-    uid = int(uid_str)
-    team_size = int(cmd)
-    bots = get_available_bots(1)
-    
-    if not bots:
-        telegram_bot.reply_to(
-            message,
-            f"<blockquote><b>HỆ THỐNG QUÁ TẢI</b>\n\n"
-            f"Không thể khởi tạo <b>Team {team_size}</b> cho UID <code>{uid}</code>.\n"
-            f"Hiện tại tất cả các Bot đều đang bận hoặc offline. Vui lòng thử lại sau giây lát!</blockquote>",
-            parse_mode="HTML"
-        )
-        return
-    
-    bot = bots[0]
-    bot.is_busy = True 
-    
-    team_cooldown[user_id] = current_time + 15
-    
-    def safe_send(data):
-        try:
-            if bot.sock39699:
-                bot.sock39699.send(data)
-        except Exception as e:
-            print("SEND ERROR:", e)
-    
-    def run():
-        try:
-            if not bot.sock39699:
-                print("SOCKET NULL")
-                return
-            safe_send(bot._bot.open_squad(team_size))
-            time.sleep(0.5)
-            safe_send(bot._bot.invite_squad(uid, 1))
-            safe_send(bot._bot.invite_squad(uid, 2))
-            time.sleep(9)
-            safe_send(bot._bot.leave_squad(0))
-        except Exception as e:
-            print("TEAM CREATION ERROR:", e)
-        finally:
-            bot.is_busy = False 
-    
-    threading.Thread(target=run, daemon=True).start()
-    bot_name = getattr(bot, 'nickname', f"Bot #{bot.botid}")
-    
-    telegram_bot.reply_to(
-        message,
-        f"<blockquote><b>ĐÃ GỬI LỜI MỜI TEAM {team_size}</b>\n"
-        f"━━━━━━━━━━━━━━━━━━\n"
-        f"Bot: {bot_name}\n"
-        f"UID: {uid}\n"
-        f"━━━━━━━━━━━━━━━━━━\n"
-        f"Vào game nhận lời mời nhé!</blockquote>",
-        parse_mode="HTML"
-    )
-
-# ====== LỆNH /web ======
-@telegram_bot.message_handler(commands=['web'])
-@async_telegram
-def telegram_web(message):
-    if not check_user_in_group(message.from_user.id):
-        send_warn_join_group(message)
-        return
-    
-    try:
-        parts = message.text.split(maxsplit=1)
-        
-        if len(parts) < 2:
-            telegram_bot.reply_to(
-                message,
-                "<b>SAI CÚ PHÁP</b>\n"
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                "<code>/web [url]</code>\n"
-                "Ví dụ: <code>/web example.com</code>",
-                parse_mode="HTML"
-            )
-            return
-        
-        url = parts[1].strip()
-        
-        if not url.startswith("http://") and not url.startswith("https://"):
-            url = "https://" + url
-        
-        msg = telegram_bot.reply_to(
-            message,
-            f"<b>ĐANG LẤY NỘI DUNG...</b>\n"
-            f"<code>{url}</code>",
-            parse_mode="HTML"
-        )
-        
-        def run_web():
-            try:
-                import requests
-                
-                headers = {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                }
-                
-                response = requests.get(url, headers=headers, timeout=15)
-                
-                if response.status_code == 200:
-                    title = "Không có title"
-                    try:
-                        import re
-                        match = re.search(r'<title>(.*?)</title>', response.text, re.IGNORECASE)
-                        if match:
-                            title = match.group(1).strip()
-                    except:
-                        pass
-                    
-                    text = response.text
-                    text = re.sub(r'<[^>]+>', ' ', text)
-                    text = ' '.join(text.split())[:500]
-                    
-                    text_response = f"<b>NỘI DUNG WEB</b>\n"
-                    text_response += f"━━━━━━━━━━━━━━━━━━━━\n"
-                    text_response += f"<b>URL:</b> <code>{url}</code>\n"
-                    text_response += f"<b>Status:</b> {response.status_code}\n"
-                    text_response += f"━━━━━━━━━━━━━━━━━━━━\n"
-                    text_response += f"<b>Title:</b> {title}\n"
-                    text_response += f"━━━━━━━━━━━━━━━━━━━━\n"
-                    text_response += f"<b>Nội dung:</b>\n"
-                    text_response += f"<i>{text[:300]}{'...' if len(text) > 300 else ''}</i>\n"
-                    text_response += f"━━━━━━━━━━━━━━━━━━━━\n"
-                    text_response += f"<b>Kích thước:</b> {len(response.content)} bytes"
-                    
-                    telegram_bot.edit_message_text(
-                        text_response,
-                        chat_id=message.chat.id,
-                        message_id=msg.message_id,
-                        parse_mode="HTML"
-                    )
-                else:
-                    telegram_bot.edit_message_text(
-                        f"<b>LỖI</b>\n"
-                        f"Status: {response.status_code}",
-                        chat_id=message.chat.id,
-                        message_id=msg.message_id,
-                        parse_mode="HTML"
-                    )
-                
-            except Exception as e:
-                telegram_bot.edit_message_text(
-                    f"<b>LỖI</b>\n{str(e)}",
-                    chat_id=message.chat.id,
-                    message_id=msg.message_id,
-                    parse_mode="HTML"
-                )
-        
-        threading.Thread(target=run_web, daemon=True).start()
-        
-    except Exception as e:
-        telegram_bot.reply_to(message, f"<b>LỖI</b>\n{str(e)}", parse_mode="HTML")
-
-# ====== LỆNH /gettoken ======
-@telegram_bot.message_handler(commands=['gettoken'])
-@async_telegram
-def telegram_gettoken(message):
-    if not check_user_in_group(message.from_user.id):
-        send_warn_join_group(message)
-        return
-    
-    try:
-        parts = message.text.split()
-        
-        if len(parts) < 3:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>SAI CÚ PHÁP</b>\n"
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                "<code>/gettoken [uid] [password]</code>\n"
-                "Ví dụ: <code>/gettoken 123456789 matkhau123</code>\n"
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                "Lấy Access Token từ UID và Password</blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        uid = parts[1].strip()
-        password = parts[2].strip()
-        
-        if not uid.isdigit():
-            telegram_bot.reply_to(message, "<blockquote>UID phải là số!</blockquote>", parse_mode="HTML")
-            return
-        
-        msg = telegram_bot.reply_to(
-            message,
-            f"<blockquote><b>ĐANG LẤY TOKEN...</b>\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"UID: <code>{uid}</code>\n"
-            f"Đang xử lý...</blockquote>",
-            parse_mode="HTML"
-        )
-        
-        def run_gettoken():
-            try:
-                import requests
-                import json
-                
-                url = "https://100067.connect.garena.com/oauth/guest/token/grant"
-                headers = {
-                    "Host": "100067.connect.garena.com",
-                    "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 7.1.2)",
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "Accept-Encoding": "gzip, deflate, br",
-                    "Connection": "close",
-                }
-                data = {
-                    "uid": f"{uid}",
-                    "password": f"{password}",
-                    "response_type": "token",
-                    "client_type": "2",
-                    "client_secret": "2ee44819e9b4598845141067b281621874d0d5d7af9d8f7e00c1e54715b7d1e3",
-                    "client_id": "100067",
-                }
-                
-                response = requests.post(url, headers=headers, data=data, timeout=15)
-                
-                if response.status_code == 200:
-                    result = response.json()
-                    access_token = result.get("access_token")
-                    open_id = result.get("open_id")
-                    uid_return = result.get("uid")
-                    
-                    if access_token:
-                        try:
-                            import base64
-                            import json as json_decode
-                            parts_token = access_token.split('.')
-                            if len(parts_token) >= 2:
-                                payload = parts_token[1]
-                                payload += '=' * (4 - len(payload) % 4)
-                                decoded = json_decode.loads(base64.urlsafe_b64decode(payload))
-                                nickname = decoded.get('nickname', 'N/A')
-                                if nickname:
-                                    try:
-                                        nickname = base64.b64decode(nickname).decode('utf-8', errors='ignore')
-                                    except:
-                                        pass
-                            else:
-                                nickname = "N/A"
-                        except:
-                            nickname = "N/A"
-                        
-                        telegram_bot.edit_message_text(
-                            f"<blockquote><b>LẤY TOKEN THÀNH CÔNG</b>\n"
-                            f"━━━━━━━━━━━━━━━━━━━━\n"
-                            f"UID: <code>{uid_return or uid}</code>\n"
-                            f"Name: {nickname}\n"
-                            f"━━━━━━━━━━━━━━━━━━━━\n"
-                            f"<b>Access Token:</b>\n"
-                            f"<code>{access_token}</code>\n"
-                            f"━━━━━━━━━━━━━━━━━━━━\n"
-                            f"Open ID: <code>{open_id}</code></blockquote>",
-                            chat_id=message.chat.id,
-                            message_id=msg.message_id,
-                            parse_mode="HTML"
-                        )
-                    else:
-                        telegram_bot.edit_message_text(
-                            f"<blockquote><b>LẤY TOKEN THẤT BẠI</b>\n"
-                            f"━━━━━━━━━━━━━━━━━━━━\n"
-                            f"Sai UID hoặc Password!</blockquote>",
-                            chat_id=message.chat.id,
-                            message_id=msg.message_id,
-                            parse_mode="HTML"
-                        )
-                else:
-                    telegram_bot.edit_message_text(
-                        f"<blockquote><b>LẤY TOKEN THẤT BẠI</b>\n"
-                        f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"Lỗi: {response.status_code}</blockquote>",
-                        chat_id=message.chat.id,
-                        message_id=msg.message_id,
-                        parse_mode="HTML"
-                    )
-                    
-            except Exception as e:
-                telegram_bot.edit_message_text(
-                    f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
-                    chat_id=message.chat.id,
-                    message_id=msg.message_id,
-                    parse_mode="HTML"
-                )
-        
-        threading.Thread(target=run_gettoken, daemon=True).start()
-        
-    except Exception as e:
-        telegram_bot.reply_to(message, f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>", parse_mode="HTML")
-        
-# ====== BUFF LIKE COMMAND (FAST) ======
-LIKE_API_URL = "https://cds-gilt.vercel.app/like"
-
-@telegram_bot.message_handler(commands=['like'])
-@check_group_only
-@async_telegram
-def telegram_like(message):
-    if not check_user_in_group(message.from_user.id):
-        send_warn_join_group(message)
-        return
-    
-    try:
-        parts = message.text.split()
-        
-        if len(parts) < 2:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>SAI CÚ PHÁP</b>\n"
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                "<code>/like [uid]</code>\n"
-                "Ví dụ: <code>/like 16890930508</code>\n"
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                "Default server: <code>BD</code></blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        uid = parts[1].strip()
-        
-        if not uid.isdigit():
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>ERROR</b>\nUID must be a number!</blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        if len(uid) < 8 or len(uid) > 11:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>INVALID UID</b>\nUID must be 8-11 digits!</blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        msg = telegram_bot.reply_to(
-            message,
-            f"<blockquote><b>ĐANG TĂNG LIKES</b>\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"UID: <code>{uid}</code>\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"Processing...</blockquote>",
-            parse_mode="HTML"
-        )
-        
-        def run_like():
-            try:
-                import requests
-                
-                url = f"https://cds-gilt.vercel.app/like?uid={uid}&server_name=BD"
-                response = requests.get(url, timeout=16)
-                
-                if response.status_code == 200:
-                    data = response.json()
-                    
-                    added = data.get('added', 0)
-                    before = data.get('before', 0)
-                    after = data.get('after', 0)
-                    nickname = data.get('nickname', 'Unknown')
-                    status = data.get('status', 'unknown')
-                    
-                    if status == "max_like":
-                        status_text = "Max like reached!"
-                    elif added > 0:
-                        status_text = "Buff like successful!"
-                    else:
-                        status_text = "No changes."
-                    
-                    message_text = (
-                        f"<blockquote>\n"
-                        f"{status_text}\n"
-                        f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"Nickname: <code>{nickname}</code>\n"
-                        f"UID: <code>{uid}</code>\n"
-                        f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"Before: <code>{before}</code>\n"
-                        f"After: <code>{after}</code>\n"
-                        f"Added: <code>+{added}</code>\n"
-                        f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"Done!</blockquote>"
-                    )
-                    
-                    telegram_bot.edit_message_text(
-                        message_text,
-                        chat_id=message.chat.id,
-                        message_id=msg.message_id,
-                        parse_mode="HTML"
-                    )
-                else:
-                    telegram_bot.edit_message_text(
-                        f"<blockquote><b>API ERROR</b>\nHTTP {response.status_code}</blockquote>",
-                        chat_id=message.chat.id,
-                        message_id=msg.message_id,
-                        parse_mode="HTML"
-                    )
-                    
-            except requests.exceptions.Timeout:
-                telegram_bot.edit_message_text(
-                    "<blockquote><b>TIMEOUT</b>\nAPI response slow!</blockquote>",
-                    chat_id=message.chat.id,
-                    message_id=msg.message_id,
-                    parse_mode="HTML"
-                )
-            except Exception as e:
-                telegram_bot.edit_message_text(
-                    f"<blockquote><b>ERROR</b>\n{str(e)}</blockquote>",
-                    chat_id=message.chat.id,
-                    message_id=msg.message_id,
-                    parse_mode="HTML"
-                )
-        
-        threading.Thread(target=run_like, daemon=True).start()
-        
-    except Exception as e:
-        telegram_bot.reply_to(
-            message,
-            f"<blockquote><b>ERROR</b>\n{str(e)}</blockquote>",
-            parse_mode="HTML"
-        )
-
-import json
-import os
-import threading
-import time
-import requests
-from datetime import datetime, timedelta
-
-AUTO_LIKE_FILE = "auto_like.json"
-
-def load_auto_like():
-    if os.path.exists(AUTO_LIKE_FILE):
-        try:
-            with open(AUTO_LIKE_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except:
-            return {}
-    return {}
-
-def save_auto_like(data):
-    with open(AUTO_LIKE_FILE, 'w', encoding='utf-8') as f:
-        json.dump(data, f, indent=4, ensure_ascii=False)
-
-ADMIN_ID = 8722607800
-
-def is_admin(user_id):
-    admin_list = [8722607800]
-    return user_id in admin_list
-
-@telegram_bot.message_handler(commands=['autolike'])
-@check_group_only
-@async_telegram
-def telegram_autolike(message):
-    if not is_admin(message.from_user.id):
-        telegram_bot.reply_to(
-            message,
-            "<blockquote><b>TỪ CHỐI TRUY CẬP</b>\n"
-            "Chỉ Admin mới có quyền sử dụng lệnh này!\n"
-            "Liên hệ: @zanbackj</blockquote>",
-            parse_mode="HTML"
-        )
-        return
-    
-    if not check_user_in_group(message.from_user.id):
-        send_warn_join_group(message)
-        return
-    
-    try:
-        parts = message.text.split()
-        
-        if len(parts) < 3:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>SAI CÚ PHÁP</b>\n"
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                "<code>/autolike [uid] [số ngày]</code>\n"
-                "Ví dụ: <code>/autolike 16890930508 5</code>\n"
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                "Xóa: <code>/delauto [uid]</code>\n"
-                "Danh sách: <code>/autolist</code></blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        uid = parts[1].strip()
-        days = int(parts[2].strip())
-        
-        if not uid.isdigit():
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>LỖI</b>\nUID phải là số!</blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        if days < 1 or days > 9999:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>LỖI</b>\nSố ngày phải từ 1-9999!</blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        data = load_auto_like()
-        
-        expire_date = datetime.now() + timedelta(days=days)
-        data[uid] = {
-            "days": days,
-            "expire": expire_date.strftime("%Y-%m-%d"),
-            "added_by": message.from_user.id,
-            "added_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }
-        
-        save_auto_like(data)
-        
-        telegram_bot.reply_to(
-            message,
-            f"<blockquote><b>ĐÃ THÊM AUTO LIKE</b>\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"UID: <code>{uid}</code>\n"
-            f"Số ngày: <code>{days}</code>\n"
-            f"Hết hạn: <code>{expire_date.strftime('%Y-%m-%d')}</code>\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"Sẽ buff lúc 5:00 sáng mỗi ngày!</blockquote>",
-            parse_mode="HTML"
-        )
-        
-    except ValueError:
-        telegram_bot.reply_to(
-            message,
-            "<blockquote><b>LỖI</b>\nSố ngày phải là số!</blockquote>",
-            parse_mode="HTML"
-        )
-    except Exception as e:
-        telegram_bot.reply_to(
-            message,
-            f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
-            parse_mode="HTML"
-        )
-
-@telegram_bot.message_handler(commands=['autolist'])
-@check_group_only
-@async_telegram
-def telegram_autolist(message):
-    if not is_admin(message.from_user.id):
-        telegram_bot.reply_to(
-            message,
-            "<blockquote><b>TỪ CHỐI TRUY CẬP</b>\n"
-            "Chỉ Admin mới có quyền sử dụng lệnh này!\n"
-            "Liên hệ: @zanbackj</blockquote>",
-            parse_mode="HTML"
-        )
-        return
-    
-    if not check_user_in_group(message.from_user.id):
-        send_warn_join_group(message)
-        return
-    
-    try:
-        data = load_auto_like()
-        
-        if not data:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>TRỐNG</b>\nChưa có UID nào trong danh sách auto like!</blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        text = "<blockquote><b>DANH SÁCH AUTO LIKE</b>\n━━━━━━━━━━━━━━━━━━━━\n"
-        for uid, info in data.items():
-            days_left = info.get('days', 0)
-            expire = info.get('expire', 'N/A')
-            text += f"UID: <code>{uid}</code> - Còn {days_left} ngày - Hết hạn: {expire}\n"
-        text += "━━━━━━━━━━━━━━━━━━━━\nTổng: {}</blockquote>".format(len(data))
-        
-        telegram_bot.reply_to(message, text, parse_mode="HTML")
-        
-    except Exception as e:
-        telegram_bot.reply_to(
-            message,
-            f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
-            parse_mode="HTML"
-        )
-
-@telegram_bot.message_handler(commands=['delauto'])
-@check_group_only
-@async_telegram
-def telegram_delauto(message):
-    if not is_admin(message.from_user.id):
-        telegram_bot.reply_to(
-            message,
-            "<blockquote><b>TỪ CHỐI TRUY CẬP</b>\n"
-            "Chỉ Admin mới có quyền sử dụng lệnh này!\n"
-            "Liên hệ: @zanbackj</blockquote>",
-            parse_mode="HTML"
-        )
-        return
-    
-    if not check_user_in_group(message.from_user.id):
-        send_warn_join_group(message)
-        return
-    
-    try:
-        parts = message.text.split()
-        
-        if len(parts) < 2:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>SAI CÚ PHÁP</b>\n<code>/delauto [uid]</code>\nVí dụ: <code>/delauto 16890930508</code></blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        uid = parts[1].strip()
-        data = load_auto_like()
-        
-        if uid in data:
-            del data[uid]
-            save_auto_like(data)
-            telegram_bot.reply_to(
-                message,
-                f"<blockquote><b>ĐÃ XÓA</b>\n━━━━━━━━━━━━━━━━━━━━\nUID: <code>{uid}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐã xóa khỏi danh sách auto like!</blockquote>",
-                parse_mode="HTML"
-            )
-        else:
-            telegram_bot.reply_to(
-                message,
-                f"<blockquote><b>KHÔNG TÌM THẤY</b>\nUID <code>{uid}</code> không có trong danh sách!</blockquote>",
-                parse_mode="HTML"
-            )
-        
-    except Exception as e:
-        telegram_bot.reply_to(
-            message,
-            f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
-            parse_mode="HTML"
-        )               
-
-def time_until_5am():
-    now = datetime.now()
-    target = now.replace(hour=5, minute=0, second=0, microsecond=0)
-    
-    if now >= target:
-        target += timedelta(days=1)
-    
-    return (target - now).total_seconds()
-
-def time_until_reset():
-    now = datetime.now()
-    target1 = now.replace(hour=4, minute=58, second=0, microsecond=0)
-    target2 = now.replace(hour=4, minute=59, second=0, microsecond=0)
-    
-    if now >= target1:
-        target1 += timedelta(days=1)
-    if now >= target2:
-        target2 += timedelta(days=1)
-    
-    if target1 < target2:
-        return (target1 - now).total_seconds(), 4, 58
-    else:
-        return (target2 - now).total_seconds(), 4, 59
-
-def reset_tokens():
-    try:
-        print(f"[RESET TOKEN] Đang reset lúc {datetime.now().strftime('%H:%M:%S')}")
-        response = requests.get("https://cds-gilt.vercel.app/refresh-tokens", timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            print(f"[RESET TOKEN] {data}")
-            return True
-    except Exception as e:
-        print(f"[RESET TOKEN LỖI] {e}")
-    return False
-
-def buff_like(uid):
-    try:
-        url = f"https://cds-gilt.vercel.app/like?uid={uid}&server_name=BD"
-        response = requests.get(url, timeout=5)
-        if response.status_code == 200:
-            data = response.json()
-            return True, data
-    except Exception as e:
-        print(f"[BUFF LIKE LỖI] {uid}: {e}")
-    return False, None
-
-def send_report_to_admin(success_list, fail_list):
-    try:
-        if not success_list and not fail_list:
-            return
-        
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
-        text = f"<blockquote><b>BÁO CÁO AUTO LIKE</b>\n"
-        text += f"━━━━━━━━━━━━━━━━━━━━\n"
-        text += f"Thời gian: <code>{now}</code>\n"
-        text += f"━━━━━━━━━━━━━━━━━━━━\n"
-        
-        if success_list:
-            text += f"<b>THÀNH CÔNG ({len(success_list)})</b>\n"
-            for uid, data in success_list:
-                added = data.get('added', 0)
-                before = data.get('before', 0)
-                after = data.get('after', 0)
-                nickname = data.get('nickname', 'Unknown')
-                text += f"  {nickname} (<code>{uid}</code>): +{added} like ({before} -> {after})\n"
-            text += f"━━━━━━━━━━━━━━━━━━━━\n"
-        
-        if fail_list:
-            text += f"<b>THẤT BẠI ({len(fail_list)})</b>\n"
-            for uid in fail_list:
-                text += f"  UID: <code>{uid}</code>\n"
-            text += f"━━━━━━━━━━━━━━━━━━━━\n"
-        
-        text += f"Kết thúc báo cáo!</blockquote>"
-        
-        telegram_bot.send_message(ADMIN_ID, text, parse_mode="HTML")
-        
-    except Exception as e:
-        print(f"[SEND REPORT LỖI] {e}")
-
-def daily_buff():
-    print("[AUTO LIKE] Đang chạy buff hàng ngày...")
-    
-    data = load_auto_like()
-    
-    if not data:
-        print("[AUTO LIKE] Không có UID nào trong danh sách!")
-        schedule_next()
-        return
-    
-    today = datetime.now().strftime("%Y-%m-%d")
-    valid_uids = []
-    expired_uids = []
-    
-    for uid, info in data.items():
-        expire = info.get('expire', '2000-01-01')
-        if expire >= today:
-            valid_uids.append(uid)
-        else:
-            expired_uids.append(uid)
-            print(f"[AUTO LIKE] UID {uid} đã hết hạn!")
-    
-    if expired_uids:
-        for uid in expired_uids:
-            if uid in data:
-                del data[uid]
-        save_auto_like(data)
-        print(f"[AUTO LIKE] Đã xóa {len(expired_uids)} UID hết hạn!")
-    
-    if not valid_uids:
-        print("[AUTO LIKE] Không có UID nào còn hạn!")
-        schedule_next()
-        return
-    
-    success_list = []
-    fail_list = []
-    
-    for uid in valid_uids:
-        success, result = buff_like(uid)
-        if success:
-            success_list.append((uid, result))
-            print(f"[AUTO LIKE] {uid}: {result}")
-        else:
-            fail_list.append(uid)
-            print(f"[AUTO LIKE] {uid}: THẤT BẠI")
-        
-        time.sleep(1)
-    
-    print(f"[AUTO LIKE] Xong! Thành công: {len(success_list)}, Thất bại: {len(fail_list)}")
-    
-    send_report_to_admin(success_list, fail_list)
-    
-    data = load_auto_like()
-    for uid in valid_uids:
-        if uid in data:
-            days_left = data[uid].get('days', 0) - 1
-            if days_left <= 0:
-                del data[uid]
-            else:
-                data[uid]['days'] = days_left
-    save_auto_like(data)
-    
-    schedule_next()
-
-def schedule_next():
-    try:
-        delay, hour, minute = time_until_reset()
-        print(f"[AUTO LIKE] Reset token lúc {hour:02d}:{minute:02d} (sau {int(delay)} giây)")
-        timer1 = threading.Timer(delay, reset_tokens)
-        timer1.daemon = True
-        timer1.start()
-        
-        delay_5am = time_until_5am()
-        print(f"[AUTO LIKE] Buff lúc 05:00 (sau {int(delay_5am)} giây)")
-        timer2 = threading.Timer(delay_5am, daily_buff)
-        timer2.daemon = True
-        timer2.start()
-    except Exception as e:
-        print(f"[SCHEDULE LỖI] {e}")
-
-def start_auto_like():
-    print("[AUTO LIKE] Đã khởi động!")
-    schedule_next()
-                            
-RESET_TOKEN_API = "https://cds-gilt.vercel.app/refresh-tokens"
-
-@telegram_bot.message_handler(commands=['rstoken'])
-@check_group_only
-@async_telegram
-def telegram_reset_token(message):
-    if not is_telegram_admin(message.from_user.id):
-        telegram_bot.reply_to(
-            message,
-            "<blockquote><b>TỪ CHỐI TRUY CẬP</b>\n"
-            "Chỉ Admin mới có quyền sử dụng lệnh này!</blockquote>",
-            parse_mode="HTML"
-        )
-        return
-    
-    try:
-        msg = telegram_bot.reply_to(
-            message,
-            "<blockquote><b>ĐANG RESET TOKEN...</b>\n"
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "Đang gọi API refresh-tokens...</blockquote>",
-            parse_mode="HTML"
-        )
-        
-        def run_reset():
-            try:
-                import requests
-                
-                response = requests.get("https://cds-gilt.vercel.app/refresh-tokens", timeout=30)
-                
-                if response.status_code == 200:
-                    data = response.json()
-                    
-                    status = data.get('status', 'unknown')
-                    total_tokens = data.get('total_tokens', 0)
-                    
-                    if status == "refresh_completed":
-                        status_text = "Reset token thành công!"
-                    else:
-                        status_text = f"Trạng thái: {status}"
-                    
-                    message_text = (
-                        f"<blockquote><b>KẾT QUẢ RESET TOKEN</b>\n"
-                        f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"{status_text}\n"
-                        f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"Trạng thái: <code>{status}</code>\n"
-                        f"Tổng token: <code>{total_tokens}</code>\n"
-                        f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"Hoàn thành!</blockquote>"
-                    )
-                    
-                    telegram_bot.edit_message_text(
-                        message_text,
-                        chat_id=message.chat.id,
-                        message_id=msg.message_id,
-                        parse_mode="HTML"
-                    )
-                else:
-                    telegram_bot.edit_message_text(
-                        f"<blockquote><b>LỖI API</b>\nHTTP {response.status_code}</blockquote>",
-                        chat_id=message.chat.id,
-                        message_id=msg.message_id,
-                        parse_mode="HTML"
-                    )
-                    
-            except requests.exceptions.Timeout:
-                telegram_bot.edit_message_text(
-                    "<blockquote><b>LỖI</b>\nAPI không phản hồi (Timeout)!</blockquote>",
-                    chat_id=message.chat.id,
-                    message_id=msg.message_id,
-                    parse_mode="HTML"
-                )
-            except Exception as e:
-                telegram_bot.edit_message_text(
-                    f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
-                    chat_id=message.chat.id,
-                    message_id=msg.message_id,
-                    parse_mode="HTML"
-                )
-        
-        threading.Thread(target=run_reset, daemon=True).start()
-        
-    except Exception as e:
-        telegram_bot.reply_to(
-            message,
-            f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
-            parse_mode="HTML"
-        )
-                                           
-@telegram_bot.message_handler(commands=['dich'])
-@async_telegram
-def telegram_dich(message):
-    if not check_user_in_group(message.from_user.id):
-        send_warn_join_group(message)
-        return
-    
-    try:
-        parts = message.text.split(maxsplit=1)
-        
-        if len(parts) < 2:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>SAI CÚ PHÁP</b>\n"
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                "<code>/dich [nội dung]</code>\n"
-                "Ví dụ: <code>/dich Hello</code>\n"
-                "Tự động phát hiện ngôn ngữ và dịch sang tiếng Việt</blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        text = parts[1].strip()
-        
-        if not text:
-            telegram_bot.reply_to(message, "<blockquote>Nội dung không được để trống!</blockquote>", parse_mode="HTML")
-            return
-        
-        msg = telegram_bot.reply_to(
-            message,
-            f"<blockquote><b>ĐANG DỊCH...</b>\n"
-            f"{text[:50]}{'...' if len(text) > 50 else ''}</blockquote>",
-            parse_mode="HTML"
-        )
-        
-        def run_dich():
-            try:
-                import requests
-                import urllib.parse
-                
-                encoded_text = urllib.parse.quote(text)
-                
-                url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=vi&dt=t&q={encoded_text}"
-                
-                headers = {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                }
-                
-                response = requests.get(url, headers=headers, timeout=15)
-                
-                if response.status_code == 200:
-                    data = response.json()
-                    
-                    translated = ""
-                    for item in data[0]:
-                        if item[0]:
-                            translated += item[0]
-                    
-                    source_lang = data[2] if len(data) > 2 else "auto"
-                    
-                    lang_map = {
-                        'en': 'Tiếng Anh',
-                        'vi': 'Tiếng Việt',
-                        'ja': 'Tiếng Nhật',
-                        'ko': 'Tiếng Hàn',
-                        'zh': 'Tiếng Trung',
-                        'fr': 'Tiếng Pháp',
-                        'de': 'Tiếng Đức',
-                        'es': 'Tiếng Tây Ban Nha',
-                        'ru': 'Tiếng Nga',
-                        'th': 'Tiếng Thái',
-                        'id': 'Tiếng Indonesia',
-                        'ms': 'Tiếng Malaysia',
-                        'pt': 'Tiếng Bồ Đào Nha',
-                        'it': 'Tiếng Ý',
-                    }
-                    
-                    source_name = lang_map.get(source_lang, f"{source_lang.upper()}")
-                    
-                    text_response = f"<blockquote><b>KẾT QUẢ DỊCH</b>\n"
-                    text_response += f"━━━━━━━━━━━━━━━━━━━━\n"
-                    text_response += f"<b>Gốc:</b> {source_name}\n"
-                    text_response += f"━━━━━━━━━━━━━━━━━━━━\n"
-                    text_response += f"<b>Nội dung gốc:</b>\n"
-                    text_response += f"{text[:200]}{'...' if len(text) > 200 else ''}\n"
-                    text_response += f"━━━━━━━━━━━━━━━━━━━━\n"
-                    text_response += f"<b>Dịch sang tiếng Việt:</b>\n"
-                    text_response += f"{translated}</blockquote>"
-                    
-                    telegram_bot.edit_message_text(
-                        text_response,
-                        chat_id=message.chat.id,
-                        message_id=msg.message_id,
-                        parse_mode="HTML"
-                    )
-                    return
-                
-                url2 = f"https://api.mymemory.translated.net/get?q={encoded_text}&langpair=en|vi"
-                
-                response2 = requests.get(url2, timeout=15)
-                
-                if response2.status_code == 200:
-                    data2 = response2.json()
-                    translated = data2.get("responseData", {}).get("translatedText", "")
-                    
-                    if translated:
-                        text_response = f"<blockquote><b>KẾT QUẢ DỊCH</b>\n"
-                        text_response += f"━━━━━━━━━━━━━━━━━━━━\n"
-                        text_response += f"<b>Gốc:</b>\n"
-                        text_response += f"{text[:200]}{'...' if len(text) > 200 else ''}\n"
-                        text_response += f"━━━━━━━━━━━━━━━━━━━━\n"
-                        text_response += f"<b>Dịch:</b>\n"
-                        text_response += f"{translated}</blockquote>"
-                        
-                        telegram_bot.edit_message_text(
-                            text_response,
-                            chat_id=message.chat.id,
-                            message_id=msg.message_id,
-                            parse_mode="HTML"
-                        )
-                        return
-                
-                telegram_bot.edit_message_text(
-                    f"<blockquote><b>KHÔNG THỂ DỊCH</b>\nVui lòng thử lại sau!</blockquote>",
-                    chat_id=message.chat.id,
-                    message_id=msg.message_id,
-                    parse_mode="HTML"
-                )
-                
-            except Exception as e:
-                telegram_bot.edit_message_text(
-                    f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
-                    chat_id=message.chat.id,
-                    message_id=msg.message_id,
-                    parse_mode="HTML"
-                )
-        
-        threading.Thread(target=run_dich, daemon=True).start()
-        
-    except Exception as e:
-        telegram_bot.reply_to(message, f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>", parse_mode="HTML")
-
-@telegram_bot.message_handler(commands=['status'])
-@check_group_only
-@async_telegram
-def handle_telegram_status(message):
-    try:
-        parts = message.text.strip().split()
-        if len(parts) < 2:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>SAI CÚ PHÁP</b>\nDùng: <code>/status [uid]</code>\nVí dụ: <code>/status 123456789</code></blockquote>"
-            )
-            return
-
-        uid = parts[1].strip()
-        if not uid.isdigit():
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>LỖI</b>\nUID phải là số!</blockquote>"
-            )
-            return
-
-        bots = get_available_bots(1)
-        if not bots:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>BOT BẬN</b>\nKhông có bot nào rảnh!</blockquote>"
-            )
-            return
-
-        bot = bots[0]
-        bot.is_busy = True
-        bot_name = getattr(bot, 'nickname', f'Bot #{bot.botid}')
-
-        msg = telegram_bot.reply_to(
-            message,
-            f"<blockquote><b>ĐANG LẤY THÔNG TIN</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>UID:</b> <code>{uid}</code>\n<b>Bot:</b> <code>{bot_name}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐang xử lý...</blockquote>",
-            parse_mode="HTML"
-        )
-
-        def run_status():
-            try:
-                bot.sock39699.send(bot._bot.get_history(uid))
-                
-                wait_time = 0
-                while not bot.playerstatus and wait_time < 5:
-                    time.sleep(0.5)
-                    wait_time += 0.5
-
-                if bot.playerstatus:
-                    try:
-                        data = get_player_status(bot.playerstatus)
-                        
-                        if data:
-                            status_text = data.get("status", "Không xác định")
-                            player_uid = data.get("uid", uid)
-                            group = data.get("group", "")
-                            roomid = data.get("roomid", "")
-                            
-                            extra = ""
-                            if group:
-                                extra = f"\n<b>Nhóm:</b> <code>{group}</code>"
-                            if roomid:
-                                extra = f"\n<b>Room ID:</b> <code>{roomid}</code>"
-                            
-                            telegram_bot.edit_message_text(
-                                f"<blockquote><b>THÔNG TIN NGƯỜI CHƠI</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>UID:</b> <code>{player_uid}</code>\n<b>Trạng thái:</b> <code>{status_text}</code>{extra}\n<b>Bot:</b> <code>{bot_name}</code>\n━━━━━━━━━━━━━━━━━━━━\nLấy thông tin thành công!</blockquote>",
-                                chat_id=message.chat.id,
-                                message_id=msg.message_id,
-                                parse_mode="HTML"
-                            )
-                        else:
-                            telegram_bot.edit_message_text(
-                                f"<blockquote><b>KHÔNG TÌM THẤY</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>UID:</b> <code>{uid}</code>\n<b>Trạng thái:</b> <code>Không có dữ liệu</code>\n━━━━━━━━━━━━━━━━━━━━\nVui lòng thử lại!</blockquote>",
-                                chat_id=message.chat.id,
-                                message_id=msg.message_id,
-                                parse_mode="HTML"
-                            )
-                    except Exception as e:
-                        telegram_bot.edit_message_text(
-                            f"<blockquote><b>LỖI PARSE</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>UID:</b> <code>{uid}</code>\n<b>Lỗi:</b> <code>{str(e)[:30]}</code>\n━━━━━━━━━━━━━━━━━━━━\nVui lòng thử lại!</blockquote>",
-                            chat_id=message.chat.id,
-                            message_id=msg.message_id,
-                            parse_mode="HTML"
-                        )
-                else:
-                    telegram_bot.edit_message_text(
-                        f"<blockquote><b>KHÔNG TÌM THẤY</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>UID:</b> <code>{uid}</code>\n<b>Trạng thái:</b> <code>Không có dữ liệu</code>\n━━━━━━━━━━━━━━━━━━━━\nLỗi API hoặc disconnect, thử lại!</blockquote>",
-                        chat_id=message.chat.id,
-                        message_id=msg.message_id,
-                        parse_mode="HTML"
-                    )
-
-            except Exception as e:
-                try:
-                    telegram_bot.edit_message_text(
-                        f"<blockquote><b>LỖI</b>\n{str(e)[:50]}</blockquote>",
-                        chat_id=message.chat.id,
-                        message_id=msg.message_id,
-                        parse_mode="HTML"
-                    )
-                except:
-                    pass
-            finally:
-                bot.is_busy = False
-
-        threading.Thread(target=run_status, daemon=True).start()
-
-    except Exception as e:
-        telegram_bot.reply_to(
-            message,
-            f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>"
-        )
-
-@telegram_bot.message_handler(commands=['lag'])
-@check_group_only
-@async_telegram
-def handle_telegram_lag(message):
-    user_id = message.from_user.id
-    current_time = time.time()
-    
-    if user_id in lag_cooldown:
-        remaining = int(lag_cooldown[user_id] - current_time)
-        if remaining > 0:
-            telegram_bot.reply_to(
-                message,
-                f"<blockquote><b>vui lòng đợi {remaining} giây và sử dụng lại</b></blockquote>",
-                parse_mode='HTML'
-            )
-            return
-    
-    parts = message.text.split()
-    if len(parts) < 2 or not parts[1].isdigit():
-        telegram_bot.reply_to(
-            message, 
-            "<blockquote><b>SAI CÚ PHÁP</b>\n━━━━━━━━━━━━━━━━━━━━\nDùng: <code>/lag [teamcode]</code>\nVí dụ: <code>/lag 1234567</code></blockquote>", 
-            parse_mode='HTML'
-        )
-        return
-    
-    team_code = parts[1].strip()
-    
-    if len(team_code) != 7:
-        telegram_bot.reply_to(
-            message, 
-            f"<blockquote><b>TEAMCODE PHẢI 7 CHỮ SỐ</b>\n━━━━━━━━━━━━━━━━━━━━\nTeamcode: <code>{team_code}</code> ({len(team_code)} số)\nVí dụ: <code>/lag 1234567</code></blockquote>", 
-            parse_mode='HTML'
-        )
-        return
-    
-    team_code_int = int(team_code)
-    
-    available_bots = []
-    for b in TCPbot.bots.values():
-        if (b.running_event.is_set() and 
-            getattr(b, "sock39699", None) is not None and 
-            not getattr(b, "is_busy", False)):
-            available_bots.append(b)
-            if len(available_bots) == 2:
-                break
-    
-    if len(available_bots) < 2:
-        telegram_bot.reply_to(
-            message, 
-            f"<blockquote><b>KHÔNG ĐỦ 2 BOT</b>\n━━━━━━━━━━━━━━━━━━━━\nCần <b>2 bot</b>!\nBot rảnh: <b>{len(available_bots)}</b></blockquote>", 
-            parse_mode='HTML'
-        )
-        return
-    
-    for b in available_bots:
-        b.is_busy = True
-    
-    bot1, bot2 = available_bots[0], available_bots[1]
-    bot1_name = getattr(bot1, 'nickname', f"Bot #{bot1.botid}")
-    bot2_name = getattr(bot2, 'nickname', f"Bot #{bot2.botid}")
-    
-    lag_cooldown[user_id] = current_time + 15
-    
-    status_msg = telegram_bot.reply_to(
-        message, 
-        f"<blockquote><b>LAG TEAMCODE {team_code_int}</b>\n━━━━━━━━━━━━━━━━━━━━\nBot 1: <code>{bot1_name}</code>\nBot 2: <code>{bot2_name}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐang lag không delay...</blockquote>", 
-        parse_mode='HTML'
-    )
-
-    def safe_send(sock, data):
-        try:
-            if sock and data:
-                sock.sendall(data)
-                return True
-        except:
-            return False
-        return False
-
-    def run_bot1(bot, bot_name, team_code_int):
-        try:
-            sock = bot.sock39699
-            if sock is None:
-                return
-            bot_uid = getattr(bot, 'botid', 0)
-            start_time = time.time()
-            count = 0
-            
-            while time.time() - start_time < 30:
-                safe_send(sock, bot._bot.join_squad(team_code_int))
-                if bot_uid:
-                    safe_send(sock, bot._bot.leave_squad(bot_uid))
-                else:
-                    safe_send(sock, bot._bot.leave_squad(0))
-                count += 1
-            
-            bot.rstatus = (0, 0)
-            print(f"[LAG] {bot_name} JOIN/RỜI {count} lần!")
-            
-        except Exception as e:
-            print(f"[LAG ERROR] {bot_name}: {e}")
-        finally:
-            bot.is_busy = False
-
-    def run_bot2(bot, bot_name, team_code_int):
-        try:
-            sock = bot.sock39699
-            if sock is None:
-                return
-            
-            bot_uid = getattr(bot, 'botid', 0)
-            start_time = time.time()
-            count = 0
-            
-            while time.time() - start_time < 30:
-                safe_send(sock, bot._bot.join_squad(team_code_int))
-                safe_send(sock, bot._gen.start_match())
-                if bot_uid:
-                    safe_send(sock, bot._bot.leave_squad(bot_uid))
-                else:
-                    safe_send(sock, bot._bot.leave_squad(0))
-                count += 1
-            
-            bot.rstatus = (0, 0)
-            print(f"[LAG] {bot_name} VÔ ĐỘI+VÔ TRẬN+RỜI {count} lần!")
-            
-        except Exception as e:
-            print(f"[LAG ERROR] {bot_name}: {e}")
-        finally:
-            bot.is_busy = False
-
-    def run_lag():
-        thread1 = threading.Thread(target=run_bot1, args=(bot1, bot1_name, team_code_int), daemon=True)
-        thread2 = threading.Thread(target=run_bot2, args=(bot2, bot2_name, team_code_int), daemon=True)
-        
-        thread1.start()
-        thread2.start()
-        
-        thread1.join()
-        thread2.join()
-        
-        try:
-            telegram_bot.edit_message_text(
-                f"<blockquote><b>LAG TEAMCODE {team_code_int} HOÀN TẤT</b>\n━━━━━━━━━━━━━━━━━━━━\nBot 1: <code>{bot1_name}</code> (JOIN/RỜI)\nBot 2: <code>{bot2_name}</code> (VÔ ĐỘI+VÔ TRẬN+RỜI)\n━━━━━━━━━━━━━━━━━━━━\nKHÔNG DELAY! GỬI LIÊN TỤC!</blockquote>",
-                chat_id=message.chat.id,
-                message_id=status_msg.message_id,
-                parse_mode='HTML'
-            )
-        except:
-            pass
-    
-    threading.Thread(target=run_lag, daemon=True).start()
-                              
 @telegram_bot.message_handler(commands=['addbot'])
-@async_telegram
 def telegram_add_bot(message):
     if not is_telegram_admin(message.from_user.id):
-        telegram_bot.reply_to(message, "Bạn không có quyền sử dụng lệnh này!")
+        telegram_bot.reply_to(message, "❌ Bạn không có quyền sử dụng lệnh này!")
         return
           
     try:
         parts = message.text.split()
         if len(parts) < 2:
-            telegram_bot.reply_to(message, "Sai cú pháp!\nSử dụng: /addbot <token>")
+            telegram_bot.reply_to(message, "❌ Sai cú pháp!\nSử dụng: /addbot <token>")
             return
         
         token = parts[1]
@@ -2891,2795 +4564,25 @@ def telegram_add_bot(message):
         if result["status"]:
             bot_id = result["bot_id"]
             TCPbot.bots[bot_id].start()
-            response = f"Thêm bot thành công!\nBot ID: {bot_id}\nToken: {token[:20]}..."
+            response = f"✅ Thêm bot thành công!\nBot ID: {bot_id}\nToken: {token[:20]}..."
         else:
-            response = f"Thêm bot thất bại!\nLý do: {result['message']}"
+            response = f"❌ Thêm bot thất bại!\nLý do: {result['message']}"
         
         telegram_bot.reply_to(message, response)
     except Exception as e:
-        telegram_bot.reply_to(message, f"Lỗi: {str(e)}")
+        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
         
-@telegram_bot.message_handler(commands=['msg'])
-@check_group_only
-@async_telegram
-def handle_msg(message):
-    if not check_user_in_group(message.from_user.id):
-        send_warn_join_group(message)
-        return
-    
-    try:
-        parts = message.text.strip().split(maxsplit=2)
-        if len(parts) < 3:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>SAI CÚ PHÁP</b>\nDùng: <code>/msg [teamcode] [nội dung]</code></blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        try:
-            tcode = int(parts[1])
-        except:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>LỖI</b>\nTeamcode phải là số!</blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        msg_content = parts[2]
-        bots = get_available_bots(1)
-        if not bots:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>HỆ THỐNG QUÁ TẢI</b>\nKhông có bot nào rảnh! Vui lòng đợi...</blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        bot = bots[0]
-        bot.is_busy = True
-        try:
-            bot.rstatus = (1, msg_content)
-            bot.sock39699.send(bot._bot.join_squad(tcode))
-            payload = json.dumps({"StickerStr": "[1=1200000002-11]", "type": "Sticker"})
-            bot.sock39801.send(bot._bot.send_object(payload, message.chat.id, None))
-            telegram_bot.reply_to(
-                message,
-                f"<blockquote><b>GỬI TIN NHẮN THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>Teamcode:</b> <code>{tcode}</code>\n<b>Nội dung:</b> <i>{msg_content}</i>\n<b>Bot:</b> <code>{getattr(bot, 'nickname', f'Bot #{bot.botid}')}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐã gửi tin nhắn tới đội !</blockquote>",
-                parse_mode="HTML"
-            )
-        finally:
-            bot.is_busy = False
-    except Exception as e:
-        if 'bot' in locals():
-            bot.is_busy = False
-        telegram_bot.reply_to(
-            message,
-            f"<blockquote><b>GỬI TIN NHẮN THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>Teamcode:</b> <code>{tcode}</code>\n<b>Nội dung:</b> <i>{msg_content}</i>\n<b>Bot:</b> <code>{getattr(bot, 'nickname', f'Bot #{bot.botid}')}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐã gửi tin nhắn tới đội !</blockquote>",
-            parse_mode="HTML"
-        )
-                
-@telegram_bot.message_handler(commands=['rd'])
-@check_group_only
-@async_telegram
-def handle_telegram_rd(message):
-    if not check_user_in_group(message.from_user.id):
-        send_warn_join_group(message)
-        return
-    
-    try:
-        parts = message.text.strip().split()
-        if len(parts) < 3:
-            telegram_bot.reply_to(
-                message,
-                f"<blockquote><b>SAI CÚ PHÁP LỆNH</b>\n"
-                f"<i>Vui lòng nhập theo định dạng:</i>\n"
-                f"<code>/rd [mã phòng] [uid1 uid2]</code></blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        if not parts[1].isdigit():
-            telegram_bot.reply_to(
-                message, 
-                "<blockquote>LỖI: Mã phòng bắt buộc phải là ký tự số!</blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        team_code = int(parts[1])
-        target_uids = []
-        for uid_str in parts[2:]:
-            try: 
-                target_uids.append(int(uid_str))
-            except: 
-                pass
-        
-        if not target_uids:
-            telegram_bot.reply_to(
-                message, 
-                "<blockquote>LỖI: Danh sách UID mục tiêu không hợp lệ!</blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        bots = get_available_bots(1)
-        if not bots:
-            telegram_bot.reply_to(
-                message,
-                f"<blockquote><b>HỆ THỐNG QUÁ TẢI</b>\n"
-                f"Không thể kích hoạt múa S7 cho phòng <code>{team_code}</code>.\n"
-                f"Hiện tại không có Bot nào rảnh. Vui lòng đợi trong giây lát!</blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        bot = bots[0]
-        bot.is_busy = True  
-        skin_ids = [914051001, 914053001, 914044001, 914047001, 914047002, 914048001, 914053001]
-        skin_id = random.choice(skin_ids)
-        emotes = [
-            909049010, 909051003, 909033002, 909041005, 909038010,
-            909039011, 909040010, 909000081, 909000085, 909000063,
-            909000075, 909033001, 909000090, 909000068, 909000098,
-            909035007, 909037011, 909038012, 909035012, 909042008,
-            909045001, 909055007
-        ]
-        
-        cfg = getattr(bot, "bot_config", {}) or {}
-        botid = cfg.get('auth_bot_login', {}).get('uid')
-        if not botid:
-            botid = getattr(bot, 'botid', None)
-        
-        all_dancers = []
-        if botid:
-            try: 
-                all_dancers.append(int(botid))
-            except: 
-                pass
-        all_dancers.extend(target_uids)
-        unique_dancers = list(dict.fromkeys(all_dancers))
-        bot_name = getattr(bot, 'nickname', f"Bot #{bot.botid}")
-        
-        uid_list_str = ', '.join([f"<code>{uid}</code>" for uid in target_uids])
-        
-        msg = telegram_bot.reply_to(
-            message,
-            f"<blockquote><b>BOT ĐANG TIẾN HÀNH MÚA RANDOM</b>\n━━━━━━━━━━━━━━━━\nTeam: <code>{team_code}</code>\nBot: <code>{bot_name}</code>\nMục tiêu: {uid_list_str}\n━━━━━━━━━━━━━━━━\nĐang xử lý...</blockquote>",
-            parse_mode="HTML"
-        )
-        
-        def auto_rd():
-            try:
-                sock = bot.sock39699
-                if not sock: 
-                    return
-                sock.sendall(bot._bot.join_squad(team_code))
-                time.sleep(1)
-                sock.sendall(bot._bot.play_animation(skin_id))
-                time.sleep(2.5)
-                sock.sendall(bot._bot.showskin(skin_id))
-                time.sleep(1)
-                used = []
-                for _ in range(18):
-                    for uid in unique_dancers:
-                        available = [e for e in emotes if e not in used]
-                        if not available:
-                            used.clear()
-                            available = emotes[:]
-                        emo = random.choice(available)
-                        used.append(emo)
-                        sock.sendall(bot._bot.play_emote(emo, [uid]))
-                        if len(used) == len(emotes):
-                            used.clear()
-                    time.sleep(5)
-                try: 
-                    sock.sendall(bot._bot.leave_squad(0))
-                except: 
-                    pass
-                try:
-                    telegram_bot.edit_message_text(
-                        f"<blockquote><b>HOÀN TẤT</b>\n━━━━━━━━━━━━━━━━\nTeam: <code>{team_code}</code>\nBot: <code>{bot_name}</code>\nMục tiêu: {uid_list_str}\n━━━━━━━━━━━━━━━━\nĐã thực hiện xong tiến trình múa random!</blockquote>",
-                        chat_id=message.chat.id,
-                        message_id=msg.message_id,
-                        parse_mode="HTML"
-                    )
-                except: 
-                    pass
-            except Exception as e:
-                print("RD ERROR:", e)
-                try: 
-                    sock.sendall(bot._bot.leave_squad(0))
-                except: 
-                    pass
-                try:
-                    telegram_bot.edit_message_text(
-                        f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
-                        chat_id=message.chat.id,
-                        message_id=msg.message_id,
-                        parse_mode="HTML"
-                    )
-                except: 
-                    pass
-            finally:
-                bot.is_busy = False  
-        
-        threading.Thread(target=auto_rd, daemon=True).start()
-        
-    except Exception as e:
-        telegram_bot.reply_to(
-            message,
-            f"<blockquote>LỖI HỆ THỐNG: {str(e)[:50]}</blockquote>",
-            parse_mode="HTML"
-        )
-                
-@telegram_bot.message_handler(commands=['hdco'])
-@check_group_only
-@async_telegram
-def handle_telegram_hdco_cmd(message):
-    if not check_user_in_group(message.from_user.id):
-        send_warn_join_group(message)
-        return
-    
-    parts = message.text.split()
-    if len(parts) < 3:
-        telegram_bot.reply_to(
-            message,
-            "<blockquote><b>SAI CÚ PHÁP</b>\nDùng: <code>/hdco [teamcode] [uid1 uid2]</code></blockquote>",
-            parse_mode="HTML"
-        )
-        return
-    
-    try: 
-        tc = int(parts[1])
-    except:
-        telegram_bot.reply_to(
-            message,
-            "<blockquote><b>LỖI</b>\nTeamcode phải là số!</blockquote>",
-            parse_mode="HTML"
-        )
-        return
-    
-    custom_uids = []
-    for x in parts[2:]:
-        try: 
-            custom_uids.append(int(x))
-        except: 
-            pass
-    
-    if not custom_uids:
-        telegram_bot.reply_to(
-            message,
-            "<blockquote><b>LỖI</b>\nCần ít nhất 1 UID!</blockquote>",
-            parse_mode="HTML"
-        )
-        return
-    
-    bots = get_available_bots(1)
-    if not bots:
-        telegram_bot.reply_to(
-            message,
-            "<blockquote><b>QUÁ TẢI</b>\nKhông có bot rảnh!</blockquote>",
-            parse_mode="HTML"
-        )
-        return
-    
-    bot = bots[0]
-    bot.is_busy = True
-    bot_name = getattr(bot, 'nickname', f'Bot #{bot.botid}')
-    
-    uid_list_str = ', '.join([f"<code>{uid}</code>" for uid in custom_uids])
-    
-    msg = telegram_bot.reply_to(
-        message,
-        f"<blockquote><b>BOT ĐANG TIẾN HÀNH MÚA HÀNH ĐỘNG CỔ</b>\n━━━━━━━━━━━━━━━━\nTeam: <code>{tc}</code>\nBot: <code>{bot_name}</code>\nMục tiêu: {uid_list_str}\n━━━━━━━━━━━━━━━━\nĐang xử lý...</blockquote>",
-        parse_mode="HTML"
-    )
-    
-    def safe_send(data):
-        try:
-            if bot.sock39699: 
-                bot.sock39699.send(data)
-        except: 
-            pass
-    
-    def run_hdco():
-        try:
-            if not bot.sock39699: 
-                return
-            bot.rstatus = (4, '')
-            safe_send(bot._bot.join_squad(tc))
-            time.sleep(2.5)
-            ids = list(custom_uids)
-            if bot.botid and int(bot.botid) not in ids:
-                ids.append(int(bot.botid))
-            skin_ids = [914051001, 914053001, 914044001, 914047001, 914047002, 914048001]
-            skin_id = random.choice(skin_ids)
-            safe_send(bot._bot.play_animation(skin_id))
-            time.sleep(3)
-            safe_send(bot._bot.showskin(skin_id))
-            time.sleep(1.5)
-            vip_emotes = [909000020, 909000021, 909000027, 909000008, 909000011, 909000012, 909042007, 909000040, 909000016, 909000029, 909000037, 909000022, 909000043, 909000061, 909000066]
-            for _ in range(1):
-                for emo in vip_emotes:
-                    if not bot.sock39699: 
-                        break
-                    safe_send(bot._bot.play_emote(emo, ids))
-                    time.sleep(4.5)
-                time.sleep(3)
-            try: 
-                safe_send(bot._bot.leave_squad(tc))
-            except: 
-                pass
-            try:
-                telegram_bot.edit_message_text(
-                    f"<blockquote><b>HOÀN TẤT</b>\n━━━━━━━━━━━━━━━━\nTeam: <code>{tc}</code>\nBot: <code>{bot_name}</code>\nMục tiêu: {uid_list_str}\n━━━━━━━━━━━━━━━━\nĐã thực hiện xong tiến trình múa hành động cổ!</blockquote>",
-                    chat_id=message.chat.id,
-                    message_id=msg.message_id,
-                    parse_mode="HTML"
-                )
-            except: 
-                pass
-        except Exception as e:
-            print("HDCO ERROR:", e)
-            try:
-                telegram_bot.edit_message_text(
-                    f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
-                    chat_id=message.chat.id,
-                    message_id=msg.message_id,
-                    parse_mode="HTML"
-                )
-            except: 
-                pass
-        finally:
-            bot.is_busy = False
-    
-    threading.Thread(target=run_hdco, daemon=True).start()
-        
-@telegram_bot.message_handler(commands=['rngau'])
-@check_group_only
-@async_telegram
-def handle_telegram_rngau_cmd(message):
-    if not check_user_in_group(message.from_user.id):
-        send_warn_join_group(message)
-        return
-    
-    parts = message.text.split()
-    if len(parts) < 3:
-        telegram_bot.reply_to(
-            message,
-            "<blockquote><b>SAI CÚ PHÁP</b>\nDùng: <code>/rngau [teamcode] [uid1 uid2]</code></blockquote>",
-            parse_mode="HTML"
-        )
-        return
-    
-    try: 
-        tc = int(parts[1])
-    except:
-        telegram_bot.reply_to(
-            message,
-            "<blockquote><b>LỖI</b>\nTeamcode phải là số!</blockquote>",
-            parse_mode="HTML"
-        )
-        return
-    
-    custom_uids = []
-    for x in parts[2:]:
-        try: 
-            custom_uids.append(int(x))
-        except: 
-            pass
-    
-    if not custom_uids:
-        telegram_bot.reply_to(
-            message,
-            "<blockquote><b>LỖI</b>\nCần ít nhất 1 UID!</blockquote>",
-            parse_mode="HTML"
-        )
-        return
-    
-    bots = get_available_bots(1)
-    if not bots:
-        telegram_bot.reply_to(
-            message,
-            "<blockquote><b>QUÁ TẢI</b>\nKhông có bot rảnh!</blockquote>",
-            parse_mode="HTML"
-        )
-        return
-    
-    bot = bots[0]
-    bot.is_busy = True
-    bot_name = getattr(bot, 'nickname', f'Bot #{bot.botid}')
-    
-    uid_list_str = ', '.join([f"<code>{uid}</code>" for uid in custom_uids])
-    
-    msg = telegram_bot.reply_to(
-        message,
-        f"<blockquote><b>BOT ĐANG TIẾN HÀNH BẬT HÀNH ĐỘNG NGẦU </b>\n━━━━━━━━━━━━━━━━\nTeam: <code>{tc}</code>\nBot: <code>{bot_name}</code>\nMục tiêu: {uid_list_str}\n━━━━━━━━━━━━━━━━\nĐang xử lý...</blockquote>",
-        parse_mode="HTML"
-    )
-    
-    def safe_send(data):
-        try:
-            if bot.sock39699: 
-                bot.sock39699.send(data)
-        except: 
-            pass
-    
-    def run_rngau():
-        try:
-            if not bot.sock39699: 
-                return
-            bot.rstatus = (4, '')
-            safe_send(bot._bot.join_squad(tc))
-            time.sleep(2.5)
-            ids = list(custom_uids)
-            if bot.botid and int(bot.botid) not in ids:
-                ids.append(int(bot.botid))
-            skin_ids = [914051001, 914053001, 914044001, 914047001, 914047002, 914048001]
-            skin_id = random.choice(skin_ids)
-            safe_send(bot._bot.play_animation(skin_id))
-            time.sleep(3)
-            safe_send(bot._bot.showskin(skin_id))
-            time.sleep(1.5)
-            rngau_emotes = [909000034, 909000036, 909000014, 909000089, 909000088, 909040008, 909051010, 909052004, 909052002]
-            for _ in range(1):
-                for emo in rngau_emotes:
-                    if not bot.sock39699: 
-                        break
-                    safe_send(bot._bot.play_emote(emo, ids))
-                    time.sleep(4.5)
-                time.sleep(3)
-            try: 
-                safe_send(bot._bot.leave_squad(tc))
-            except: 
-                pass
-            try:
-                telegram_bot.edit_message_text(
-                    f"<blockquote><b>HOÀN TẤT</b>\n━━━━━━━━━━━━━━━━\nTeam: <code>{tc}</code>\nBot: <code>{bot_name}</code>\nMục tiêu: {uid_list_str}\n━━━━━━━━━━━━━━━━\nĐã thực hiện xong tiến trình múa hành động ngầu!</blockquote>",
-                    chat_id=message.chat.id,
-                    message_id=msg.message_id,
-                    parse_mode="HTML"
-                )
-            except: 
-                pass
-        except Exception as e:
-            print("RNGAU ERROR:", e)
-            try:
-                telegram_bot.edit_message_text(
-                    f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
-                    chat_id=message.chat.id,
-                    message_id=msg.message_id,
-                    parse_mode="HTML"
-                )
-            except: 
-                pass
-        finally:
-            bot.is_busy = False
-    
-    threading.Thread(target=run_rngau, daemon=True).start()
- 
-@telegram_bot.message_handler(commands=['resetall'])
-@check_group_only
-@async_telegram
-def reset_all_bots(message):
-    if not is_telegram_admin(message.from_user.id):
-        telegram_bot.reply_to(message, "Không có quyền!")
-        return
-    
-    count = 0
-    for bot in TCPbot.bots.values():
-        bot.is_busy = False
-        bot.cleanup()
-        time.sleep(1)
-        bot.start()
-        count += 1
-    
-    telegram_bot.reply_to(message, f"Đã reset {count} bot!")
-        
-@telegram_bot.message_handler(commands=['s7'])
-@check_group_only
-@async_telegram
-def handle_telegram_s7_cmd(message):
-    if not check_user_in_group(message.from_user.id):
-        send_warn_join_group(message)
-        return
-    
-    parts = message.text.split()
-    if len(parts) < 3:
-        telegram_bot.reply_to(
-            message,
-            "<blockquote><b>SAI CÚ PHÁP</b>\n"
-            "Dùng: <code>/s7 [teamcode] [uid1 uid2]</code>\n"
-            "Ví dụ: <code>/s7 1234567 16104663154 123456789</code></blockquote>",
-            parse_mode="HTML"
-        )
-        return
-    
-    try: 
-        tc = int(parts[1])
-    except:
-        telegram_bot.reply_to(
-            message,
-            "<blockquote><b>LỖI</b>\nTeamcode phải là số!</blockquote>",
-            parse_mode="HTML"
-        )
-        return
-    
-    custom_uids = []
-    for x in parts[2:]:
-        try: 
-            custom_uids.append(int(x))
-        except: 
-            pass
-    
-    if not custom_uids:
-        telegram_bot.reply_to(
-            message,
-            "<blockquote><b>LỖI</b>\nCần ít nhất 1 UID!</blockquote>",
-            parse_mode="HTML"
-        )
-        return
-    
-    bots = get_available_bots(1)
-    if not bots:
-        telegram_bot.reply_to(
-            message,
-            "<blockquote><b>QUÁ TẢI</b>\nKhông có bot rảnh!</blockquote>",
-            parse_mode="HTML"
-        )
-        return
-    
-    bot = bots[0]
-    bot.is_busy = True
-    bot_name = getattr(bot, 'nickname', f'Bot #{bot.botid}')
-    
-    uid_list_str = ', '.join([f"<code>{uid}</code>" for uid in custom_uids])
-    
-    msg = telegram_bot.reply_to(
-        message,
-        f"<blockquote><b>BOT ĐANG TIẾN HÀNH MÚA S7</b>\n"
-        f"━━━━━━━━━━━━━━━━\n"
-        f"Team: <code>{tc}</code>\n"
-        f"Bot: <code>{bot_name}</code>\n"
-        f"Mục tiêu: {uid_list_str}\n"
-        f"━━━━━━━━━━━━━━━━\n"
-        f"Đang xử lý...</blockquote>",
-        parse_mode="HTML"
-    )
-    
-    def safe_send(data):
-        try:
-            if bot.sock39699: 
-                bot.sock39699.send(data)
-        except: 
-            pass
-    
-    def run_s7():
-        try:
-            if not bot.sock39699: 
-                return
-            bot.rstatus = (4, '')
-            safe_send(bot._bot.join_squad(tc))
-            time.sleep(2.5)
-            ids = list(custom_uids)
-            if bot.botid and int(bot.botid) not in ids:
-                ids.append(int(bot.botid))
-            skin_ids = [914051001, 914053001, 914044001, 914047001, 914047002, 914048001]
-            skin_id = random.choice(skin_ids)
-            safe_send(bot._bot.play_animation(skin_id))
-            time.sleep(3)
-            safe_send(bot._bot.showskin(skin_id))
-            time.sleep(1)
-            vip_emotes = [909040010, 909000090, 909035012, 909038010, 909035007, 909039011, 909000063, 909055007, 909000098, 909000081, 909000075, 909042008, 909000068, 909049010, 909041005, 909033002, 909045001, 909000085, 909051003]
-            for _ in range(1):
-                for emo in vip_emotes:
-                    if not bot.sock39699: 
-                        break
-                    safe_send(bot._bot.play_emote(emo, ids))
-                    time.sleep(5)
-                time.sleep(3)
-            try: 
-                safe_send(bot._bot.leave_squad(tc))
-            except: 
-                pass
-            try:
-                telegram_bot.edit_message_text(
-                    f"<blockquote><b>HOÀN TẤT</b>\n"
-                    f"━━━━━━━━━━━━━━━━\n"
-                    f"Team: <code>{tc}</code>\n"
-                    f"Bot: <code>{bot_name}</code>\n"
-                    f"Mục tiêu: {uid_list_str}\n"
-                    f"━━━━━━━━━━━━━━━━\n"
-                    f"Đã thực hiện xong tiến trình múa s7!</blockquote>",
-                    chat_id=message.chat.id,
-                    message_id=msg.message_id,
-                    parse_mode="HTML"
-                )
-            except: 
-                pass
-        except Exception as e:
-            try:
-                telegram_bot.edit_message_text(
-                    f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
-                    chat_id=message.chat.id,
-                    message_id=msg.message_id,
-                    parse_mode="HTML"
-                )
-            except: 
-                pass
-        finally:
-            bot.is_busy = False
-    
-    threading.Thread(target=run_s7, daemon=True).start()
-            
-def safe_edit(chat_id, msg_id, text):
-    try:
-        telegram_bot.edit_message_text(
-            chat_id=chat_id,
-            message_id=msg_id,
-            text=text,
-            parse_mode='HTML'
-        )
-    except Exception as e:
-        print("EDIT FAIL:", e)
-  
-@telegram_bot.message_handler(commands=['checkbot'])
-@check_group_only
-@async_telegram
-def tele_check(message):
-    try:
-        ADMIN_IDS = [8722607800]
-        user_id = int(message.from_user.id)
-        
-        if user_id not in ADMIN_IDS:
-            telegram_bot.reply_to(message, "Không có quyền sử dụng lệnh này")
-            return
-        
-        if not TCPbot.bots:
-            telegram_bot.reply_to(message, "Không có bot nào trong hệ thống")
-            return
-        
-        online_count = 0
-        offline_count = 0
-        busy_count = 0
-        free_count = 0
-        total_count = len(TCPbot.bots)
-        
-        for bot in TCPbot.bots.values():
-            running = bot.running_event.is_set() if bot.running_event else False
-            is_busy = getattr(bot, 'is_busy', False)
-            
-            if not running:
-                offline_count += 1
-            else:
-                online_count += 1
-                if is_busy:
-                    busy_count += 1
-                else:
-                    free_count += 1
-        
-        text = "<blockquote><b>BẢNG TRẠNG THÁI BOT</b>\n"
-        text += f"Tổng bot: <b>{total_count}</b>\n"
-        text += f"Online: <b>{online_count}</b>\n"
-        text += f"Offline: <b>{offline_count}</b>\n"
-        text += f"Rảnh: <b>{free_count}</b>\n"
-        text += f"Bận: <b>{busy_count}</b>\n"
-        text += f"</blockquote>\n\n"
-        
-        for bid, bot in TCPbot.bots.items():
-            running = bot.running_event.is_set() if bot.running_event else False
-            nickname = getattr(bot, 'nickname', 'Chưa đồng bộ')
-            uid_bot = getattr(bot, 'botid', 'Trống')
-            is_busy = getattr(bot, 'is_busy', False)
-            
-            if not running:
-                status = "Offline"
-                activity = "Tắt"
-            else:
-                status = "Online"
-                activity = "Bận" if is_busy else "Rảnh"
-            
-            text += f"<blockquote><b>Bot {bid}</b>\n"
-            text += f"├ Tên: {nickname}\n"
-            text += f"├ UID: <code>{uid_bot}</code>\n"
-            text += f"├ Trạng thái: {status}\n"
-            text += f"└ Hoạt động: {activity}</blockquote>\n"
-        
-        telegram_bot.reply_to(message, text, parse_mode="HTML")
-        
-    except Exception as e:
-        telegram_bot.reply_to(message, f"ERROR: {e}")
-        print("CHECKBOTS ERROR:", e)
-                        
-@telegram_bot.message_handler(commands=['rinv'])
-@check_group_only
-@async_telegram
-def handle_telegram_rinv(message):
-    if not check_user_in_group(message.from_user.id):
-        send_warn_join_group(message)
-        return
-
-    try:
-        parts = message.text.strip().split()
-        if len(parts) < 2:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>SAI CÚ PHÁP</b>\nDùng: <code>/rinv [uid]</code>\nVí dụ: <code>/rinv 123456789</code></blockquote>",
-                parse_mode="HTML"
-            )
-            return
-
-        target_uid = parts[1].strip()
-        if not target_uid.isdigit():
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>LỖI</b>\nUID phải là số!</blockquote>",
-                parse_mode="HTML"
-            )
-            return
-
-        bots = get_available_bots(1)
-        if not bots:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>BOT BẬN</b>\nKhông có bot nào rảnh để xử lý!</blockquote>",
-                parse_mode="HTML"
-            )
-            return
-
-        bot = bots[0]
-        bot.is_busy = True
-        bot_name = getattr(bot, 'nickname', f'Bot #{bot.botid}')
-
-        msg = telegram_bot.reply_to(
-            message,
-            f"<blockquote><b>ĐANG SPAM ROOM</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>UID:</b> <code>{target_uid}</code>\n<b>Bot:</b> <code>{bot_name}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐang xử lý...</blockquote>",
-            parse_mode="HTML"
-        )
-
-        def run_rinv():
-            try:
-                bot.sock39699.send(bot._bot.get_history(target_uid))
-                time.sleep(1.5)
-                
-                room_id = bot.roomid
-                if not room_id:
-                    try:
-                        telegram_bot.edit_message_text(
-                            "<blockquote><b>KHÔNG TÌM THẤY PHÒNG</b>\nUID không có trong phòng!</blockquote>",
-                            chat_id=message.chat.id,
-                            message_id=msg.message_id,
-                            parse_mode="HTML"
-                        )
-                    except:
-                        pass
-                    return
-
-                success_count = 0
-                fail_count = 0
-
-                for i in range(123):
-                    try:
-                        packet = bot._bot.request_join_room(room_id, target_uid)
-                        bot.sock39699.send(packet)
-                        success_count += 1
-                        time.sleep(0.35)
-                    except:
-                        fail_count += 1
-
-                    if (i + 1) % 20 == 0 or i == 122:
-                        try:
-                            telegram_bot.edit_message_text(
-                                f"<blockquote><b>ĐANG SPAM ROOM</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>UID:</b> <code>{target_uid}</code>\n<b>Room ID:</b> <code>{room_id}</code>\n<b>Bot:</b> <code>{bot_name}</code>\n<b>Tiến độ:</b> <code>{i+1}/123</code>\n<b>Thành công:</b> <code>{success_count}</code>\n<b>Thất bại:</b> <code>{fail_count}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐang xử lý...</blockquote>",
-                                chat_id=message.chat.id,
-                                message_id=msg.message_id,
-                                parse_mode="HTML"
-                            )
-                        except:
-                            pass
-
-                try:
-                    telegram_bot.edit_message_text(
-                        f"<blockquote><b>SPAM ROOM HOÀN TẤT</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>UID:</b> <code>{target_uid}</code>\n<b>Room ID:</b> <code>{room_id}</code>\n<b>Bot:</b> <code>{bot_name}</code>\n<b>Tổng:</b> <code>123</code>\n<b>Thành công:</b> <code>{success_count}</code>\n<b>Thất bại:</b> <code>{fail_count}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐã spam xong!</blockquote>",
-                        chat_id=message.chat.id,
-                        message_id=msg.message_id,
-                        parse_mode="HTML"
-                    )
-                except:
-                    pass
-
-            except Exception as e:
-                try:
-                    telegram_bot.edit_message_text(
-                        f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
-                        chat_id=message.chat.id,
-                        message_id=msg.message_id,
-                        parse_mode="HTML"
-                    )
-                except:
-                    pass
-            finally:
-                bot.is_busy = False
-
-        threading.Thread(target=run_rinv, daemon=True).start()
-
-    except Exception as e:
-        telegram_bot.reply_to(
-            message,
-            f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
-            parse_mode="HTML"
-        )
-                
-def random_colored_text(text):
-    colors = [
-        "FF0000",
-        "00FF00",
-        "FFFF00",
-        "00FFFF",
-        "0000FF",
-        "FF00FF",
-        "FF66FF"
-    ]
-
-    color = random.choice(colors)
-    return f"[{color}]{text}"
-
-def random_telegram_name():
-    return f"[c][b][FFFFFF]Telegram: {random_colored_text('@zanbackj')}"
-
-def random_tiktok_name():
-    return f"[c][b][FFFF00]TikTok: {random_colored_text('@zanbackj')}"
-                
-@telegram_bot.message_handler(commands=['dc'])
-@check_group_only
-@async_telegram
-def handle_telegram_hc(message):
-    if not check_user_in_group(message.from_user.id):
-        send_warn_join_group(message)
-        return
-    
-    try:
-        parts = message.text.strip().split()
-        if len(parts) < 2:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>SAI CÚ PHÁP</b>\nDùng: <code>/dc [teamcode]</code>\nVí dụ: <code>/dc 1234567</code></blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        team_code = parts[1].strip()
-        if not team_code.isdigit():
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>LỖI</b>\nTeamcode phải là số!</blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        team_code = int(team_code)
-        
-        bots = get_available_bots(1)
-        if not bots:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>HỆ THỐNG QUÁ TẢI</b>\nKhông có bot rảnh!</blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        bot = bots[0]
-        bot.is_busy = True
-        bot_name = getattr(bot, 'nickname', f'Bot #{bot.botid}')
-        
-        msg = telegram_bot.reply_to(
-            message,
-            f"<blockquote><b>ĐANG MÚA S7</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>Teamcode:</b> <code>{team_code}</code>\n<b>Bot:</b> <code>{bot_name}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐang xử lý...</blockquote>",
-            parse_mode="HTML"
-        )
-        
-        def run_dc():
-            try:
-                sock = bot.sock39699
-                
-                bot.ids = []
-                bot.rstatus = (10, team_code)
-                sock.sendall(bot._bot.join_squad(team_code))
-                time.sleep(3)
-                
-                sock.sendall(bot._bot.play_animation(914053001))
-                time.sleep(4)
-                sock.sendall(bot._bot.showskin(914053001))
-                time.sleep(1)
-                
-                ids = list(set(bot.ids)) if bot.ids else []
-                bot.rstatus = (0, 0)
-                
-                if not ids:
-                    ids = [bot.botid]
-                
-                s7_emotes = [
-                    909040010, 909000090, 909035012,
-                    909038010, 909035007, 909039011,
-                    909000063, 909000098,
-                    909000081, 909000075,
-                    909042008, 909000068,
-                    909049010, 909041005,
-                    909033002, 909045001,
-                    909000085, 909051003
-                ]
-                
-                for emote in s7_emotes:
-                    try:
-                        sock.sendall(bot._bot.play_emote(emote, ids))
-                        time.sleep(4.5)
-                    except:
-                        pass
-                
-                sock.sendall(bot._bot.leave_squad(0))
-                
-                telegram_bot.edit_message_text(
-                    f"<blockquote><b>MÚA S7 THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>Teamcode:</b> <code>{team_code}</code>\n<b>Bot:</b> <code>{bot_name}</code>\n<b>Số UID:</b> <code>{len(ids)}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐã múa xong!</blockquote>",
-                    chat_id=message.chat.id,
-                    message_id=msg.message_id,
-                    parse_mode="HTML"
-                )
-                
-            except Exception as e:
-                try:
-                    sock.sendall(bot._bot.leave_squad(0))
-                except:
-                    pass
-                    
-                telegram_bot.edit_message_text(
-                    f"<blockquote><b>MÚA S7 THẤT BẠI</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>Lỗi:</b> {str(e)}\n━━━━━━━━━━━━━━━━━━━━\nKiểm tra lại teamcode!</blockquote>",
-                    chat_id=message.chat.id,
-                    message_id=msg.message_id,
-                    parse_mode="HTML"
-                )
-            finally:
-                bot.is_busy = False
-        
-        threading.Thread(target=run_dc, daemon=True).start()
-        
-    except Exception as e:
-        telegram_bot.reply_to(
-            message,
-            f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
-            parse_mode="HTML"
-        )
-
-@telegram_bot.message_handler(commands=['ghost'])
-def handle_telegram_ghost(message):
-    parts = message.text.split(maxsplit=2)
-    
-    if len(parts) < 2 or not parts[1].isdigit():
-        telegram_bot.reply_to(
-            message,
-            "<blockquote><b>SAI CÚ PHÁP</b>\n"
-            "<code>/ghost [teamcode] [tên]</code>\n"
-            "Ví dụ: <code>/ghost 1234567 zan</code></blockquote>",
-            parse_mode='HTML'
-        )
-        return
-    
-    team_code = parts[1]
-    custom_name = parts[2] if len(parts) > 2 else "Tiktok: @nqbinhan_"
-    
-    if not team_code.isdigit():
-        telegram_bot.reply_to(message, "<blockquote><b>LỖI</b>\nTeamcode phải là số!</blockquote>", parse_mode='HTML')
-        return
-    
-    team_code_int = int(team_code)
-    clean_name = custom_name
-    
-    bot = None
-    for b in TCPbot.bots.values():
-        if b.running_event.is_set() and b.sock39699:
-            if b.rstatus[0] == 0 or b.rstatus[0] is None:
-                if not getattr(b, 'is_busy', False):
-                    bot = b
-                    break
-    
-    if not bot:
-        telegram_bot.reply_to(message, "<blockquote><b>KHÔNG CÓ BOT RẢNH</b></blockquote>", parse_mode='HTML')
-        return
-    
-    bot.is_busy = True
-    
-    status_msg = telegram_bot.reply_to(
-        message,
-        f"<blockquote><b>GHOST THÀNH CÔNG TEAMCODE {team_code_int} !</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"Teamcode: <code>{team_code_int}</code>\n"
-        f"Tên hiển thị: <code>{clean_name}</code>\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"Đã ghost thành công!</blockquote>",
-        parse_mode='HTML'
-    )
-    
-    def run_ghost():
-        try:
-            bot.rstatus = (2, team_code_int, clean_name)
-            
-            bot.sock39699.sendall(bot._bot.join_squad(team_code_int))
-            time.sleep(1.5)
-            
-            colors = ["[FF0000]", "[00FF00]", "[0000FF]", "[FFFF00]", "[FF00FF]", "[00FFFF]"]
-            color = random.choice(colors)
-            
-            fields = {}
-            fields[0] = 5
-            fields[1] = 61
-            fields[2] = {}
-            fields[2][1] = int(team_code_int)
-            fields[2][2] = {}
-            fields[2][2][1] = int(team_code_int)
-            fields[2][2][3] = f"[b][c]{color}{clean_name}"
-            fields[2][2][6] = int(time.time())
-            fields[2][2][7] = 0x01
-            fields[2][2][9] = 0x01
-            fields[2][3] = "1"
-            
-            ghost_packet = bot._gen._builder(fields=list(fields.items()))
-            bot.sock39699.sendall(ghost_packet)
-            time.sleep(1)
-            
-            bot.sock39699.sendall(bot._bot.leave_squad(0))
-            
-            bot.is_busy = False
-            bot.rstatus = (0, 0)
-            
-        except Exception as e:
-            bot.is_busy = False
-            bot.rstatus = (0, 0)
-            print(f"[GHOST ERROR] {e}")
-    
-    threading.Thread(target=run_ghost, daemon=True).start()
-                            
-@telegram_bot.message_handler(commands=['spamall'])
-@check_group_only
-@async_telegram
-def handle_telegram_spamall(message):
-    if not check_user_in_group(message.from_user.id):
-        send_warn_join_group(message)
-        return
-
-    try:
-        parts = message.text.strip().split()
-        if len(parts) < 2:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>SAI CÚ PHÁP</b>\nDùng: <code>/spamall [uid]</code>\nVí dụ: <code>/spamall 123456789</code></blockquote>",
-                parse_mode="HTML"
-            )
-            return
-
-        target_uid = parts[1].strip()
-        if not target_uid.isdigit():
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>LỖI</b>\nUID phải là số!</blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        if len(target_uid) < 8 or len(target_uid) > 11:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>UID KHÔNG HỢP LỆ</b>\nUID phải có từ 8-11 chữ số!</blockquote>",
-                parse_mode="HTML"
-            )
-            return
-
-        bots = get_available_bots(1)
-        if not bots:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>BOT BẬN</b>\nKhông có bot nào rảnh để xử lý!</blockquote>",
-                parse_mode="HTML"
-            )
-            return
-
-        bot = bots[0]
-        bot.is_busy = True
-        bot_name = getattr(bot, 'nickname', f'Bot #{bot.botid}')
-
-        badge_values = [1048576, 1048577, 1048578, 1048579, 1048580]
-
-        msg = telegram_bot.reply_to(
-            message,
-            f"<blockquote><b>ĐANG SPAM ALL BADGE</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>UID:</b> <code>{target_uid}</code>\n<b>Loại:</b> <code>5 TÍCH</code>\n<b>Bot:</b> <code>{bot_name}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐang xử lý...</blockquote>",
-            parse_mode="HTML"
-        )
-
-        def run_spamall():
-            try:
-                total_success = 0
-                total_fail = 0
-
-                for badge_idx, badge_value in enumerate(badge_values, 1):
-                    for i in range(10):
-                        try:
-                            join_packet = bot._bot.request_join_squad(int(target_uid))
-                            bot.sock39699.sendall(join_packet)
-                            total_success += 1
-                            time.sleep(0.3)
-                            
-                        except Exception as e:
-                            total_fail += 1
-                            print(f"[SPAMALL] Lỗi: {e}")
-                        
-                        if (badge_idx * 10 + i) % 5 == 0:
-                            try:
-                                done = (badge_idx - 1) * 10 + i + 1
-                                telegram_bot.edit_message_text(
-                                    f"<blockquote><b>ĐANG SPAM ALL BADGE</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>UID:</b> <code>{target_uid}</code>\n<b>tích:</b> <code>{badge_idx}/5</code>\n<b>Đã spam:</b> <code>{done}/50</code>\n<b>Thành công:</b> <code>{total_success}</code>\n<b>Thất bại:</b> <code>{total_fail}</code>\n<b>Bot:</b> <code>{bot_name}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐang xử lý...</blockquote>",
-                                    chat_id=message.chat.id,
-                                    message_id=msg.message_id,
-                                    parse_mode="HTML"
-                                )
-                            except:
-                                pass
-                    
-                    time.sleep(0.5)
-
-                try:
-                    bot.sock39699.sendall(bot._bot.leave_squad(0))
-                except:
-                    pass
-
-                try:
-                    telegram_bot.edit_message_text(
-                        f"<blockquote><b>SPAM ALL BADGE HOÀN TẤT</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>UID:</b> <code>{target_uid}</code>\n<b>Loại:</b> <code>5 TÍCH</code>\n<b>Tổng:</b> <code>50</code>\n<b>Thành công:</b> <code>{total_success}</code>\n<b>Thất bại:</b> <code>{total_fail}</code>\n<b>Bot:</b> <code>{bot_name}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐã spam xong!</blockquote>",
-                        chat_id=message.chat.id,
-                        message_id=msg.message_id,
-                        parse_mode="HTML"
-                    )
-                except:
-                    pass
-
-            except Exception as e:
-                try:
-                    telegram_bot.edit_message_text(
-                        f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
-                        chat_id=message.chat.id,
-                        message_id=msg.message_id,
-                        parse_mode="HTML"
-                    )
-                except:
-                    pass
-            finally:
-                bot.is_busy = False
-
-        threading.Thread(target=run_spamall, daemon=True).start()
-
-    except Exception as e:
-        telegram_bot.reply_to(
-            message,
-            f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
-            parse_mode="HTML"
-        )
-                      
-@telegram_bot.message_handler(commands=['service'])
-@check_group_only
-@async_telegram
-def telegram_service(message):
-    if not check_user_in_group(message.from_user.id):
-        send_warn_join_group(message)
-        return
-    
-    msg = f"""
-<blockquote>BẢNG GIÁ DỊCH VỤ
-━━━━━━━━━━━━━━━━━━━━━━━━
-
-1. BOT THƯỜNG:
-├ 1 ngày: 10k
-├ 1 tuần: 50k
-└ 1 tháng: 120k
-
-5. BOT TÊN RIÊNG:
-├ 1 ngày: 15k
-├ 1 tuần: 60k
-└ 1 tháng: 150k
-
-2. BOT QUÂN ĐOÀN (nhiều người sử dụng được):
-├ 1 ngày: 15k
-├ 1 tuần: 65k
-└ 1 tháng: 170k
-
-3. CAPCUT PRO:
-└ 50/1 tháng
-
-4. WINK:
-├ 1 tuần: 60k
-├ 2 tuần: 100k
-└ 3 tuần: 130k
-
-━━━━━━━━━━━━━━━━━━━━━━━━
-có nhu cầu liên hệ admin: @zanbackj
-</blockquote>
-"""
-    telegram_bot.reply_to(message, msg, parse_mode="HTML")
-                                 
-@telegram_bot.message_handler(commands=['getlink'])
-@check_group_only
-@async_telegram
-def get_group_link(message):
-    if message.from_user.id != ADMIN_ID:
-        telegram_bot.reply_to(message, "Không có quyền!")
-        return
-    
-    group_ids = []
-    if os.path.exists(TELE_GROUPS_FILE):
-        try:
-            with open(TELE_GROUPS_FILE, "r", encoding="utf-8") as f:
-                group_ids = json.load(f)
-        except:
-            pass
-    
-    if not group_ids:
-        telegram_bot.reply_to(message, "Chưa có group nào!")
-        return
-    
-    result = "<b>DANH SÁCH GROUP:</b>\n───────────────────────\n"
-    
-    for gid in group_ids:
-        try:
-            chat = telegram_bot.get_chat(gid)
-            title = chat.title or "Unknown"
-            
-            try:
-                if chat.username:
-                    link = f"https://t.me/{chat.username}"
-                else:
-                    link = telegram_bot.export_chat_invite_link(gid)
-            except:
-                link = "Không thể tạo link (cần quyền admin)"
-            
-            result += f"<b>{title}</b>\n"
-            result += f"   ID: <code>{gid}</code>\n"
-            result += f"   Link: {link}\n\n"
-        except Exception as e:
-            result += f"<code>{gid}</code> - Lỗi: {str(e)[:30]}\n\n"
-    
-    telegram_bot.reply_to(message, result, parse_mode="HTML")
-        
-@telegram_bot.message_handler(commands=['info'])
-@check_group_only
-@async_telegram
-def handle_info(message):
-    if not check_user_in_group(message.from_user.id):
-        send_warn_join_group(message)
-        return
-    
-    try:
-        args = message.text.split()
-        if len(args) < 2:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>SAI CÚ PHÁP</b>\nDùng: <code>/info [UID]</code></blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        uid = args[1].strip()
-        if not uid.isdigit():
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>LỖI</b>\nUID phải là số!</blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        msg = telegram_bot.reply_to(
-            message,
-            "<blockquote>Đang tra cứu thông tin...</blockquote>",
-            parse_mode="HTML"
-        )
-        
-        url = f"http://zangayinfo.onrender.com/info?uid={uid}"
-        response = requests.get(url, timeout=10)
-        
-        if response.status_code != 200:
-            telegram_bot.edit_message_text(
-                f"<blockquote><b>LỖI API</b>\nHTTP {response.status_code}</blockquote>",
-                chat_id=message.chat.id,
-                message_id=msg.message_id,
-                parse_mode="HTML"
-            )
-            return
-        
-        data = response.json()
-        
-        if not data.get('success'):
-            telegram_bot.edit_message_text(
-                f"<blockquote><b>LỖI</b>\n{data.get('error', 'Unknown error')}</blockquote>",
-                chat_id=message.chat.id,
-                message_id=msg.message_id,
-                parse_mode="HTML"
-            )
-            return
-        
-        result = data.get('result', {})
-        basic = result.get('basic_info', {})
-        social = result.get('social_info', {})
-        credit = result.get('credit_score_info', {})
-        clan = result.get('clan_basic_info', {})
-        pet = result.get('pet_info', {})
-        profile = result.get('profile_info', {})
-        
-        def convert_time(timestamp):
-            try:
-                ts = int(timestamp)
-                return datetime.datetime.fromtimestamp(ts).strftime("%d/%m/%Y %H:%M")
-            except:
-                return str(timestamp)
-        
-        reply = f"""
-<blockquote><b>THÔNG TIN NGƯỜI CHƠI</b>
-━━━━━━━━━━━━━━━━━━━━
-<b>Tên:</b> <code>{basic.get('nickname', 'N/A')}</code>
-<b>UID:</b> <code>{basic.get('account_id', 'N/A')}</code>
-<b>Khu vực:</b> <code>{basic.get('region', 'N/A')}</code>
-<b>Cấp độ:</b> <code>{basic.get('level', 'N/A')}</code>
-<b>Lượt thích:</b> <code>{basic.get('liked', 'N/A')}</code>
-<b>Hạng BR:</b> <code>{basic.get('rank', 'N/A')}</code>
-<b>Hạng CS:</b> <code>{basic.get('cs_rank', 'N/A')}</code>
-<b>Điểm uy tín:</b> <code>{credit.get('credit_score', 'N/A')}</code>
-<b>Tiểu sử:</b> <i>{social.get('signature', 'Không có')}</i>
-━━━━━━━━━━━━━━━━━━━━
-<b>CLAN:</b>
-├ <b>Tên:</b> <code>{clan.get('clan_name', 'Không có')}</code>
-├ <b>ID:</b> <code>{clan.get('clan_id', 'N/A')}</code>
-├ <b>Level:</b> <code>{clan.get('clan_level', 'N/A')}</code>
-└ <b>Thành viên:</b> <code>{clan.get('member_num', 0)}/{clan.get('capacity', 0)}</code>
-━━━━━━━━━━━━━━━━━━━━
-<b>PET:</b>
-├ <b>Tên:</b> <code>{pet.get('name', 'Không có')}</code>
-├ <b>Level:</b> <code>{pet.get('level', 'N/A')}</code>
-└ <b>Skin ID:</b> <code>{pet.get('skin_id', 'N/A')}</code>
-━━━━━━━━━━━━━━━━━━━━
-</blockquote>
-"""
-        telegram_bot.edit_message_text(
-            reply,
-            chat_id=message.chat.id,
-            message_id=msg.message_id,
-            parse_mode="HTML"
-        )
-        
-    except requests.exceptions.Timeout:
-        telegram_bot.edit_message_text(
-            "<blockquote><b>LỖI</b>\nAPI không phản hồi, vui lòng thử lại sau.</blockquote>",
-            chat_id=message.chat.id,
-            message_id=msg.message_id,
-            parse_mode="HTML"
-        )
-    except Exception as e:
-        telegram_bot.edit_message_text(
-            f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>",
-            chat_id=message.chat.id,
-            message_id=msg.message_id,
-            parse_mode="HTML"
-        )     
-                                
-@telegram_bot.message_handler(commands=['add'])
-@check_group_only
-@async_telegram
-def handle_telegram_add_user(message):
-    if not is_telegram_admin(message.from_user.id):
-        telegram_bot.reply_to(message, "<pre>TỪ CHỐI TRUY CẬP\nBạn không có quyền hạn Admin để sử dụng lệnh này!</pre>")
-        return
-    
-    try:
-        cid = message.chat.id
-        parts = message.text.strip().split()
-        if len(parts) < 4:
-            error_msg = (
-                f"<pre>SAI CÚ PHÁP LỆNH QUẢN TRỊ\n"
-                f"Định dạng lẻ: /add [bot id] [uid] [thời gian]\n"
-                f"Định dạng all: /add all [uid] [thời gian]\n\n"
-                f"Ví dụ:\n"
-                f"➜ /add 1 12345678 30d\n"
-                f"➜ /add all 12345678 30d</pre>"
-            )
-            telegram_bot.reply_to(message, error_msg)
-            return
-        
-        is_add_all = (parts[1].lower() == "all")
-        if not is_add_all and not parts[1].isdigit():
-            telegram_bot.reply_to(message, "<pre>Lỗi: Bot ID phải là số hoặc chữ 'all'!</pre>")
-            return
-        
-        if not parts[2].isdigit():
-            telegram_bot.reply_to(message, "<pre>Lỗi: UID Game phải là ký tự số!</pre>")
-            return
-        
-        add_uid = int(parts[2].strip())
-        duration = parts[3].strip()
-        bots_to_process = []
-        
-        if is_add_all:
-            for b in TCPbot.bots.values():
-                if b.running_event.is_set() and hasattr(b, "manager"):
-                    bots_to_process.append(b)
-        else:
-            target_bot_id = int(parts[1].strip())
-            for b in TCPbot.bots.values():
-                bot_config_id = b.bot_config.get("bot_id") if hasattr(b, "bot_config") else None
-                if (bot_config_id == target_bot_id or getattr(b, "botid", None) == target_bot_id) and hasattr(b, "manager"):
-                    bots_to_process.append(b)
-                    break
-        
-        if not bots_to_process:
-            if is_add_all:
-                fail_msg = "<pre>THÔNG BÁO\nHệ thống hiện tại không có Bot nào đang online!</pre>"
-            else:
-                fail_msg = f"<pre>THÔNG BÁO\nBot ID {target_bot_id} hiện offline hoặc không có kết nối Database.</pre>"
-            telegram_bot.reply_to(message, fail_msg)
-            return
-        
-        success_count = 0
-        failed_bots = []
-        
-        for bot in bots_to_process:
-            cfg = getattr(bot, "bot_config", {}) or {}
-            current_bot_id = cfg.get("bot_id") or getattr(bot, "botid", None)
-            if not current_bot_id:
-                continue
-            try:
-                result = bot.manager.add_uid_to_access(current_bot_id, add_uid, duration)
-                if result == True:
-                    success_count += 1
-                else:
-                    bot_name = getattr(bot, 'nickname', f"Bot #{current_bot_id}")
-                    failed_bots.append(bot_name)
-            except Exception as ex:
-                bot_name = getattr(bot, 'nickname', f"Bot #{current_bot_id}")
-                failed_bots.append(f"{bot_name}")
-        
-        if is_add_all:
-            done_msg = (
-                f"<pre>TIẾN TRÌNH ADD ALL HOÀN TẤT\n"
-                f"───────────────────────\n"
-                f"UID Game: {add_uid}\n"
-                f"Thời hạn: {duration}\n"
-                f"Thành công: {success_count}/{len(bots_to_process)} Bot</pre>"
-            )
-            if failed_bots:
-                done_msg += f"\n<i>Thất bại tại: {', '.join(failed_bots)}</i>"
-        else:
-            if success_count > 0:
-                done_msg = (
-                    f"<pre>KÍCH HOẠT TÀI KHOẢN THÀNH CÔNG\n"
-                    f"───────────────────────\n"
-                    f"Hệ thống Bot: {target_bot_id}\n"
-                    f"UID Game: {add_uid}\n"
-                    f"Thời hạn cấp: {duration}\n"
-                    f"Trạng thái: Đã thêm vào danh sách sử dụng bot thành công!</pre>"
-                )
-            else:
-                done_msg = f"<pre>THẤT BẠI\nKhông thể thêm UID {add_uid} vào Database của Bot {target_bot_id}.</pre>"
-        
-        telegram_bot.reply_to(message, done_msg)
-        
-    except Exception as e:
-        try:
-            telegram_bot.reply_to(message, f"<pre>LỖI HỆ THỐNG\nChi tiết: {str(e)[:50]}</pre>")
-        except:
-            pass
-        print("ADD USER ERROR:", e)
-
-@telegram_bot.message_handler(commands=['kb'])
-@check_group_only
-@async_telegram
-def telegram_kb(message):
-    if not is_telegram_admin(message.from_user.id):
-        telegram_bot.reply_to(message, "Không có quyền!")
-        return
-    
-    try:
-        parts = message.text.split()
-        if len(parts) < 3:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>SAI CÚ PHÁP</b>\nDùng: <code>/kb [botid] [uid]</code>\nVí dụ: <code>/kb 1 123456789</code></blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        bot_id = parts[1]
-        uid = parts[2]
-        
-        import requests
-        url = f"http://127.0.0.1:2011/kb?uid={uid}&botid={bot_id}"
-        response = requests.get(url, timeout=10)
-        result = response.json()
-        
-        if result.get('status') == 'success':
-            data = result.get('data', {})
-            telegram_bot.reply_to(
-                message,
-                f"<blockquote><b>GỬI KẾT BẠN THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>Bot:</b> <code>{data.get('bot_name', '')}</code>\n<b>UID:</b> <code>{uid}</code>\n<b>Trạng thái:</b> {result.get('message')}\n━━━━━━━━━━━━━━━━━━━━\nĐã gửi qua API!</blockquote>",
-                parse_mode="HTML"
-            )
-        else:
-            telegram_bot.reply_to(
-                message,
-                f"<blockquote><b>GỬI KẾT BẠN THẤT BẠI</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>Bot ID:</b> <code>{bot_id}</code>\n<b>UID:</b> <code>{uid}</code>\n<b>Lý do:</b> {result.get('message')}\n━━━━━━━━━━━━━━━━━━━━\nKiểm tra lại bot!</blockquote>",
-                parse_mode="HTML"
-            )
-            
-    except Exception as e:
-        telegram_bot.reply_to(message, f"Lỗi: {str(e)}")
-        
-MAX_REG_PER_DAY = 50
-MAX_REG_ADMIN = 9999
-REG_HISTORY_FILE = "reg_history.json"
-LIMITS_FILE = "reg_limits.json"
-
-def log_print(msg):
-    print(f"[{time.strftime('%H:%M:%S')}] {msg}")
-
-from zan_fixed import (
-    generate_accounts, REGION_LANG, CLIENT_VERSION, RELEASE_VERSION,
-    LOGIN_SERVER_URL, guest_register, token_grant, major_register,
-    major_login, choose_region, get_login_data, create_account,
-    generate_nickname, generate_password, _build_major_login
-)
-
-def load_reg_history():
-    if os.path.exists(REG_HISTORY_FILE):
-        try:
-            with open(REG_HISTORY_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except:
-            return {}
-    return {}
-
-def save_reg_history(data):
-    with open(REG_HISTORY_FILE, 'w', encoding='utf-8') as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
-
-def get_today():
-    return time.strftime("%Y-%m-%d")
-
-def get_user_reg_today(user_id):
-    history = load_reg_history()
-    today = get_today()
-    user_key = str(user_id)
-    
-    if user_key in history:
-        data = history[user_key]
-        if isinstance(data, dict) and data.get("date") == today:
-            return data.get("count", 0)
-    return 0
-
-def update_user_reg(user_id, count):
-    history = load_reg_history()
-    today = get_today()
-    user_key = str(user_id)
-    
-    if user_key not in history or not isinstance(history[user_key], dict) or history[user_key].get("date") != today:
-        history[user_key] = {"date": today, "count": 0}
-    
-    history[user_key]["count"] += count
-    save_reg_history(history)
-
-def get_user_reg_limit(user_id):
-    if os.path.exists(LIMITS_FILE):
-        try:
-            with open(LIMITS_FILE, 'r', encoding='utf-8') as f:
-                limits_data = json.load(f)
-            return limits_data.get(str(user_id), {}).get("limit", MAX_REG_PER_DAY)
-        except:
-            return MAX_REG_PER_DAY
-    return MAX_REG_PER_DAY
-
-@telegram_bot.message_handler(commands=['reg'])
-@async_telegram
-def telegram_reg_account(message):
-    user_id = message.from_user.id
-    is_admin = is_telegram_admin(user_id)
-    
-    if not is_admin:
-        telegram_bot.reply_to(
-            message,
-            "<blockquote><b>TỪ CHỐI TRUY CẬP</b>\n"
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "Chỉ Admin mới có quyền sử dụng lệnh này!\n"
-            "Liên hệ: @zanbackj</blockquote>",
-            parse_mode="HTML"
-        )
-        return
-    
-    if not check_user_in_group(user_id):
-        send_warn_join_group(message)
-        return
-    
-    try:
-        args = message.text.split()
-        if len(args) < 4:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>SAI CÚ PHÁP</b>\n"
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                "<code>/reg [số_lượng] [region] [tên]</code>\n\n"
-                "<b>Ví dụ:</b>\n"
-                "<code>/reg 10 VN zan</code>\n\n"
-                "<b>Region hỗ trợ:</b>\n"
-                "<code>VN, TH, ID, SG, MY, IN, PK, BD, RU, BR, EU, NA, ME, TW</code>\n\n"
-                "<b>Giới hạn Admin:</b> <code>{}</code> acc/lần</blockquote>".format(MAX_REG_ADMIN),
-                parse_mode="HTML"
-            )
-            return
-        
-        count = int(args[1])
-        region = args[2].upper()
-        name = args[3]
-        
-        if len(name) < 1:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>TÊN QUÁ NGẮN</b>\n"
-                f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"Tên phải có ít nhất <b>1</b> ký tự!\n"
-                f"Vui lòng nhập tên hợp lệ.</blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        if len(name) > 8:
-            telegram_bot.reply_to(
-                message,
-                f"<blockquote><b>TÊN QUÁ DÀI</b>\n"
-                f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"Tên chỉ được tối đa <b>8</b> ký tự!\n"
-                f"Tên hiện tại: <code>{name}</code> ({len(name)} ký tự)\n"
-                f"Vui lòng rút gọn tên (tối đa 8 ký tự).</blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        if " " in name:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>TÊN CÓ KHOẢNG CÁCH</b>\n"
-                f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"Tên <b>KHÔNG ĐƯỢC</b> có khoảng cách!\n"
-                f"Tên hiện tại: <code>{name}</code>\n"
-                f"Vui lòng nhập tên viết liền, không dấu cách.\n"
-                f"Ví dụ: <code>zan</code>, <code>vip</code>, <code>ff</code></blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        if region not in REGION_LANG:
-            telegram_bot.reply_to(
-                message,
-                f"<blockquote><b>REGION KHÔNG HỢP LỆ</b>\n"
-                f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"Hỗ trợ: <code>{', '.join(REGION_LANG.keys())}</code>\n"
-                f"Ví dụ: <code>/reg 10 VN zan</code></blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        if count < 1:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>LỖI</b>\n"
-                f"Số lượng phải lớn hơn 0!</blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        if count > MAX_REG_ADMIN:
-            telegram_bot.reply_to(
-                message,
-                f"<blockquote><b>LỖI</b>\n"
-                f"Admin chỉ được reg tối đa <code>{MAX_REG_ADMIN}</code> acc/lần!</blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        msg = telegram_bot.reply_to(
-            message,
-            f"<blockquote><b>ĐANG TẠO TÀI KHOẢN</b>\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"Số lượng: <code>{count}</code>\n"
-            f"Region: <code>{region}</code>\n"
-            f"Prefix: <code>{name}</code>\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"Vui lòng chờ...</blockquote>",
-            parse_mode="HTML"
-        )
-        
-        def run_reg():
-            try:
-                from telebot.types import InputFile
-                import io
-                
-                results = generate_accounts(name, region, count, 60)
-                
-                if results:
-                    file_content = f"========== FREE FIRE ACCOUNTS ==========\n"
-                    file_content += f"Total: {len(results)} accounts\n"
-                    file_content += f"Region: {region}\n"
-                    file_content += f"Prefix: {name}\n"
-                    file_content += f"Version: 1.126.1 (OB54)\n"
-                    file_content += f"Server: {LOGIN_SERVER_URL}\n"
-                    file_content += f"Created: {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
-                    file_content += f"========================================\n\n"
-                    
-                    tokens = []
-                    for i, acc in enumerate(results, 1):
-                        file_content += f"[{i}] UID: {acc.get('uid')}\n"
-                        file_content += f"    Password: {acc.get('password')}\n"
-                        file_content += f"    Name: {acc.get('name')}\n"
-                        file_content += f"    Region: {acc.get('region')}\n"
-                        file_content += f"    Account ID: {acc.get('account_id')}\n"
-                        file_content += f"    Access Token: {acc.get('access_token')}\n"
-                        file_content += f"    Open ID: {acc.get('open_id')}\n"
-                        file_content += f"    Status: {acc.get('status')}\n"
-                        file_content += f"    ------------------------------\n"
-                        if acc.get('access_token'):
-                            tokens.append(acc.get('access_token'))
-                    
-                    file_bytes = io.BytesIO(file_content.encode('utf-8'))
-                    file_bytes.name = "accounts.json"
-                    
-                    caption = (
-                        f"<blockquote><b>ADMIN REG THÀNH CÔNG</b>\n"
-                        f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"Đã tạo: <code>{len(results)}/{count}</code> acc\n"
-                        f"Region: <code>{region}</code>\n"
-                        f"Prefix: <code>{name}</code>\n"
-                        f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"File: <code>accounts.json</code></blockquote>"
-                    )
-                    
-                    telegram_bot.send_document(
-                        message.chat.id,
-                        file_bytes,
-                        caption=caption,
-                        visible_file_name="accounts.json",
-                        parse_mode="HTML"
-                    )
-                    
-                    try:
-                        telegram_bot.delete_message(message.chat.id, msg.message_id)
-                    except:
-                        pass
-                    
-                    if tokens:
-                        temp_tokens[message.from_user.id] = tokens
-                        
-                        keyboard = InlineKeyboardMarkup()
-                        keyboard.add(
-                            InlineKeyboardButton("Có (1 bot)", callback_data="addbot_yes"),
-                            InlineKeyboardButton("Có (ALL bot)", callback_data="addbot_all"),
-                            InlineKeyboardButton("Không", callback_data="addbot_no")
-                        )
-                        telegram_bot.send_message(
-                            message.chat.id,
-                            f"<blockquote><b>KẾT NỐI BOT TCP?</b>\n"
-                            f"━━━━━━━━━━━━━━━━━━━━\n"
-                            f"Số lượng: <code>{len(tokens)}</code> acc\n"
-                            f"Chọn 'Có (1 bot)' để thêm 1 bot\n"
-                            f"Chọn 'Có (ALL bot)' để thêm tất cả\n"
-                            f"Chọn 'Không' để hủy</blockquote>",
-                            parse_mode="HTML",
-                            reply_markup=keyboard
-                        )
-                    
-                else:
-                    telegram_bot.send_message(
-                        message.chat.id,
-                        "<blockquote><b>KHÔNG TẠO ĐƯỢC ACCOUNT</b>\n"
-                        f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"Vui lòng thử lại sau!</blockquote>",
-                        parse_mode="HTML"
-                    )
-                    
-            except Exception as e:
-                import traceback
-                traceback.print_exc()
-                telegram_bot.send_message(
-                    message.chat.id,
-                    f"<blockquote><b>LỖI</b>\n"
-                    f"{str(e)}</blockquote>",
-                    parse_mode="HTML"
-                )
-        
-        threading.Thread(target=run_reg, daemon=True).start()
-        
-    except ValueError:
-        telegram_bot.reply_to(
-            message,
-            "<blockquote><b>LỖI</b>\n"
-            f"Số lượng phải là số nguyên!</blockquote>",
-            parse_mode="HTML"
-        )
-    except Exception as e:
-        telegram_bot.reply_to(
-            message,
-            f"<blockquote><b>LỖI</b>\n"
-            f"{str(e)}</blockquote>",
-            parse_mode="HTML"
-        )
-                            
-@telegram_bot.callback_query_handler(func=lambda call: call.data in ["addbot_yes", "addbot_no", "addbot_all"])
-def callback_addbot(call):
-    try:
-        user_id = call.from_user.id
-        
-        if not is_telegram_admin(user_id):
-            telegram_bot.answer_callback_query(
-                call.id, 
-                "Bạn không phải admin để thực hiện yêu cầu này!",
-                show_alert=True
-            )
-            return
-        
-        tokens = temp_tokens.get(user_id, [])
-        
-        if call.data == "addbot_no":
-            telegram_bot.edit_message_text(
-                "<blockquote><b>ĐÃ HỦY KẾT NỐI</b>\n"
-                f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"Không thêm bot TCP vào hệ thống.</blockquote>",
-                chat_id=call.message.chat.id,
-                message_id=call.message.message_id,
-                parse_mode="HTML"
-            )
-            telegram_bot.answer_callback_query(call.id, "Đã hủy!")
-            if user_id in temp_tokens:
-                del temp_tokens[user_id]
-            return
-        
-        if not tokens:
-            telegram_bot.edit_message_text(
-                "<blockquote><b>LỖI</b>\n"
-                f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"Không lấy được access token!\n"
-                f"Vui lòng thử lại lệnh /reg</blockquote>",
-                chat_id=call.message.chat.id,
-                message_id=call.message.message_id,
-                parse_mode="HTML"
-            )
-            telegram_bot.answer_callback_query(call.id, "Lỗi token!")
-            return
-        
-        if call.data == "addbot_yes":
-            token = tokens[0] if tokens else None
-            if not token:
-                telegram_bot.answer_callback_query(call.id, "Không có token!")
-                return
-            
-            result = TCPbot.add_bot(token)
-            
-            if result["status"]:
-                bot_id = result["bot_id"]
-                TCPbot.bots[bot_id].start()
-                
-                telegram_bot.edit_message_text(
-                    f"<blockquote><b>THÊM 1 BOT THÀNH CÔNG</b>\n"
-                    f"━━━━━━━━━━━━━━━━━━━━\n"
-                    f"Bot ID: <code>{bot_id}</code>\n"
-                    f"Token: <code>{token[:20]}...</code>\n"
-                    f"━━━━━━━━━━━━━━━━━━━━\n"
-                    f"Bot đã được thêm vào hệ thống!</blockquote>",
-                    chat_id=call.message.chat.id,
-                    message_id=call.message.message_id,
-                    parse_mode="HTML"
-                )
-                telegram_bot.answer_callback_query(call.id, "Thêm bot thành công!")
-            else:
-                telegram_bot.edit_message_text(
-                    f"<blockquote><b>THÊM BOT THẤT BẠI</b>\n"
-                    f"━━━━━━━━━━━━━━━━━━━━\n"
-                    f"Lý do: {result['message']}</blockquote>",
-                    chat_id=call.message.chat.id,
-                    message_id=call.message.message_id,
-                    parse_mode="HTML"
-                )
-                telegram_bot.answer_callback_query(call.id, "Thêm bot thất bại!")
-        
-        elif call.data == "addbot_all":
-            success_count = 0
-            fail_count = 0
-            bot_ids = []
-            
-            for token in tokens:
-                result = TCPbot.add_bot(token)
-                if result["status"]:
-                    bot_id = result["bot_id"]
-                    TCPbot.bots[bot_id].start()
-                    success_count += 1
-                    bot_ids.append(bot_id)
-                else:
-                    fail_count += 1
-            
-            telegram_bot.edit_message_text(
-                f"<blockquote><b>THÊM ALL BOT THÀNH CÔNG</b>\n"
-                f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"Thành công: <code>{success_count}</code> bot\n"
-                f"Thất bại: <code>{fail_count}</code> bot\n"
-                f"Bot IDs: <code>{', '.join(map(str, bot_ids))}</code>\n"
-                f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"Tất cả bot đã được thêm vào hệ thống!</blockquote>",
-                chat_id=call.message.chat.id,
-                message_id=call.message.message_id,
-                parse_mode="HTML"
-            )
-            telegram_bot.answer_callback_query(call.id, f"Thêm {success_count} bot thành công!")
-        
-        if user_id in temp_tokens:
-            del temp_tokens[user_id]
-            
-    except Exception as e:
-        telegram_bot.answer_callback_query(call.id, f"Lỗi: {str(e)}")
-
-@telegram_bot.message_handler(commands=['checkallreg'])
-@async_telegram
-def telegram_checkallreg(message):
-    if not check_user_in_group(message.from_user.id):
-        send_warn_join_group(message)
-        return
-    
-    try:
-        if not is_telegram_admin(message.from_user.id):
-            telegram_bot.reply_to(message, "KHÔNG CÓ QUYỀN - Chỉ admin mới dùng được!")
-            return
-        
-        history = load_reg_history()
-        limits_data = {}
-        if os.path.exists(LIMITS_FILE):
-            with open(LIMITS_FILE, "r", encoding="utf-8") as f:
-                limits_data = json.load(f)
-        
-        if not history:
-            telegram_bot.reply_to(message, "CHƯA CÓ DỮ LIỆU REG - Chưa có ai reg account!")
-            return
-        
-        text = "DANH SÁCH REG CỦA TẤT CẢ USER\n"
-        text += "━━━━━━━━━━━━━━━━━━━━\n\n"
-        
-        today = get_today()
-        total_reg = 0
-        user_list = []
-        
-        for uid, data in history.items():
-            if isinstance(data, dict):
-                date = data.get("date", "N/A")
-                count = data.get("count", 0)
-                total_reg += count
-                
-                limit = limits_data.get(uid, {}).get("limit", MAX_REG_PER_DAY)
-                
-                try:
-                    user = telegram_bot.get_chat(int(uid))
-                    name = user.first_name or "Unknown"
-                    username = f"@{user.username}" if user.username else ""
-                except:
-                    name = "Unknown"
-                    username = ""
-                
-                if date == today:
-                    user_list.append({
-                        "uid": uid,
-                        "name": name,
-                        "username": username,
-                        "count": count,
-                        "limit": limit,
-                        "date": date
-                    })
-        
-        user_list.sort(key=lambda x: x["count"], reverse=True)
-        
-        if not user_list:
-            text += "Hôm nay chưa có ai reg!\n"
-        else:
-            for i, u in enumerate(user_list, 1):
-                text += f"{i}. {u['name']} {u['username']}\n"
-                text += f"   UID: {u['uid']}\n"
-                text += f"   Reg: {u['count']}/{u['limit']}\n"
-                text += f"   Ngày: {u['date']}\n\n"
-        
-        text += "━━━━━━━━━━━━━━━━━━━━\n"
-        text += f"Tổng reg hôm nay: {total_reg} accounts\n"
-        text += f"Tổng user: {len(user_list)} người"
-        
-        if len(text) > 4000:
-            import io
-            file_bytes = io.BytesIO(text.encode('utf-8'))
-            file_bytes.name = "reg_report.txt"
-            telegram_bot.send_document(
-                message.chat.id,
-                file_bytes,
-                caption=f"Báo cáo reg ngày {today}"
-            )
-        else:
-            telegram_bot.reply_to(message, text)
-        
-    except Exception as e:
-        telegram_bot.reply_to(message, f"LỖI: {str(e)}")
-
-
-@telegram_bot.message_handler(commands=['checkreg'])
-@async_telegram
-def telegram_checkreg(message):
-    if not check_user_in_group(message.from_user.id):
-        send_warn_join_group(message)
-        return
-    
-    try:
-        user_id = message.from_user.id
-        is_admin = is_telegram_admin(user_id)
-        
-        target_id = user_id
-        target_name = message.from_user.first_name or "Unknown"
-        
-        if is_admin and message.reply_to_message:
-            target_id = message.reply_to_message.from_user.id
-            target_name = message.reply_to_message.from_user.first_name or "Unknown"
-        
-        if is_admin and len(message.text.split()) > 1:
-            try:
-                target_id = int(message.text.split()[1])
-            except:
-                pass
-        
-        history = load_reg_history()
-        today = get_today()
-        user_key = str(target_id)
-        user_limit = get_user_reg_limit(target_id)
-        
-        today_count = 0
-        if user_key in history:
-            data = history[user_key]
-            if isinstance(data, dict):
-                if data.get("date") == today:
-                    today_count = data.get("count", 0)
-        
-        reg_details = {}
-        if os.path.exists("reg_details.json"):
-            with open("reg_details.json", "r", encoding="utf-8") as f:
-                reg_details = json.load(f)
-        
-        user_regs = reg_details.get(user_key, [])
-        
-        try:
-            user = telegram_bot.get_chat(target_id)
-            user_name = user.first_name or target_name
-            username = f"@{user.username}" if user.username else ""
-        except:
-            user_name = target_name
-            username = ""
-        
-        text = f"THÔNG TIN REG\n"
-        text += f"━━━━━━━━━━━━━━━━━━━━\n"
-        text += f"User: {user_name} {username}\n"
-        text += f"ID: {target_id}\n"
-        text += f"━━━━━━━━━━━━━━━━━━━━\n"
-        text += f"Hôm nay: {today}\n"
-        text += f"Đã reg: {today_count}/{user_limit}\n"
-        text += f"Còn lại: {user_limit - today_count}\n"
-        text += f"━━━━━━━━━━━━━━━━━━━━\n"
-        
-        if user_regs:
-            text += f"Lịch sử reg gần đây:\n"
-            for reg in user_regs[-5:]:
-                date = reg.get("date", "N/A")
-                count = reg.get("count", 0)
-                region = reg.get("region", "N/A")
-                text += f"  - {date}: {count} acc ({region})\n"
-        
-        limits_data = {}
-        if os.path.exists(LIMITS_FILE):
-            with open(LIMITS_FILE, "r", encoding="utf-8") as f:
-                limits_data = json.load(f)
-        
-        user_limit_info = limits_data.get(user_key, {})
-        if user_limit_info:
-            limit = user_limit_info.get("limit", MAX_REG_PER_DAY)
-            updated_by = user_limit_info.get("updated_by", "N/A")
-            updated_at = user_limit_info.get("updated_at", "N/A")
-            text += f"━━━━━━━━━━━━━━━━━━━━\n"
-            text += f"Giới hạn reg: {limit} acc/ngày\n"
-            if updated_by != "N/A":
-                text += f"Updated by: {updated_by}\n"
-                text += f"Lúc: {updated_at}\n"
-        
-        text += f"━━━━━━━━━━━━━━━━━━━━\n"
-        text += f"Reset vào 00:00 hàng ngày"
-        
-        telegram_bot.reply_to(message, text)
-        
-    except Exception as e:
-        telegram_bot.reply_to(message, f"LỖI: {str(e)}")
-
-
-@telegram_bot.message_handler(commands=['topreg'])
-@async_telegram
-def telegram_topreg(message):
-    if not check_user_in_group(message.from_user.id):
-        send_warn_join_group(message)
-        return
-    
-    try:
-        history = load_reg_history()
-        
-        if not history:
-            telegram_bot.reply_to(message, "Chưa có dữ liệu reg!")
-            return
-        
-        user_stats = {}
-        for uid, data in history.items():
-            if isinstance(data, dict):
-                count = data.get("count", 0)
-                if uid in user_stats:
-                    user_stats[uid] += count
-                else:
-                    user_stats[uid] = count
-        
-        sorted_users = sorted(user_stats.items(), key=lambda x: x[1], reverse=True)[:10]
-        
-        text = "TOP 10 USER REG NHIỀU NHẤT\n"
-        text += "━━━━━━━━━━━━━━━━━━━━\n\n"
-        
-        for i, (uid, count) in enumerate(sorted_users, 1):
-            try:
-                user = telegram_bot.get_chat(int(uid))
-                name = user.first_name or "Unknown"
-                username = f"@{user.username}" if user.username else ""
-            except:
-                name = "Unknown"
-                username = ""
-            
-            medal = f"{i}."
-            text += f"{medal} {name} {username}\n"
-            text += f"   {count} accounts\n"
-            text += f"   UID: {uid}\n\n"
-        
-        telegram_bot.reply_to(message, text)
-        
-    except Exception as e:
-        telegram_bot.reply_to(message, f"LỖI: {str(e)}")
-                
-@telegram_bot.message_handler(commands=['addreg'])
-def telegram_addreg(message):
-    if not is_telegram_admin(message.from_user.id):
-        telegram_bot.reply_to(
-            message,
-            "<b>KHÔNG CÓ QUYỀN</b>\n"
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "Bạn không có quyền sử dụng lệnh này!",
-            parse_mode="HTML"
-        )
-        return
-    
-    try:
-        args = message.text.split()
-        if len(args) < 2:
-            telegram_bot.reply_to(
-                message,
-                "<b>SAI CÚ PHÁP</b>\n"
-                "━━━━━━━━━━━━━━━━━━━━\n"
-                "<code>/addreg @username [số_lượng]</code>\n"
-                "<code>/addreg user_id [số_lượng]</code>\n\n"
-                "<b>Ví dụ:</b>\n"
-                "<code>/addreg @zanbackj 100</code>\n"
-                "<code>/addreg 123456789 50</code>\n\n"
-                "<b>Mặc định:</b> 50 acc/ngày\n"
-                "Reset vào 00:00 hàng ngày",
-                parse_mode="HTML"
-            )
-            return
-        
-        target = args[1].strip()
-        limit = 50
-        
-        if len(args) >= 3:
-            try:
-                limit = int(args[2])
-                if limit < 1:
-                    limit = 1
-                if limit > 9999:
-                    limit = 9999
-            except:
-                limit = 50
-        
-        user_id = None
-        user_name = target
-        
-        if target.startswith("@"):
-            username = target[1:]
-            try:
-                user = telegram_bot.get_chat(f"@{username}")
-                user_id = user.id
-                user_name = user.first_name or username
-            except Exception as e:
-                telegram_bot.reply_to(
-                    message,
-                    f"<b>KHÔNG TÌM THẤY USER</b>\n"
-                    f"━━━━━━━━━━━━━━━━━━━━\n"
-                    f"Username <code>{target}</code> không tồn tại!\n"
-                    f"User phải đã từng chat với bot.",
-                    parse_mode="HTML"
-                )
-                return
-        else:
-            try:
-                user_id = int(target)
-                try:
-                    user = telegram_bot.get_chat(user_id)
-                    user_name = user.first_name or str(user_id)
-                except:
-                    user_name = str(user_id)
-            except:
-                telegram_bot.reply_to(
-                    message,
-                    f"<b>ID KHÔNG HỢP LỆ</b>\n"
-                    f"━━━━━━━━━━━━━━━━━━━━\n"
-                    f"<code>{target}</code> không phải ID Telegram hợp lệ!",
-                    parse_mode="HTML"
-                )
-                return
-        
-        if not user_id:
-            telegram_bot.reply_to(
-                message,
-                "<b>KHÔNG TÌM THẤY USER</b>\n"
-                f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"Không xác định được user!\n"
-                f"Reply tin nhắn của user: <code>/addreg 100</code>",
-                parse_mode="HTML"
-            )
-            return
-        
-        limits_data = {}
-        if os.path.exists(LIMITS_FILE):
-            try:
-                with open(LIMITS_FILE, "r", encoding="utf-8") as f:
-                    limits_data = json.load(f)
-            except:
-                limits_data = {}
-        
-        limits_data[str(user_id)] = {
-            "limit": limit,
-            "updated_by": message.from_user.id,
-            "updated_at": time.strftime("%Y-%m-%d %H:%M:%S")
-        }
-        
-        with open(LIMITS_FILE, "w", encoding="utf-8") as f:
-            json.dump(limits_data, f, indent=2, ensure_ascii=False)
-        
-        try:
-            telegram_bot.send_message(
-                user_id,
-                f"<b>ĐÃ CẬP NHẬT GIỚI HẠN REG</b>\n"
-                f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"Bạn có thể tạo <code>{limit}</code> account mỗi ngày!\n"
-                f"Giới hạn mới: <code>{limit}</code> acc/ngày\n"
-                f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"Reset vào 00:00 hàng ngày\n"
-                f"Dùng /reg để tạo account",
-                parse_mode="HTML"
-            )
-        except:
-            pass
-        
-        telegram_bot.reply_to(
-            message,
-            f"<b>ĐÃ CẬP NHẬT GIỚI HẠN REG</b>\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"User: <code>{user_name}</code>\n"
-            f"ID: <code>{user_id}</code>\n"
-            f"Giới hạn mới: <code>{limit}</code> acc/ngày\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"Đã gửi thông báo cho user!",
-            parse_mode="HTML"
-        )
-        
-    except Exception as e:
-        telegram_bot.reply_to(
-            message,
-            f"<b>LỖI</b>\n"
-            f"{str(e)}",
-            parse_mode="HTML"
-        )
-                     
-ADMIN_ID = [8722607800]
-TELE_USERS_FILE = "tele_users.json"
-
-def save_telegram_user(chat_id):
-    users = []
-    if os.path.exists(TELE_USERS_FILE):
-        try:
-            with open(TELE_USERS_FILE, "r", encoding="utf-8") as f:
-                users = json.load(f)
-        except:
-            pass
-            
-    if chat_id not in users:
-        users.append(chat_id)
-        try:
-            with open(TELE_USERS_FILE, "w", encoding="utf-8") as f:
-                json.dump(users, f, indent=4)
-        except:
-            pass
-
-@telegram_bot.message_handler(func=lambda message: message.chat.type in ['group', 'supergroup'])
-def auto_save_group_id(message):
-    save_telegram_chat(message.chat.id, TELE_GROUPS_FILE)
-
-@telegram_bot.message_handler(commands=['tb'])
-def telegram_broadcast(message):
-    if message.from_user.id not in ADMIN_ID:
-        telegram_bot.reply_to(message, "Bạn không có quyền sử dụng lệnh này!")
-        return
-
-    msg_text = message.text.split(maxsplit=1)
-    if len(msg_text) < 2:
-        telegram_bot.reply_to(message, f"THÔNG BÁO LỖI\nVui lòng nhập nội dung.\nVí dụ: /tb Thông báo bảo trì hệ thống")
-        return
-        
-    broadcast_content = msg_text[1]
-    
-    user_ids = []
-    if os.path.exists(TELE_USERS_FILE):
-        try:
-            with open(TELE_USERS_FILE, "r", encoding="utf-8") as f:
-                user_ids = json.load(f)
-        except:
-            pass
-
-    group_ids = []
-    if os.path.exists(TELE_GROUPS_FILE):
-        try:
-            with open(TELE_GROUPS_FILE, "r", encoding="utf-8") as f:
-                group_ids = json.load(f)
-        except:
-            pass
-
-    if not user_ids and not group_ids:
-        telegram_bot.reply_to(message, f"DANH SÁCH TRỐNG\nKhông tìm thấy ID người dùng hoặc ID nhóm nào.")
-        return
-
-    telegram_bot.reply_to(message, f"ĐANG TIẾN HÀNH\nĐang gửi tới {len(user_ids)} người dùng và {len(group_ids)} nhóm...")
-
-    user_success = 0
-    group_success = 0
-    fail_count = 0
-    
-    formatted_msg = f"<b>{broadcast_content}</b>"
-
-    for user_id in user_ids:
-        try:
-            telegram_bot.send_message(user_id, formatted_msg, parse_mode="HTML")
-            user_success += 1
-            time.sleep(0.05)
-        except:
-            fail_count += 1
-
-    for group_id in group_ids:
-        try:
-            telegram_bot.send_message(group_id, formatted_msg, parse_mode="HTML")
-            group_success += 1
-            time.sleep(0.05)
-        except:
-            fail_count += 1
-
-    report = (
-        f"KẾT QUẢ GỬI TIN (BROADCAST)\n"
-        f"───────────────────────\n"
-        f"Thành công User: {user_success}\n"
-        f"Thành công Group: {group_success}\n"
-        f"Thất bại (Block/Kích): {fail_count}\n"
-        f"Tổng số mục tiêu: {len(user_ids) + len(group_ids)}"
-    )
-    telegram_bot.send_message(ADMIN_ID[0], report)
-                       
-ADMIN_IDSK = [8722607800]
-
-@telegram_bot.message_handler(commands=['cbrs', 'checkusers'])
-def telegram_check_users(message):
-    if message.from_user.id not in ADMIN_IDSK:
-        telegram_bot.reply_to(message, "Bạn không có quyền sử dụng lệnh này!")
-        return
-    
-    user_ids = []
-    if os.path.exists(TELE_USERS_FILE):
-        try:
-            with open(TELE_USERS_FILE, "r", encoding="utf-8") as f:
-                user_ids = json.load(f)
-        except:
-            pass
-    
-    group_ids = []
-    if os.path.exists(TELE_GROUPS_FILE):
-        try:
-            with open(TELE_GROUPS_FILE, "r", encoding="utf-8") as f:
-                group_ids = json.load(f)
-        except:
-            pass
-    
-    total_users = len(user_ids)
-    total_groups = len(group_ids)
-    
-    report = f"""
-<blockquote>
-<b>DANH SÁCH NGƯỜI DÙNG</b>
-───────────────────────
-<b>Tổng User:</b> <code>{total_users}</code>
-<b>Tổng Group:</b> <code>{total_groups}</code>
-───────────────────────
-<b>DANH SÁCH USER:</b>
-"""
-    
-    if user_ids:
-        for i, uid in enumerate(user_ids[:50], 1):
-            try:
-                user = telegram_bot.get_chat(uid)
-                name = user.first_name or "Unknown"
-                username = f"@{user.username}" if user.username else ""
-                report += f"{i}. {name} {username} - <code>{uid}</code>\n"
-            except:
-                report += f"{i}. <code>{uid}</code> (Không truy cập được)\n"
-    else:
-        report += "Chưa có user nào!\n"
-    
-    if len(user_ids) > 50:
-        report += f"\n... và {len(user_ids) - 50} user khác"
-    
-    report += f"""
-───────────────────────
-<b>DANH SÁCH GROUP:</b>
-"""
-    
-    if group_ids:
-        for i, gid in enumerate(group_ids[:20], 1):
-            try:
-                chat = telegram_bot.get_chat(gid)
-                title = chat.title or "Unknown"
-                report += f"{i}. {title} - <code>{gid}</code>\n"
-            except:
-                report += f"{i}. <code>{gid}</code> (Không truy cập được)\n"
-    else:
-        report += "Chưa có group nào!\n"
-    
-    if len(group_ids) > 20:
-        report += f"\n... và {len(group_ids) - 20} group khác"
-    
-    report += "</blockquote>"
-    
-    telegram_bot.reply_to(message, report, parse_mode="HTML")
-    
-@telegram_bot.message_handler(commands=['price', 'gia', 'banggiao'])
-def price_cmd(message):
-    text = """
-<b>BẢNG GIÁ DỊCH VỤ BOT FF</b>
-━━━━━━━━━━━━━━━━━━━━
-
-<b>BOT TEAM 5-6 (MÚA S7):</b>
-├ 1 ngày: 10k
-├ 1 tuần: 40k
-└ 1 tháng: 100k
-
-<b>BOT TÊN RIÊNG THEO YÊU CẦU:</b>
-├ 1 tuần: 60k
-└ 1 tháng: 120k
-
-<b>BOT QUÂN ĐOÀN (NHIỀU NGƯỜI DÙNG):</b>
-├ 1 tuần: 65k
-├ 1 tháng: 120k
-└ 3 tháng: 236k
-
-━━━━━━━━━━━━━━━━━━━━
-<b>ƯU ĐÃI ĐẶC BIỆT:</b>
-Càng thuê lâu dài giá càng rẻ
-Bot online 24/7, hoạt động liên tục
-Hỗ trợ đổi tên bot theo yêu cầu
-
-━━━━━━━━━━━━━━━━━━━━
-Liên hệ mua: @zanbackj
-    """
-    
-    telegram_bot.reply_to(message, text, parse_mode="HTML")
-
-@telegram_bot.message_handler(commands=['kick'])
-@check_group_only
-@async_telegram
-def handle_telegram_kick(message):
-    parts = message.text.split()
-    if len(parts) < 2 or not parts[1].isdigit():
-        telegram_bot.reply_to(
-            message, 
-            "<blockquote><b>SAI CÚ PHÁP</b>\n━━━━━━━━━━━━━━━━━━━━\nDùng: <code>/kick [teamcode]</code>\nVí dụ: <code>/kick 1234567</code>\n━━━━━━━━━━━━━━━━━━━━\nTeamcode phải là 7 chữ số!</blockquote>", 
-            parse_mode='HTML'
-        )
-        return
-    
-    team_code_int = int(parts[1])
-    
-    bots = get_available_bots(1)
-    if not bots:
-        telegram_bot.reply_to(
-            message, 
-            "<blockquote><b>KHÔNG CÓ BOT RẢNH</b>\n━━━━━━━━━━━━━━━━━━━━\nTất cả bot đang bận hoặc offline.\nVui lòng thử lại sau!\n</blockquote>", 
-            parse_mode='HTML'
-        )
-        return
-    
-    bot = bots[0]
-    bot.is_busy = True
-        
-    status_msg = telegram_bot.reply_to(
-        message, 
-        f"<blockquote><b>ĐANG KICK TEAM</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>Teamcode:</b> <code>{team_code_int}</code>\n<b>Bot:</b> <code>{getattr(bot, 'nickname', f'Bot #{bot.botid}')}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐang xử lý!</blockquote>", 
-        parse_mode='HTML'
-    )
-
-    try:
-        bot.rstatus = (99, "lagging")
-        bot.sock39699.sendall(bot._bot.join_squad(team_code_int))
-        time.sleep(1.5)
-        
-        sms_text = "[b][c][ffffff]Telegram: @zanbackj\nTiktok: @zanbackj\nThuê Bot Liên hệ admin"
-        bot.rstatus = (1, sms_text)
-        time.sleep(0.5)
-        
-        for _ in range(2222):
-            try:
-                bot.sock39699.sendall(bot._gen.lag_zan())
-                time.sleep(0.0001)
-            except:
-                pass
-        
-        bot.sock39699.sendall(bot._bot.leave_squad(0))                
-        bot.rstatus = (0, 0)
-        bot.is_busy = False
-        
-        telegram_bot.edit_message_text(
-            f"<blockquote><b>KICK TEAM THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>Teamcode:</b> <code>{team_code_int}</code>\n<b>Bot:</b> <code>{getattr(bot, 'nickname', f'Bot #{bot.botid}')}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐã kick xong team!</blockquote>",
-            chat_id=message.chat.id,
-            message_id=status_msg.message_id,
-            parse_mode='HTML'
-        )
-        
-    except Exception as e:      
-        bot.rstatus = (0, 0)
-        bot.is_busy = False
-        telegram_bot.edit_message_text(
-            f"<blockquote><b>KICK TEAM THẤT BẠI</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>Teamcode:</b> <code>{team_code_int}</code>\n<b>Lỗi:</b> {str(e)}\n━━━━━━━━━━━━━━━━━━━━\nKiểm tra lại teamcode hoặc bot!</blockquote>",
-            chat_id=message.chat.id,
-            message_id=status_msg.message_id,
-            parse_mode='HTML'
-        )                               
-@telegram_bot.message_handler(commands=['kball'])
-def telegram_kb_all(message):
-    if not is_telegram_admin(message.from_user.id):
-        telegram_bot.reply_to(message, "Không có quyền!")
-        return
-    
-    try:
-        parts = message.text.split()
-        if len(parts) < 2:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>SAI CÚ PHÁP</b>\nDùng: <code>/kball [uid]</code>\nVí dụ: <code>/kball 123456789</code></blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        uid = parts[1]
-        
-        import requests
-        url = f"http://127.0.0.1:2011/kb/all?uid={uid}"
-        response = requests.get(url, timeout=30)
-        result = response.json()
-        
-        if result.get('status') == 'success':
-            data = result.get('data', {})
-            results = data.get('results', [])
-            
-            msg = f"<blockquote><b>GỬI KẾT BẠN ALL THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>UID:</b> <code>{uid}</code>\n<b>Thành công:</b> {data.get('success', 0)}/{data.get('total_bots', 0)}\n━━━━━━━━━━━━━━━━━━━━\n"
-            
-            for r in results:
-                status = "" if r.get('success') else ""
-                msg += f"{status} <b>{r.get('bot_name')}</b>: {r.get('message')}\n"
-            
-            msg += "━━━━━━━━━━━━━━━━━━━━\nĐã gửi qua API!</blockquote>"
-            
-            telegram_bot.reply_to(message, msg, parse_mode="HTML")
-        else:
-            telegram_bot.reply_to(
-                message,
-                f"<blockquote><b>GỬI KẾT BẠN ALL THẤT BẠI</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>UID:</b> <code>{uid}</code>\n<b>Lý do:</b> {result.get('message')}\n━━━━━━━━━━━━━━━━━━━━\nKiểm tra lại!</blockquote>",
-                parse_mode="HTML"
-            )
-            
-    except Exception as e:
-        telegram_bot.reply_to(message, f"Lỗi: {str(e)}")
-
-@telegram_bot.message_handler(commands=['xkb'])
-def telegram_xkb(message):
-    if not is_telegram_admin(message.from_user.id):
-        telegram_bot.reply_to(message, "Bạn không có quyền sử dụng lệnh này!")
-        return
-    
-    try:
-        parts = message.text.split()
-        if len(parts) < 3:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>SAI CÚ PHÁP</b>\nDùng: <code>/xkb [bot_id] [uid]</code>\nVí dụ: <code>/xkb 1 123456789</code></blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        bot_id = parts[1]
-        uid = parts[2]
-        
-        import requests
-        url = f"http://127.0.0.1:2011/xkb?uid={uid}&botid={bot_id}"
-        response = requests.get(url, timeout=10)
-        result = response.json()
-        
-        if result.get('status') == 'success':
-            data = result.get('data', {})
-            telegram_bot.reply_to(
-                message,
-                f"<blockquote><b>HỦY KẾT BẠN THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>Bot:</b> <code>{data.get('bot_name', '')}</code>\n<b>UID:</b> <code>{uid}</code>\n<b>Trạng thái:</b> {result.get('message')}\n━━━━━━━━━━━━━━━━━━━━\nĐã hủy qua API!</blockquote>",
-                parse_mode="HTML"
-            )
-        else:
-            telegram_bot.reply_to(
-                message,
-                f"<blockquote><b>HỦY KẾT BẠN THẤT BẠI</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>Bot ID:</b> <code>{bot_id}</code>\n<b>UID:</b> <code>{uid}</code>\n<b>Lý do:</b> {result.get('message')}\n━━━━━━━━━━━━━━━━━━━━\nKiểm tra lại bot!</blockquote>",
-                parse_mode="HTML"
-            )
-            
-    except Exception as e:
-        telegram_bot.reply_to(message, f"Lỗi: {str(e)}")
-        
-@telegram_bot.message_handler(commands=['xkball'])
-def telegram_xkb_all(message):
-    if not is_telegram_admin(message.from_user.id):
-        telegram_bot.reply_to(message, "Không có quyền!")
-        return
-    
-    try:
-        parts = message.text.split()
-        if len(parts) < 2:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>SAI CÚ PHÁP</b>\nDùng: <code>/xkball [uid]</code>\nVí dụ: <code>/xkball 123456789</code></blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        uid = parts[1]
-        
-        import requests
-        url = f"http://127.0.0.1:2011/xkb/all?uid={uid}"
-        response = requests.get(url, timeout=30)
-        result = response.json()
-        
-        if result.get('status') == 'success':
-            data = result.get('data', {})
-            results = data.get('results', [])
-            
-            msg = f"<blockquote><b>HỦY KẾT BẠN ALL THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>UID:</b> <code>{uid}</code>\n<b>Thành công:</b> {data.get('success', 0)}/{data.get('total_bots', 0)}\n━━━━━━━━━━━━━━━━━━━━\n"
-            
-            for r in results:
-                status = "" if r.get('success') else ""
-                msg += f"{status} <b>{r.get('bot_name')}</b>: {r.get('message')}\n"
-            
-            msg += "━━━━━━━━━━━━━━━━━━━━\nĐã hủy qua API!</blockquote>"
-            
-            telegram_bot.reply_to(message, msg, parse_mode="HTML")
-        else:
-            telegram_bot.reply_to(
-                message,
-                f"<blockquote><b>HỦY KẾT BẠN ALL THẤT BẠI</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>UID:</b> <code>{uid}</code>\n<b>Lý do:</b> {result.get('message')}\n━━━━━━━━━━━━━━━━━━━━\nKiểm tra lại!</blockquote>",
-                parse_mode="HTML"
-            )
-            
-    except Exception as e:
-        telegram_bot.reply_to(message, f"Lỗi: {str(e)}")
-                
-@telegram_bot.message_handler(commands=['isbanned'])
-@check_group_only
-@async_telegram
-def telegram_isbanned(message):
-    if not check_user_in_group(message.from_user.id):
-        send_warn_join_group(message)
-        return
-    
-    try:
-        args = message.text.split()
-        if len(args) < 2:
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>INVALID SYNTAX</b>\nUse: <code>/isbanned [uid]</code>\nExample: <code>/isbanned 123456789</code></blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        uid = args[1].strip()
-        if not uid.isdigit():
-            telegram_bot.reply_to(
-                message,
-                "<blockquote><b>ERROR</b>\nUID must be a number!</blockquote>",
-                parse_mode="HTML"
-            )
-            return
-        
-        msg = telegram_bot.reply_to(
-            message,
-            f"<blockquote><b>CHECKING BAN STATUS</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>UID:</b> <code>{uid}</code>\n━━━━━━━━━━━━━━━━━━━━\nProcessing...</blockquote>",
-            parse_mode="HTML"
-        )
-        
-        def run_check():
-            try:
-                is_banned = check_banned(uid)
-                
-                if is_banned:
-                    response = (
-                        f"<blockquote><b>UID: {uid}</b>\n"
-                        f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"<b>Status:</b> BANNED\n"
-                        f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"This account has been banned!</blockquote>"
-                    )
-                else:
-                    response = (
-                        f"<blockquote><b>UID: {uid}</b>\n"
-                        f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"<b>Status:</b> NOT BANNED\n"
-                        f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"This account is active!</blockquote>"
-                    )
-                
-                telegram_bot.edit_message_text(
-                    response,
-                    chat_id=message.chat.id,
-                    message_id=msg.message_id,
-                    parse_mode="HTML"
-                )
-                
-            except Exception as e:
-                telegram_bot.edit_message_text(
-                    f"<blockquote><b>ERROR</b>\n{str(e)}</blockquote>",
-                    chat_id=message.chat.id,
-                    message_id=msg.message_id,
-                    parse_mode="HTML"
-                )
-        
-        threading.Thread(target=run_check, daemon=True).start()
-        
-    except Exception as e:
-        telegram_bot.reply_to(
-            message,
-            f"<blockquote><b>ERROR</b>\n{str(e)}</blockquote>",
-            parse_mode="HTML"
-        )
-                                           
 @telegram_bot.message_handler(commands=['addid'])
 def telegram_addid(message):
     if not is_telegram_admin(message.from_user.id):
-        telegram_bot.reply_to(message, "Không có quyền!")
+        telegram_bot.reply_to(message, "❌ Không có quyền!")
         return
 
     parts = message.text.split()
     if len(parts) < 4:
         telegram_bot.reply_to(
             message,
-            "<blockquote><b>SAI CÚ PHÁP</b>\nDùng: <code>/addid [botid] [uid] [time]</code>\nVí dụ: <code>/addid 1 123456 7d</code></blockquote>",
+            "<blockquote><b>❌ SAI CÚ PHÁP</b>\n💡 Dùng: <code>/addid [botid] [uid] [time]</code>\n📌 Ví dụ: <code>/addid 1 123456 7d</code></blockquote>",
             parse_mode="HTML"
         )
         return
@@ -5690,14 +4593,14 @@ def telegram_addid(message):
         timee = parts[3]
 
         if bid not in TCPbot.bots:
-            telegram_bot.reply_to(message, "Bot không tồn tại!")
+            telegram_bot.reply_to(message, "❌ Bot không tồn tại!")
             return
 
         import re
         if not re.match(r'^\d+[hdwmy]$', timee.lower()):
             telegram_bot.reply_to(
                 message,
-                "<blockquote><b>SAI ĐỊNH DẠNG TIME</b>\nDùng: <code>1h</code> <code>1d</code> <code>7d</code> <code>1w</code> <code>1m</code></blockquote>",
+                "<blockquote><b>❌ SAI ĐỊNH DẠNG TIME</b>\n💡 Dùng: <code>1h</code> <code>1d</code> <code>7d</code> <code>1w</code> <code>1m</code></blockquote>",
                 parse_mode="HTML"
             )
             return
@@ -5738,30 +4641,111 @@ def telegram_addid(message):
 
         telegram_bot.reply_to(
             message,
-            f"<blockquote><b>THÊM QUYỀN THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\n<b>Bot ID:</b> <code>{bid}</code>\n<b>UID:</b> <code>{uid}</code>\n<b>Time:</b> <code>{timee}</code>\n━━━━━━━━━━━━━━━━━━━━\nĐã thêm thành công!</blockquote>",
+            f"<blockquote><b>✅ THÊM QUYỀN THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\n🤖 <b>Bot ID:</b> <code>{bid}</code>\n👤 <b>UID:</b> <code>{uid}</code>\n⏳ <b>Time:</b> <code>{timee}</code>\n━━━━━━━━━━━━━━━━━━━━\n⚡ Đã thêm thành công!</blockquote>",
             parse_mode="HTML"
         )
 
     except Exception as e:
-        telegram_bot.reply_to(message, f"<blockquote><b>LỖI</b>\n{str(e)}</blockquote>", parse_mode="HTML")
-                           
+        telegram_bot.reply_to(message, f"<blockquote><b>❌ LỖI</b>\n🔴 {str(e)}</blockquote>", parse_mode="HTML")
+   
+@telegram_bot.message_handler(commands=["grant"])
+def cmd_grant(message):
+    if not is_telegram_admin(message.from_user.id):
+        telegram_bot.reply_to(message, "❌ Không có quyền!")
+        return
+    
+    parts = message.text.split()
+    if len(parts) < 4:
+        telegram_bot.reply_to(message, "⚠️ Dùng: /grant [botid] [uid] [time]\nVí dụ: /grant 1 12345678 30d (d: ngày, h: giờ, w: tuần)")
+        return
+    
+    try:
+        bid = int(parts[1])
+        uid = int(parts[2])
+        time_str = parts[3]
+        
+        # Kiểm tra bot tồn tại
+        if bid not in TCPbot.bots:
+            telegram_bot.reply_to(message, f"❌ Bot ID {bid} không tồn tại!")
+            return
+        
+        bot = TCPbot.bots[bid]
+        
+        # Kiểm tra định dạng time
+        import re
+        if not re.match(r'^\d+[hdwmy]$', time_str.lower()):
+            telegram_bot.reply_to(message, "❌ Sai định dạng thời gian! (Ví dụ hợp lệ: 1d, 12h, 2w, 1m, 1y)")
+            return
+        
+        # Tính thời gian hết hạn
+        from datetime import datetime, timedelta
+        
+        now = datetime.now()
+        num = int(time_str[:-1])
+        unit = time_str[-1].lower()
+        
+        if unit == 'h':
+            delta = timedelta(hours=num)
+        elif unit == 'd':
+            delta = timedelta(days=num)
+        elif unit == 'w':
+            delta = timedelta(weeks=num)
+        elif unit == 'm':
+            delta = timedelta(days=num * 30)
+        elif unit == 'y':
+            delta = timedelta(days=num * 365)
+        else:
+            delta = timedelta(days=1)
+        
+        expire_time = now + delta
+        expire_str = expire_time.strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Cập nhật vào bot_config
+        if 'access_bot' not in bot.bot_config:
+            bot.bot_config['access_bot'] = []
+        
+        found = False
+        for u in bot.bot_config['access_bot']:
+            if u.get('uid') == uid:
+                u['expire'] = expire_str
+                found = True
+                break
+        
+        if not found:
+            bot.bot_config['access_bot'].append({
+                'uid': uid,
+                'expire': expire_str
+            })
+        
+        # Lưu config
+        TCPbot.save_config()
+        
+        # Trả kết quả
+        bot_name = getattr(bot, 'nickname', f'Bot #{bid}')
+        telegram_bot.reply_to(message, f"✅ Đã cấp quyền thành công!\n- BotID: {bid} ({bot_name})\n- UID: {uid}\n- Thời gian: {time_str}\n- Hết hạn: {expire_str}")
+        
+    except ValueError:
+        telegram_bot.reply_to(message, "❌ BotID và UID phải là số nguyên!")
+    except Exception as e:
+        telegram_bot.reply_to(message, f"❌ Lỗi: {e}")                           
+                                                                          
 @telegram_bot.message_handler(commands=['del'])
 def telegram_delete_user(message):
     if not is_telegram_admin(message.from_user.id):
-        telegram_bot.reply_to(message, "Bạn không có quyền sử dụng lệnh này!")
+        telegram_bot.reply_to(message, "❌ Bạn không có quyền sử dụng lệnh này!")
         return
     
     try:
         parts = message.text.split()
         if len(parts) < 3:
-            telegram_bot.reply_to(message, "Sai cú pháp! Cú pháp chuẩn: /del <bot_id> <uid>")
+            telegram_bot.reply_to(message, "❌ Sai cú pháp! Cú pháp chuẩn: /del <bot_id> <uid>")
             return
         
         bot_id = int(parts[1])
         uid = int(parts[2])
         
         if bot_id not in TCPbot.bots:
-            telegram_bot.reply_to(message, f"Không tìm thấy bot ID {bot_id} trong hệ thống!")
+            telegram_bot.reply_to(message, f"❌ Không tìm thấy bot ID {bot_id} trong hệ thống!")
             return
         
         target_bot = TCPbot.bots[bot_id]
@@ -5771,128 +4755,2553 @@ def telegram_delete_user(message):
         
         if result:
             msg = (
-                f"Đã xóa quyền sử dụng thành công!\n"
+                f"🗑️ Đã xóa quyền sử dụng thành công!\n"
                 f"━━━━━━━━━━━━━━━━━━\n"
-                f"Bot ID: {bot_id}\n"
-                f"Name bot: {bot_name}\n"
-                f"UID: {uid}"
+                f"🤖 Bot ID: {bot_id}\n"
+                f"📛 Name bot: {bot_name}\n"
+                f"👤 UID: {uid}"
             )
             telegram_bot.reply_to(message, msg)
         else:
-            telegram_bot.reply_to(message, "Xóa người dùng thất bại hoặc không tìm thấy dữ liệu trên bot này!")
+            telegram_bot.reply_to(message, "❌ Xóa người dùng thất bại hoặc không tìm thấy dữ liệu trên bot này!")
             
     except ValueError:
-        telegram_bot.reply_to(message, "Bot ID và UID phải là số nguyên!")
+        telegram_bot.reply_to(message, "❌ Bot ID và UID phải là số nguyên!")
     except Exception as e:
-        telegram_bot.reply_to(message, f"Lỗi: {str(e)}")
+        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
               
-@telegram_bot.message_handler(commands=['delbot'])
-def telegram_del_bot(message):
+@telegram_bot.message_handler(commands=["delbot"])
+def cmd_delbot(message):
     if not is_telegram_admin(message.from_user.id):
-        telegram_bot.reply_to(message, "Bạn không có quyền sử dụng lệnh này!")
+        telegram_bot.reply_to(message, "❌ Không có quyền!")
+        return
+
+    parts = message.text.split()
+    if len(parts) < 2:
+        telegram_bot.reply_to(
+            message,
+            "<blockquote><b>❌ SAI CÚ PHÁP</b>\n"
+            "<code>/delbot [botid]</code>\n"
+            "<code>/delbot all</code> (xóa tất cả)</blockquote>",
+            parse_mode='HTML'
+        )
+        return
+
+    import os
+
+    # ===== XÓA ALL =====
+    if parts[1].lower() == "all":
+        count = len(TCPbot.bots)
+        if count == 0:
+            telegram_bot.reply_to(
+                message,
+                "<blockquote><b>⚠️ KHÔNG CÓ BOT</b>\n"
+                "Không có bot nào để xóa!</blockquote>",
+                parse_mode='HTML'
+            )
+            return
+        for bid in list(TCPbot.bots.keys()):
+            try:
+                TCPbot.bots[bid].cleanup()
+            except:
+                pass
+            del TCPbot.bots[bid]
+            try:
+                db_path = f"bot_{bid}.db"
+                if os.path.exists(db_path):
+                    os.remove(db_path)
+            except:
+                pass
+        TCPbot.config["bots"] = []
+        TCPbot.save_config()
+        telegram_bot.reply_to(
+            message,
+            f"<blockquote><b>✅ ĐÃ XÓA TOÀN BỘ</b>\n"
+            f"Đã xóa {count} bot khỏi hệ thống và file bot.json!</blockquote>",
+            parse_mode='HTML'
+        )
+        return
+
+    # ===== XÓA 1 BOT =====
+    try:
+        bid = int(parts[1])
+        if bid not in TCPbot.bots:
+            telegram_bot.reply_to(
+                message,
+                f"<blockquote><b>❌ KHÔNG TÌM THẤY</b>\n"
+                f"Bot ID {bid} không tồn tại!</blockquote>",
+                parse_mode='HTML'
+            )
+            return
+        
+        bot_name = getattr(TCPbot.bots[bid], 'nickname', 'Unknown')
+        
+        # Cleanup socket
+        try:
+            TCPbot.bots[bid].cleanup()
+        except:
+            pass
+        
+        # Xóa khỏi RAM
+        del TCPbot.bots[bid]
+        
+        # Xóa khỏi config
+        TCPbot.config["bots"] = [
+            b for b in TCPbot.config["bots"]
+            if b.get("bot_id") != bid
+        ]
+        
+        # Xóa file DB
+        db_path = f"bot_{bid}.db"
+        if os.path.exists(db_path):
+            try:
+                os.remove(db_path)
+            except:
+                pass
+        
+        # Lưu file
+        TCPbot.save_config()
+        
+        telegram_bot.reply_to(
+            message,
+            f"<blockquote><b>✅ XÓA BOT THÀNH CÔNG</b>\n"
+            f"Bot ID: <code>{bid}</code>\n"
+            f"Tên: <code>{bot_name}</code>\n"
+            f"📁 Đã xóa khỏi file <code>bot.json</code></blockquote>",
+            parse_mode='HTML'
+        )
+    except ValueError:
+        telegram_bot.reply_to(
+            message,
+            "<blockquote><b>❌ LỖI</b>\nBot ID phải là số!</blockquote>",
+            parse_mode='HTML'
+        )
+    except Exception as e:
+        telegram_bot.reply_to(
+            message,
+            f"<blockquote><b>❌ LỖI</b>\n{str(e)}</blockquote>",
+            parse_mode='HTML'
+        )
+        
+def get_region_from_jwt(jwt_token):
+    """Lấy region từ JWT token"""
+    try:
+        import jwt
+        decoded = jwt.decode(jwt_token, options={"verify_signature": False})
+        return decoded.get("lock_region", "VN")
+    except:
+        return "VN"
+
+def request_join_clan(jwt_token, clan_id, region="VN"):
+    """Xin vào clan"""
+    import requests
+    from Crypto.Cipher import AES
+    from Crypto.Util.Padding import pad
+    
+    KEY = bytes([89,103,38,116,99,37,68,69,117,104,54,37,90,99,94,56])
+    IV = bytes([54,111,121,90,68,114,50,50,69,51,121,99,104,106,77,37])
+    
+    REGION_SERVER_MAP = {
+        "VN": "https://clientbp.ggpolarbear.com",
+        "TH": "https://clientbp.ggpolarbear.com",
+        "ID": "https://clientbp.ggpolarbear.com",
+        "SG": "https://clientbp.ggpolarbear.com",
+        "MY": "https://clientbp.ggpolarbear.com",
+        "IN": "https://client.ind.freefiremobile.com",
+        "PK": "https://clientbp.ggblueshark.com",
+        "BD": "https://clientbp.ggwhitehawk.com",
+        "BR": "https://client.us.freefiremobile.com",
+        "NA": "https://client.us.freefiremobile.com",
+        "ME": "https://clientbp.ggblueshark.com",
+        "EU": "https://clientbp.ggpolarbear.com",
+        "RU": "https://clientbp.ggpolarbear.com",
+    }
+    
+    server_url = REGION_SERVER_MAP.get(region.upper(), "https://clientbp.ggpolarbear.com")
+    
+    msg = ReqCLan_pb2.MyMessage()
+    msg.field_1 = int(clan_id)
+    
+    cipher = AES.new(KEY, AES.MODE_CBC, IV)
+    encrypted = cipher.encrypt(pad(msg.SerializeToString(), AES.block_size))
+    
+    headers = {
+        "Authorization": f"Bearer {jwt_token}",
+        "Content-Type": "application/octet-stream",
+        "X-Unity-Version": "2018.4.11f1",
+        "X-GA": "v1 1",
+        "ReleaseVersion": "OB55",
+        "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 9)",
+        "Connection": "Keep-Alive",
+        "Accept-Encoding": "gzip"
+    }
+    
+    try:
+        r = requests.post(f"{server_url}/RequestJoinClan", headers=headers, data=encrypted, verify=False, timeout=15)
+        if r.status_code == 200:
+            return True, "✅ Xin vào clan thành công!"
+        elif "BR_ALREADY_IN_CLAN" in r.text:
+            return False, "❌ Bạn đã ở trong clan này rồi!"
+        elif "BR_JOIN_CLAN_REQUEST_LIMIT" in r.text:
+            return False, "❌ Đã đạt giới hạn yêu cầu!"
+        else:
+            return False, f"❌ Thất bại! Status: {r.status_code}"
+    except Exception as e:
+        return False, f"❌ Lỗi: {str(e)}"
+
+def quit_clan(jwt_token, clan_id, region="VN"):
+    """Rời clan"""
+    import requests
+    from Crypto.Cipher import AES
+    from Crypto.Util.Padding import pad
+    
+    KEY = bytes([89,103,38,116,99,37,68,69,117,104,54,37,90,99,94,56])
+    IV = bytes([54,111,121,90,68,114,50,50,69,51,121,99,104,106,77,37])
+    
+    REGION_SERVER_MAP = {
+        "VN": "https://clientbp.ggpolarbear.com",
+        "TH": "https://clientbp.ggpolarbear.com",
+        "ID": "https://clientbp.ggpolarbear.com",
+        "SG": "https://clientbp.ggpolarbear.com",
+        "MY": "https://clientbp.ggpolarbear.com",
+        "IN": "https://client.ind.freefiremobile.com",
+        "PK": "https://clientbp.ggblueshark.com",
+        "BD": "https://clientbp.ggwhitehawk.com",
+        "BR": "https://client.us.freefiremobile.com",
+        "NA": "https://client.us.freefiremobile.com",
+        "ME": "https://clientbp.ggblueshark.com",
+        "EU": "https://clientbp.ggpolarbear.com",
+        "RU": "https://clientbp.ggpolarbear.com",
+    }
+    
+    server_url = REGION_SERVER_MAP.get(region.upper(), "https://clientbp.ggpolarbear.com")
+    
+    msg = QuitClanReq_pb2.QuitClanReq()
+    msg.field_1 = int(clan_id)
+    
+    cipher = AES.new(KEY, AES.MODE_CBC, IV)
+    encrypted = cipher.encrypt(pad(msg.SerializeToString(), AES.block_size))
+    
+    headers = {
+        "Authorization": f"Bearer {jwt_token}",
+        "Content-Type": "application/octet-stream",
+        "X-Unity-Version": "2018.4.11f1",
+        "X-GA": "v1 1",
+        "ReleaseVersion": "OB55",
+        "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 9)",
+        "Connection": "Keep-Alive",
+        "Accept-Encoding": "gzip"
+    }
+    
+    try:
+        r = requests.post(f"{server_url}/QuitClan", headers=headers, data=encrypted, verify=False, timeout=15)
+        if r.status_code == 200:
+            return True, "✅ Rời clan thành công!"
+        elif "BR_NOT_IN_CLAN" in r.text:
+            return False, "❌ Bạn không ở trong clan này!"
+        else:
+            return False, f"❌ Thất bại! Status: {r.status_code}"
+    except Exception as e:
+        return False, f"❌ Lỗi: {str(e)}"
+
+
+# ===== LỆNH TELEGRAM: /voqd =====
+@telegram_bot.message_handler(commands=['voqd'])
+def telegram_join_clan(message):
+    if not is_telegram_admin(message.from_user.id):
+        telegram_bot.reply_to(message, "❌ Bạn không có quyền sử dụng lệnh này!")
+        return
+    
+    try:
+        parts = message.text.split()
+        if len(parts) < 3:
+            telegram_bot.reply_to(
+                message,
+                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n"
+                "💡 Dùng: <code>/voqd [botid] [clan_id]</code>\n"
+                "📌 Ví dụ: <code>/voqd 1 123456789</code>\n"
+                "📌 Ví dụ: <code>/voqd 1 123456789 VN</code></blockquote>",
+                parse_mode="HTML"
+            )
+            return
+        
+        bot_id = int(parts[1])
+        clan_id = parts[2]
+        region = parts[3].upper() if len(parts) > 3 else None
+        
+        if not clan_id.isdigit():
+            telegram_bot.reply_to(message, "❌ Clan ID phải là số!")
+            return
+        
+        if bot_id not in TCPbot.bots:
+            telegram_bot.reply_to(message, f"❌ Không tìm thấy bot {bot_id}!")
+            return
+        
+        bot = TCPbot.bots[bot_id]
+        
+        # Lấy token
+        token = getattr(bot, 'token', None)
+        if not token:
+            token = bot.bot_config.get('auth_bot_login', {}).get('access_token')
+        
+        if not token:
+            telegram_bot.reply_to(message, f"❌ Bot {bot_id} không có token!")
+            return
+        
+        # Auto detect region nếu không có
+        if not region:
+            region = get_region_from_jwt(token)
+        
+        bot_name = getattr(bot, 'nickname', f'Bot #{bot_id}')
+        bot_uid = getattr(bot, 'botid', '?')
+        
+        telegram_bot.reply_to(
+            message,
+            f"<blockquote><b>🔄 ĐANG XIN VÀO CLAN...</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"🤖 Bot: <code>{bot_name}</code>\n"
+            f"🆔 UID: <code>{bot_uid}</code>\n"
+            f"🏠 Clan ID: <code>{clan_id}</code>\n"
+            f"🌍 Region: <code>{region}</code>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"⏳ Đang xử lý...</blockquote>",
+            parse_mode="HTML"
+        )
+        
+        success, msg = request_join_clan(token, clan_id, region)
+        
+        if success:
+            final_msg = (
+                f"<blockquote><b>✅ XIN VÀO CLAN THÀNH CÔNG</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"🤖 Bot: <code>{bot_name}</code>\n"
+                f"🆔 UID: <code>{bot_uid}</code>\n"
+                f"🏠 Clan ID: <code>{clan_id}</code>\n"
+                f"🌍 Region: <code>{region}</code>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"⚡ {msg}</blockquote>"
+            )
+        else:
+            final_msg = (
+                f"<blockquote><b>❌ XIN VÀO CLAN THẤT BẠI</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"🤖 Bot: <code>{bot_name}</code>\n"
+                f"🆔 UID: <code>{bot_uid}</code>\n"
+                f"🏠 Clan ID: <code>{clan_id}</code>\n"
+                f"🌍 Region: <code>{region}</code>\n"
+                f"⚠️ {msg}\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"💡 Kiểm tra clan ID hoặc token!</blockquote>"
+            )
+        
+        telegram_bot.reply_to(message, final_msg, parse_mode="HTML")
+        
+    except ValueError:
+        telegram_bot.reply_to(message, "❌ Bot ID phải là số!")
+    except Exception as e:
+        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
+
+@telegram_bot.message_handler(commands=['addadmin'])
+def telegram_add_admin(message):
+    global TELEGRAM_ADMINS                              # ← PHẢI ĐỂ ĐẦU HÀM
+    
+    if not is_telegram_admin(message.from_user.id):
+        telegram_bot.reply_to(message, "❌ Bạn không có quyền sử dụng lệnh này!")
         return
     
     try:
         parts = message.text.split()
         if len(parts) < 2:
-            telegram_bot.reply_to(message, "Sai cú pháp!\nSử dụng: /delbot <bot_id> hoặc /delbot all")
+            telegram_bot.reply_to(
+                message,
+                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n"
+                "💡 Dùng: <code>/addadmin [uid]</code>\n"
+                "📌 Ví dụ: <code>/addadmin 8722607800</code></blockquote>",
+                parse_mode="HTML"
+            )
+            return
+        
+        target_uid = parts[1]
+        if not target_uid.isdigit():
+            telegram_bot.reply_to(message, "❌ UID phải là số!")
+            return
+        
+        target_uid = int(target_uid)
+        
+        import os
+        ADMIN_FILE = "telegram_admins.json"
+        
+        admins = list(TELEGRAM_ADMINS)
+        if os.path.exists(ADMIN_FILE):
+            try:
+                with open(ADMIN_FILE, "r", encoding="utf-8") as f:
+                    admins = json.load(f)
+            except:
+                pass
+        
+        if target_uid in admins:
+            telegram_bot.reply_to(
+                message,
+                f"⚠️ UID <code>{target_uid}</code> đã là admin rồi!",
+                parse_mode="HTML"
+            )
+            return
+        
+        admins.append(target_uid)
+        
+        with open(ADMIN_FILE, "w", encoding="utf-8") as f:
+            json.dump(admins, f, ensure_ascii=False, indent=2)
+        
+        TELEGRAM_ADMINS.clear()
+        TELEGRAM_ADMINS.extend(admins)
+        
+        telegram_bot.reply_to(
+            message,
+            f"<blockquote><b>✅ THÊM ADMIN THÀNH CÔNG</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"🆔 UID: <code>{target_uid}</code>\n"
+            f"👥 Tổng admin: <b>{len(admins)}</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"⚡ Người này giờ dùng được:\n"
+            f"<code>/addbot /delbot /checkbot /online</code>\n"
+            f"<code>/offline /resetbot /checktime /checkqd</code>\n"
+            f"và tất cả lệnh quản lý bot khác!</blockquote>",
+            parse_mode="HTML"
+        )
+        
+    except Exception as e:
+        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
+
+@telegram_bot.message_handler(commands=['checkqd'])
+def telegram_check_clan(message):
+    if not is_telegram_admin(message.from_user.id):
+        telegram_bot.reply_to(message, "❌ Bạn không có quyền sử dụng lệnh này!")
+        return
+    
+    try:
+        parts = message.text.split()
+        
+        # ====== CHECK 1 BOT ======
+        if len(parts) >= 2:
+            bot_id = int(parts[1])
+            
+            if bot_id not in TCPbot.bots:
+                telegram_bot.reply_to(message, f"❌ Không tìm thấy bot {bot_id}!")
+                return
+            
+            bot = TCPbot.bots[bot_id]
+            bot_name = getattr(bot, 'nickname', f'Bot #{bot_id}')
+            bot_uid = getattr(bot, 'botid', '?')
+            
+            clan_info = bot.bot_config.get('clan_info', {})
+            
+            if not clan_info:
+                telegram_bot.reply_to(
+                    message,
+                    f"<blockquote><b>📋 THÔNG TIN QUÂN ĐOÀN BOT {bot_id}</b>\n"
+                    f"━━━━━━━━━━━━━━━━━━━━\n"
+                    f"🤖 Bot: <code>{bot_name}</code>\n"
+                    f"🆔 UID: <code>{bot_uid}</code>\n"
+                    f"━━━━━━━━━━━━━━━━━━━━\n"
+                    f"📭 Bot chưa vào quân đoàn nào!</blockquote>",
+                    parse_mode="HTML"
+                )
+                return
+            
+            text = f"<blockquote><b>📋 THÔNG TIN QUÂN ĐOÀN BOT {bot_id}</b>\n"
+            text += f"━━━━━━━━━━━━━━━━━━━━\n"
+            text += f"🤖 Bot: <code>{bot_name}</code>\n"
+            text += f"🆔 UID: <code>{bot_uid}</code>\n"
+            text += f"━━━━━━━━━━━━━━━━━━━━\n"
+            
+            for clan_id, info in clan_info.items():
+                expire = info.get('expire', 'Vĩnh viễn')
+                region = info.get('region', 'VN')
+                joined_at = info.get('joined_at', 'Không rõ')
+                
+                # ====== TÍNH THỜI GIAN CÒN LẠI ======
+                try:
+                    from datetime import datetime
+                    if expire and expire != 'Vĩnh viễn':
+                        expire_time = datetime.strptime(expire, "%Y-%m-%d %H:%M:%S")
+                        now = datetime.now()
+                        
+                        if expire_time < now:
+                            time_left = "⏰ Đã hết hạn"
+                        else:
+                            delta = expire_time - now
+                            days = delta.days
+                            hours, remainder = divmod(delta.seconds, 3600)
+                            minutes, seconds = divmod(remainder, 60)
+                            parts_time = []
+                            if days > 0:
+                                parts_time.append(f"{days} ngày")
+                            if hours > 0:
+                                parts_time.append(f"{hours} giờ")
+                            if minutes > 0 and days == 0:
+                                parts_time.append(f"{minutes} phút")
+                            time_left = ", ".join(parts_time) if parts_time else "0 phút"
+                    else:
+                        time_left = "♾️ Vĩnh viễn"
+                except:
+                    time_left = expire
+                
+                text += f"🏠 <b>Clan ID:</b> <code>{clan_id}</code>\n"
+                text += f"🌍 <b>Region:</b> <code>{region}</code>\n"
+                text += f"📅 <b>Vào lúc:</b> <code>{joined_at}</code>\n"
+                text += f"⏳ <b>Còn lại:</b> <code>{time_left}</code>\n"
+                text += f"━━━━━━━━━━━━━━━━━━━━\n"
+            
+            text += f"⚡ Tổng: <b>{len(clan_info)}</b> quân đoàn</blockquote>"
+            
+            telegram_bot.reply_to(message, text, parse_mode="HTML")
+            return
+        
+        # ====== CHECK ALL BOT ======
+        if not TCPbot.bots:
+            telegram_bot.reply_to(message, "❌ Không có bot nào trong hệ thống!")
+            return
+        
+        text = "<blockquote><b>📊 TỔNG HỢP QUÂN ĐOÀN ALL BOT</b>\n"
+        text += f"━━━━━━━━━━━━━━━━━━━━\n"
+        text += f"🤖 Tổng bot: <b>{len(TCPbot.bots)}</b>\n"
+        text += f"━━━━━━━━━━━━━━━━━━━━\n\n"
+        
+        total_clans = 0
+        bot_details = []
+        
+        for bot_id, bot in TCPbot.bots.items():
+            clan_info = bot.bot_config.get('clan_info', {})
+            bot_name = getattr(bot, 'nickname', f'Bot #{bot_id}')
+            bot_uid = getattr(bot, 'botid', '?')
+            running = "🟢 Online" if bot.running_event.is_set() else "🔴 Offline"
+            
+            total_clans += len(clan_info)
+            bot_details.append({
+                'bot_id': bot_id,
+                'bot_name': bot_name,
+                'bot_uid': bot_uid,
+                'clans': clan_info,
+                'total': len(clan_info),
+                'running': running
+            })
+        
+        for detail in bot_details:
+            text += f"🤖 <b>Bot {detail['bot_id']}</b> {detail['running']}\n"
+            text += f"├ Tên: <code>{detail['bot_name']}</code>\n"
+            text += f"├ UID: <code>{detail['bot_uid']}</code>\n"
+            
+            if detail['clans']:
+                for clan_id, info in detail['clans'].items():
+                    expire = info.get('expire', 'Vĩnh viễn')
+                    try:
+                        from datetime import datetime
+                        if expire and expire != 'Vĩnh viễn':
+                            expire_time = datetime.strptime(expire, "%Y-%m-%d %H:%M:%S")
+                            now = datetime.now()
+                            if expire_time < now:
+                                time_left = "⏰ Hết hạn"
+                            else:
+                                delta = expire_time - now
+                                days = delta.days
+                                hours, remainder = divmod(delta.seconds, 3600)
+                                parts_time = []
+                                if days > 0:
+                                    parts_time.append(f"{days} ngày")
+                                if hours > 0:
+                                    parts_time.append(f"{hours} giờ")
+                                time_left = ", ".join(parts_time) if parts_time else "0 phút"
+                        else:
+                            time_left = "♾️ Vĩnh viễn"
+                    except:
+                        time_left = expire
+                    
+                    text += f"└ 🏠 Clan <code>{clan_id}</code> ⏳ {time_left}\n"
+            else:
+                text += f"└ 📭 Chưa vào QĐ nào\n"
+            text += "\n"
+        
+        text += f"━━━━━━━━━━━━━━━━━━━━\n"
+        text += f"📦 Tổng QĐ: <b>{total_clans}</b>\n"
+        text += f"━━━━━━━━━━━━━━━━━━━━\n"
+        text += f"💡 Dùng <code>/checkqd [botid]</code> để xem chi tiết</blockquote>"
+        
+        telegram_bot.reply_to(message, text, parse_mode="HTML")
+        
+    except ValueError:
+        telegram_bot.reply_to(message, "❌ Bot ID phải là số!")
+    except Exception as e:
+        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
+
+# ==================== LỆNH /reg - TẠO ACC VN ====================
+@telegram_bot.message_handler(commands=['reg'])
+def telegram_reg(message):
+    """Tạo acc Free Fire VN + gửi file acc.json + hỏi add bot"""
+    if not is_telegram_admin(message.from_user.id):
+        telegram_bot.reply_to(
+            message,
+            "<blockquote><b>❌ TỪ CHỐI</b>\nChỉ admin mới dùng được!</blockquote>",
+            parse_mode="HTML"
+        )
+        return
+    
+    try:
+        args = message.text.split()
+        if len(args) < 3:
+            telegram_bot.reply_to(
+                message,
+                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "💡 Dùng: <code>/reg [số_lượng] [tên]</code>\n\n"
+                "📌 <b>Ví dụ:</b>\n"
+                "<code>/reg 10 zan</code>\n"
+                "<code>/reg 5 test</code>\n\n"
+                "🌍 Region: <b>VN</b> (cố định)\n"
+                "📊 Giới hạn: <b>1-100</b> acc/lần</blockquote>",
+                parse_mode="HTML"
+            )
+            return
+        
+        count = int(args[1])
+        name = args[2]
+        
+        # Validate
+        if len(name) < 1 or len(name) > 12:
+            telegram_bot.reply_to(message, "❌ Tên phải có 1-12 ký tự!")
+            return
+        
+        if " " in name:
+            telegram_bot.reply_to(message, "❌ Tên không được có khoảng cách!")
+            return
+        
+        if count < 1 or count > 100:
+            telegram_bot.reply_to(message, "❌ Số lượng phải từ 1-100!")
+            return
+        
+        msg = telegram_bot.reply_to(
+            message,
+            f"<blockquote><b>⏳ ĐANG TẠO TÀI KHOẢN VN</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"📦 Số lượng: <code>{count}</code>\n"
+            f"🌍 Region: <code>VN</code>\n"
+            f"👤 Prefix: <code>{name}</code>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"⏳ Vui lòng chờ (2-5 phút)...</blockquote>",
+            parse_mode="HTML"
+        )
+        
+        def run_reg():
+            try:
+                import io
+                
+                # Backup acc cũ
+                if os.path.exists("acc.json"):
+                    os.rename("acc.json", f"acc_old_{int(time.time())}.json")
+                
+                print(f"\n{'='*60}", flush=True)
+                print(f"[REG] BAT DAU CHAY hm.py | {count} acc | name={name}", flush=True)
+                print(f"{'='*60}\n", flush=True)
+                
+                # Chạy hm.py — LOG CHẢY THẲNG RA TERMUX
+                process = subprocess.Popen(
+                    [sys.executable, "hm.py"],
+                    stdin=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    bufsize=1,
+                    cwd=os.getcwd()
+                )
+                
+                # Gửi input: region_num(VN=1), name, count, threads
+                threads = min(count, 5)
+                input_data = f"1\n{name}\n{count}\n{threads}\n"
+                
+                try:
+                    process.stdin.write(input_data)
+                    process.stdin.flush()
+                    process.stdin.close()
+                except Exception as e:
+                    print(f"[REG-INPUT] Loi: {e}", flush=True)
+                
+                # Đợi xong
+                try:
+                    process.wait(timeout=1800)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait()
+                    telegram_bot.send_message(
+                        message.chat.id,
+                        "<blockquote><b>⏰ TIMEOUT</b>\nQuá 30 phút chưa xong!</blockquote>",
+                        parse_mode="HTML"
+                    )
+                    return
+                
+                print(f"\n[REG] hm.py da xong\n", flush=True)
+                
+                # Đọc acc.json
+                accounts = []
+                if os.path.exists("acc.json"):
+                    try:
+                        with open("acc.json", "r", encoding="utf-8") as f:
+                            data = json.load(f)
+                        if isinstance(data, dict):
+                            accounts = list(data.values())
+                        elif isinstance(data, list):
+                            accounts = data
+                    except Exception as e:
+                        print(f"[REG] Parse error: {e}", flush=True)
+                
+                success_accounts = [a for a in accounts if a.get("status") == "success"]
+                success_count = len(success_accounts)
+                
+                # Lấy tokens
+                tokens = []
+                for acc in success_accounts:
+                    token = acc.get("access_token", "").strip()
+                    if token and len(token) > 10:
+                        tokens.append(token)
+                
+                # ===== GỬI FILE acc.json =====
+                file_content = json.dumps(accounts, indent=2, ensure_ascii=False) if accounts else "[]"
+                file_bytes = io.BytesIO(file_content.encode('utf-8'))
+                file_bytes.name = "acc.json"
+                
+                caption = (
+                    f"<blockquote><b>✅ TẠO XONG</b>\n"
+                    f"━━━━━━━━━━━━━━━━━━━━\n"
+                    f"📦 Thành công: <b>{success_count}/{count}</b>\n"
+                    f"🌍 Region: <code>VN</code>\n"
+                    f"👤 Prefix: <code>{name}</code>\n"
+                    f"🔑 Tokens: <code>{len(tokens)}</code>\n"
+                    f"━━━━━━━━━━━━━━━━━━━━</blockquote>"
+                )
+                
+                telegram_bot.send_document(
+                    message.chat.id,
+                    file_bytes,
+                    caption=caption,
+                    visible_file_name="acc.json",
+                    parse_mode="HTML"
+                )
+                
+                try:
+                    telegram_bot.delete_message(message.chat.id, msg.message_id)
+                except:
+                    pass
+                
+                # HỎI ADD BOT
+                if tokens:
+                    reg_temp_tokens[message.from_user.id] = tokens
+                    
+                    keyboard = InlineKeyboardMarkup()
+                    keyboard.add(
+                        InlineKeyboardButton("✅ Add 1 BOT", callback_data="reg_add_1"),
+                        InlineKeyboardButton("✅ Add 10 BOT", callback_data="reg_add_10")
+                    )
+                    keyboard.add(
+                        InlineKeyboardButton("❌ Không add", callback_data="reg_add_no")
+                    )
+                    
+                    telegram_bot.send_message(
+                        message.chat.id,
+                        f"<blockquote><b>🔗 KẾT NỐI BOT TCP?</b>\n"
+                        f"━━━━━━━━━━━━━━━━━━━━\n"
+                        f"🎫 Bạn có <b>{len(tokens)}</b> token\n"
+                        f"📌 Chọn hành động:</blockquote>",
+                        parse_mode="HTML",
+                        reply_markup=keyboard
+                    )
+                else:
+                    telegram_bot.send_message(
+                        message.chat.id,
+                        "<blockquote><b>⚠️ KHÔNG CÓ TOKEN</b>\n"
+                        "Không lấy được access_token nào!</blockquote>",
+                        parse_mode="HTML"
+                    )
+            
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                telegram_bot.send_message(
+                    message.chat.id,
+                    f"<blockquote><b>❌ LỖI</b>\n{str(e)}</blockquote>",
+                    parse_mode="HTML"
+                )
+        
+        threading.Thread(target=run_reg, daemon=True).start()
+        
+    except ValueError:
+        telegram_bot.reply_to(message, "❌ Số lượng phải là số!")
+    except Exception as e:
+        telegram_bot.reply_to(message, f"❌ Lỗi: {e}")
+
+
+# ==================== CALLBACK ADD BOT TỪ /reg ====================
+@telegram_bot.callback_query_handler(func=lambda call: call.data.startswith("reg_add_"))
+def callback_reg_add(call):
+    try:
+        user_id = call.from_user.id
+        
+        if not is_telegram_admin(user_id):
+            telegram_bot.answer_callback_query(call.id, "❌ Không có quyền!", show_alert=True)
+            return
+        
+        tokens = reg_temp_tokens.get(user_id, [])
+        
+        if call.data == "reg_add_no":
+            telegram_bot.edit_message_text(
+                "<blockquote><b>✅ ĐÃ HỦY</b>\nKhông thêm bot nào.</blockquote>",
+                chat_id=call.message.chat.id,
+                message_id=call.message.message_id,
+                parse_mode="HTML"
+            )
+            telegram_bot.answer_callback_query(call.id, "Đã hủy!")
+            if user_id in reg_temp_tokens:
+                del reg_temp_tokens[user_id]
+            return
+        
+        if not tokens:
+            telegram_bot.answer_callback_query(call.id, "❌ Không có token!", show_alert=True)
+            return
+        
+        if call.data == "reg_add_1":
+            tokens_to_add = tokens[:1]
+        elif call.data == "reg_add_10":
+            tokens_to_add = tokens[:10]
+        else:
+            tokens_to_add = tokens
+        
+        success_count = 0
+        fail_count = 0
+        bot_ids = []
+        
+        for token in tokens_to_add:
+            try:
+                result = TCPbot.add_bot(token)
+                if result["status"]:
+                    bot_id = result["bot_id"]
+                    TCPbot.bots[bot_id].start()
+                    success_count += 1
+                    bot_ids.append(bot_id)
+                    time.sleep(0.5)
+                else:
+                    fail_count += 1
+            except Exception as e:
+                print(f"[REG-ADD] Error: {e}")
+                fail_count += 1
+        
+        telegram_bot.edit_message_text(
+            f"<blockquote><b>✅ ĐÃ THÊM BOT</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"✅ Thành công: <b>{success_count}</b>\n"
+            f"❌ Thất bại: <b>{fail_count}</b>\n"
+            f"🤖 Bot IDs: <code>{', '.join(map(str, bot_ids))}</code>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"⚡ Dùng /checkbot để xem!</blockquote>",
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            parse_mode="HTML"
+        )
+        
+        telegram_bot.answer_callback_query(call.id, f"Đã thêm {success_count} bot!")
+        
+        if user_id in reg_temp_tokens:
+            del reg_temp_tokens[user_id]
+        
+    except Exception as e:
+        print(f"[REG-CALLBACK] Error: {e}")
+        telegram_bot.answer_callback_query(call.id, f"Lỗi: {str(e)}")
+
+ # ===== LỆNH TELEGRAM: /roiqd =====
+@telegram_bot.message_handler(commands=['roiqd'])
+def telegram_quit_clan(message):
+    if not is_telegram_admin(message.from_user.id):
+        telegram_bot.reply_to(message, "❌ Bạn không có quyền sử dụng lệnh này!")
+        return
+    
+    try:
+        parts = message.text.split()
+        if len(parts) < 3:
+            telegram_bot.reply_to(
+                message,
+                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n"
+                "💡 Dùng: <code>/roiqd [botid] [clan_id]</code>\n"
+                "📌 Ví dụ: <code>/roiqd 1 123456789</code></blockquote>",
+                parse_mode="HTML"
+            )
+            return
+        
+        bot_id = int(parts[1])
+        clan_id = parts[2]
+        region = parts[3].upper() if len(parts) > 3 else None
+        
+        if not clan_id.isdigit():
+            telegram_bot.reply_to(message, "❌ Clan ID phải là số!")
+            return
+        
+        if bot_id not in TCPbot.bots:
+            telegram_bot.reply_to(message, f"❌ Không tìm thấy bot {bot_id}!")
+            return
+        
+        bot = TCPbot.bots[bot_id]
+        
+        token = getattr(bot, 'token', None)
+        if not token:
+            token = bot.bot_config.get('auth_bot_login', {}).get('access_token')
+        
+        if not token:
+            telegram_bot.reply_to(message, f"❌ Bot {bot_id} không có token!")
+            return
+        
+        if not region:
+            region = get_region_from_jwt(token)
+        
+        bot_name = getattr(bot, 'nickname', f'Bot #{bot_id}')
+        bot_uid = getattr(bot, 'botid', '?')
+        
+        telegram_bot.reply_to(
+            message,
+            f"<blockquote><b>🔄 ĐANG RỜI CLAN...</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"🤖 Bot: <code>{bot_name}</code>\n"
+            f"🆔 UID: <code>{bot_uid}</code>\n"
+            f"🏠 Clan ID: <code>{clan_id}</code>\n"
+            f"🌍 Region: <code>{region}</code>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"⏳ Đang xử lý...</blockquote>",
+            parse_mode="HTML"
+        )
+        
+        success, msg = quit_clan(token, clan_id, region)
+        
+        if success:
+            final_msg = (
+                f"<blockquote><b>✅ RỜI CLAN THÀNH CÔNG</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"🤖 Bot: <code>{bot_name}</code>\n"
+                f"🆔 UID: <code>{bot_uid}</code>\n"
+                f"🏠 Clan ID: <code>{clan_id}</code>\n"
+                f"🌍 Region: <code>{region}</code>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"⚡ {msg}</blockquote>"
+            )
+        else:
+            final_msg = (
+                f"<blockquote><b>❌ RỜI CLAN THẤT BẠI</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"🤖 Bot: <code>{bot_name}</code>\n"
+                f"🆔 UID: <code>{bot_uid}</code>\n"
+                f"🏠 Clan ID: <code>{clan_id}</code>\n"
+                f"🌍 Region: <code>{region}</code>\n"
+                f"⚠️ {msg}\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"💡 Kiểm tra clan ID hoặc token!</blockquote>"
+            )
+        
+        telegram_bot.reply_to(message, final_msg, parse_mode="HTML")
+        
+    except ValueError:
+        telegram_bot.reply_to(message, "❌ Bot ID phải là số!")
+    except Exception as e:
+        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
+
+
+# ===== LỆNH TELEGRAM: /voqdall =====
+@telegram_bot.message_handler(commands=['voqdall'])
+def telegram_join_clan_all(message):
+    if not is_telegram_admin(message.from_user.id):
+        telegram_bot.reply_to(message, "❌ Bạn không có quyền sử dụng lệnh này!")
+        return
+    
+    try:
+        parts = message.text.split()
+        if len(parts) < 2:
+            telegram_bot.reply_to(
+                message,
+                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n"
+                "💡 Dùng: <code>/voqdall [clan_id]</code>\n"
+                "📌 Ví dụ: <code>/voqdall 123456789</code></blockquote>",
+                parse_mode="HTML"
+            )
+            return
+        
+        clan_id = parts[1]
+        region = parts[2].upper() if len(parts) > 2 else None
+        
+        if not clan_id.isdigit():
+            telegram_bot.reply_to(message, "❌ Clan ID phải là số!")
+            return
+        
+        online_bots = []
+        for bot_id, bot in TCPbot.bots.items():
+            if bot.running_event.is_set():
+                token = getattr(bot, 'token', None)
+                if not token:
+                    token = bot.bot_config.get('auth_bot_login', {}).get('access_token')
+                if token:
+                    online_bots.append((bot_id, bot, token))
+        
+        if not online_bots:
+            telegram_bot.reply_to(message, "❌ Không có bot online nào!")
+            return
+        
+        if not region:
+            region = get_region_from_jwt(online_bots[0][2])
+        
+        telegram_bot.reply_to(
+            message,
+            f"<blockquote><b>🔄 ĐANG XIN VÀO CLAN CHO {len(online_bots)} BOT...</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"🏠 Clan ID: <code>{clan_id}</code>\n"
+            f"🌍 Region: <code>{region}</code>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"⏳ Đang xử lý...</blockquote>",
+            parse_mode="HTML"
+        )
+        
+        results = []
+        success_count = 0
+        
+        for bot_id, bot, token in online_bots:
+            bot_name = getattr(bot, 'nickname', f'Bot #{bot_id}')
+            success, msg = request_join_clan(token, clan_id, region)
+            if success:
+                success_count += 1
+            results.append({
+                'bot_id': bot_id,
+                'bot_name': bot_name,
+                'success': success,
+                'message': msg
+            })
+        
+        msg_final = (
+            f"<blockquote><b>✅ XIN VÀO CLAN ALL HOÀN TẤT</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"🏠 Clan ID: <code>{clan_id}</code>\n"
+            f"🌍 Region: <code>{region}</code>\n"
+            f"✅ Thành công: <b>{success_count}/{len(online_bots)}</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+        )
+        
+        for r in results:
+            status = "✅" if r['success'] else "❌"
+            msg_final += f"{status} <b>{r['bot_name']}</b>: {r['message'][:30]}\n"
+        
+        msg_final += "</blockquote>"
+        telegram_bot.reply_to(message, msg_final, parse_mode="HTML")
+        
+    except Exception as e:
+        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
+
+
+# ===== LỆNH TELEGRAM: /roiqdall =====
+@telegram_bot.message_handler(commands=['roiqdall'])
+def telegram_quit_clan_all(message):
+    if not is_telegram_admin(message.from_user.id):
+        telegram_bot.reply_to(message, "❌ Bạn không có quyền sử dụng lệnh này!")
+        return
+    
+    try:
+        parts = message.text.split()
+        if len(parts) < 2:
+            telegram_bot.reply_to(
+                message,
+                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n"
+                "💡 Dùng: <code>/roiqdall [clan_id]</code>\n"
+                "📌 Ví dụ: <code>/roiqdall 123456789</code></blockquote>",
+                parse_mode="HTML"
+            )
+            return
+        
+        clan_id = parts[1]
+        region = parts[2].upper() if len(parts) > 2 else None
+        
+        if not clan_id.isdigit():
+            telegram_bot.reply_to(message, "❌ Clan ID phải là số!")
+            return
+        
+        online_bots = []
+        for bot_id, bot in TCPbot.bots.items():
+            if bot.running_event.is_set():
+                token = getattr(bot, 'token', None)
+                if not token:
+                    token = bot.bot_config.get('auth_bot_login', {}).get('access_token')
+                if token:
+                    online_bots.append((bot_id, bot, token))
+        
+        if not online_bots:
+            telegram_bot.reply_to(message, "❌ Không có bot online nào!")
+            return
+        
+        if not region:
+            region = get_region_from_jwt(online_bots[0][2])
+        
+        telegram_bot.reply_to(
+            message,
+            f"<blockquote><b>🔄 ĐANG RỜI CLAN CHO {len(online_bots)} BOT...</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"🏠 Clan ID: <code>{clan_id}</code>\n"
+            f"🌍 Region: <code>{region}</code>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"⏳ Đang xử lý...</blockquote>",
+            parse_mode="HTML"
+        )
+        
+        results = []
+        success_count = 0
+        
+        for bot_id, bot, token in online_bots:
+            bot_name = getattr(bot, 'nickname', f'Bot #{bot_id}')
+            success, msg = quit_clan(token, clan_id, region)
+            if success:
+                success_count += 1
+            results.append({
+                'bot_id': bot_id,
+                'bot_name': bot_name,
+                'success': success,
+                'message': msg
+            })
+        
+        msg_final = (
+            f"<blockquote><b>✅ RỜI CLAN ALL HOÀN TẤT</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"🏠 Clan ID: <code>{clan_id}</code>\n"
+            f"🌍 Region: <code>{region}</code>\n"
+            f"✅ Thành công: <b>{success_count}/{len(online_bots)}</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+        )
+        
+        for r in results:
+            status = "✅" if r['success'] else "❌"
+            msg_final += f"{status} <b>{r['bot_name']}</b>: {r['message'][:30]}\n"
+        
+        msg_final += "</blockquote>"
+        telegram_bot.reply_to(message, msg_final, parse_mode="HTML")
+        
+    except Exception as e:
+        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
+
+# ==================== ĐỔI BIO ====================
+def change_bio_via_token(jwt_token, bio_text):
+    """Đổi bio sử dụng JWT token"""
+    import requests
+    import urllib3
+    from Crypto.Cipher import AES
+    from Crypto.Util.Padding import pad
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    
+    KEY = bytes([89, 103, 38, 116, 99, 37, 68, 69, 117, 104, 54, 37, 90, 99, 94, 56])
+    IV = bytes([54, 111, 121, 90, 68, 114, 50, 50, 69, 51, 121, 99, 104, 106, 77, 37])
+    
+    def encode_varint(n):
+        result = []
+        while True:
+            byte = n & 0x7F
+            n >>= 7
+            if n:
+                byte |= 0x80
+            result.append(byte)
+            if not n:
+                break
+        return bytes(result)
+    
+    def build_bio_proto(bio_text):
+        result = b''
+        header = (2 << 3) | 0
+        result += encode_varint(header)
+        result += encode_varint(17)
+        empty = b''
+        header5 = (5 << 3) | 2
+        result += encode_varint(header5)
+        result += encode_varint(len(empty))
+        result += empty
+        header6 = (6 << 3) | 2
+        result += encode_varint(header6)
+        result += encode_varint(len(empty))
+        result += empty
+        bio_encoded = bio_text.encode('utf-8')
+        header8 = (8 << 3) | 2
+        result += encode_varint(header8)
+        result += encode_varint(len(bio_encoded))
+        result += bio_encoded
+        header9 = (9 << 3) | 0
+        result += encode_varint(header9)
+        result += encode_varint(1)
+        header11 = (11 << 3) | 2
+        result += encode_varint(header11)
+        result += encode_varint(len(empty))
+        result += empty
+        header12 = (12 << 3) | 2
+        result += encode_varint(header12)
+        result += encode_varint(len(empty))
+        result += empty
+        return result
+    
+    endpoints = [
+        "https://clientbp.ggpolarbear.com/UpdateSocialBasicInfo",
+        "https://clientbp.ggblueshark.com/UpdateSocialBasicInfo",
+        "https://clientbp.common.ggbluefox.com/UpdateSocialBasicInfo"
+    ]
+    
+    headers = {
+        "Authorization": f"Bearer {jwt_token}",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "X-Unity-Version": "2018.4.11f1",
+        "X-GA": "v1 1",
+        "ReleaseVersion": "OB55",
+        "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 13; SM-G998B Build/TP1A.220624.014)"
+    }
+    
+    for url in endpoints:
+        try:
+            proto = build_bio_proto(bio_text)
+            cipher = AES.new(KEY, AES.MODE_CBC, IV)
+            encrypted = cipher.encrypt(pad(proto, AES.block_size))
+            resp = requests.post(url, headers=headers, data=encrypted, verify=False, timeout=10)
+            if resp.status_code == 200:
+                return True, "✅ Đổi bio thành công!"
+            headers_json = headers.copy()
+            headers_json["Content-Type"] = "application/json"
+            resp2 = requests.post(url, headers=headers_json, json={"bio": bio_text}, verify=False, timeout=10)
+            if resp2.status_code == 200:
+                return True, "✅ Đổi bio thành công!"
+        except:
+            continue
+    return False, "❌ Đổi bio thất bại!"
+
+# ===== LỆNH TELEGRAM: /bio =====
+@telegram_bot.message_handler(commands=['bio'])
+def telegram_change_bio(message):
+    if not is_telegram_admin(message.from_user.id):
+        telegram_bot.reply_to(message, "❌ Bạn không có quyền sử dụng lệnh này!")
+        return
+    
+    try:
+        parts = message.text.split(maxsplit=2)
+        if len(parts) < 3:
+            telegram_bot.reply_to(
+                message,
+                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n"
+                "💡 Dùng: <code>/bio [botid] [nội dung bio]</code>\n"
+                "📌 Ví dụ: <code>/bio 1 Xin chào các bạn!</code></blockquote>",
+                parse_mode="HTML"
+            )
+            return
+        
+        bot_id = int(parts[1])
+        bio_text = parts[2].strip()
+        
+        if not bio_text:
+            telegram_bot.reply_to(message, "❌ Bio không được để trống!")
+            return
+        
+        if len(bio_text) > 150:
+            telegram_bot.reply_to(message, "❌ Bio quá dài! Tối đa 150 ký tự.")
+            return
+        
+        if bot_id not in TCPbot.bots:
+            telegram_bot.reply_to(message, f"❌ Không tìm thấy bot {bot_id}!")
+            return
+        
+        bot = TCPbot.bots[bot_id]
+        
+        # Lấy token
+        token = None
+        if hasattr(bot, 'token') and bot.token:
+            token = bot.token
+        elif hasattr(bot, 'bot_config'):
+            token = bot.bot_config.get('auth_bot_login', {}).get('access_token')
+        
+        if not token:
+            telegram_bot.reply_to(message, f"❌ Bot {bot_id} không có token!")
+            return
+        
+        bot_name = getattr(bot, 'nickname', f'Bot #{bot_id}')
+        bot_uid = getattr(bot, 'botid', '?')
+        
+        telegram_bot.reply_to(
+            message,
+            f"<blockquote><b>🔄 ĐANG ĐỔI BIO...</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"🤖 Bot: <code>{bot_name}</code>\n"
+            f"🆔 UID: <code>{bot_uid}</code>\n"
+            f"📝 Bio mới: <code>{bio_text[:50]}{'...' if len(bio_text) > 50 else ''}</code>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"⏳ Đang xử lý...</blockquote>",
+            parse_mode="HTML"
+        )
+        
+        success, msg = change_bio_via_token(token, bio_text)
+        
+        if success:
+            final_msg = (
+                f"<blockquote><b>✅ ĐỔI BIO THÀNH CÔNG</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"🤖 Bot: <code>{bot_name}</code>\n"
+                f"🆔 UID: <code>{bot_uid}</code>\n"
+                f"📝 Bio mới: <code>{bio_text[:80]}{'...' if len(bio_text) > 80 else ''}</code>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"⚡ {msg}</blockquote>"
+            )
+        else:
+            final_msg = (
+                f"<blockquote><b>❌ ĐỔI BIO THẤT BẠI</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"🤖 Bot: <code>{bot_name}</code>\n"
+                f"🆔 UID: <code>{bot_uid}</code>\n"
+                f"⚠️ {msg}\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"💡 Kiểm tra token hoặc thử lại!</blockquote>"
+            )
+        
+        telegram_bot.reply_to(message, final_msg, parse_mode="HTML")
+        
+    except ValueError:
+        telegram_bot.reply_to(message, "❌ Bot ID phải là số!")
+    except Exception as e:
+        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
+
+
+# ===== LỆNH TELEGRAM: /bioall =====
+@telegram_bot.message_handler(commands=['bioall'])
+def telegram_change_bio_all(message):
+    if not is_telegram_admin(message.from_user.id):
+        telegram_bot.reply_to(message, "❌ Bạn không có quyền sử dụng lệnh này!")
+        return
+    
+    try:
+        parts = message.text.split(maxsplit=1)
+        if len(parts) < 2:
+            telegram_bot.reply_to(
+                message,
+                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n"
+                "💡 Dùng: <code>/bioall [nội dung bio]</code>\n"
+                "📌 Ví dụ: <code>/bioall Xin chào tất cả!</code></blockquote>",
+                parse_mode="HTML"
+            )
+            return
+        
+        bio_text = parts[1].strip()
+        
+        if not bio_text:
+            telegram_bot.reply_to(message, "❌ Bio không được để trống!")
+            return
+        
+        if len(bio_text) > 150:
+            telegram_bot.reply_to(message, "❌ Bio quá dài! Tối đa 150 ký tự.")
+            return
+        
+        online_bots = []
+        for bot_id, bot in TCPbot.bots.items():
+            if bot.running_event.is_set():
+                token = getattr(bot, 'token', None)
+                if not token:
+                    token = bot.bot_config.get('auth_bot_login', {}).get('access_token')
+                if token:
+                    online_bots.append((bot_id, bot, token))
+        
+        if not online_bots:
+            telegram_bot.reply_to(message, "❌ Không có bot online nào!")
+            return
+        
+        telegram_bot.reply_to(
+            message,
+            f"<blockquote><b>🔄 ĐANG ĐỔI BIO CHO {len(online_bots)} BOT...</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"📝 Bio: <code>{bio_text[:50]}{'...' if len(bio_text) > 50 else ''}</code>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"⏳ Đang xử lý...</blockquote>",
+            parse_mode="HTML"
+        )
+        
+        results = []
+        success_count = 0
+        
+        for bot_id, bot, token in online_bots:
+            bot_name = getattr(bot, 'nickname', f'Bot #{bot_id}')
+            success, msg = change_bio_via_token(token, bio_text)
+            if success:
+                success_count += 1
+            results.append({
+                'bot_id': bot_id,
+                'bot_name': bot_name,
+                'success': success,
+                'message': msg
+            })
+        
+        msg_final = (
+            f"<blockquote><b>✅ ĐỔI BIO ALL HOÀN TẤT</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"📝 Bio: <code>{bio_text[:50]}{'...' if len(bio_text) > 50 else ''}</code>\n"
+            f"✅ Thành công: <b>{success_count}/{len(online_bots)}</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+        )
+        
+        for r in results:
+            status = "✅" if r['success'] else "❌"
+            msg_final += f"{status} <b>{r['bot_name']}</b>: {r['message'][:30]}\n"
+        
+        msg_final += "</blockquote>"
+        telegram_bot.reply_to(message, msg_final, parse_mode="HTML")
+        
+    except Exception as e:
+        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
+
+
+# ===== LỆNH TELEGRAM: /bioid =====
+@telegram_bot.message_handler(commands=['bioid'])
+def telegram_change_bio_by_uid(message):
+    """Đổi bio cho bot dùng UID (không cần botid)"""
+    if not is_telegram_admin(message.from_user.id):
+        telegram_bot.reply_to(message, "❌ Bạn không có quyền sử dụng lệnh này!")
+        return
+    
+    try:
+        parts = message.text.split(maxsplit=2)
+        if len(parts) < 3:
+            telegram_bot.reply_to(
+                message,
+                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n"
+                "💡 Dùng: <code>/bioid [uid_bot] [nội dung bio]</code>\n"
+                "📌 Ví dụ: <code>/bioid 16104663154 Xin chào!</code></blockquote>",
+                parse_mode="HTML"
+            )
+            return
+        
+        target_uid = parts[1]
+        bio_text = parts[2].strip()
+        
+        if not bio_text:
+            telegram_bot.reply_to(message, "❌ Bio không được để trống!")
+            return
+        
+        if len(bio_text) > 150:
+            telegram_bot.reply_to(message, "❌ Bio quá dài! Tối đa 150 ký tự.")
+            return
+        
+        # Tìm bot theo UID
+        found_bot = None
+        found_bot_id = None
+        for bot_id, bot in TCPbot.bots.items():
+            if str(getattr(bot, 'botid', '')) == str(target_uid):
+                found_bot = bot
+                found_bot_id = bot_id
+                break
+        
+        if not found_bot:
+            telegram_bot.reply_to(message, f"❌ Không tìm thấy bot có UID {target_uid}!")
+            return
+        
+        if not found_bot.running_event.is_set():
+            telegram_bot.reply_to(message, f"❌ Bot {found_bot_id} đang offline!")
+            return
+        
+        token = getattr(found_bot, 'token', None)
+        if not token:
+            token = found_bot.bot_config.get('auth_bot_login', {}).get('access_token')
+        
+        if not token:
+            telegram_bot.reply_to(message, f"❌ Bot {found_bot_id} không có token!")
+            return
+        
+        bot_name = getattr(found_bot, 'nickname', f'Bot #{found_bot_id}')
+        
+        telegram_bot.reply_to(
+            message,
+            f"<blockquote><b>🔄 ĐANG ĐỔI BIO...</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"🤖 Bot: <code>{bot_name}</code>\n"
+            f"🆔 UID: <code>{target_uid}</code>\n"
+            f"📝 Bio: <code>{bio_text[:50]}{'...' if len(bio_text) > 50 else ''}</code>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"⏳ Đang xử lý...</blockquote>",
+            parse_mode="HTML"
+        )
+        
+        success, msg = change_bio_via_token(token, bio_text)
+        
+        if success:
+            final_msg = (
+                f"<blockquote><b>✅ ĐỔI BIO THÀNH CÔNG</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"🤖 Bot: <code>{bot_name}</code>\n"
+                f"🆔 UID: <code>{target_uid}</code>\n"
+                f"📝 Bio: <code>{bio_text[:80]}{'...' if len(bio_text) > 80 else ''}</code>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"⚡ {msg}</blockquote>"
+            )
+        else:
+            final_msg = (
+                f"<blockquote><b>❌ ĐỔI BIO THẤT BẠI</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"🤖 Bot: <code>{bot_name}</code>\n"
+                f"🆔 UID: <code>{target_uid}</code>\n"
+                f"⚠️ {msg}\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"💡 Kiểm tra token hoặc thử lại!</blockquote>"
+            )
+        
+        telegram_bot.reply_to(message, final_msg, parse_mode="HTML")
+        
+    except Exception as e:
+        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
+
+@telegram_bot.message_handler(commands=['checktime'])
+def telegram_check_time(message):
+    if not is_telegram_admin(message.from_user.id):
+        telegram_bot.reply_to(message, "❌ Bạn không có quyền sử dụng lệnh này!")
+        return
+    
+    try:
+        parts = message.text.split()
+        
+        # ====== CHECK 1 BOT ======
+        if len(parts) >= 2:
+            bot_id = int(parts[1])
+            
+            if bot_id not in TCPbot.bots:
+                telegram_bot.reply_to(message, f"❌ Không tìm thấy bot {bot_id}!")
+                return
+            
+            bot = TCPbot.bots[bot_id]
+            access_list = bot.bot_config.get('access_bot', [])
+            bot_name = getattr(bot, 'nickname', f'Bot #{bot_id}')
+            bot_uid = getattr(bot, 'botid', '?')
+            
+            if not access_list:
+                telegram_bot.reply_to(
+                    message,
+                    f"<blockquote><b>📋 DANH SÁCH USER BOT {bot_id}</b>\n"
+                    f"━━━━━━━━━━━━━━━━━━━━\n"
+                    f"🤖 Bot: <code>{bot_name}</code>\n"
+                    f"🆔 UID: <code>{bot_uid}</code>\n"
+                    f"━━━━━━━━━━━━━━━━━━━━\n"
+                    f"📭 Chưa có user nào được cấp quyền!</blockquote>",
+                    parse_mode="HTML"
+                )
+                return
+            
+            text = f"<blockquote><b>📋 DANH SÁCH USER BOT {bot_id}</b>\n"
+            text += f"━━━━━━━━━━━━━━━━━━━━\n"
+            text += f"🤖 Bot: <code>{bot_name}</code>\n"
+            text += f"🆔 UID: <code>{bot_uid}</code>\n"
+            text += f"━━━━━━━━━━━━━━━━━━━━\n"
+            text += f"👥 Tổng: <b>{len(access_list)}</b> user\n"
+            text += f"━━━━━━━━━━━━━━━━━━━━\n\n"
+            
+            for i, user in enumerate(access_list, 1):
+                uid = user.get('uid', 'N/A')
+                expire = user.get('expire', 'N/A')
+                
+                # ====== LẤY TÊN USER ======
+                user_name = "Không xác định"
+                try:
+                    import requests
+                    resp = requests.get(f"http://localhost:2008/info1?uid={uid}", timeout=5)
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        if data.get('success'):
+                            result = data.get('result', {})
+                            if 'nickname' in result and result['nickname']:
+                                user_name = result['nickname']
+                            elif 'name' in result and result['name']:
+                                user_name = result['name']
+                            elif 'basic_info' in result:
+                                basic = result['basic_info']
+                                if 'nickname' in basic and basic['nickname']:
+                                    user_name = basic['nickname']
+                                elif 'name' in basic and basic['name']:
+                                    user_name = basic['name']
+                except Exception as e:
+                    print(f"[GET NAME] {uid}: {e}")
+                
+                # ====== TÍNH THỜI GIAN CÒN LẠI ======
+                try:
+                    from datetime import datetime
+                    exp_time = datetime.strptime(expire, "%Y-%m-%d %H:%M:%S")
+                    now = datetime.now()
+                    
+                    if exp_time < now:
+                        time_left = "⏰ Hết hạn"
+                    else:
+                        delta = exp_time - now
+                        days = delta.days
+                        hours, remainder = divmod(delta.seconds, 3600)
+                        minutes, seconds = divmod(remainder, 60)
+                        parts_time = []
+                        if days > 0:
+                            parts_time.append(f"{days} ngày")
+                        if hours > 0 and days < 7:
+                            parts_time.append(f"{hours} giờ")
+                        if minutes > 0 and days == 0:
+                            parts_time.append(f"{minutes} phút")
+                        time_left = ", ".join(parts_time) if parts_time else "0 phút"
+                except:
+                    time_left = expire
+                
+                text += f"{i}. 👤 <code>{user_name}</code>\n"
+                text += f"   🆔 UID: <code>{uid}</code>\n"
+                text += f"   ⏳ Hết hạn: <code>{expire}</code>\n"
+                text += f"   📊 Còn: <code>{time_left}</code>\n\n"
+            
+            text += f"━━━━━━━━━━━━━━━━━━━━\n"
+            text += f"⚡ Tổng: <b>{len(access_list)}</b> user</blockquote>"
+            
+            if len(text) > 4000:
+                import io
+                file_content = text.replace("<blockquote>", "").replace("</blockquote>", "").replace("<b>", "").replace("</b>", "").replace("<code>", "").replace("</code>", "")
+                file_bytes = io.BytesIO(file_content.encode('utf-8'))
+                file_bytes.name = f"users_bot_{bot_id}.txt"
+                telegram_bot.send_document(
+                    message.chat.id,
+                    file_bytes,
+                    caption=f"📋 Danh sách user bot {bot_id}"
+                )
+            else:
+                telegram_bot.reply_to(message, text, parse_mode="HTML")
+            return
+        
+        # ====== CHECK ALL BOT ======
+        if not TCPbot.bots:
+            telegram_bot.reply_to(message, "❌ Không có bot nào trong hệ thống!")
+            return
+        
+        text = "<blockquote><b>📊 TỔNG HỢP USER ALL BOT</b>\n"
+        text += f"━━━━━━━━━━━━━━━━━━━━\n"
+        text += f"🤖 Tổng bot: <b>{len(TCPbot.bots)}</b>\n"
+        text += f"━━━━━━━━━━━━━━━━━━━━\n\n"
+        
+        total_users = 0
+        bot_details = []
+        
+        for bot_id, bot in TCPbot.bots.items():
+            access_list = bot.bot_config.get('access_bot', [])
+            bot_name = getattr(bot, 'nickname', f'Bot #{bot_id}')
+            bot_uid = getattr(bot, 'botid', '?')
+            running = "🟢 Online" if bot.running_event.is_set() else "🔴 Offline"
+            
+            total_users += len(access_list)
+            bot_details.append({
+                'bot_id': bot_id,
+                'bot_name': bot_name,
+                'bot_uid': bot_uid,
+                'total': len(access_list),
+                'running': running
+            })
+        
+        bot_details.sort(key=lambda x: x['total'], reverse=True)
+        
+        for detail in bot_details:
+            text += f"🤖 <b>Bot {detail['bot_id']}</b> {detail['running']}\n"
+            text += f"├ Tên: <code>{detail['bot_name']}</code>\n"
+            text += f"├ UID: <code>{detail['bot_uid']}</code>\n"
+            text += f"└ 👥 User: <b>{detail['total']}</b>\n\n"
+        
+        text += f"━━━━━━━━━━━━━━━━━━━━\n"
+        text += f"📦 Tổng user: <b>{total_users}</b>\n"
+        text += f"━━━━━━━━━━━━━━━━━━━━\n"
+        text += f"💡 Dùng <code>/checktime [botid]</code> để xem chi tiết</blockquote>"
+        
+        telegram_bot.reply_to(message, text, parse_mode="HTML")
+        
+    except ValueError:
+        telegram_bot.reply_to(message, "❌ Bot ID phải là số!")
+    except Exception as e:
+        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
+
+# ===== API: /bio =====
+@app.route("/bio", methods=["GET"])
+def api_change_bio():
+    try:
+        bot_id = request.args.get("botid")
+        bio_text = request.args.get("bio")
+        
+        if not bot_id or not bio_text:
+            return jsonify({"status": "error", "message": "Missing botid or bio"}), 400
+        
+        if not bot_id.isdigit():
+            return jsonify({"status": "error", "message": "botid must be number"}), 400
+        
+        bot_id = int(bot_id)
+        
+        if bot_id not in TCPbot.bots:
+            return jsonify({"status": "error", "message": f"Bot {bot_id} not found"}), 404
+        
+        bot = TCPbot.bots[bot_id]
+        
+        token = getattr(bot, 'token', None)
+        if not token:
+            token = bot.bot_config.get('auth_bot_login', {}).get('access_token')
+        
+        if not token:
+            return jsonify({"status": "error", "message": "No token"}), 400
+        
+        success, msg = change_bio_via_token(token, bio_text)
+        
+        return jsonify({
+            "status": "success" if success else "error",
+            "message": msg,
+            "data": {
+                "bot_id": bot_id,
+                "bot_name": getattr(bot, 'nickname', f'Bot #{bot_id}'),
+                "bot_uid": getattr(bot, 'botid', ''),
+                "bio": bio_text
+            }
+        }), 200 if success else 400
+        
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@telegram_bot.message_handler(commands=['kb'])
+def telegram_kb(message):
+    if not is_telegram_admin(message.from_user.id):
+        telegram_bot.reply_to(message, "❌ Bạn không có quyền!")
+        return
+    
+    try:
+        parts = message.text.split()
+        if len(parts) < 3:
+            telegram_bot.reply_to(
+                message,
+                "<b>❌ SAI CÚ PHÁP</b>\n"
+                "💡 /kb [botid] [uid] [time]\n"
+                "📌 /kb 1 123456789 7d",
+                parse_mode="HTML"
+            )
+            return
+        
+        bot_id = int(parts[1])
+        uid = parts[2]
+        
+        # ====== KIỂM TRA TIME ======
+        if len(parts) >= 4:
+            time_str = parts[3]
+            import re
+            if not re.match(r'^\d+[hdwmy]$', time_str.lower()):
+                telegram_bot.reply_to(
+                    message,
+                    "<b>❌ SAI ĐỊNH DẠNG TIME</b>\n💡 Dùng: 1h, 1d, 7d, 1w, 1m, 1y",
+                    parse_mode="HTML"
+                )
+                return
+        else:
+            time_str = None
+        
+        if bot_id not in TCPbot.bots:
+            telegram_bot.reply_to(message, f"❌ Không tìm thấy bot {bot_id}!")
+            return
+        
+        bot = TCPbot.bots[bot_id]
+        if not bot.running_event.is_set():
+            telegram_bot.reply_to(message, "❌ Bot đang offline!")
+            return
+        
+        bot_name = getattr(bot, 'nickname', f'Bot #{bot_id}')
+        bot_uid = getattr(bot, 'botid', '?')
+        
+        # ====== GỌI API /kb ======
+        import requests
+        api_url = f"http://127.0.0.1:2008/kb?uid={uid}&botid={bot_id}"
+        
+        try:
+            response = requests.get(api_url, timeout=30)
+            result = response.json()
+        except Exception as e:
+            telegram_bot.reply_to(message, f"❌ Lỗi gọi API: {e}")
+            return
+        
+        if result.get('status') != 'success':
+            text = f"""
+<blockquote>
+<b>❌ GỬI KẾT BẠN THẤT BẠI</b>
+━━━━━━━━━━━━━━━━━━━━━━
+🤖 Bot: <code>{bot_name}</code>
+🆔 UID: <code>{uid}</code>
+⚠️ {result.get('message')}
+━━━━━━━━━━━━━━━━━━━━━━
+💡 Vui lòng kiểm tra lại!
+</blockquote>
+"""
+            telegram_bot.reply_to(message, text, parse_mode="HTML")
+            return
+        
+        # ====== CỘNG THỜI GIAN ======
+        time_msg = ""
+        expire_str = "Vĩnh viễn"
+        
+        if time_str:
+            try:
+                from datetime import datetime, timedelta
+                now = datetime.now()
+                num = int(time_str[:-1])
+                unit = time_str[-1].lower()
+                
+                delta_map = {
+                    'h': timedelta(hours=num),
+                    'd': timedelta(days=num),
+                    'w': timedelta(weeks=num),
+                    'm': timedelta(days=num * 30),
+                    'y': timedelta(days=num * 365),
+                }
+                delta = delta_map.get(unit, timedelta(days=1))
+                
+                expire_time = now + delta
+                expire_str = expire_time.strftime("%Y-%m-%d %H:%M:%S")
+                
+                # Cập nhật vào bot_config
+                if 'access_bot' not in bot.bot_config:
+                    bot.bot_config['access_bot'] = []
+                
+                found = False
+                for u in bot.bot_config['access_bot']:
+                    if u.get('uid') == int(uid):
+                        u['expire'] = expire_str
+                        found = True
+                        break
+                
+                if not found:
+                    bot.bot_config['access_bot'].append({
+                        'uid': int(uid),
+                        'expire': expire_str
+                    })
+                
+                TCPbot.save_config()
+                time_msg = f"\n⏳ Hạn sử dụng: <code>{time_str}</code>"
+                
+            except Exception as e:
+                time_msg = f"\n⚠️ Lỗi cộng time: {e}"
+        
+        # ====== KẾT QUẢ ======
+        text = f"""
+<blockquote>
+<b>✅ GỬI KẾT BẠN VÀ CỘNG TIME THÀNH CÔNG</b>
+━━━━━━━━━━━━━━━━━━━━━━
+🤖 Bot: <code>{bot_name}</code>
+🆔 Bot UID: <code>{bot_uid}</code>
+👤 UID: <code>{uid}</code>
+📩 {result.get('message')}
+{time_msg}
+📅 Hết hạn: <code>{expire_str}</code>
+━━━━━━━━━━━━━━━━━━━━━━
+💡 Liên hệ: @zanbackj
+</blockquote>
+"""
+        telegram_bot.reply_to(message, text, parse_mode="HTML")
+            
+    except Exception as e:
+        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
+        
+@telegram_bot.message_handler(commands=['kball'])
+def telegram_kb_all(message):
+    if not is_telegram_admin(message.from_user.id):
+        telegram_bot.reply_to(message, "❌ Không có quyền!")
+        return
+    
+    try:
+        parts = message.text.split()
+        if len(parts) < 2:
+            telegram_bot.reply_to(
+                message,
+                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n💡 Dùng: <code>/kball [uid]</code>\n📌 Ví dụ: <code>/kball 123456789</code></blockquote>",
+                parse_mode="HTML"
+            )
+            return
+        
+        uid = parts[1]
+        
+        results = []
+        success_count = 0
+        online_bots = 0
+        
+        for bot_id, bot in TCPbot.bots.items():
+            if not bot.running_event.is_set():
+                continue
+            online_bots += 1
+            
+            token = None
+            if hasattr(bot, 'token') and bot.token:
+                token = bot.token
+            elif hasattr(bot, 'bot_config'):
+                token = bot.bot_config.get('auth_bot_login', {}).get('access_token')
+            
+            if not token:
+                results.append({
+                    'bot_id': bot_id,
+                    'bot_name': getattr(bot, 'nickname', f'Bot #{bot_id}'),
+                    'success': False,
+                    'message': 'No token'
+                })
+                continue
+            
+            success, msg = byte.SendFriendRequest_HTTP(uid, token, bot_id)
+            
+            if success:
+                success_count += 1
+            
+            results.append({
+                'bot_id': bot_id,
+                'bot_name': getattr(bot, 'nickname', f'Bot #{bot_id}'),
+                'success': success,
+                'message': msg
+            })
+        
+        if online_bots > 0:
+            msg = f"<blockquote><b>✅ GỬI KẾT BẠN ALL THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\n🆔 <b>UID:</b> <code>{uid}</code>\n✅ <b>Thành công:</b> {success_count}/{online_bots}\n━━━━━━━━━━━━━━━━━━━━\n"
+            
+            for r in results:
+                status = "✅" if r.get('success') else "❌"
+                msg += f"{status} <b>{r.get('bot_name')}</b>: {r.get('message')}\n"
+            
+            msg += "━━━━━━━━━━━━━━━━━━━━\n⚡ Đã gửi!</blockquote>"
+            telegram_bot.reply_to(message, msg, parse_mode="HTML")
+        else:
+            telegram_bot.reply_to(
+                message,
+                f"<blockquote><b>❌ GỬI KẾT BẠN ALL THẤT BẠI</b>\n━━━━━━━━━━━━━━━━━━━━\n🆔 <b>UID:</b> <code>{uid}</code>\n⚠️ <b>Lý do:</b> Không có bot online!\n━━━━━━━━━━━━━━━━━━━━\n💡 Kiểm tra lại bot!</blockquote>",
+                parse_mode="HTML"
+            )
+            
+    except Exception as e:
+        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")        
+        
+@telegram_bot.message_handler(commands=['checkbot'])
+def tele_check(message):
+    try:
+        user_id = int(message.from_user.id)
+        
+        # ✅ Dùng TELEGRAM_ADMINS (dynamic) thay vì hardcode
+        if not is_telegram_admin(user_id):
+            telegram_bot.reply_to(message, "❌ Không có quyền sử dụng lệnh này")
+            return
+        
+        if not TCPbot.bots:
+            telegram_bot.reply_to(message, "❌ Không có bot nào trong hệ thống")
+            return
+        
+        online_count = 0
+        offline_count = 0
+        total_count = len(TCPbot.bots)
+        
+        text = "<blockquote><b>📊 DANH SÁCH BOT</b>\n"
+        text += f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        text += f"📌 Tổng bot: <b>{total_count}</b>\n\n"
+        
+        for bid, bot in TCPbot.bots.items():
+            running = bot.running_event.is_set() if bot.running_event else False
+            nickname = getattr(bot, 'nickname', 'Chưa đồng bộ')
+            uid_bot = getattr(bot, 'botid', 'Trống')
+            
+            if running:
+                online_count += 1
+                status = "🟢 Online"
+            else:
+                offline_count += 1
+                status = "🔴 Offline"
+            
+            text += f"🤖 Bot {bid}\n"
+            text += f"├ Tên: {nickname}\n"
+            text += f"├ UID: <code>{uid_bot}</code>\n"
+            text += f"└ Trạng thái: {status}\n\n"
+        
+        text += f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        text += f"🟢 Online: <b>{online_count}</b>  |  🔴 Offline: <b>{offline_count}</b>\n"
+        text += f"</blockquote>"
+        
+        telegram_bot.reply_to(message, text, parse_mode="HTML")
+        
+    except Exception as e:
+        telegram_bot.reply_to(message, f"ERROR: {e}")
+        print("CHECKBOTS ERROR:", e)
+# ====== LỆNH BACKUP ======
+@telegram_bot.message_handler(commands=['backup'])
+def telegram_backup(message):
+    if not is_telegram_admin(message.from_user.id):
+        telegram_bot.reply_to(message, "❌ Không có quyền!")
+        return
+    
+    try:
+        from datetime import datetime
+        
+        if not os.path.exists("bot.json"):
+            telegram_bot.reply_to(message, "❌ Không tìm thấy file bot.json!")
+            return
+        
+        with open("bot.json", "r", encoding="utf-8") as f:
+            content = f.read()
+        
+        import io
+        file_buffer = io.BytesIO(content.encode('utf-8'))
+        file_buffer.name = "bot.json"
+        
+        telegram_bot.send_document(
+            message.chat.id,
+            file_buffer,
+            caption=f"📦 Backup bot.json - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        )
+        
+        telegram_bot.reply_to(message, "✅ Đã backup bot.json!")
+        
+    except Exception as e:
+        telegram_bot.reply_to(message, f"❌ Lỗi: {e}")
+
+@telegram_bot.message_handler(commands=['server'])
+def telegram_server(message):
+    if not is_telegram_admin(message.from_user.id):
+        telegram_bot.reply_to(message, "❌ Không có quyền!")
+        return
+    
+    try:
+        import psutil
+        import platform
+        global BOT_START_TIME
+        
+        cpu_percent = psutil.cpu_percent(interval=0.5)
+        cpu_count = psutil.cpu_count()
+        
+        memory = psutil.virtual_memory()
+        memory_used_gb = memory.used / (1024**3)
+        memory_total_gb = memory.total / (1024**3)
+        memory_percent = memory.percent
+        
+        disk = psutil.disk_usage('/')
+        disk_used_gb = disk.used / (1024**3)
+        disk_total_gb = disk.total / (1024**3)
+        disk_percent = disk.percent
+        
+        uptime_seconds = int(time.time() - BOT_START_TIME)
+        days = uptime_seconds // 86400
+        hours = (uptime_seconds % 86400) // 3600
+        minutes = (uptime_seconds % 3600) // 60
+        uptime_str = f"{days} ngày {hours} giờ {minutes} phút" if days > 0 else f"{hours} giờ {minutes} phút"
+        
+        bar_length = 20
+        
+        ram_filled = int(bar_length * memory_percent / 100)
+        ram_bar = '█' * ram_filled + '░' * (bar_length - ram_filled)
+        
+        cpu_filled = int(bar_length * cpu_percent / 100)
+        cpu_bar = '█' * cpu_filled + '░' * (bar_length - cpu_filled)
+        
+        disk_filled = int(bar_length * disk_percent / 100)
+        disk_bar = '█' * disk_filled + '░' * (bar_length - disk_filled)
+        
+        text = f"""
+<blockquote>
+THÔNG TIN SERVER
+====================================
+
+RAM
+Đã dùng: {memory_used_gb:.1f} GB
+Tổng: {memory_total_gb:.1f} GB
+Đã dùng: {memory_percent:.1f}%
+[{ram_bar}]
+
+CPU
+Đã dùng: {cpu_percent:.1f}%
+Số nhân: {cpu_count}
+[{cpu_bar}]
+
+DISK
+Đã dùng: {disk_used_gb:.1f} GB
+Tổng: {disk_total_gb:.1f} GB
+Đã dùng: {disk_percent:.1f}%
+[{disk_bar}]
+
+UPTIME BOT
+{uptime_str}
+
+HỆ ĐIỀU HÀNH
+{platform.system()} {platform.release()}
+
+====================================
+Dùng /ping để kiểm tra kết nối
+</blockquote>
+"""
+        telegram_bot.reply_to(message, text, parse_mode="HTML")
+        
+    except Exception as e:
+        telegram_bot.reply_to(message, f"Lỗi: {e}")
+                
+@telegram_bot.message_handler(commands=['uptime'])
+def telegram_uptime(message):
+    if not is_telegram_admin(message.from_user.id):
+        telegram_bot.reply_to(message, "❌ Không có quyền!")
+        return
+    
+    try:
+        global BOT_START_TIME
+        uptime_seconds = int(time.time() - BOT_START_TIME)
+        
+        days = uptime_seconds // 86400
+        hours = (uptime_seconds % 86400) // 3600
+        minutes = (uptime_seconds % 3600) // 60
+        seconds = uptime_seconds % 60
+        
+        max_uptime = 604800
+        percent = min(100, (uptime_seconds / max_uptime) * 100)
+        
+        bar_length = 20
+        filled = int(bar_length * percent / 100)
+        bar = '█' * filled + '░' * (bar_length - filled)
+        
+        start_time_str = time.strftime('%H:%M:%S %d/%m/%Y', time.localtime(BOT_START_TIME))
+        
+        if uptime_seconds < 3600:
+            status = "Bot mới khởi động!"
+        elif uptime_seconds < 86400:
+            status = "Bot đang chạy ổn định!"
+        else:
+            status = "Bot hoạt động tốt!"
+        
+        text = f"""
+<blockquote>
+UPTIME
+====================================
+
+{days:02d} ngày  {hours:02d} giờ  {minutes:02d} phút  {seconds:02d} giây
+
+[{bar}] {percent:.1f}%
+
+Khởi động: {start_time_str}
+
+{status}
+
+====================================
+Bot đang hoạt động ổn định
+</blockquote>
+"""
+        telegram_bot.reply_to(message, text, parse_mode="HTML")
+        
+    except Exception as e:
+        telegram_bot.reply_to(message, f"Lỗi: {e}") 
+                          
+@telegram_bot.message_handler(commands=['online'])
+def telegram_online_bot(message):
+    if not is_telegram_admin(message.from_user.id):
+        telegram_bot.reply_to(message, "❌ Bạn không có quyền sử dụng lệnh này!")
+        return
+    
+    try:
+        parts = message.text.split()
+        if len(parts) < 2:
+            telegram_bot.reply_to(
+                message,
+                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n"
+                "💡 Dùng: <code>/online [botid]</code>\n"
+                "📌 Ví dụ: <code>/online 1</code>\n"
+                "📌 Ví dụ: <code>/online all</code></blockquote>",
+                parse_mode="HTML"
+            )
+            return
+        
+        target = parts[1]
+        
+        if target.lower() == "all":
+            online_bots = []
+            offline_bots = []
+            
+            for bot_id, bot in TCPbot.bots.items():
+                if bot.running_event.is_set():
+                    online_bots.append(bot_id)
+                else:
+                    offline_bots.append(bot_id)
+            
+            if not offline_bots:
+                telegram_bot.reply_to(
+                    message,
+                    f"<blockquote><b>✅ TẤT CẢ BOT ĐÃ ONLINE</b>\n"
+                    f"━━━━━━━━━━━━━━━━━━━━\n"
+                    f"🟢 Online: <b>{len(online_bots)}</b> bot\n"
+                    f"━━━━━━━━━━━━━━━━━━━━\n"
+                    f"⚡ Không có bot nào offline!</blockquote>",
+                    parse_mode="HTML"
+                )
+                return
+            
+            # Bật từng bot offline
+            success_count = 0
+            for bot_id in offline_bots:
+                try:
+                    bot = TCPbot.bots[bot_id]
+                    if not bot.running_event.is_set():
+                        # Reset và start lại
+                        bot.cleanup()
+                        time.sleep(0.5)
+                        bot.running_event.set()
+                        bot.started = False
+                        bot.start()
+                        success_count += 1
+                        time.sleep(1)
+                except Exception as e:
+                    print(f"[ONLINE ALL] Bot {bot_id} error: {e}")
+            
+            telegram_bot.reply_to(
+                message,
+                f"<blockquote><b>✅ BẬT ONLINE ALL BOT</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"✅ Thành công: <b>{success_count}/{len(offline_bots)}</b>\n"
+                f"🟢 Online hiện tại: <b>{len(online_bots) + success_count}</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"⚡ Đã bật tất cả bot!</blockquote>",
+                parse_mode="HTML"
+            )
+            return
+        
+        bot_id = int(target)
+        
+        if bot_id not in TCPbot.bots:
+            telegram_bot.reply_to(message, f"❌ Không tìm thấy bot {bot_id}!")
+            return
+        
+        bot = TCPbot.bots[bot_id]
+        
+        if bot.running_event.is_set():
+            telegram_bot.reply_to(
+                message,
+                f"<blockquote><b>🟢 BOT ĐÃ ONLINE</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"🤖 Bot ID: <code>{bot_id}</code>\n"
+                f"📛 Name: <code>{getattr(bot, 'nickname', 'Unknown')}</code>\n"
+                f"🆔 UID: <code>{getattr(bot, 'botid', '?')}</code>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"⚡ Bot đang hoạt động!</blockquote>",
+                parse_mode="HTML"
+            )
+            return
+        
+        # Bật bot
+        bot.cleanup()
+        time.sleep(0.5)
+        bot.running_event.set()
+        bot.started = False
+        bot.start()
+        time.sleep(2)
+        
+        if bot.running_event.is_set():
+            telegram_bot.reply_to(
+                message,
+                f"<blockquote><b>✅ BẬT BOT THÀNH CÔNG</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"🤖 Bot ID: <code>{bot_id}</code>\n"
+                f"📛 Name: <code>{getattr(bot, 'nickname', 'Unknown')}</code>\n"
+                f"🆔 UID: <code>{getattr(bot, 'botid', '?')}</code>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"⚡ Bot đã online!</blockquote>",
+                parse_mode="HTML"
+            )
+        else:
+            telegram_bot.reply_to(
+                message,
+                f"<blockquote><b>❌ BẬT BOT THẤT BẠI</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"🤖 Bot ID: <code>{bot_id}</code>\n"
+                f"⚠️ Lý do: Bot không thể kết nối!\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"💡 Kiểm tra token hoặc mạng!</blockquote>",
+                parse_mode="HTML"
+            )
+        
+    except ValueError:
+        telegram_bot.reply_to(message, "❌ Bot ID phải là số hoặc 'all'!")
+    except Exception as e:
+        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
+
+
+# ===== LỆNH TELEGRAM: /offline =====
+@telegram_bot.message_handler(commands=['offline'])
+def telegram_offline_bot(message):
+    if not is_telegram_admin(message.from_user.id):
+        telegram_bot.reply_to(message, "❌ Bạn không có quyền sử dụng lệnh này!")
+        return
+    
+    try:
+        parts = message.text.split()
+        if len(parts) < 2:
+            telegram_bot.reply_to(
+                message,
+                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n"
+                "💡 Dùng: <code>/offline [botid]</code>\n"
+                "📌 Ví dụ: <code>/offline 1</code>\n"
+                "📌 Ví dụ: <code>/offline all</code></blockquote>",
+                parse_mode="HTML"
+            )
+            return
+        
+        target = parts[1]
+        
+        if target.lower() == "all":
+            online_bots = []
+            
+            for bot_id, bot in TCPbot.bots.items():
+                if bot.running_event.is_set():
+                    online_bots.append(bot_id)
+            
+            if not online_bots:
+                telegram_bot.reply_to(
+                    message,
+                    f"<blockquote><b>⚠️ TẤT CẢ BOT ĐÃ OFFLINE</b>\n"
+                    f"━━━━━━━━━━━━━━━━━━━━\n"
+                    f"🔴 Offline: <b>{len(TCPbot.bots)}</b> bot\n"
+                    f"━━━━━━━━━━━━━━━━━━━━\n"
+                    f"⚡ Không có bot nào online!</blockquote>",
+                    parse_mode="HTML"
+                )
+                return
+            
+            # Tắt từng bot online
+            success_count = 0
+            for bot_id in online_bots:
+                try:
+                    bot = TCPbot.bots[bot_id]
+                    if bot.running_event.is_set():
+                        bot.cleanup()
+                        bot.running_event.clear()
+                        success_count += 1
+                        time.sleep(0.5)
+                except Exception as e:
+                    print(f"[OFFLINE ALL] Bot {bot_id} error: {e}")
+            
+            telegram_bot.reply_to(
+                message,
+                f"<blockquote><b>✅ TẮT ONLINE ALL BOT</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"✅ Thành công: <b>{success_count}/{len(online_bots)}</b>\n"
+                f"🔴 Offline hiện tại: <b>{len(TCPbot.bots)}</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"⚡ Đã tắt tất cả bot!</blockquote>",
+                parse_mode="HTML"
+            )
+            return
+        
+        bot_id = int(target)
+        
+        if bot_id not in TCPbot.bots:
+            telegram_bot.reply_to(message, f"❌ Không tìm thấy bot {bot_id}!")
+            return
+        
+        bot = TCPbot.bots[bot_id]
+        
+        if not bot.running_event.is_set():
+            telegram_bot.reply_to(
+                message,
+                f"<blockquote><b>🔴 BOT ĐÃ OFFLINE</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"🤖 Bot ID: <code>{bot_id}</code>\n"
+                f"📛 Name: <code>{getattr(bot, 'nickname', 'Unknown')}</code>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"⚡ Bot đã dừng hoạt động!</blockquote>",
+                parse_mode="HTML"
+            )
+            return
+        
+        # Tắt bot
+        bot.cleanup()
+        bot.running_event.clear()
+        
+        telegram_bot.reply_to(
+            message,
+            f"<blockquote><b>✅ TẮT BOT THÀNH CÔNG</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"🤖 Bot ID: <code>{bot_id}</code>\n"
+            f"📛 Name: <code>{getattr(bot, 'nickname', 'Unknown')}</code>\n"
+            f"🆔 UID: <code>{getattr(bot, 'botid', '?')}</code>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"⚡ Bot đã offline!</blockquote>",
+            parse_mode="HTML"
+        )
+        
+    except ValueError:
+        telegram_bot.reply_to(message, "❌ Bot ID phải là số hoặc 'all'!")
+    except Exception as e:
+        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
+
+# ===== LỆNH TELEGRAM: /resetbot =====
+@telegram_bot.message_handler(commands=['resetbot'])
+def telegram_reset_bot(message):
+    if not is_telegram_admin(message.from_user.id):
+        telegram_bot.reply_to(message, "❌ Bạn không có quyền sử dụng lệnh này!")
+        return
+    
+    try:
+        parts = message.text.split()
+        if len(parts) < 2:
+            telegram_bot.reply_to(
+                message,
+                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n"
+                "💡 Dùng: <code>/resetbot [botid]</code>\n"
+                "📌 Ví dụ: <code>/resetbot 1</code>\n"
+                "📌 Ví dụ: <code>/resetbot all</code></blockquote>",
+                parse_mode="HTML"
+            )
             return
         
         target = parts[1]
         
         if target.lower() == "all":
             bot_list = list(TCPbot.bots.keys())
+            
             if not bot_list:
-                telegram_bot.reply_to(message, "Không có bot nào để xóa!")
+                telegram_bot.reply_to(message, "❌ Không có bot nào để reset!")
                 return
             
-            count = 0
-            for bid in bot_list:
+            success_count = 0
+            for bot_id in bot_list:
                 try:
-                    result = TCPbot.delete_bot(bid)
-                    if result == "RES_OK":
-                        count += 1
-                except:
-                    pass
+                    bot = TCPbot.bots[bot_id]
+                    bot.cleanup()
+                    time.sleep(0.5)
+                    bot.running_event.set()
+                    bot.started = False
+                    bot.start()
+                    success_count += 1
+                    time.sleep(1)
+                except Exception as e:
+                    print(f"[RESET ALL] Bot {bot_id} error: {e}")
             
             telegram_bot.reply_to(
                 message,
-                f"<blockquote><b>ĐÃ XÓA TẤT CẢ BOT</b>\n"
+                f"<blockquote><b>✅ RESET ALL BOT THÀNH CÔNG</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"Đã xóa <code>{count}</code> bot\n"
-                f"Tổng: <code>{len(bot_list)}</code> bot\n"
+                f"✅ Thành công: <b>{success_count}/{len(bot_list)}</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"Tất cả bot đã bị xóa!</blockquote>",
+                f"⚡ Đã reset tất cả bot!</blockquote>",
                 parse_mode="HTML"
             )
             return
         
-        bid = int(target)
-        result = TCPbot.delete_bot(bid) 
+        bot_id = int(target)
         
-        if result == "RES_OK":
-            response = f"Xóa bot thành công!\nBot ID: {bid} đã được loại bỏ và dừng hoạt động."
-        elif result == "RES_BOT_NOT_FOUND":
-            response = f"Xóa bot thất bại!\nLý do: Không tìm thấy Bot ID {bid} trong hệ thống."
-        elif result == "RES_BOT_BUSY":
-            response = f"Xóa bot thất bại!\nLý do: Bot {bid} đang bận xử lý tiến trình khác, không thể dừng."
+        if bot_id not in TCPbot.bots:
+            telegram_bot.reply_to(message, f"❌ Không tìm thấy bot {bot_id}!")
+            return
+        
+        bot = TCPbot.bots[bot_id]
+        
+        # Reset bot
+        bot.cleanup()
+        time.sleep(1)
+        bot.running_event.set()
+        bot.started = False
+        bot.start()
+        
+        time.sleep(3)
+        
+        if bot.running_event.is_set():
+            telegram_bot.reply_to(
+                message,
+                f"<blockquote><b>✅ RESET BOT THÀNH CÔNG</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"🤖 Bot ID: <code>{bot_id}</code>\n"
+                f"📛 Name: <code>{getattr(bot, 'nickname', 'Unknown')}</code>\n"
+                f"🆔 UID: <code>{getattr(bot, 'botid', '?')}</code>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"⚡ Bot đã được khởi động lại!</blockquote>",
+                parse_mode="HTML"
+            )
         else:
-            response = f"Lỗi không xác định: {result}"
-        
-        telegram_bot.reply_to(message, response)
+            telegram_bot.reply_to(
+                message,
+                f"<blockquote><b>❌ RESET BOT THẤT BẠI</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"🤖 Bot ID: <code>{bot_id}</code>\n"
+                f"⚠️ Lý do: Bot không thể kết nối!\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"💡 Kiểm tra token hoặc mạng!</blockquote>",
+                parse_mode="HTML"
+            )
         
     except ValueError:
-        telegram_bot.reply_to(message, "Thất bại: Bot ID phải là một số hoặc 'all'!")
+        telegram_bot.reply_to(message, "❌ Bot ID phải là số hoặc 'all'!")
     except Exception as e:
-        telegram_bot.reply_to(message, f"Lỗi khi xóa bot: {str(e)}")
-                
-@telegram_bot.message_handler(commands=['addadmin'])
-def telegram_add_admin(message):
+        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
+
+@telegram_bot.message_handler(commands=['xkb'])
+def telegram_xkb(message):
     if not is_telegram_admin(message.from_user.id):
-        telegram_bot.reply_to(message, "Bạn không có quyền sử dụng lệnh này!")
+        telegram_bot.reply_to(message, "❌ Bạn không có quyền sử dụng lệnh này!")
         return
     
     try:
         parts = message.text.split()
         if len(parts) < 3:
-            telegram_bot.reply_to(message, "Sai cú pháp!\nSử dụng: /addadmin <bot_id|all> <uid>")
+            telegram_bot.reply_to(
+                message,
+                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n💡 Dùng: <code>/xkb [bot_id] [uid]</code>\n📌 Ví dụ: <code>/xkb 1 123456789</code></blockquote>",
+                parse_mode="HTML"
+            )
             return
         
-        target = parts[1]
-        uid = int(parts[2])
+        bot_id = parts[1]
+        uid = parts[2]
         
-        if target.lower() == "all":
-            count = 0
-            for bot_id in TCPbot.bots:
-                try:
-                    if AdminManager.add_admin(bot_id, uid):
-                        count += 1
-                except:
-                    pass
-            telegram_bot.reply_to(message, f"Đã thêm UID {uid} vào {count} bot")
-            return         
+        import requests
+        url = f"http://127.0.0.1:2008/xkb?uid={uid}&botid={bot_id}"
+        response = requests.get(url, timeout=10)
+        result = response.json()
         
-        bot_id = int(target)
-        if bot_id not in TCPbot.bots:
-            telegram_bot.reply_to(message, f"Không tìm thấy bot ID {bot_id}")
-            return
-        
-        result = AdminManager.add_admin(bot_id, uid)
-        if result:
-            response = f"Đã thêm admin UID {uid} cho bot ID {bot_id} thành công!"
+        if result.get('status') == 'success':
+            data = result.get('data', {})
+            telegram_bot.reply_to(
+                message,
+                f"<blockquote><b>✅ HỦY KẾT BẠN THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\n🤖 <b>Bot:</b> <code>{data.get('bot_name', '')}</code>\n🆔 <b>UID:</b> <code>{uid}</code>\n📩 <b>Trạng thái:</b> {result.get('message')}\n━━━━━━━━━━━━━━━━━━━━\n⚡ Đã hủy qua API!</blockquote>",
+                parse_mode="HTML"
+            )
         else:
-            response = f"Thêm admin thất bại! UID {uid} có thể đã là admin."
-        
-        telegram_bot.reply_to(message, response)
-        
-    except ValueError:
-        telegram_bot.reply_to(message, "Bot ID và UID phải là số!")
+            telegram_bot.reply_to(
+                message,
+                f"<blockquote><b>❌ HỦY KẾT BẠN THẤT BẠI</b>\n━━━━━━━━━━━━━━━━━━━━\n🤖 <b>Bot ID:</b> <code>{bot_id}</code>\n🆔 <b>UID:</b> <code>{uid}</code>\n⚠️ <b>Lý do:</b> {result.get('message')}\n━━━━━━━━━━━━━━━━━━━━\n💡 Kiểm tra lại bot!</blockquote>",
+                parse_mode="HTML"
+            )
+            
     except Exception as e:
-        telegram_bot.reply_to(message, f"Lỗi: {str(e)}")
+        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
         
-TCPbot = BOTMNG()
-app = Flask(__name__)
-   
+@telegram_bot.message_handler(commands=['xkball'])
+def telegram_xkb_all(message):
+    if not is_telegram_admin(message.from_user.id):
+        telegram_bot.reply_to(message, "❌ Không có quyền!")
+        return
+    
+    try:
+        parts = message.text.split()
+        if len(parts) < 2:
+            telegram_bot.reply_to(
+                message,
+                "<blockquote><b>❌ SAI CÚ PHÁP</b>\n💡 Dùng: <code>/xkball [uid]</code>\n📌 Ví dụ: <code>/xkball 123456789</code></blockquote>",
+                parse_mode="HTML"
+            )
+            return
+        
+        uid = parts[1]
+        
+        import requests
+        url = f"http://127.0.0.1:2010/xkb/all?uid={uid}"
+        response = requests.get(url, timeout=30)
+        result = response.json()
+        
+        if result.get('status') == 'success':
+            data = result.get('data', {})
+            results = data.get('results', [])
+            
+            msg = f"<blockquote><b>✅ HỦY KẾT BẠN ALL THÀNH CÔNG</b>\n━━━━━━━━━━━━━━━━━━━━\n🆔 <b>UID:</b> <code>{uid}</code>\n✅ <b>Thành công:</b> {data.get('success', 0)}/{data.get('total_bots', 0)}\n━━━━━━━━━━━━━━━━━━━━\n"
+            
+            for r in results:
+                status = "✅" if r.get('success') else "❌"
+                msg += f"{status} <b>{r.get('bot_name')}</b>: {r.get('message')}\n"
+            
+            msg += "━━━━━━━━━━━━━━━━━━━━\n⚡ Đã hủy qua API!</blockquote>"
+            
+            telegram_bot.reply_to(message, msg, parse_mode="HTML")
+        else:
+            telegram_bot.reply_to(
+                message,
+                f"<blockquote><b>❌ HỦY KẾT BẠN ALL THẤT BẠI</b>\n━━━━━━━━━━━━━━━━━━━━\n🆔 <b>UID:</b> <code>{uid}</code>\n⚠️ <b>Lý do:</b> {result.get('message')}\n━━━━━━━━━━━━━━━━━━━━\n💡 Kiểm tra lại!</blockquote>",
+                parse_mode="HTML"
+            )
+            
+    except Exception as e:
+        telegram_bot.reply_to(message, f"❌ Lỗi: {str(e)}")
+    
 @app.route("/check", methods=["GET"])
 def ktr_bot():
  data = []
@@ -5925,10 +7334,12 @@ def add_uid():
         bid = int(bid)
         uid = int(uid)
         
+        # Kiểm tra định dạng time
         import re
         if not re.match(r'^\d+[hdwmy]$', timee.lower()):
             return "RES_INVALID_TIME", 201
         
+        # Thêm trực tiếp vào database bằng SQL
         import sqlite3
         db_path = f"bot_{bid}.db"
         
@@ -5936,6 +7347,7 @@ def add_uid():
             conn = sqlite3.connect(db_path)
             cursor = conn.cursor()
             
+            # Tạo bảng
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS access (
                     uid INTEGER PRIMARY KEY,
@@ -5943,6 +7355,7 @@ def add_uid():
                 )
             ''')
             
+            # Lưu timee dạng chuỗi
             cursor.execute(
                 'INSERT OR REPLACE INTO access (uid, expire_time) VALUES (?, ?)',
                 (uid, timee)
@@ -5951,14 +7364,17 @@ def add_uid():
             conn.commit()
             conn.close()
             
+            # Reload lại access cho bot
             if bid in TCPbot.bots:
                 bot = TCPbot.bots[bid]
                 if hasattr(bot, 'load_access'):
                     bot.load_access()
+                # Hoặc cập nhật trực tiếp vào bot_config
                 if hasattr(bot, 'bot_config'):
                     if 'access_bot' not in bot.bot_config:
                         bot.bot_config['access_bot'] = []
                     
+                    # Kiểm tra và cập nhật
                     found = False
                     for u in bot.bot_config['access_bot']:
                         if u.get('uid') == uid:
@@ -5993,90 +7409,16 @@ def delete_uid():
  if I:return "RES_OK", 200
  else:return "RES_FAILED", 201
 
+
 @app.route("/addbot", methods=["GET"])
 def add_bot():
-    token = request.args.get("token")
-    if not token: 
-        return "RES_INVALID", 201
-    
-    try:
-        from ReQAPI import FreeFireAPI
-        test = FreeFireAPI().get(token, is_emulator=False)
-        if "account not found" in str(test):
-            return "TOKEN_INVALID", 201
-    except:
-        pass
-    
-    I = TCPbot.add_bot(token)
-    if I["status"]:
-        TCPbot.bots[I["bot_id"]].start()
-        return "RES_OK", 200
-    else: 
-        return str(I["message"]), 201
-
-@app.route("/lag", methods=["GET"])
-def api_lag():
-    tc = request.args.get("tc")
-    if not tc:
-        return jsonify({"success": False, "message": "Missing tc"}), 400
-    
-    try:
-        tc = int(tc)
-    except:
-        return jsonify({"success": False, "message": "Invalid tc"}), 400
-    
-    if len(str(tc)) != 7:
-        return jsonify({"success": False, "message": "tc must be 7 digits"}), 400
-    
-    bot = None
-    for b in TCPbot.bots.values():
-        if (b.running_event.is_set() and 
-            getattr(b, "sock39699", None) and 
-            not getattr(b, "is_busy", False)):
-            bot = b
-            break
-    
-    if not bot:
-        return jsonify({"success": False, "message": "No bot available"}), 400
-    
-    bot.is_busy = True
-    bot_name = getattr(bot, 'nickname', f'Bot #{bot.botid}')
-    
-    def run_lag():
-        try:
-            bot.rstatus = (99, "lagging")
-            bot.sock39699.sendall(bot._bot.join_squad(tc))
-            time.sleep(1.5)
-            
-            sms_text = "[b][c][ffffff]Telegram: @zanbackj\nTiktok: @zanbackj\nThuê Bot Liên hệ admin"
-            bot.rstatus = (1, sms_text)
-            time.sleep(0.5)
-            
-            for _ in range(1111):
-                try:
-                    bot.sock39699.sendall(bot._gen.lag_dev())
-                    time.sleep(0.0001)
-                except:
-                    pass
-            
-            bot.sock39699.sendall(bot._bot.leave_squad(0))
-            bot.rstatus = (0, 0)
-            
-        except Exception as e:
-            print(f"LAG API ERROR: {e}")
-        finally:
-            bot.is_busy = False
-    
-    threading.Thread(target=run_lag, daemon=True).start()
-    
-    return jsonify({
-        "success": True,
-        "message": f"Lagging team {tc} with bot {bot_name}",
-        "data": {
-            "tc": tc,
-            "bot": bot_name
-        }
-    }), 200
+ token = request.args.get("token")
+ if not token: return "RES_INVALID", 201
+ I=TCPbot.add_bot(token)
+ if I["status"]:
+  TCPbot.bots[I["bot_id"]].start()
+  return "RES_OK", 200
+ else: return str(I["message"]), 201
         
 @app.route("/delbot", methods=["GET"])
 def delete_bot():
@@ -6153,6 +7495,7 @@ def api_kb_get():
             
         bot_uid = getattr(bot, 'botid', '')
         
+        # Gửi kết bạn trực tiếp 
         try:
             def encrypt_uid(x):
                 dec = ['80','81','82','83','84','85','86','87','88','89','8a','8b','8c','8d','8e','8f','90','91','92','93','94','95','96','97','98','99','9a','9b','9c','9d','9e','9f','a0','a1','a2','a3','a4','a5','a6','a7','a8','a9','aa','ab','ac','ad','ae','af','b0','b1','b2','b3','b4','b5','b6','b7','b8','b9','ba','bb','bc','bd','be','bf','c0','c1','c2','c3','c4','c5','c6','c7','c8','c9','ca','cb','cc','cd','ce','cf','d0','d1','d2','d3','d4','d5','d6','d7','d8','d9','da','db','dc','dd','de','df','e0','e1','e2','e3','e4','e5','e6','e7','e8','e9','ea','eb','ec','ed','ee','ef','f0','f1','f2','f3','f4','f5','f6','f7','f8','f9','fa','fb','fc','fd','fe','ff']
@@ -6204,7 +7547,7 @@ def api_kb_get():
             
             headers = {
                 'X-Unity-Version': '2018.4.11f1',
-                'ReleaseVersion': 'OB54',
+                'ReleaseVersion': 'OB55',
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'X-GA': 'v1 1',
                 'Authorization': f'Bearer {token}',
@@ -6268,6 +7611,7 @@ def api_kb_all_get():
         success_count = 0
         online_bots = 0
         
+        # Hàm mã hóa UID
         def encrypt_uid(x):
             dec = ['80','81','82','83','84','85','86','87','88','89','8a','8b','8c','8d','8e','8f','90','91','92','93','94','95','96','97','98','99','9a','9b','9c','9d','9e','9f','a0','a1','a2','a3','a4','a5','a6','a7','a8','a9','aa','ab','ac','ad','ae','af','b0','b1','b2','b3','b4','b5','b6','b7','b8','b9','ba','bb','bc','bd','be','bf','c0','c1','c2','c3','c4','c5','c6','c7','c8','c9','ca','cb','cc','cd','ce','cf','d0','d1','d2','d3','d4','d5','d6','d7','d8','d9','da','db','dc','dd','de','df','e0','e1','e2','e3','e4','e5','e6','e7','e8','e9','ea','eb','ec','ed','ee','ef','f0','f1','f2','f3','f4','f5','f6','f7','f8','f9','fa','fb','fc','fd','fe','ff']
             xxx = ['1','01','02','03','04','05','06','07','08','09','0a','0b','0c','0d','0e','0f','10','11','12','13','14','15','16','17','18','19','1a','1b','1c','1d','1e','1f','20','21','22','23','24','25','26','27','28','29','2a','2b','2c','2d','2e','2f','30','31','32','33','34','35','36','37','38','39','3a','3b','3c','3d','3e','3f','40','41','42','43','44','45','46','47','48','49','4a','4b','4c','4d','4e','4f','50','51','52','53','54','55','56','57','58','59','5a','5b','5c','5d','5e','5f','60','61','62','63','64','65','66','67','68','69','6a','6b','6c','6d','6e','6f','70','71','72','73','74','75','76','77','78','79','7a','7b','7c','7d','7e','7f']
@@ -6334,7 +7678,7 @@ def api_kb_all_get():
                 
                 headers = {
                     'X-Unity-Version': '2018.4.11f1',
-                    'ReleaseVersion': 'OB54',
+                    'ReleaseVersion': 'OB55',
                     'Content-Type': 'application/x-www-form-urlencoded',
                     'X-GA': 'v1 1',
                     'Authorization': f'Bearer {token}',
@@ -6398,6 +7742,62 @@ def api_kb_all_get():
         
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route("/bio/all", methods=["GET"])
+def api_change_bio_all():
+    try:
+        bio_text = request.args.get("bio")
+        
+        if not bio_text:
+            return jsonify({"status": "error", "message": "Missing bio"}), 400
+        
+        results = []
+        success_count = 0
+        online_bots = 0
+        
+        for bot_id, bot in TCPbot.bots.items():
+            if not bot.running_event.is_set():
+                continue
+            online_bots += 1
+            
+            token = getattr(bot, 'token', None)
+            if not token:
+                token = bot.bot_config.get('auth_bot_login', {}).get('access_token')
+            
+            if not token:
+                results.append({
+                    'bot_id': bot_id,
+                    'bot_name': getattr(bot, 'nickname', f'Bot #{bot_id}'),
+                    'success': False,
+                    'message': 'No token'
+                })
+                continue
+            
+            success, msg = change_bio_via_token(token, bio_text)
+            if success:
+                success_count += 1
+            
+            results.append({
+                'bot_id': bot_id,
+                'bot_name': getattr(bot, 'nickname', f'Bot #{bot_id}'),
+                'success': success,
+                'message': msg
+            })
+        
+        return jsonify({
+            "status": "success",
+            "message": f"Completed: {success_count}/{online_bots} success",
+            "data": {
+                "bio": bio_text,
+                "total_bots": online_bots,
+                "success": success_count,
+                "results": results
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
         
 @app.route("/xkb", methods=["GET"])
 def api_xkb_get():
@@ -6420,7 +7820,8 @@ def api_xkb_get():
         if not token:
             return jsonify({'status': 'error', 'message': 'No token'}), 400
         bot_uid = getattr(bot, 'botid', '')
-               
+        
+        # Hủy kết bạn
         try:
             def encrypt_uid(x):
                 dec = ['80','81','82','83','84','85','86','87','88','89','8a','8b','8c','8d','8e','8f','90','91','92','93','94','95','96','97','98','99','9a','9b','9c','9d','9e','9f','a0','a1','a2','a3','a4','a5','a6','a7','a8','a9','aa','ab','ac','ad','ae','af','b0','b1','b2','b3','b4','b5','b6','b7','b8','b9','ba','bb','bc','bd','be','bf','c0','c1','c2','c3','c4','c5','c6','c7','c8','c9','ca','cb','cc','cd','ce','cf','d0','d1','d2','d3','d4','d5','d6','d7','d8','d9','da','db','dc','dd','de','df','e0','e1','e2','e3','e4','e5','e6','e7','e8','e9','ea','eb','ec','ed','ee','ef','f0','f1','f2','f3','f4','f5','f6','f7','f8','f9','fa','fb','fc','fd','fe','ff']
@@ -6472,7 +7873,7 @@ def api_xkb_get():
             
             headers = {
                 'X-Unity-Version': '2018.4.11f1',
-                'ReleaseVersion': 'OB54',
+                'ReleaseVersion': 'OB55',
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'X-GA': 'v1 1',
                 'Authorization': f'Bearer {token}',
@@ -6602,7 +8003,7 @@ def api_xkb_all_get():
                 
                 headers = {
                     'X-Unity-Version': '2018.4.11f1',
-                    'ReleaseVersion': 'OB54',
+                    'ReleaseVersion': 'OB55',
                     'Content-Type': 'application/x-www-form-urlencoded',
                     'X-GA': 'v1 1',
                     'Authorization': f'Bearer {token}',
@@ -6661,6 +8062,668 @@ def api_xkb_all_get():
                 'total_bots': online_bots,
                 'success': success_count,
                 'results': results
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route("/voqd", methods=["GET"])
+def api_join_clan():
+    try:
+        bot_id = request.args.get("botid")
+        clan_id = request.args.get("idqd")
+        region = request.args.get("region", "")
+        
+        if not bot_id or not clan_id:
+            return jsonify({"status": "error", "message": "Missing botid or idqd"}), 400
+        
+        if not bot_id.isdigit() or not clan_id.isdigit():
+            return jsonify({"status": "error", "message": "botid and idqd must be number"}), 400
+        
+        bot_id = int(bot_id)
+        
+        if bot_id not in TCPbot.bots:
+            return jsonify({"status": "error", "message": f"Bot {bot_id} not found"}), 404
+        
+        bot = TCPbot.bots[bot_id]
+        
+        token = getattr(bot, 'token', None)
+        if not token:
+            token = bot.bot_config.get('auth_bot_login', {}).get('access_token')
+        
+        if not token:
+            return jsonify({"status": "error", "message": "No token"}), 400
+        
+        if not region:
+            region = get_region_from_jwt(token)
+        
+        success, msg = request_join_clan(token, clan_id, region)
+        
+        return jsonify({
+            "status": "success" if success else "error",
+            "message": msg,
+            "data": {
+                "bot_id": bot_id,
+                "bot_name": getattr(bot, 'nickname', f'Bot #{bot_id}'),
+                "clan_id": clan_id,
+                "region": region
+            }
+        }), 200 if success else 400
+        
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/online", methods=["GET"])
+def api_online_bot():
+    try:
+        bot_id = request.args.get("botid")
+        
+        if not bot_id:
+            return jsonify({"status": "error", "message": "Missing botid"}), 400
+        
+        if bot_id.lower() == "all":
+            results = []
+            success_count = 0
+            
+            for bid, bot in TCPbot.bots.items():
+                if not bot.running_event.is_set():
+                    try:
+                        bot.cleanup()
+                        time.sleep(0.5)
+                        bot.running_event.set()
+                        bot.started = False
+                        bot.start()
+                        success_count += 1
+                        time.sleep(1)
+                        results.append({
+                            "bot_id": bid,
+                            "success": True,
+                            "message": "Started"
+                        })
+                    except Exception as e:
+                        results.append({
+                            "bot_id": bid,
+                            "success": False,
+                            "message": str(e)
+                        })
+                else:
+                    results.append({
+                        "bot_id": bid,
+                        "success": True,
+                        "message": "Already online"
+                    })
+            
+            return jsonify({
+                "status": "success",
+                "message": f"Started {success_count} bots",
+                "data": {
+                    "total": len(TCPbot.bots),
+                    "success": success_count,
+                    "results": results
+                }
+            }), 200
+        
+        if not bot_id.isdigit():
+            return jsonify({"status": "error", "message": "botid must be number or 'all'"}), 400
+        
+        bid = int(bot_id)
+        
+        if bid not in TCPbot.bots:
+            return jsonify({"status": "error", "message": f"Bot {bid} not found"}), 404
+        
+        bot = TCPbot.bots[bid]
+        
+        if bot.running_event.is_set():
+            return jsonify({
+                "status": "success",
+                "message": "Bot already online",
+                "data": {
+                    "bot_id": bid,
+                    "name": getattr(bot, 'nickname', 'Unknown'),
+                    "status": "online"
+                }
+            }), 200
+        
+        bot.cleanup()
+        time.sleep(0.5)
+        bot.running_event.set()
+        bot.started = False
+        bot.start()
+        time.sleep(2)
+        
+        if bot.running_event.is_set():
+            return jsonify({
+                "status": "success",
+                "message": "Bot started successfully",
+                "data": {
+                    "bot_id": bid,
+                    "name": getattr(bot, 'nickname', 'Unknown'),
+                    "status": "online"
+                }
+            }), 200
+        else:
+            return jsonify({
+                "status": "error",
+                "message": "Bot failed to start"
+            }), 500
+        
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/offline", methods=["GET"])
+def api_offline_bot():
+    try:
+        bot_id = request.args.get("botid")
+        
+        if not bot_id:
+            return jsonify({"status": "error", "message": "Missing botid"}), 400
+        
+        if bot_id.lower() == "all":
+            results = []
+            success_count = 0
+            
+            for bid, bot in TCPbot.bots.items():
+                if bot.running_event.is_set():
+                    try:
+                        bot.cleanup()
+                        bot.running_event.clear()
+                        success_count += 1
+                        results.append({
+                            "bot_id": bid,
+                            "success": True,
+                            "message": "Stopped"
+                        })
+                    except Exception as e:
+                        results.append({
+                            "bot_id": bid,
+                            "success": False,
+                            "message": str(e)
+                        })
+                else:
+                    results.append({
+                        "bot_id": bid,
+                        "success": True,
+                        "message": "Already offline"
+                    })
+            
+            return jsonify({
+                "status": "success",
+                "message": f"Stopped {success_count} bots",
+                "data": {
+                    "total": len(TCPbot.bots),
+                    "success": success_count,
+                    "results": results
+                }
+            }), 200
+        
+        if not bot_id.isdigit():
+            return jsonify({"status": "error", "message": "botid must be number or 'all'"}), 400
+        
+        bid = int(bot_id)
+        
+        if bid not in TCPbot.bots:
+            return jsonify({"status": "error", "message": f"Bot {bid} not found"}), 404
+        
+        bot = TCPbot.bots[bid]
+        
+        if not bot.running_event.is_set():
+            return jsonify({
+                "status": "success",
+                "message": "Bot already offline",
+                "data": {
+                    "bot_id": bid,
+                    "name": getattr(bot, 'nickname', 'Unknown'),
+                    "status": "offline"
+                }
+            }), 200
+        
+        bot.cleanup()
+        bot.running_event.clear()
+        
+        return jsonify({
+            "status": "success",
+            "message": "Bot stopped successfully",
+            "data": {
+                "bot_id": bid,
+                "name": getattr(bot, 'nickname', 'Unknown'),
+                "status": "offline"
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/resetbot", methods=["GET"])
+def api_reset_bot():
+    try:
+        bot_id = request.args.get("botid")
+        
+        if not bot_id:
+            return jsonify({"status": "error", "message": "Missing botid"}), 400
+        
+        if bot_id.lower() == "all":
+            results = []
+            success_count = 0
+            
+            for bid, bot in TCPbot.bots.items():
+                try:
+                    bot.cleanup()
+                    time.sleep(0.5)
+                    bot.running_event.set()
+                    bot.started = False
+                    bot.start()
+                    success_count += 1
+                    time.sleep(1)
+                    results.append({
+                        "bot_id": bid,
+                        "success": True,
+                        "message": "Reset successful"
+                    })
+                except Exception as e:
+                    results.append({
+                        "bot_id": bid,
+                        "success": False,
+                        "message": str(e)
+                    })
+            
+            return jsonify({
+                "status": "success",
+                "message": f"Reset {success_count} bots",
+                "data": {
+                    "total": len(TCPbot.bots),
+                    "success": success_count,
+                    "results": results
+                }
+            }), 200
+        
+        if not bot_id.isdigit():
+            return jsonify({"status": "error", "message": "botid must be number or 'all'"}), 400
+        
+        bid = int(bot_id)
+        
+        if bid not in TCPbot.bots:
+            return jsonify({"status": "error", "message": f"Bot {bid} not found"}), 404
+        
+        bot = TCPbot.bots[bid]
+        
+        bot.cleanup()
+        time.sleep(1)
+        bot.running_event.set()
+        bot.started = False
+        bot.start()
+        
+        time.sleep(3)
+        
+        if bot.running_event.is_set():
+            return jsonify({
+                "status": "success",
+                "message": "Bot reset successfully",
+                "data": {
+                    "bot_id": bid,
+                    "name": getattr(bot, 'nickname', 'Unknown'),
+                    "status": "online"
+                }
+            }), 200
+        else:
+            return jsonify({
+                "status": "error",
+                "message": "Bot failed to restart",
+                "data": {
+                    "bot_id": bid,
+                    "name": getattr(bot, 'nickname', 'Unknown'),
+                    "status": "offline"
+                }
+            }), 500
+        
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+
+@app.route("/roiqd", methods=["GET"])
+def api_quit_clan():
+    try:
+        bot_id = request.args.get("botid")
+        clan_id = request.args.get("clanid")
+        region = request.args.get("region", "")
+        
+        if not bot_id or not clan_id:
+            return jsonify({"status": "error", "message": "Missing botid or clanid"}), 400
+        
+        if not bot_id.isdigit() or not clan_id.isdigit():
+            return jsonify({"status": "error", "message": "botid and clanid must be number"}), 400
+        
+        bot_id = int(bot_id)
+        
+        if bot_id not in TCPbot.bots:
+            return jsonify({"status": "error", "message": f"Bot {bot_id} not found"}), 404
+        
+        bot = TCPbot.bots[bot_id]
+        
+        token = getattr(bot, 'token', None)
+        if not token:
+            token = bot.bot_config.get('auth_bot_login', {}).get('access_token')
+        
+        if not token:
+            return jsonify({"status": "error", "message": "No token"}), 400
+        
+        if not region:
+            region = get_region_from_jwt(token)
+        
+        success, msg = quit_clan(token, clan_id, region)
+        
+        return jsonify({
+            "status": "success" if success else "error",
+            "message": msg,
+            "data": {
+                "bot_id": bot_id,
+                "bot_name": getattr(bot, 'nickname', f'Bot #{bot_id}'),
+                "clan_id": clan_id,
+                "region": region
+            }
+        }), 200 if success else 400
+        
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/voqdall", methods=["GET"])
+def api_join_clan_all():
+    try:
+        clan_id = request.args.get("idqd")
+        region = request.args.get("region", "")
+        
+        if not clan_id:
+            return jsonify({"status": "error", "message": "Missing idqd"}), 400
+        
+        if not clan_id.isdigit():
+            return jsonify({"status": "error", "message": "clan_id must be number"}), 400
+        
+        results = []
+        success_count = 0
+        online_bots = 0
+        
+        for bot_id, bot in TCPbot.bots.items():
+            if not bot.running_event.is_set():
+                continue
+            online_bots += 1
+            
+            token = getattr(bot, 'token', None)
+            if not token:
+                token = bot.bot_config.get('auth_bot_login', {}).get('access_token')
+            
+            if not token:
+                results.append({
+                    'bot_id': bot_id,
+                    'bot_name': getattr(bot, 'nickname', f'Bot #{bot_id}'),
+                    'success': False,
+                    'message': 'No token'
+                })
+                continue
+            
+            if not region:
+                region = get_region_from_jwt(token)
+            
+            success, msg = request_join_clan(token, clan_id, region)
+            if success:
+                success_count += 1
+            
+            results.append({
+                'bot_id': bot_id,
+                'bot_name': getattr(bot, 'nickname', f'Bot #{bot_id}'),
+                'success': success,
+                'message': msg
+            })
+        
+        return jsonify({
+            "status": "success",
+            "message": f"Completed: {success_count}/{online_bots} success",
+            "data": {
+                "clan_id": clan_id,
+                "region": region,
+                "total_bots": online_bots,
+                "success": success_count,
+                "results": results
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/roiqdall", methods=["GET"])
+def api_quit_clan_all():
+    try:
+        clan_id = request.args.get("clanid")
+        region = request.args.get("region", "")
+        
+        if not clan_id:
+            return jsonify({"status": "error", "message": "Missing clanid"}), 400
+        
+        if not clan_id.isdigit():
+            return jsonify({"status": "error", "message": "clan_id must be number"}), 400
+        
+        results = []
+        success_count = 0
+        online_bots = 0
+        
+        for bot_id, bot in TCPbot.bots.items():
+            if not bot.running_event.is_set():
+                continue
+            online_bots += 1
+            
+            token = getattr(bot, 'token', None)
+            if not token:
+                token = bot.bot_config.get('auth_bot_login', {}).get('access_token')
+            
+            if not token:
+                results.append({
+                    'bot_id': bot_id,
+                    'bot_name': getattr(bot, 'nickname', f'Bot #{bot_id}'),
+                    'success': False,
+                    'message': 'No token'
+                })
+                continue
+            
+            if not region:
+                region = get_region_from_jwt(token)
+            
+            success, msg = quit_clan(token, clan_id, region)
+            if success:
+                success_count += 1
+            
+            results.append({
+                'bot_id': bot_id,
+                'bot_name': getattr(bot, 'nickname', f'Bot #{bot_id}'),
+                'success': success,
+                'message': msg
+            })
+        
+        return jsonify({
+            "status": "success",
+            "message": f"Completed: {success_count}/{online_bots} success",
+            "data": {
+                "clan_id": clan_id,
+                "region": region,
+                "total_bots": online_bots,
+                "success": success_count,
+                "results": results
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# ====== SỬA LẠI HÀM /clearfriends TRONG start.py ======
+
+@app.route("/clearfriends", methods=["GET"])
+def api_clear_friends():
+    """Xóa tất cả bạn bè của bot (không cần UID)"""
+    try:
+        import requests  # THÊM DÒNG NÀY VÀO ĐẦU HÀM
+        bot_id = request.args.get('botid')
+        
+        if not bot_id:
+            return jsonify({'status': 'error', 'message': 'Missing botid'}), 400
+        
+        if not bot_id.isdigit():
+            return jsonify({'status': 'error', 'message': 'botid must be number'}), 400
+        
+        bot_id = int(bot_id)
+        
+        if bot_id not in TCPbot.bots:
+            return jsonify({'status': 'error', 'message': f'Bot {bot_id} not found'}), 404
+        
+        bot = TCPbot.bots[bot_id]
+        
+        if not bot.running_event.is_set():
+            return jsonify({'status': 'error', 'message': 'Bot offline'}), 400
+        
+        token = getattr(bot, 'token', None)
+        if not token:
+            token = bot.bot_config.get('auth_bot_login', {}).get('access_token')
+        
+        if not token:
+            return jsonify({'status': 'error', 'message': 'No token'}), 400
+        
+        # ====== LẤY DANH SÁCH BẠN BÈ ======
+        headers = {
+            'Authorization': f'Bearer {token}',
+            'User-Agent': 'UnityPlayer/2022.3.47f1',
+            'ReleaseVersion': 'OB55',
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Connection': 'Keep-Alive'
+        }
+        
+        payload = bytes.fromhex('598fcaf07839308ff287aca3ae0a0617')
+        friends = []
+        
+        try:
+            response = requests.post('https://clientbp.ggpolarbear.com/GetFriend', headers=headers, data=payload, verify=False, timeout=10)
+            if response.status_code == 200:
+                from lib import protobuf_dec
+                import json
+                decoded = protobuf_dec(response.content.hex())
+                parsed = json.loads(decoded)
+                
+                if "1" in parsed and isinstance(parsed["1"], list):
+                    for friend in parsed["1"]:
+                        friends.append(friend.get("1", ""))
+        except Exception as e:
+            print(f"[DEBUG] GetFriend error: {e}")
+            return jsonify({
+                'status': 'error',
+                'message': f'GetFriend failed: {str(e)}'
+            }), 500
+        
+        if not friends:
+            return jsonify({
+                'status': 'success',
+                'message': f'Bot {bot_id} không có bạn bè để xóa!',
+                'data': {
+                    'bot_id': bot_id,
+                    'bot_name': getattr(bot, 'nickname', f'Bot #{bot_id}'),
+                    'total_friends': 0,
+                    'removed': 0
+                }
+            }), 200
+        
+        # ====== XÓA TỪNG BẠN ======
+        from Crypto.Cipher import AES
+        from Crypto.Util.Padding import pad
+        
+        KEY = bytes([89, 103, 38, 116, 99, 37, 68, 69, 117, 104, 54, 37, 90, 99, 94, 56])
+        IV = bytes([54, 111, 121, 90, 68, 114, 50, 50, 69, 51, 121, 99, 104, 106, 77, 37])
+        
+        def encrypt_uid(x):
+            dec = ['80','81','82','83','84','85','86','87','88','89','8a','8b','8c','8d','8e','8f','90','91','92','93','94','95','96','97','98','99','9a','9b','9c','9d','9e','9f','a0','a1','a2','a3','a4','a5','a6','a7','a8','a9','aa','ab','ac','ad','ae','af','b0','b1','b2','b3','b4','b5','b6','b7','b8','b9','ba','bb','bc','bd','be','bf','c0','c1','c2','c3','c4','c5','c6','c7','c8','c9','ca','cb','cc','cd','ce','cf','d0','d1','d2','d3','d4','d5','d6','d7','d8','d9','da','db','dc','dd','de','df','e0','e1','e2','e3','e4','e5','e6','e7','e8','e9','ea','eb','ec','ed','ee','ef','f0','f1','f2','f3','f4','f5','f6','f7','f8','f9','fa','fb','fc','fd','fe','ff']
+            xxx = ['1','01','02','03','04','05','06','07','08','09','0a','0b','0c','0d','0e','0f','10','11','12','13','14','15','16','17','18','19','1a','1b','1c','1d','1e','1f','20','21','22','23','24','25','26','27','28','29','2a','2b','2c','2d','2e','2f','30','31','32','33','34','35','36','37','38','39','3a','3b','3c','3d','3e','3f','40','41','42','43','44','45','46','47','48','49','4a','4b','4c','4d','4e','4f','50','51','52','53','54','55','56','57','58','59','5a','5b','5c','5d','5e','5f','60','61','62','63','64','65','66','67','68','69','6a','6b','6c','6d','6e','6f','70','71','72','73','74','75','76','77','78','79','7a','7b','7c','7d','7e','7f']
+            try:
+                x = int(x)
+                x_float = float(x) / 128
+                if x_float > 128:
+                    x_float /= 128
+                    if x_float > 128:
+                        x_float /= 128
+                        if x_float > 128:
+                            x_float /= 128
+                            strx = int(x_float)
+                            y = (x_float - strx) * 128
+                            z = (y - int(y)) * 128
+                            n = (z - int(z)) * 128
+                            m = (n - int(n)) * 128
+                            return dec[int(m)] + dec[int(n)] + dec[int(z)] + dec[int(y)] + xxx[int(x_float)] 
+                        else:
+                            strx = int(x_float)
+                            y = (x_float - strx) * 128
+                            z = (y - int(y)) * 128
+                            n = (z - int(z)) * 128
+                            return dec[int(n)] + dec[int(z)] + dec[int(y)] + xxx[int(x_float)] 
+                return None 
+            except: 
+                return None
+        
+        removed = 0
+        failed = 0
+        failed_list = []
+        
+        for friend_uid in friends:
+            try:
+                encrypted_id = encrypt_uid(str(friend_uid))
+                if not encrypted_id:
+                    failed += 1
+                    failed_list.append(friend_uid)
+                    continue
+                
+                plain_text_payload = f'08a7c4839f1e10{encrypted_id}1801'
+                cipher = AES.new(KEY, AES.MODE_CBC, IV)
+                data = cipher.encrypt(pad(bytes.fromhex(plain_text_payload), AES.block_size))
+                
+                headers_remove = {
+                    'X-Unity-Version': '2018.4.11f1',
+                    'ReleaseVersion': 'OB55',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-GA': 'v1 1',
+                    'Authorization': f'Bearer {token}',
+                    'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 7.1.2; ASUS_Z01QD Build/QKQ1.190825.002)',
+                    'Connection': 'Keep-Alive',
+                    'Accept-Encoding': 'gzip'
+                }
+                
+                response = requests.post(
+                    'https://clientbp.ggpolarbear.com/RemoveFriend',
+                    headers=headers_remove,
+                    data=data,
+                    verify=False,
+                    timeout=10
+                )
+                
+                if response.status_code == 200:
+                    removed += 1
+                else:
+                    failed += 1
+                    failed_list.append(friend_uid)
+                    
+                time.sleep(0.2)
+                
+            except Exception as e:
+                failed += 1
+                failed_list.append(friend_uid)
+        
+        return jsonify({
+            'status': 'success',
+            'message': f'Đã xóa {removed} bạn, thất bại {failed}',
+            'data': {
+                'bot_id': bot_id,
+                'bot_name': getattr(bot, 'nickname', f'Bot #{bot_id}'),
+                'total_friends': len(friends),
+                'removed': removed,
+                'failed': failed,
+                'failed_list': failed_list[:20]
             }
         }), 200
         
@@ -6892,33 +8955,36 @@ def home():
     } 
 
 def sbot():
-    for bot in TCPbot.bots.values():
-        bot.start()
+ for bot in TCPbot.bots.values(): bot.start()
 
-def run_telegram():  
-    print("Telegram bot đang chạy...") 
-    telegram_bot.infinity_polling()
+def restart_bot():
+    print("🔄 Bot mất kết nối! Khởi động lại sau 5 giây...")
+    time.sleep(5)
+    os.execv(sys.executable, ['python'] + sys.argv)
 
 def ping_api_keep_alive():
-    url = "https://zangayinfo-yzah.onrender.com/"
+    url = "http://zantreobot1-r8ha.onrender.com"
     
     while True:
         try:
             resp = requests.get(url, timeout=10)
-            print(f"[PING] {url} - Status: {resp.status_code}")
+            print(f"[PING] ✅ {url} - Status: {resp.status_code}")
         except Exception as e:
-            print(f"[PING] Lỗi: {e}")
+            print(f"[PING] ❌ Lỗi: {e}")
         
         time.sleep(600) 
 
 def start_ping_thread():
     thread = threading.Thread(target=ping_api_keep_alive, daemon=True)
     thread.start()
-    print("[PING] Đã khởi động thread ping API mỗi 10 phút!")
-    
+    print("[PING] ✅ Đã khởi động thread ping API mỗi 10 phút!")
+
+def run_telegram():  
+    print("Telegram bot đang chạy...") 
+    telegram_bot.infinity_polling()
+
 if __name__ == "__main__":
-    start_auto_like
     start_ping_thread() 
     threading.Thread(target=run_telegram, daemon=True).start()
     threading.Thread(target=sbot, daemon=True).start()
-    app.run(host="0.0.0.0", port=2011)
+    app.run(host="0.0.0.0", port=2008)
