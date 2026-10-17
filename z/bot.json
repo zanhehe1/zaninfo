@@ -41,199 +41,59 @@
     {
       "bot_id": 12,
       "auth_bot_login": {
-        "access_token": "650d4c036672d47d1d7e4797ba5bb27d4579bb92e048eec13cd25e99e389324a"
+        "access_token": "c27d088b32ba68cad4a7c385eabe5785aa1dadbaf71d37cc21df4ddab21d89b8"
       },
       "access_bot": [
         {
-          "uid": 1073860763,
-          "expire": "2026-11-13 06:46:16"
+          "uid": 18457983435,
+          "expire": "2054-03-03 06:57:10"
+        },
+        {
+          "uid": 3391643669,
+          "expire": "2029-07-12 07:00:32"
         }
       ],
       "active-clan": true,
-      "botid": 18693743751,
-      "nickname": "benメquang³⁵⁵"
+      "botid": 18763012007,
+      "nickname": "nguyn quy.69"
     },
     {
       "bot_id": 13,
       "auth_bot_login": {
-        "access_token": "cb3ebb889a5b69a848106012fa5796a30529e1d393ad1eebaf32f2b41cbc7824"
+        "access_token": "6204ac672a579441936b9cf21efa2a8e24530861f25db8ce8dc3dfbc376f1ae4"
       },
       "access_bot": [
         {
-          "uid": 1073860763,
-          "expire": "2026-11-13 06:46:20"
+          "uid": 18457983435,
+          "expire": "2054-03-03 06:57:34"
+        },
+        {
+          "uid": 3391643669,
+          "expire": "2029-07-12 07:00:29"
         }
       ],
       "active-clan": true,
-      "botid": 18693743322,
-      "nickname": "benメquang³³²"
+      "botid": 18763012741,
+      "nickname": "nguyn quy.84"
     },
     {
       "bot_id": 14,
       "auth_bot_login": {
-        "access_token": "c36c1ad48347c039dbb29951ec81259d2131d60b4c46a4a5c66223f7e9ee0840"
+        "access_token": "b28643b7fc37ce50b569bced50afbaec04297f5551f56eb5dfe4af405e77f1f4"
       },
       "access_bot": [
-        {
-          "uid": 1073860763,
-          "expire": "2026-11-13 06:46:23"
-        }
-      ],
-      "active-clan": true,
-      "botid": 18693743449,
-      "nickname": "benメquang⁶¹³"
-    },
-    {
-      "bot_id": 15,
-      "auth_bot_login": {
-        "access_token": "7c6cb7da95505a2cbc24e48f778a909bf9e1741571288838b555f96e772805d6"
-      },
-      "access_bot": [
-        {
-          "uid": 281100969,
-          "expire": "2029-07-09 08:19:10"
-        },
         {
           "uid": 18457983435,
-          "expire": "2054-03-01 04:01:18"
-        }
-      ],
-      "active-clan": true,
-      "botid": 18697155407,
-      "nickname": "qthangメzan⁷²"
-    },
-    {
-      "bot_id": 19,
-      "auth_bot_login": {
-        "access_token": "f1a6a4957f7ad521d1fb0fee3f7a40fd2e38c8967542e65307a0d1cdd6042f0b"
-      },
-      "access_bot": [
-        {
-          "uid": 281100969,
-          "expire": "2029-07-10 04:02:19"
+          "expire": "2054-03-03 06:57:28"
         },
         {
           "uid": 3391643669,
-          "expire": "2029-07-10 04:02:45"
+          "expire": "2029-07-12 07:00:24"
         }
       ],
       "active-clan": true,
-      "botid": 18700929793,
-      "nickname": "zanメcute¹⁴⁴²"
-    },
-    {
-      "bot_id": 20,
-      "auth_bot_login": {
-        "access_token": "275fc1e9d1178e7a88be34ffd899dc9fedd20ced871fdf7d169ef299613251d6"
-      },
-      "access_bot": [
-        {
-          "uid": 3391643669,
-          "expire": "2027-01-23 09:37:40"
-        },
-        {
-          "uid": 18457983435,
-          "expire": "2054-03-02 09:37:43"
-        }
-      ],
-      "active-clan": true,
-      "botid": 18752528710,
-      "nickname": "nguyn quy⁹¹⁹"
-    },
-    {
-      "bot_id": 21,
-      "auth_bot_login": {
-        "access_token": "5f1efbfc45865bbb4d635f566a6f273bc8704c6c3998fe533a4bd1a86c8e5498"
-      },
-      "access_bot": [
-        {
-          "uid": 3391643669,
-          "expire": "2027-01-23 09:37:44"
-        },
-        {
-          "uid": 18457983435,
-          "expire": "2054-03-02 10:29:11"
-        }
-      ],
-      "active-clan": true,
-      "botid": 18752528565,
-      "nickname": "nguyn quy⁷⁷⁰"
-    },
-    {
-      "bot_id": 22,
-      "auth_bot_login": {
-        "access_token": "461acf301a7e87f6bbd1d2017b6319014d0bbe03c34cb9c6d9cbc282f2948b6b"
-      },
-      "access_bot": [
-        {
-          "uid": 3391643669,
-          "expire": "2027-01-23 09:38:00"
-        },
-        {
-          "uid": 18457983435,
-          "expire": "2054-03-02 12:04:58"
-        }
-      ],
-      "active-clan": true,
-      "botid": 18752528711,
-      "nickname": "nguyn quy³⁷⁴"
-    },
-    {
-      "bot_id": 23,
-      "auth_bot_login": {
-        "access_token": "e8d749507afcbc3599288dfe0cc75a8ac1bbe6f8b9b95301c0cb90a42dc15ebc"
-      },
-      "access_bot": [
-        {
-          "uid": 8070935966,
-          "expire": "2026-10-16 13:45:42"
-        },
-        {
-          "uid": 18457983435,
-          "expire": "2054-03-02 09:45:56"
-        }
-      ],
-      "active-clan": true,
-      "botid": 18751583019,
-      "nickname": "zanxgay⁶⁵⁰⁴⁵"
-    },
-    {
-      "bot_id": 24,
-      "auth_bot_login": {
-        "access_token": "c5f266c49514be92963a0adf38a93ef01c8238fdb626011eae77c76ae6619f71"
-      },
-      "access_bot": [
-        {
-          "uid": 18457983435,
-          "expire": "2054-03-02 12:35:08"
-        },
-        {
-          "uid": 449224166,
-          "expire": "2027-01-23 12:38:42"
-        }
-      ],
-      "active-clan": true,
-      "botid": 18754149738,
-      "nickname": "cha lũ ảo.20"
-    },
-    {
-      "bot_id": 25,
-      "auth_bot_login": {
-        "access_token": "685c0236a577a3b111e341784f1d6f2c4ac83d4383c167e8778fedbdf36d0a27"
-      },
-      "access_bot": [
-        {
-          "uid": 449224166,
-          "expire": "2027-01-23 12:38:53"
-        },
-        {
-          "uid": 18457983435,
-          "expire": "2054-03-02 12:39:03"
-        }
-      ],
-      "active-clan": true,
-      "botid": 18754150090,
-      "nickname": "cha lũ ảo.22"
+      "botid": 18763012758,
+      "nickname": "nguyn quy.35"
     }
   ]
 }
