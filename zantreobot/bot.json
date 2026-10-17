@@ -104,7 +104,7 @@
         },
         {
           "uid": 18457983435,
-          "expire": "2054-03-02 09:26:50"
+          "expire": "2054-03-03 13:30:30"
         }
       ],
       "active-clan": true,
@@ -135,30 +135,11 @@
       "nickname": "an‎‎؝‎‎؝‎‎;"
     },
     {
-      "bot_id": 12,
-      "auth_bot_login": {
-        "access_token": "dba1af249059b258c542924499afffc833efa95f427262455e1d81312563d8a5"
-      },
-      "access_bot": [
-        {
-          "uid": 18457983435,
-          "expire": "2054-02-24 11:08:07"
-        }
-      ],
-      "active-clan": true,
-      "botid": 18477680451,
-      "nickname": "#anmeomeo"
-    },
-    {
       "bot_id": 20,
       "auth_bot_login": {
         "access_token": "6665578dd2feca83f548628b29f01169f8ec9fc60cf6bc26aab1a57adf8ea76a"
       },
       "access_bot": [
-        {
-          "uid": 1781307835,
-          "expire": "2026-10-17 12:48:48"
-        },
         {
           "uid": 4272925991,
           "expire": "2026-10-19 07:37:36"
@@ -180,7 +161,7 @@
       "access_bot": [
         {
           "uid": 18457983435,
-          "expire": "2054-03-02 09:26:41"
+          "expire": "2054-03-03 13:24:35"
         }
       ],
       "active-clan": true,
@@ -188,34 +169,16 @@
       "nickname": "@thao2ngon."
     },
     {
-      "bot_id": 28,
-      "auth_bot_login": {
-        "access_token": "cf1d0aca28db72b5afea0da8445d9e568b382b1a8626c966e1d2b80f41432865"
-      },
-      "access_bot": [
-        {
-          "uid": 3679989966,
-          "expire": "2026-11-12 09:37:24"
-        },
-        {
-          "uid": 806722790,
-          "expire": "2026-11-13 06:04:41"
-        },
-        {
-          "uid": 18457983435,
-          "expire": "2054-03-02 09:26:41"
-        }
-      ],
-      "active-clan": true,
-      "botid": 18580342136,
-      "nickname": "zanxgayhh⁷⁷⁰"
-    },
-    {
       "bot_id": 30,
       "auth_bot_login": {
         "access_token": "fd2ba5fa67b5dbcd45f4ad0981a1bee48871abaa2cdb02dc78e8be191c61bfee"
       },
-      "access_bot": [],
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-03 13:54:32"
+        }
+      ],
       "active-clan": true,
       "botid": 18598124421,
       "nickname": "dat dz prm¹³"
@@ -262,7 +225,7 @@
       "access_bot": [
         {
           "uid": 18457983435,
-          "expire": "2054-03-03 07:07:05"
+          "expire": "2054-03-03 14:10:30"
         },
         {
           "uid": 3391643669,
@@ -272,6 +235,78 @@
       "active-clan": true,
       "botid": 18763166792,
       "nickname": "tuilatipo.28"
+    },
+    {
+      "bot_id": 37,
+      "auth_bot_login": {
+        "access_token": "8298148310:1F303874F8D945E7D4D2690633ADF98A3AB94282E3A3929C5CCCCFAB153A357F"
+      },
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-03 15:01:56"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18763836254,
+      "nickname": "@stupid;"
+    },
+    {
+      "bot_id": 38,
+      "auth_bot_login": {
+        "access_token": "81520da2689f400aba3a7f933c0b0ccdfb84e21e37788e53041b19677763adca"
+      },
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-03 13:48:26"
+        },
+        {
+          "uid": 297087064,
+          "expire": "2026-10-24 09:46:06"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18764955194,
+      "nickname": "emdun.06"
+    },
+    {
+      "bot_id": 39,
+      "auth_bot_login": {
+        "access_token": "4a6ae5b385808d792dae47c6006391b9311f60138586d5c4d4ba9c9c46c875cc"
+      },
+      "access_bot": [
+        {
+          "uid": 2607427244,
+          "expire": "2026-10-22 11:05:24"
+        },
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-03 15:08:11"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18765585032,
+      "nickname": "zandev.37418"
+    },
+    {
+      "bot_id": 40,
+      "auth_bot_login": {
+        "access_token": "8300938969:C638C23A461D365F423CBFB9107B2B7DA114E9BC6915D435BAD49DCDE6EF1710"
+      },
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2029-07-12 15:16:08"
+        },
+        {
+          "uid": 189483832,
+          "expire": "2026-11-16 15:19:09"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18769455908,
+      "nickname": "@rbl kid."
     }
   ]
 }
