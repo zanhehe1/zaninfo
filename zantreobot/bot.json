@@ -240,25 +240,6 @@
       "nickname": "zanメcute⁴⁹⁵¹"
     },
     {
-      "bot_id": 34,
-      "auth_bot_login": {
-        "access_token": "d16e9e1c441d0bc5d38afba32d60d03528237d2f9b25ff321ddd2c7b176b4d7f"
-      },
-      "access_bot": [
-        {
-          "uid": 1491959799,
-          "expire": "2027-01-22 07:14:10"
-        },
-        {
-          "uid": 16395721207,
-          "expire": "2027-01-22 07:32:42"
-        }
-      ],
-      "active-clan": true,
-      "botid": 18733193075,
-      "nickname": "nghuukhang⁵⁶"
-    },
-    {
       "bot_id": 35,
       "auth_bot_login": {
         "access_token": "ec86263e3da69e269b4411840389b8c7b68c158cd60af3309fd53c3dcaf143d7"
@@ -276,42 +257,21 @@
     {
       "bot_id": 36,
       "auth_bot_login": {
-        "access_token": "f01cfd677d78397ac8089fc93e11a9e41f4bcdf51b590aced23f211205a206c7"
-      },
-      "access_bot": [
-        {
-          "uid": 265142676,
-          "expire": "2026-10-17 09:42:40"
-        }
-      ],
-      "active-clan": true,
-      "botid": 18751592094,
-      "nickname": "zanxgay⁶¹⁸⁸⁸"
-    },
-    {
-      "bot_id": 37,
-      "auth_bot_login": {
-        "access_token": "a9ce3a764952aec462a21d5322282c44b8dedfe8bdd3ef6abc9796f289799beb"
-      },
-      "access_bot": [],
-      "active-clan": true,
-      "botid": 18745130959,
-      "nickname": "stupid⁷³"
-    },
-    {
-      "bot_id": 38,
-      "auth_bot_login": {
-        "access_token": "2a75dc60ea3ad3dd7cec7512e69d76f40eb483c8f60b477ac4302c4e2dc17fea"
+        "access_token": "95e924b1c1918ae5895658d751e81017623683ef36ccd983ab5a5ab51fab3eed"
       },
       "access_bot": [
         {
           "uid": 18457983435,
-          "expire": "2029-07-11 11:26:58"
+          "expire": "2054-03-03 07:07:05"
+        },
+        {
+          "uid": 3391643669,
+          "expire": "2029-07-12 07:07:20"
         }
       ],
       "active-clan": true,
-      "botid": 18753537252,
-      "nickname": "tuilatipo.31"
+      "botid": 18763166792,
+      "nickname": "tuilatipo.28"
     }
   ]
 }
