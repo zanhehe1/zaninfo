@@ -12,7 +12,7 @@
         },
         {
           "uid": 18457983435,
-          "expire": "2054-03-03 07:24:28"
+          "expire": "2054-03-04 03:34:41"
         }
       ],
       "active-clan": true,
@@ -27,7 +27,7 @@
       "access_bot": [
         {
           "uid": 18457983435,
-          "expire": "2054-03-03 07:24:27"
+          "expire": "2054-03-03 19:48:35"
         },
         {
           "uid": 1106907888,
@@ -183,12 +183,31 @@
         },
         {
           "uid": 18457983435,
-          "expire": "2054-03-03 15:24:38"
+          "expire": "2054-03-04 03:57:38"
         }
       ],
       "active-clan": true,
       "botid": 18769575903,
       "nickname": "mhuong cte.5"
+    },
+    {
+      "bot_id": 20,
+      "auth_bot_login": {
+        "access_token": "37f6d6fce9a33a5f79e30ea2227568bf6265c431df2886a792ea9467831bc0d9"
+      },
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-04 03:49:48"
+        },
+        {
+          "uid": 5149817139,
+          "expire": "2026-10-25 03:52:03"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18776103059,
+      "nickname": "tr jan jan.2"
     }
   ]
 }
