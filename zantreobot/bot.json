@@ -218,25 +218,6 @@
       "nickname": "accclonexxz⁷"
     },
     {
-      "bot_id": 36,
-      "auth_bot_login": {
-        "access_token": "95e924b1c1918ae5895658d751e81017623683ef36ccd983ab5a5ab51fab3eed"
-      },
-      "access_bot": [
-        {
-          "uid": 18457983435,
-          "expire": "2054-03-03 14:10:30"
-        },
-        {
-          "uid": 3391643669,
-          "expire": "2029-07-12 07:07:20"
-        }
-      ],
-      "active-clan": true,
-      "botid": 18763166792,
-      "nickname": "tuilatipo.28"
-    },
-    {
       "bot_id": 37,
       "auth_bot_login": {
         "access_token": "8298148310:1F303874F8D945E7D4D2690633ADF98A3AB94282E3A3929C5CCCCFAB153A357F"
@@ -307,6 +288,52 @@
       "active-clan": true,
       "botid": 18769455908,
       "nickname": "@rbl kid."
+    },
+    {
+      "bot_id": 41,
+      "auth_bot_login": {
+        "access_token": "107afad783fe5d99dd203c65f16d4267f43c1a81bd0c184273a3e4c98f7ffa17"
+      },
+      "access_bot": [
+        {
+          "uid": 93577258,
+          "expire": "2026-11-17 08:33:07"
+        },
+        {
+          "uid": 18457983435,
+          "expire": "2029-07-13 11:18:36"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18778228291,
+      "nickname": "thi؝؝؝"
+    },
+    {
+      "bot_id": 42,
+      "auth_bot_login": {
+        "access_token": "f15fd48893f74e58ea39d9a7b30040cef065ba802a373cc2f11ba769f3e997cd"
+      },
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2029-07-13 11:15:48"
+        },
+        {
+          "uid": 840494762,
+          "expire": "2026-10-25 11:22:52"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18782286589,
+      "nickname": "ngoc ngao’ l"
+    },
+    {
+      "bot_id": 43,
+      "auth_bot_login": {
+        "access_token": "cc437e16d2f48992c77619e9836fcb74e23687b497e4c035047720fbec8a86c0"
+      },
+      "access_bot": [],
+      "active-clan": true
     }
   ]
 }
