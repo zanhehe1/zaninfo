@@ -208,6 +208,21 @@
       "active-clan": true,
       "botid": 18776103059,
       "nickname": "tr jan jan.2"
+    },
+    {
+      "bot_id": 21,
+      "auth_bot_login": {
+        "access_token": "a9edafec5eb88e384a6b286d4bd015f279b614c9ce824cc13b7509570ed9760c"
+      },
+      "access_bot": [
+        {
+          "uid": 1106907888,
+          "expire": "2027-01-25 13:12:58"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18782380118,
+      "nickname": "tuilatipo.57"
     }
   ]
 }
