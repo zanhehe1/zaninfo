@@ -8963,7 +8963,7 @@ def restart_bot():
     os.execv(sys.executable, ['python'] + sys.argv)
 
 def ping_api_keep_alive():
-    url = "https://zankhacfile.onrender.com/"
+    url = "https://zankhacfile1.onrender.com"
     
     while True:
         try:
@@ -8972,7 +8972,7 @@ def ping_api_keep_alive():
         except Exception as e:
             print(f"[PING] ❌ Lỗi: {e}")
         
-        time.sleep(600) 
+        time.sleep(300) 
 
 def start_ping_thread():
     thread = threading.Thread(target=ping_api_keep_alive, daemon=True)
