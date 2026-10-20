@@ -1,750 +1,630 @@
-import requests, json, base64, time, struct, datetime, re, hmac, hashlib, random
-from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad, unpad
-from protobuf_decoder.protobuf_decoder import Parser
+import requests, json, base64, time, struct, datetime, re
 from typing import Dict, Any, Optional, Tuple, Union, TypedDict, List
 from dataclasses import dataclass
 from enum import IntEnum
+import hashlib
+
+
+# Crypto compatibility (pycryptodome OR cryptography)
+try:
+ from Crypto.Cipher import AES
+ from Crypto.Util.Padding import pad, unpad
+except ImportError:
+ from cryptography.hazmat.primitives.ciphers import Cipher as _Cipher, algorithms as _algo, modes as _modes
+ from cryptography.hazmat.primitives import padding as _pad
+ from cryptography.hazmat.backends import default_backend as _db
+ class AES:
+  MODE_CBC = 2
+  @staticmethod
+  def new(key, mode, iv):
+   class _C:
+    def __init__(self, k, i): self.k, self.i = k, i
+    def encrypt(self, data):
+     c = _Cipher(_algo.AES(self.k), _modes.CBC(self.i), backend=_db())
+     e = c.encryptor(); return e.update(data) + e.finalize()
+    def decrypt(self, data):
+     c = _Cipher(_algo.AES(self.k), _modes.CBC(self.i), backend=_db())
+     d = c.decryptor(); return d.update(data) + d.finalize()
+   return _C(key, iv)
+ def pad(data, bs):
+  p = _pad.PKCS7(bs * 8).padder(); return p.update(data) + p.finalize()
+ def unpad(data, bs):
+  p = _pad.PKCS7(bs * 8).unpadder(); return p.update(data) + p.finalize()
+
+try:
+ from protobuf_decoder.protobuf_decoder import Parser
+except ImportError:
+ class Parser:
+  def parse(self, data): return []
 
 
 class ProtoBuf:
-    def __init__(self, data):
-        self.data = data
+ def __init__(self, data):
+  self.data = data
 
-    def varint(self, buffer: bytes, pos: int = 0) -> Tuple[int, int]:
-        result, shift = 0, 0
-        while shift < 64 and pos < len(buffer):
-            byte = buffer[pos]
-            pos += 1
-            result |= (byte & 0x7F) << shift
-            if not (byte & 0x80):
-                return result, pos
-            shift += 7
-        return result, pos
+ def varint(self, buffer: bytes, pos: int = 0) -> Tuple[int, int]:
+  result, shift = 0, 0
+  while shift < 64 and pos < len(buffer):
+   byte = buffer[pos]
+   pos += 1
+   result |= (byte & 0x7F) << shift
+   if not (byte & 0x80):
+    return result, pos
+   shift += 7
+  return result, pos
 
-    def repeated(self, data: bytes) -> List[int]:
-        pos, out = 0, []
-        while pos < len(data):
-            val, pos = self.varint(data, pos)
-            out.append(val)
-        return out
+ def repeated(self, data: bytes) -> List[int]:
+  pos, out = 0, []
+  while pos < len(data):
+   val, pos = self.varint(data, pos)
+   out.append(val)
+  return out
 
-    def string(self, buffer: bytes, pos: int) -> Tuple[str, int]:
-        length, pos = self.varint(buffer, pos)
-        newpos = min(pos + length, len(buffer))
-        value = buffer[pos:newpos]
-        try: value = value.decode("utf-8")
-        except: pass
-        return value, newpos
+ def string(self, buffer: bytes, pos: int) ->32 Tuple[str, int]:
+  length, pos = self(self.varint(buffer, pos)
+ , newpos = min(pos + length, len(buffer buffer))
+  value = buffer[pos:newpos]
+ : try: value = value.decode("utf-8")
+ bytes  except: pass
+  return value, newpos
 
-    def fixed32(self, buffer: bytes, pos: int) -> Tuple[int, int]:
-        return (struct.unpack("<I", buffer[pos:pos + 4])[0], pos + 4) if pos + 4 <= len(buffer) else (0, pos)
+ def fixed, pos: int) -> Tuple[int, int]:
+  return (struct.unpack("<I", buffer[pos:pos + 4])[0], pos + 4) if pos + 4 <= len(buffer) else (0, pos)
 
-    def fixed64(self, buffer: bytes, pos: int) -> Tuple[int, int]:
-        return (struct.unpack("<Q", buffer[pos:pos + 8])[0], pos + 8) if pos + 8 <= len(buffer) else (0, pos)
+ def fixed64(self, buffer: bytes, pos: int) -> Tuple[int, int]:
+  return (struct.unpack("<Q", buffer[pos:pos + 8])[0], pos + 8) if pos + 8 <= len(buffer) else (0, pos)
 
-    def parse_field(self, buffer: bytes, pos: int) -> Tuple[int, Any, int]:
-        if pos >= len(buffer): return 0, None, pos
-        key, pos = self.varint(buffer, pos)
-        field_number, wire_type = key >> 3, key & 0x7
-        try:
-            if wire_type == 0: value, pos = self.varint(buffer, pos)
-            elif wire_type == 1: value, pos = self.fixed64(buffer, pos)
-            elif wire_type == 2: value, pos = self.string(buffer, pos)
-            elif wire_type == 5: value, pos = self.fixed32(buffer, pos)
-            else: return field_number, None, pos
-        except (struct.error, IndexError):
-            return field_number, None, pos
-        return field_number, value, pos
+ def parse_field(self, buffer: bytes, pos: int) -> Tuple[int, Any, int]:
+  if pos >= len(buffer): return 0, None, pos
+  key, pos = self.varint(buffer, pos)
+  field_number, wire_type = key >> 3, key & 0x7
+  try:
+   if wire_type == 0: value, pos = self.varint(buffer, pos)
+   elif wire_type == 1: value, pos = self.fixed64(buffer, pos)
+   elif wire_type == 2: value, pos = self.string(buffer, pos)
+   elif wire_type == 5: value, pos = self.fixed32(buffer, pos)
+   else: return field_number, None, pos
+  except (struct.error, IndexError):
+   return field_number, None, pos
+  return field_number, value, pos
 
-    def protobuf(self, buffer: Optional[bytes] = None, offset: int = 0) -> Dict[str, Any]:
-        if buffer is None:
-            buffer = self.data
-        result = {}
-        while offset < len(buffer):
-            field_number, value, offset = self.parse_field(buffer, offset)
-            if isinstance(value, bytes) and value:
-                try:
-                    nested = self.protobuf(value)
-                    if nested: value = nested
-                except: pass
-            key = str(field_number)
-            result.setdefault(key, []).append(value)
-        return {k: v[0] if len(v) == 1 else v for k, v in result.items()}
+ def protobuf(self, buffer: Optional[bytes] = None, offset: int = 0) -> Dict[str, Any]:
+  if buffer is None:
+   buffer = self.data
+  result = {}
+  while offset < len(buffer):
+   field_number, value, offset = self.parse_field(buffer, offset)
+   if isinstance(value, bytes) and value:
+    try:
+     nested = self.protobuf(value)
+     if nested: value = nested
+    except: pass
+   key = str(field_number)
+   result.setdefault(key, []).append(value)
+  return {k: v[0] if len(v) == 1 else v for k, v in result.items()}
 
-    def fieldsRaw(self, buf: bytes, pos: int) -> Tuple[int, int, bytes, int, int]:
-        start = pos
-        key, pos = self.varint(buf, pos)
-        num, wt = key >> 3, key & 0x7
-        if wt == 0: _, end = self.varint(buf, pos)
-        elif wt == 1: end = pos + 8
-        elif wt == 2:
-            length, lp = self.varint(buf, pos)
-            end = lp + length
-        elif wt == 5: end = pos + 4
-        else: return num, wt, b'', pos, pos
-        return num, wt, buf[start:end], pos, end
+ def fieldsRaw(self, buf: bytes, pos: int) -> Tuple[int, int, bytes, int, int]:
+  start = pos
+  key, pos = self.varint(buf, pos)
+  num, wt = key >> 3, key & 0x7
+  if wt == 0: _, end = self.varint(buf, pos)
+  elif wt == 1: end = pos + 8
+  elif wt == 2:
+   length, lp = self.varint(buf, pos)
+   end = lp + length
+  elif wt == 5: end = pos + 4
+  else: return num, wt, b'', pos, pos
+  return num, wt, buf[start:end], pos, end
 
-    def EXTRACT_FIELDS(self, fields: List[int], mode: str = "repeated") -> List:
-        cur = self.data
-        for depth, target in enumerate(fields):
-            pos = 0; found = False
-            if depth == len(fields) - 1:
-                results = []
-                while pos < len(cur):
-                    num, wt, raw, val_start, val_end = self.fieldsRaw(cur, pos)
-                    if num == target:
-                        if mode == "repeated":
-                            if wt == 0:
-                                val, _ = self.varint(cur, val_start)
-                                results.append(val)
-                            elif wt == 2:
-                                _, lp = self.varint(cur, val_start)
-                                packed = cur[lp:val_end]
-                                results += self.repeated(packed)
-                        elif mode == "bytes":
-                            if wt == 2:
-                                _, lp = self.varint(cur, val_start)
-                                results.append(cur[lp:val_end])
-                            else:
-                                results.append(cur[val_start:val_end])
-                    pos = val_end
-                if len(results) == 0: return []
-                if len(results) == 1: return results[0]
-                return results
-            else:
-                while pos < len(cur):
-                    num, wt, raw, val_start, val_end = self.fieldsRaw(cur, pos)
-                    if num == target and wt == 2:
-                        _, lp = self.varint(cur, val_start)
-                        cur = cur[lp:val_end]
-                        found = True; break
-                    pos = val_end
-                if not found: return []
-        return []
-
+ def EXTRACT_FIELDS(self, fields: List[int], mode: str = "repeated") -> List:
+  cur = self.data
+  for depth, target in enumerate(fields):
+   pos = 0; found = False
+   if depth == len(fields) - 1:
+    results = []
+    while pos < len(cur):
+     num, wt, raw, val_start, val_end = self.fieldsRaw(cur, pos)
+     if num == target:
+      if mode == "repeated":
+       if wt == 0:
+        val, _ = self.varint(cur, val_start)
+        results.append(val)
+       elif wt == 2:
+        _, lp = self.varint(cur, val_start)
+        packed = cur[lp:val_end]
+        results += self.repeated(packed)
+      elif mode == "bytes":
+       if wt == 2:
+        _, lp = self.varint(cur, val_start)
+        results.append(cur[lp:val_end])
+       else:
+        results.append(cur[val_start:val_end])
+     pos = val_end
+    if len(results) == 0: return []
+    if len(results) == 1: return results[0]
+    return results
+   else:
+    while pos < len(cur):
+     num, wt, raw, val_start, val_end = self.fieldsRaw(cur, pos)
+     if num == target and wt == 2:
+      _, lp = self.varint(cur, val_start)
+      cur = cur[lp:val_end]
+      found = True; break
+     pos = val_end
+    if not found: return []
+  return []
 
 def Encrypt(value):
-    value = int(value)
-    result = []
-    while value > 0x7F:
-        result.append((value & 0x7F) | 0x80)
-        value >>= 7
-    result.append(value)
-    return bytes(result)
+ value = int(value)
+ result = []
+ while value > 0x7F:
+  result.append((value & 0x7F) | 0x80)
+  value >>= 7
+ result.append(value)
+ return bytes(result)
 
 def Decrypt(value):
-    result, shift = 0, 0
-    for byte in bytes.fromhex(value):
-        result |= (byte & 0x7F) << shift
-        if not (byte & 0x80):
-            break
-        shift += 7
-    return result
+ result, shift = 0, 0
+ for byte in bytes.fromhex(value):
+  result |= (byte & 0x7F) << shift
+  if not (byte & 0x80):
+   break
+  shift += 7
+ return result
 
 def parse_results(parsed_results):
-    result_dict = {}
-    for result in parsed_results:
-        if result.field not in result_dict:
-            result_dict[result.field] = []
-        field_data = {}
-        if result.wire_type in ["varint", "string", "bytes"]:
-            field_data = result.data
-        elif result.wire_type == "length_delimited":
-            field_data = parse_results(result.data.results)
-        result_dict[result.field].append(field_data)
-    return {
-        key: value[0] if len(value) == 1
-        else value for key, value in result_dict.items()
-    }
+ result_dict = {}
+ for result in parsed_results:
+  if result.field not in result_dict:
+   result_dict[result.field] = []
+  field_data = {}
+  if result.wire_type in ["varint", "string", "bytes"]:
+   field_data = result.data
+  elif result.wire_type == "length_delimited":
+   field_data = parse_results(result.data.results)
+  result_dict[result.field].append(field_data)
+ return {
+  key: value[0] if len(value) == 1
+  else value for key, value in result_dict.items()
+  }
 
 protobuf_dec = lambda data: json.dumps(parse_results(
-    Parser().parse(data)
-), ensure_ascii=False)
+ Parser().parse(data)
+ ), ensure_ascii=False)
 
 def AES_CBC128(data, key, iv):
-    cipher = AES.new(key, AES.MODE_CBC, iv)
-    return cipher.encrypt(pad(data, 0x10))
-
-def _scalar(v):
-    while isinstance(v, (list, tuple)) and v:
-        v = v[0]
-    return v
-
-def _as_bytes(v):
-    v = _scalar(v)
-    if v is None: return None
-    if isinstance(v, bytes): return v
-    if isinstance(v, bytearray): return bytes(v)
-    if isinstance(v, str): return v.encode("latin-1")
-    if isinstance(v, (list, tuple)):
-        try: return bytes(v)
-        except Exception: return None
-    return None
+ cipher = AES.new(key, AES.MODE_CBC, iv)
+ return cipher.encrypt(pad(data, 0x10))
 
 def create_varint_field(field_number, value):
-    field_header = (field_number << 3) | 0
-    return Encrypt(field_header) + Encrypt(value)
+ field_header = (field_number << 3) | 0
+ return Encrypt(field_header) + Encrypt(value)
 
 def create_length_delimited_field(field_number, value):
-    field_header = (field_number << 3) | 2
-    encoded_value = value.encode() if isinstance(value, str) else value
-    return Encrypt(field_header) + Encrypt(len(encoded_value)) + encoded_value
+ field_header = (field_number << 3) | 2
+ encoded_value = value.encode() if isinstance(value, str) else value
+ return Encrypt(field_header) + Encrypt(len(encoded_value)) + encoded_value
 
 def pb_encode(fields):
-    packet = bytearray()
-    for field, value in fields.items():
-        field = int(field)
-        if isinstance(value, list):
-            for item in value:
-                if isinstance(item, dict):
-                    packet.extend(create_length_delimited_field(field, pb_encode(item)))
-        elif isinstance(value, dict):
-            nested_packet = pb_encode(value)
-            packet.extend(create_length_delimited_field(field, nested_packet))
-        elif isinstance(value, int):
-            packet.extend(create_varint_field(field, value))
-        elif isinstance(value, str) or isinstance(value, bytes):
-            packet.extend(create_length_delimited_field(field, value))
-    return bytes(packet)
-
+ packet = bytearray()
+ for field, value in fields.items():
+  if isinstance(value, list):
+   for item in value:
+    if isinstance(item, dict):
+     packet.extend(create_length_delimited_field(field, pb_encode(item)))
+  elif isinstance(value, dict):
+   nested_packet = pb_encode(value)
+   packet.extend(create_length_delimited_field(field, nested_packet))
+  elif isinstance(value, int):
+   packet.extend(create_varint_field(field, value))
+  elif isinstance(value, str) or isinstance(value, bytes):
+   packet.extend(create_length_delimited_field(field, value))
+ return bytes(packet)
 
 class gayerr(Exception): pass
-
 @dataclass
 class account_data:
-    def __init__(self):
-        self.access_token = ""
-        self.open_id = ""
-        self.platform = 0x4
-        self.login_platform = 0x4
-        self.main_active_platform = 0x4
-        self.chat_ip = self.chat_port = self.online_ip = self.online_port = ""
-        self.create_time = None
-        self.expiry_time = None
-        self.guild_id = None
-        self.guild_code = None
-        self.login_token = None
-        self.account_id = None
-        self.server = None
-        self.base_url = None
-        self.login_time = None
-        self.key = None
-        self.iv = None
-
+ access_token = ""
+ open_id = ""
+ platform = 0x4
+ login_platform = 0x4
+ main_active_platform = 0x4
+ chat_ip = chat_port = online_ip = online_port  = ""
+ create_time = None
+ expiry_time = None
+ guild_id = None
+ guild_code = None
+ login_token  = None
+ account_id = None
+ base_url = None
+ login_time = None
+ key = None
+ iv = None
 
 class gringay:
-    @staticmethod
-    def tokendecode(token):
-        try:
-            parts = token.split(".")
-            if len(parts) != 3: raise gayerr("Invalid token format")
-            payload = parts[1]
-            payload += "=" * (0x4 - len(payload) % 0x4)
-            return json.loads(base64.urlsafe_b64decode(payload).decode('utf-8'))
-        except (ValueError, json.JSONDecodeError) as e: pass
-
-    @staticmethod
-    def format_timestamp(timestamp):
-        if timestamp is None: return ""
-        return time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(timestamp))
+ @staticmethod
+ def tokendecode(token):
+  try:
+   parts = token.split(".")
+   if len(parts) != 3: raise gayerr("Invalid token format")
+   payload = parts[1]
+   payload += "=" * (0x4 - len(payload) % 0x4)
+   return json.loads(base64.urlsafe_b64decode(payload).decode('utf-8'))
+  except (ValueError, json.JSONDecodeError) as e: pass
+ 
+ @staticmethod
+ def format_timestamp(timestamp):
+  if timestamp is None: return ""
+  return time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(timestamp))
 
 def storeApps(package):
-    try:
-        I = requests.get(f"https://play.google.com/store/apps/%s" % package, timeout=15)
-        I = re.search(r'\[\[\["(\d+\.\d+\.\d+)"\]\]', I.text)
-        if I: return I.group(1)
-    except: pass
-    return None
+ I=requests.get(f"https://play.google.com/store/apps/%s"%package)
+ I=re.search(r'\[\[\["(\d+\.\d+\.\d+)"\]\]', I.text)
+ if I:return I.group(1)
+ return None
 
 def bdversion(ver: str = None):
-    try:
-        if not ver:
-            try:
-                from google_play_scraper import app as play_store_app
-                result = play_store_app('com.dts.freefireth', lang="fr", country='fr')
-                ver = result['version']
-            except Exception:
-                ver = "1.132.11"
-        r = requests.get(f'https://version.ggwhitehawk.com/live/ver.php?version={ver}&lang=en&device=android&channel=android&appsttore=googleplay&region=ME&whitelist_version=1.3.0&whitelist_sp_version=1.0.0&device_name=google%20G011A&device_CPU=ARMv7%20VFPv3%20NEON%20VMH&device_GPU=Adreno%20(TM)%20640&device_mem=1993', verify=False, timeout=10).json()
-        data = {
-            "server_url": r['server_url'],
-            "latest_release_version": r.get('latest_release_version') or "OB55",
-            "remote_version": ver
-        }
-        return data
-    except Exception as e:
-        return {
-            "server_url": "https://loginbp.ppmainecoonghj.com/",
-            "latest_release_version": "OB55",
-            "remote_version": "1.132.11"
-        }
-
-# Details: https://api.freefireservice.dnc.su/ff.status
-# Telegram: @gringo_modz
-
+ requests.packages.urllib3.disable_warnings()
+ if not ver:
+  ver = storeApps("details?id=com.dts.freefireth")
+ url = "https://version.common.redflamenco.com/live/ver.php?version=%s&lang=vi&device=android&region=VN" % ver
+ res = requests.get(url, verify=False)
+ return res.json()
+            
 class APIClient:
-    def __init__(self):
-        self._data = account_data()
-        self.logindata = {}
-        detail_vers = bdversion()
-        self.is_emulator = False
-        self.language = "en"
-        self.base_url = detail_vers["server_url"]
-        self.client_version = "1.132.11"
-        self.release_version = detail_vers.get("latest_release_version") or "OB55"
-        self.key = bytes([89, 103, 38, 116, 99, 37, 68, 69, 117, 104, 54, 37, 90, 99, 94, 56])
-        self.iv = bytes([54, 111, 121, 90, 68, 114, 50, 50, 69, 51, 121, 99, 104, 106, 77, 37])
-        from urllib.parse import urlparse
-        host_name = "loginbp.ppmainecoonghj.com"
-        self.session = requests.Session()
-        self.session.headers.update({
-            "User-Agent": "UnityPlayer/2018.4.12f1 (UnityWebRequest/1.0, libcurl/8.5.0-DEV)",
-            "X-GA": "v1 1", "X-GA-SV": str(int(time.time())),
-            "Content-Type": "application/x-www-form-urlencoded",
-            "Accept-Encoding": "deflate, gzip", "Accept": "*/*",
-            "X-Unity-Version": "2018.4.12f1",
-            "Host": host_name, "ReleaseVersion": self.release_version
-        })
+ def __init__(self):
+  self._data = account_data()
+  detail_vers = bdversion()
+  self.is_emulator = False
+  self.language = "vn"
+  self.base_url = detail_vers["server_url"]
+  self.client_version = detail_vers["remote_version"]
+  self.release_version = detail_vers["latest_release_version"]
+  self.key = bytes([89, 103, 38, 116, 99, 37, 68, 69, 117, 104, 54, 37, 90, 99, 94, 56])
+  self.iv = bytes([54, 111, 121, 90, 68, 114, 50, 50, 69, 51, 121, 99, 104, 106, 77, 37])
+  self.session = requests.Session()
+  self.session.headers.update({
+    "User-Agent": "UnityPlayer/2018.4.12f1 (UnityWebRequest/1.0, libcurl/8.5.0-DEV)",
+    "X-GA": "v1 1",
+    "Content-Type": "application/x-www-form-urlencoded",
+    "Accept-Encoding": "deflate, gzip",
+    "Accept": "*/*",
+    "X-Unity-Version": "2018.4.12f1",
+    "Host": "loginbp.ppmainecoonghj.com",
+    "ReleaseVersion": self.release_version,
+    "X-Ga-Sv": "1789534056",
+    "Authorization": "Bearer "
+  })
 
-    def auth_guest_token(self, uid, password):
-        payload = {
-            "uid": str(uid), "password": str(password),
-            "response_type": "token", "client_type": "2", "client_id": "100067", 
-            "client_secret": bytes([50, 101, 101, 52, 52, 56, 49, 57, 101, 57, 98, 52, 53, 57, 56, 56, 52, 53, 49, 52, 49, 48, 54, 55, 98, 50, 56, 49, 54, 50, 49, 56, 55, 52, 100, 48, 100, 53, 100, 55, 97, 102, 57, 100, 56, 102, 55, 101, 48, 48, 99, 49, 101, 53, 52, 55, 49,53, 98, 55, 100, 49, 101, 51]).decode()
-        }
-        try:
-            data = requests.post(
-                "https://auth.garena.com/oauth/guest/token/grant",
-                data=payload,
-                headers={
-                    "Accept-Encoding": "gzip", "Accept-Encoding": "gzip, deflate",
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "User-Agent": "GarenaMSDK/4.0.44(SM-G975F ;Android 12;en;VN;app 1.132.11 2019121207;)",
-                }
-            ).json()
-            if "access_token" not in data: return "account not found"
-            self._data.access_token = data["access_token"]
-            self._data.open_id = data["open_id"]
-            self._data.platform = data.get("platform", 0x4)
-            self._data.login_platform = data.get("login_platform", 0x4)
-            self._data.main_active_platform = data.get("main_active_platform")
-            self._data.create_time = data.get("create_time")
-            self._data.expiry_time = data.get("expiry_time")
-        except Exception as e: print(e)
+ def auth_guest_token(self, uid, password):
+  payload = {
+   "uid": str(uid), "password": str(password),
+   "response_type": "token", "client_type": "2", "client_id": "100067", 
+   "client_secret": bytes([50, 101, 101, 52, 52, 56, 49, 57, 101, 57, 98, 52, 53, 57, 56, 56, 52, 53, 49, 52, 49, 48, 54, 55, 98, 50, 56, 49, 54, 50, 49, 56, 55, 52, 100, 48, 100, 53, 100, 55, 97, 102, 57, 100, 56, 102, 55, 101, 48, 48, 99, 49, 101, 53, 52, 55, 49,53, 98, 55, 100, 49, 101, 51]).decode()
+   }
+  try:
+   data = requests.post(
+    "https://auth.garena.com/oauth/guest/token/grant",
+    data=payload,
+    headers={
+     "Accept-Encoding": "gzip", "Accept-Encoding": "gzip, deflate",
+     "Content-Type": "application/x-www-form-urlencoded",
+     "User-Agent": "Mozilla/5.0 (Android 9; Mobile; rv:91.0) Gecko/91.0 Firefox/91.0",
+     }
+    ).json()
+   if "access_token" not in data: return "account not found"
+   self._data.access_token = data["access_token"]
+   self._data.open_id = data["open_id"]
+   self._data.platform = data.get("platform", 0x4)
+   self._data.login_platform = data.get("login_platform", 0x4)
+   self._data.main_active_platform = data.get("main_active_platform")
+   self._data.create_time = data.get("create_time")
+   self._data.expiry_time = data.get("expiry_time")
+  except Exception as e: print(e)
 
-    def auth_token_inspect(self, access_token):
-        try:
-            data = requests.get(
-                "https://auth.garena.com/oauth/token/inspect",
-                params={"token": access_token}
-            ).json()
-            if "open_id" not in data: raise gayerr("Invalid access token")
-            self._data.access_token = access_token
-            self._data.open_id = data["open_id"]
-            self._data.platform = data.get("platform", 0x4)
-            self._data.login_platform = data.get("login_platform", 0x4)
-            self._data.main_active_platform = data.get("main_active_platform")
-            self._data.create_time = data.get("create_time")
-            self._data.expiry_time = data.get("expiry_time")
-        except Exception as e: pass
+ def auth_token_inspect(self, access_token):
+  try:
+   data = requests.get(
+    "https://auth.garena.com/oauth/token/inspect",
+    params={"token": access_token}
+    ).json()
+   if "open_id" not in data: raise gayerr("Invalid access token")
+   self._data.access_token = access_token
+   self._data.open_id = data["open_id"]
+   self._data.platform = data.get("platform", 0x4)
+   self._data.login_platform = data.get("login_platform", 0x4)
+   self._data.main_active_platform = data.get("main_active_platform")
+   self._data.create_time = data.get("create_time")
+   self._data.expiry_time = data.get("expiry_time")
+  except Exception as e: pass
 
-    def MajorLogin(self):
-        try:
-            fields = {}
-            fields[3] = str(datetime.datetime.now())[:-7]
-            fields[4] = "free fire"
-            fields[7] = "1.132.11"
-            fields[8] = "Android OS 12 / API-31 (SP1A.210812.016)"
-            fields[9] = "Handheld"
-            fields[10] = "Viettel"
-            fields[11] = "WIFI"
-            fields[12] = 1708
-            fields[13] = 750
-            fields[14] = "440"
-            fields[15] = "ARM64 FP ASIMD AES | 2850 | 8"
-            fields[16] = 3968
-            fields[17] = "Mali-G76 MP12"
-            fields[18] = "OpenGL ES 3.2 v1.r32p1-01eac0.54329dee8f160f288c574caaf67bbe3f"
-            fields[19] = "samsung|SM-G975F"
-            fields[20] = "116.98.241.133"
-            fields[21] = "en"
-            fields[22] = str(self._data.open_id)
-            fields[23] = "4"
-            fields[24] = "Handheld"
-            fields[25] = "SM-G975F"
-            fields[26] = "VN"
-            fields[29] = str(self._data.access_token)
-            fields[30] = 1
-            fields[41] = "Viettel"
-            fields[42] = "WIFI"
-            fields[57] = "7428b253defc164018c604a1ebbfebdf"
-            fields[60] = 109029
-            fields[61] = 37616
-            fields[62] = 2048
-            fields[63] = 804
-            fields[64] = 37616
-            fields[65] = 109029
-            fields[66] = 37616
-            fields[67] = 109029
-            fields[70] = 2
-            fields[73] = 3
-            fields[74] = "/data/app/com.dts.freefireth-oiglMJkEoNJlsRci10280Q==/lib/arm64"
-            fields[76] = 1
-            fields[77] = "b8e0cd5e295eee42f5860d3c86e483dd|/data/app/com.dts.freefireth-oiglMJkEoNJlsRci10280Q==/base.apk"
-            fields[78] = 3
-            fields[79] = 2
-            fields[81] = "64"
-            fields[83] = "2019121207"
-            fields[85] = 3
-            fields[86] = "OpenGLES2"
-            fields[87] = 511
-            fields[88] = 4
-            fields[90] = "Hà Nội"
-            fields[91] = "01"
-            fields[92] = 4231
-            fields[93] = "android"
-            fields[94] = "KqsHT8at0g7Na/G7iOeF1IpesHMf+HoePFMFFE8Tq/dSk4fIbJ1j8TdV8OAyWIVnSmD2rM6vfFMtCD8Ig7iROgDJmIMrdtcB6orwuNRpMr4MVu3D7FoTcuQdq/8EyOkRQiUrbg=="
-            fields[95] = 111207
-            fields[96] = '{"cur_rate":null,"support_etc2":false}'
-            fields[97] = 1
-            fields[98] = 1
-            fields[99] = "4"
-            fields[100] = "4"
-            fields[102] = bytes.fromhex('4000434f07555f0637')
-            fields[103] = 1
-            fields[104] = 1797
-            fields[105] = 1
-            fields[106] = "https://dl.cdn.freefiremobile.com/live/ABHotUpdates/|https://dl-core.cdn.freefiremobile.com/live/ABHotUpdates/|4a0070ac356973792f002e0b25b96c3b"
-            fields[107] = "c8e41b7a93f02d56e1a94c7b8203f5d1"
+ def MajorLogin(self):
+  fields = {}
+  fields[3] = time.strftime("%Y-%m-%d %H:%M:%S")
+  fields[4] = "free fire"
+  fields[5] = 4
+  fields[7] = self.client_version
+  fields[8] = "Android OS 9 / API-28 (PI/rel.cjw.20220518.114133)"
+  fields[9] = "Handheld"
+  fields[10] = "Verizon Wireless"
+  fields[11] = "WIFI"
+  fields[12] = 1280
+  fields[13] = 960
+  fields[15] = "x86-64 SSE3 SSE4.1 SSE4.2 AVX AVX2 | 2400 | 4"
+  fields[16] = 5951
+  fields[17] = "Adreno (TM) 640"
+  fields[18] = "OpenGL ES 3.0"
+  fields[19] = "Google|d00d071a-5662-486c-82e2-5dc03c5cb82e"
+  fields[20] = "14.161.1.1"
+  fields[21] = "en"
+  fields[22] = str(self._data.open_id)
+  fields[23] = int(self._data.login_platform)
+  fields[24] = "Handheld"
+  fields[25] = "Asus ASUS_I005DA"
+  fields[29] = str(self._data.access_token)
+  fields[30] = 1
+  fields[41] = "O2"
+  fields[42] = "WIFI"
+  fields[57] = bytes([49, 97, 99, 52, 98, 56, 48, 101, 99, 102, 48, 52, 55, 56, 97, 52, 52, 50, 48, 51, 98, 102, 56, 102, 97, 99, 54, 49, 50, 48, 102, 53])
+  fields[60] = 32969
+  fields[61] = 29901
+  fields[62] = 2479
+  fields[63] = 900
+  fields[64] = 31298
+  fields[65] = 32969
+  fields[66] = 31298
+  fields[67] = 32969
+  fields[70] = 4
+  fields[73] = 3
+  fields[76] = 1
+  fields[78] = 6
+  fields[79] = 1
+  fields[85] = 3
+  fields[88] = 4
+  fields[93] = "android"
+  fields[94] = "KqsHT1r9GNgPJ0nDb82dJ+mJ4wwzqfR9fk7HviQ+4tx58ObceZuLaFrmk9qaVIP+qB3CV0DG40yTeS+2h1GA1rqKtMVPLfDUz7rIThfm4ZKedCh3"
+  fields[95] = 111111
+  fields[97] = 1
+  fields[98] = 1
+  fields[99] = str(self._data.platform)
+  fields[100] = str(self._data.platform)
+  fields[102] = bytes([71, 87, 76, 65, 86, 89, 9, 4, 78, 1, 12, 19, 15, 4, 64, 94, 65, 57, 89, 83, 15, 80, 91, 61, 15, 81, 91, 110, 82, 9, 60, 10, 84, 50])
+  try:
+   response = self.session.post(
+    "%sMajorLogin" % self.base_url,
+    data = AES_CBC128(pb_encode(fields), self.key, self.iv),
+    timeout = 25
+   )
+   raw = response.content
+   if response.status_code != 200 or not raw:
+    return
+   # Skip binary header, find real protobuf start
+   pb_start = 0
+   for i in range(min(len(raw) - 1, 512)):
+    if raw[i] == 0x08:
+     try:
+      tmp = ProtoBuf(raw)
+      val, _ = tmp.varint(raw, i + 1)
+      if 1000000000 <= val <= 100000000000:
+       pb_start = i
+       break
+     except Exception:
+      continue
+   pb = ProtoBuf(raw[pb_start:])
+   res = pb.protobuf()
+   self._data.account_id = res.get("1")
+   self._data.server = res.get("3")
+   tok = res.get("8")
+   if isinstance(tok, bytes):
+    tok = tok.decode("utf-8", errors="ignore")
+   self._data.login_token = tok
+   self._data.base_url = res.get("10")
+   self._data.login_time = res.get("21")
+   # key/iv from response (fields 22/23) — fallback static
+   k = pb.EXTRACT_FIELDS([22], mode="bytes")
+   v = pb.EXTRACT_FIELDS([23], mode="bytes")
+   if isinstance(k, bytes) and len(k) in (16, 24, 32):
+    self._data.key = k
+   else:
+    self._data.key = self.key
+   if isinstance(v, bytes) and len(v) == 16:
+    self._data.iv = v
+   else:
+    self._data.iv = self.iv
+   # JWT fallback
+   if not self._data.login_token or str(self._data.login_token).count(".") != 2:
+    m = re.search(rb"eyJ[A-Za-z0-9_\-\.]+", raw)
+    if m:
+     self._data.login_token = m.group(0).decode("utf-8", errors="ignore")
+   if not self._data.account_id and self._data.login_token:
+    try:
+     dec = gringay.tokendecode(self._data.login_token)
+     if dec:
+      self._data.account_id = dec.get("account_id")
+    except Exception:
+     pass
+  except Exception as e:
+   print("MajorLogin error:", e)
 
-            payload = AES_CBC128(pb_encode(fields), self.key, self.iv)
-            url = "https://loginbp.ppmainecoonghj.com/MajorLogin"
-            headers = {
-                "X-Unity-Version": "2018.4.12f1",
-                "ReleaseVersion": "OB55",
-                "Content-Type": "application/x-www-form-urlencoded",
-                "Authorization": "Bearer",
-                "Accept": "*/*",
-                "Expect": "100-continue",
-                "X-GA": "v1 1",
-                "X-GA-SV": str(int(time.time())),
-                "User-Agent": "UnityPlayer/2018.4.12f1 (UnityWebRequest/1.0, libcurl/8.5.0-DEV)",
-                "Host": "loginbp.ppmainecoonghj.com",
-                "Connection": "Keep-Alive",
-                "Accept-Encoding": "deflate, gzip",
-            }
-            r = requests.post(url, headers=headers, data=payload, verify=False, timeout=30)
-            print(f"[MajorLogin] HTTP {r.status_code}")
-            if r.status_code != 200:
-                print(f"[MajorLogin] ❌ {r.text[:200]}")
-                return
+ def GetLoginData(self):
+  try:
+   tokendec = gringay.tokendecode(self._data.login_token) or {}
+   fields = {}
+   fields[3]  = time.strftime("%Y-%m-%d %H:%M:%S")
+   fields[7]  = self.client_version
+   fields[23] = int(tokendec.get("external_type", 4) or 4)
+   fields[29] = str(tokendec.get("external_id", self._
+data.open_id or ""))
+   fields[4]  = "  free fire"
+   fields[5] = 4
+ fields   fields[8]  = "Android[ OS 9 / API-28 (PI/rel61.cjw.20220518.114133)"
+   fields[9]  = "Handheld"
+   fields[10] = "Verizon Wireless"
+   fields[11] = "WIFI"
+   fields[12] = 1280
+   fields[13] = 960
+   fields[15] = "x86-64 SSE3 SSE4.1 SSE4.2 AVX AVX2 | 2400 | 4"
+   fields[17] = "Adreno (TM) 640"
+   fields[18] = "OpenGL ES 3.0"
+   fields[19] = "Google|d00d071a-5662-486c-82e2-5dc03c5cb82e"
+   fields[20] = "20.81.159.0"
+   fields[21] = self.language
+   fields[22] = "40254b1770e14131d3879ea51acb93ad"
+   fields[24] = "Handheld"
+   fields[25] = "Asus ASUS_Z01QD"
+   fields[41] = "Verizon Wireless"
+   fields[42] = "WIFI"
+   fields[57] = str(tokendec.get("signature_md5", "1ac4b80ecf0478a44203bf8fac6120f5"))
+   fields[60] = 32969] = 29665
+   fields[62] = 2479
+   fields[63] = 900
+   fields[64] = 31063
+   fields[65] = 32969
+   fields[66] = 31063
+   fields[67] = 32969
+   fields[70] = 4
+   fields[73] = 3
+   fields[76] = 1
+   fields[78] = 6
+   fields[79] = 1
+   fields[85] = 3
+   fields[88] = 4
+   fields[92] = 11111
+   fields[95] = 11111
+   fields[97] = 1
+   fields[98] = 1
+   fields[104] = 31784
+   fields[105] = 1
+   fields[106] = "https://dl.gmc.freefiremobile.com/live/ABHotUpdates/|https://core-gmc.freefiremobile.com/live/ABHotUpdates/|1c2462939e53942fc995400436a3dc7b"
+   fields[107] = "c8e41b7a93f02d56e1a94c7b8203f5d1"
+   base = self._data.base_url or ""
+   if not base.startswith("http"):
+    base = "https://" + base
+   host = base.replace("https://", "").replace("http://", "").split("/")[0]
+   response = self.session.post(
+     "%s/GetLoginData" % base.rstrip("/"),
+     headers = {
+      "Authorization": "Bearer %s" % self._data.login_token,
+      "Host": host
+      },
+     data = AES_CBC128(pb_encode(fields), self.key, self.iv),
+     timeout = 25
+    )
+   raw = response.content
+   pb2 = ProtoBuf(raw)
+   data = pb2.protobuf()
+   # Normalize field 19 region map -> list of {"1": id, "2": "VN"}
+   f19 = data.get("19")
+   if f19 is not None:
+    items = f19 if isinstance(f19, list) else [f19]
+    norm = []
+    for it in items:
+     if isinstance(it, dict) and "1" in it and "2" in it:
+      norm.append({"1": it["1"], "2": it["2"]})
+     elif isinstance(it, (bytes, str)):
+      b = it if isinstance(it, bytes) else it.encode("latin-1", errors="ignore")
+      nested = ProtoBuf(b).protobuf()
+      if "1" in nested and "2" in nested:
+       norm.append({"1": nested["1"], "2": nested["2"]})
+    if norm:
+     data["19"] = norm
+   self.logindata = data
+   self._data.guild_id = data.get("20")
+   self._data.guild_code = data.get("55")
+   sv, chat = data.get("14"), data.get("32")
+   if isinstance(chat, str) and len(chat) > 6:
+    self._data.chat_port, self._data.chat_ip = chat[-5:], chat[:-6]
+   if isinstance(sv, str) and len(sv) > 6:
+    self._data.online_port, self._data.online_ip = sv[-5:], sv[:-6]
+  except Exception as e:
+   print("GetLoginData error:", e)
+   import traceback; traceback.print_exc()
 
-            raw = r.content
-            print(f"[MajorLogin] RESPONSE LEN: {len(raw)}")
+ def TAO_PACKET_XT(self) -> bytes:
+  try:
+   region_map = {}
+   f19 = (self.logindata or {}).get("19") or []
+   if not isinstance(f19, list):
+    f19 = [f19]
+   for x in f19:
+    if isinstance(x, dict) and "1" in x and "2" in x:
+     region_map[str(x["2"]).upper()] = x["1"]
+   server = str(self._data.server or "VN").upper()
+   esid = region_map.get(server, region_map.get("VN", 1))
+   try: esid = int(esid)
+   except Exception: esid = 1
+   eid = hex(int(self._data.account_id))[2:]
+   bytestoken = str(self._data.login_token).encode()
+   # Use response key/iv if valid length else static
+   k = self._data.key if isinstance(self._data.key, (bytes, bytearray)) and len(self._data.key) in (16, 24, 32) else self.key
+   v = self._data.iv if isinstance(self._data.iv, (bytes, bytearray)) and len(self._data.iv) == 16 else self.iv
+   encrypts = AES_CBC128(bytestoken, bytes(k), bytes(v)).hex()
+   lengths = hex(len(encrypts) // 2)[2:]
+   header = ("0" * 16)[:max(0, 16 - len(eid))]
+   packet = "%s%s%s%X%05d%s%s" % (
+     "%02d%02X" % (1, esid), header,
+     eid, int(self._data.login_time or 0), 0x0, lengths, encrypts
+    )
+   return bytes.fromhex(packet)
+  except Exception as e:
+   print("TAO_PACKET_XT error:", e)
+   import traceback; traceback.print_exc()
+   return b""
 
-            decrypted = None
-            try:
-                decrypted = unpad(AES.new(self.key, AES.MODE_CBC, self.iv).decrypt(raw), 16)
-                print(f"[MajorLogin] ✅ Response decrypted OK (len={len(decrypted)})")
-            except Exception as e:
-                print(f"[MajorLogin] ⚠️ Response NOT encrypted: {e}")
-                decrypted = raw
+ def auth(self, access_token, is_emulator = False):
+  try:
+   self.is_emulator = is_emulator
+   if ":" in access_token:
+    uid, password = access_token.split(":", 1)
+    err = self.auth_guest_token(int(uid), password)
+    if err: return err
+   else:
+    self.auth_token_inspect(access_token)
+   if not self._data.access_token:
+    return "account not found"
+   self.MajorLogin()
+   if not self._data.login_token:
+    return "account not found"
+   self.GetLoginData()
+   return self._build_api_response(self.TAO_PACKET_XT())
+  except Exception as e:
+   print("auth error:", e)
+   return None
+ 
+ def _build_api_response(self, authpacket):
+  if not self._data.login_token: return "account not found"
+  data = gringay.tokendecode(self._data.login_token)
+  if self._data.guild_id:
+   guild = {}
+   guild["id"] = self._data.guild_id
+   guild["secret_code"] = self._data.guild_code
+  else: guild = False
 
-            pb = ProtoBuf(decrypted)
-            key_extracted = _as_bytes(pb.EXTRACT_FIELDS([22], mode="bytes"))
-            iv_extracted = _as_bytes(pb.EXTRACT_FIELDS([23], mode="bytes"))
+  saddress = {}
+  saddress["chatip"] = self._data.chat_ip
+  saddress["chatport"] = self._data.chat_port
+  saddress["onlineip"] = self._data.online_ip
+  saddress["onlineport"] = self._data.online_port  
+  response = {}
+  response["CreateTime"] = gringay.format_timestamp(self._data.create_time)
+  response["ExpiryTime"] = gringay.format_timestamp(self._data.expiry_time)
+  response["UserAuthPacket"] = list(authpacket)
+  response["UserAuthToken"] = self._data.login_token
+  response["UserNickName"] = data.get("nickname")
+  response["UserAccountUID"] = data.get("account_id")
+  response["LockRegion"] = data.get("lock_region")
+  response["ClientVersion"] = data.get("client_version")
+  response["IsEmulator"] = data.get("is_emulator")
+  response["GuildData"] = guild
+  response["BaseUrl"] = self._data.base_url or ""
+  response["key"] = list(self._data.key)
+  response["iv"] = list(self._data.iv)
+  response["logindata"] = self.logindata
+  response["GameServerAddress"] = saddress
+  return response
 
-            if (not key_extracted or not iv_extracted) and len(decrypted) > 64:
-                pb2 = ProtoBuf(decrypted[64:])
-                key_extracted = _as_bytes(pb2.EXTRACT_FIELDS([22], mode="bytes"))
-                iv_extracted = _as_bytes(pb2.EXTRACT_FIELDS([23], mode="bytes"))
-
-            if key_extracted and iv_extracted:
-                self._data.key = key_extracted
-                self._data.iv = iv_extracted
-                print(f"[MajorLogin] ✅ key={key_extracted.hex()}")
-                print(f"[MajorLogin] ✅ iv ={iv_extracted.hex()}")
-            else:
-                self._data.key = self.key
-                self._data.iv = self.iv
-                print(f"[MajorLogin] ⚠️ key/iv hardcode")
-
-            jwt_bytes = None
-            o = 0
-            while o < len(decrypted) - 1:
-                idx = decrypted.find(b"\x42", o)
-                if idx < 0:
-                    idx = decrypted.find(b"eyJ", o)
-                    if idx >= 0:
-                        jwt_bytes = decrypted[idx:idx + 500]
-                        break
-                    break
-                length, after = 0, idx + 1
-                shift = 0
-                while after < len(decrypted):
-                    b = decrypted[after]; after += 1
-                    length |= (b & 0x7F) << shift
-                    if not (b & 0x80): break
-                    shift += 7
-                end = after + length
-                if end <= len(decrypted) and decrypted[after:after + 3] == b"eyJ":
-                    jwt_bytes = decrypted[after:end]
-                    break
-                o = idx + 1
-
-            if not jwt_bytes:
-                print(f"[MajorLogin] ❌ Không tìm thấy JWT")
-                return
-
-            login_token = jwt_bytes.decode('utf-8', 'replace')
-            account_id = ""
-            try:
-                parts = login_token.split('.')
-                if len(parts) >= 2:
-                    p = parts[1] + '=' * ((4 - len(parts[1]) % 4) % 4)
-                    jd = json.loads(base64.urlsafe_b64decode(p))
-                    account_id = str(jd.get('account_id', ''))
-            except: pass
-
-            self._data.login_token = login_token
-            self._data.account_id = account_id
-            self._data.server = "VN"
-            self._data.base_url = "https://clientbp.ppmainecoonghj.com"
-            self._data.login_time = int(time.time())
-
-            print(f"[MajorLogin] ✅ OK account_id={account_id}")
-        except Exception as e:
-            print("[MajorLogin]", e)
-
-    def GetLoginData(self):
-        try:
-            if not self._data.login_token:
-                print("[GetLoginData] ❌ login_token rỗng")
-                return
-
-            fields = {}
-            fields[3] = str(datetime.datetime.now())[:-7]
-            fields[4] = "free fire"
-            fields[7] = "1.132.11"
-            fields[8] = "Android OS 12 / API-31 (SP1A.210812.016)"
-            fields[9] = "Handheld"
-            fields[10] = "Viettel"
-            fields[11] = "WIFI"
-            fields[12] = 1708
-            fields[13] = 750
-            fields[14] = "440"
-            fields[15] = "ARM64 FP ASIMD AES | 2850 | 8"
-            fields[16] = 3968
-            fields[17] = "Mali-G76 MP12"
-            fields[18] = "OpenGL ES 3.2 v1.r32p1-01eac0.54329dee8f160f288c574caaf67bbe3f"
-            fields[19] = "samsung|SM-G975F"
-            fields[20] = "116.98.241.133"
-            fields[21] = "en"
-            fields[22] = str(self._data.open_id)
-            fields[23] = "4"
-            fields[24] = "Handheld"
-            fields[25] = "SM-G975F"
-            fields[26] = "VN"
-            fields[29] = str(self._data.access_token)
-            fields[30] = 1
-            fields[41] = "Viettel"
-            fields[42] = "WIFI"
-            fields[57] = "7428b253defc164018c604a1ebbfebdf"
-            fields[60] = 109029
-            fields[61] = 37616
-            fields[62] = 2048
-            fields[63] = 804
-            fields[64] = 37616
-            fields[65] = 109029
-            fields[66] = 37616
-            fields[67] = 109029
-            fields[70] = 2
-            fields[73] = 3
-            fields[74] = "/data/app/com.dts.freefireth-oiglMJkEoNJlsRci10280Q==/lib/arm64"
-            fields[76] = 1
-            fields[77] = "b8e0cd5e295eee42f5860d3c86e483dd|/data/app/com.dts.freefireth-oiglMJkEoNJlsRci10280Q==/base.apk"
-            fields[78] = 3
-            fields[79] = 2
-            fields[81] = "64"
-            fields[83] = "2019121207"
-            fields[85] = 3
-            fields[86] = "OpenGLES2"
-            fields[87] = 511
-            fields[88] = 4
-            fields[90] = "Hà Nội"
-            fields[91] = "01"
-            fields[92] = 4231
-            fields[93] = "android"
-            fields[94] = "KqsHT8at0g7Na/G7iOeF1IpesHMf+HoePFMFFE8Tq/dSk4fIbJ1j8TdV8OAyWIVnSmD2rM6vfFMtCD8Ig7iROgDJmIMrdtcB6orwuNRpMr4MVu3D7FoTcuQdq/8EyOkRQiUrbg=="
-            fields[95] = 111207
-            fields[96] = '{"cur_rate":null,"support_etc2":false}'
-            fields[97] = 1
-            fields[98] = 1
-            fields[99] = "4"
-            fields[100] = "4"
-            fields[102] = bytes.fromhex('4000434f07555f0637')
-            fields[103] = 1
-            fields[104] = 1797
-            fields[105] = 1
-            fields[106] = "https://dl.cdn.freefiremobile.com/live/ABHotUpdates/|https://dl-core.cdn.freefiremobile.com/live/ABHotUpdates/|4a0070ac356973792f002e0b25b96c3b"
-            fields[107] = "c8e41b7a93f02d56e1a94c7b8203f5d1"
-
-            payload = AES_CBC128(pb_encode(fields), self.key, self.iv)
-            url = f"{self._data.base_url}/GetLoginData"
-            headers = {
-                "X-Unity-Version": "2018.4.12f1",
-                "ReleaseVersion": "OB55",
-                "Content-Type": "application/x-www-form-urlencoded",
-                "X-GA": "v1 1",
-                "X-GA-SV": str(int(time.time())),
-                "User-Agent": "UnityPlayer/2018.4.12f1 (UnityWebRequest/1.0, libcurl/8.5.0-DEV)",
-                "Host": "clientbp.ppmainecoonghj.com",
-                "Connection": "Keep-Alive",
-                "Accept-Encoding": "gzip",
-                "Authorization": f"Bearer {self._data.login_token}",
-            }
-            r = requests.post(url, headers=headers, data=payload, verify=False, timeout=30)
-            print(f"[GetLoginData] HTTP {r.status_code}")
-            if r.status_code != 200:
-                print(f"[GetLoginData] ❌ {r.text[:200]}")
-                return
-
-            raw = r.content
-            try:
-                dec = unpad(AES.new(self.key, AES.MODE_CBC, self.iv).decrypt(raw), 16)
-                data = json.loads(protobuf_dec(dec.hex()))
-            except:
-                data = json.loads(protobuf_dec(raw.hex()))
-
-            self.logindata = data
-            self._data.guild_id = data.get("20")
-            self._data.guild_code = data.get("55")
-            sv = _scalar(data.get("14"))
-            chat = _scalar(data.get("32"))
-            sv = str(sv) if sv else ""
-            chat = str(chat) if chat else ""
-            if len(chat) > 6:
-                self._data.chat_port, self._data.chat_ip = chat[-5:], chat[:-6]
-            if len(sv) > 6:
-                self._data.online_port, self._data.online_ip = sv[-5:], sv[:-6]
-            print(f"[GetLoginData] ✅ OK online={self._data.online_ip}:{self._data.online_port}")
-        except Exception as e:
-            print("[GetLoginData]", e)
-
-    def _auth_packet(self, fox=True):
-        regions = self.logindata.get("19") or []
-        if isinstance(regions, dict):
-            regions = [regions]
-        esid = lambda rec: (
-            lambda s: s[str(rec).upper()] if str(rec).upper() in s else None)(
-            {str(x["2"]).upper(): x["1"] for x in regions if isinstance(x, dict) and "1" in x and "2" in x}
-        )
-        tok = self._data.login_token
-        if isinstance(tok, bytes):
-            tok = tok.decode("utf-8", "replace")
-        encrypts = AES_CBC128(str(tok).encode(), self._data.key, self._data.iv)
-        region = int(_scalar(esid(self._data.server)) or 1)
-        aid = int(_scalar(self._data.account_id) or 0)
-        kts = int(_scalar(self._data.login_time) or 0)
-        cmd = 1 if fox else (101 + (aid % 50))
-        hdr = (
-            bytes([cmd & 0xFF, region & 0xFF])
-            + struct.pack(">Q", aid)
-            + struct.pack(">I", kts & 0xFFFFFFFF)
-        )
-        if fox:
-            return hdr + struct.pack(">I", len(encrypts)) + encrypts
-        return hdr + struct.pack(">Q", len(encrypts)) + encrypts
-
-    def TAO_PACKET_XT(self) -> str:
-        try:
-            return self._auth_packet(True)
-        except Exception as e: print(e)
-
-    def TAO_PACKET_LOBBY(self):
-        try:
-            return self._auth_packet(False)
-        except Exception as e: print(e)
-
-    def auth(self, access_token, is_emulator=False):
-        try:
-            self.is_emulator = is_emulator
-            print(f"[auth] Bắt đầu — token={'guest' if ':' in access_token else 'access_token'}")
-
-            if ":" in access_token:
-                uid, password = access_token.split(":")
-                self.auth_guest_token(int(uid), password)
-            else:
-                self.auth_token_inspect(access_token)
-
-            if not self._data.access_token:
-                print("[auth] ❌ Không có access_token")
-                return "account not found"
-            print(f"[auth] ✅ open_id={self._data.open_id}")
-
-            self.MajorLogin()
-            if not self._data.login_token:
-                print("[auth] ❌ MajorLogin thất bại")
-                return "account not found"
-
-            self.GetLoginData()
-            if not self.logindata:
-                print("[auth] ❌ GetLoginData thất bại")
-                return "account not found"
-
-            pkt = self.TAO_PACKET_XT()
-            if not pkt:
-                print("[auth] ❌ TAO_PACKET_XT rỗng")
-                return "account not found"
-
-            return self._build_api_response(pkt)
-        except Exception as e:
-            print("[auth]", e)
-
-    def _build_api_response(self, authpacket):
-        if not self._data.login_token or not authpacket: return "account not found"
-        if not self._data.key or not self._data.iv: return "account not found"
-        tok = self._data.login_token
-        if isinstance(tok, bytes):
-            tok = tok.decode("utf-8", "replace")
-        data = gringay.tokendecode(tok)
-        if self._data.guild_id:
-            guild = {}
-            guild["id"] = self._data.guild_id
-            guild["secret_code"] = self._data.guild_code
-        else:
-            guild = False
-
-        saddress = {}
-        saddress["chatip"] = self._data.chat_ip
-        saddress["chatport"] = self._data.chat_port
-        saddress["onlineip"] = self._data.online_ip
-        saddress["onlineport"] = self._data.online_port
-        response = {}
-        response["CreateTime"] = gringay.format_timestamp(self._data.create_time)
-        response["ExpiryTime"] = gringay.format_timestamp(self._data.expiry_time)
-        response["UserAuthPacket"] = list(authpacket)
-        lobby_pkt = self.TAO_PACKET_LOBBY()
-        response["UserAuthPacketLobby"] = list(lobby_pkt) if lobby_pkt else list(authpacket)
-        response["UserAuthToken"] = tok
-        response["UserNickName"] = data.get("nickname") if data else None
-        response["UserAccountUID"] = data.get("account_id") if data else None
-        response["LockRegion"] = data.get("lock_region") if data else None
-        response["ClientVersion"] = data.get("client_version") if data else None
-        response["IsEmulator"] = data.get("is_emulator") if data else None
-        response["GuildData"] = guild
-        response["BaseUrl"] = self._data.base_url or ""
-        response["key"] = list(self._data.key)
-        response["iv"] = list(self._data.iv)
-        response["logindata"] = self.logindata
-        response["GameServerAddress"] = saddress
-        return response
-
-
-class FreeFireAPI:
-    def __init__(self):
-        self.client = APIClient()
-
-    def get(self, target: str, is_emulator: bool = False):
-        return self.client.auth(target, is_emulator)
+class FreeFireAPI: 
+ def __init__(self):
+  self.client = APIClient()
+ def get(self, target: str, is_emulator: bool = False):
+  return self.client.auth(target, is_emulator)
