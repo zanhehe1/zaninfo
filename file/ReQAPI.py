@@ -6,6 +6,7 @@ from typing import Dict, Any, Optional, Tuple, Union, TypedDict, List
 from dataclasses import dataclass
 from enum import IntEnum
 
+
 class ProtoBuf:
     def __init__(self, data):
         self.data = data
@@ -247,34 +248,14 @@ class gringay:
         if timestamp is None: return ""
         return time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(timestamp))
 
-def storeApps(package):
-    I = requests.get(f"https://play.google.com/store/apps/%s" % package)
-    I = re.search(r'\[\[\["(\d+\.\d+\.\d+)"\]\]', I.text)
-    if I: return I.group(1)
-    return None
 
 def bdversion(ver: str = None):
-    try:
-        if not ver:
-            try:
-                from google_play_scraper import app as play_store_app
-                result = play_store_app('com.dts.freefireth', lang="fr", country='fr')
-                ver = result['version']
-            except Exception:
-                ver = "1.132.9"
-        r = requests.get(f'https://version.ggwhitehawk.com/live/ver.php?version={ver}&lang=en&device=android&channel=android&appsttore=googleplay&region=ME&whitelist_version=1.3.0&whitelist_sp_version=1.0.0&device_name=google%20G011A&device_CPU=ARMv7%20VFPv3%20NEON%20VMH&device_GPU=Adreno%20(TM)%20640&device_mem=1993', verify=False, timeout=10).json()
-        data = {
-            "server_url": r['server_url'],
-            "latest_release_version": r.get('latest_release_version') or "OB55",
-            "remote_version": ver
-        }
-        return data
-    except Exception as e:
-        return {
-            "server_url": "https://loginbp.ppmainecoonghj.com/",
-            "latest_release_version": "OB55",
-            "remote_version": "1.132.9"
-        }
+    """Hardcode — không gọi API ngoài"""
+    return {
+        "server_url": "https://loginbp.ppmainecoonghj.com/",
+        "latest_release_version": "OB55",
+        "remote_version": ver or "1.132.11"
+    }
 
 
 class APIClient:
@@ -285,11 +266,10 @@ class APIClient:
         self.is_emulator = False
         self.language = "en"
         self.base_url = detail_vers["server_url"]
-        self.client_version = "1.132.9"
+        self.client_version = "1.132.11"
         self.release_version = detail_vers.get("latest_release_version") or "OB55"
         self.key = bytes([89, 103, 38, 116, 99, 37, 68, 69, 117, 104, 54, 37, 90, 99, 94, 56])
         self.iv = bytes([54, 111, 121, 90, 68, 114, 50, 50, 69, 51, 121, 99, 104, 106, 77, 37])
-        from urllib.parse import urlparse
         host_name = "loginbp.ppmainecoonghj.com"
         self.session = requests.Session()
         self.session.headers.update({
@@ -305,17 +285,18 @@ class APIClient:
         payload = {
             "uid": str(uid), "password": str(password),
             "response_type": "token", "client_type": "2", "client_id": "100067", 
-            "client_secret": bytes([50, 101, 101, 52, 52, 56, 49, 57, 101, 57, 98, 52, 53, 57, 56, 56, 52, 53, 49, 52, 49, 48, 54, 55, 98, 50, 56, 49, 54, 50, 49, 56, 55, 52, 100, 48, 100, 53, 100, 55, 97, 102, 57, 100, 56, 102, 55, 101, 48, 48, 99, 49, 101, 53, 52, 55, 49,53, 98, 55, 100, 49, 101, 51]).decode()
+            "client_secret": "2ee44819e9b4598845141067b281621874d0d5d7af9d8f7e00c1e54715b7d1e3"
         }
         try:
             data = requests.post(
                 "https://auth.garena.com/oauth/guest/token/grant",
                 data=payload,
                 headers={
-                    "Accept-Encoding": "gzip", "Accept-Encoding": "gzip, deflate",
+                    "Accept-Encoding": "gzip, deflate",
                     "Content-Type": "application/x-www-form-urlencoded",
-                    "User-Agent": "Mozilla/5.0 (Android 9; Mobile; rv:91.0) Gecko/91.0 Firefox/91.0",
-                }
+                    "User-Agent": "GarenaMSDK/4.0.44(SM-G975F ;Android 12;en;VN;app 1.132.11 2019121207;)",
+                },
+                verify=False, timeout=30
             ).json()
             if "access_token" not in data: return "account not found"
             self._data.access_token = data["access_token"]
@@ -325,14 +306,14 @@ class APIClient:
             self._data.main_active_platform = data.get("main_active_platform")
             self._data.create_time = data.get("create_time")
             self._data.expiry_time = data.get("expiry_time")
-        except Exception:
-            pass
+        except Exception as e: print(e)
 
     def auth_token_inspect(self, access_token):
         try:
             data = requests.get(
                 "https://auth.garena.com/oauth/token/inspect",
-                params={"token": access_token}
+                params={"token": access_token},
+                verify=False, timeout=30
             ).json()
             if "open_id" not in data: raise gayerr("Invalid access token")
             self._data.access_token = access_token
@@ -342,38 +323,40 @@ class APIClient:
             self._data.main_active_platform = data.get("main_active_platform")
             self._data.create_time = data.get("create_time")
             self._data.expiry_time = data.get("expiry_time")
-        except Exception:
-            pass
+        except Exception as e: pass
 
     def MajorLogin(self):
         try:
+            # ============================================================
+            # ANDROID THẬT — Samsung Galaxy S10+ (SM-G975F)
+            # KHÔNG dính logo PC vì là device thật, không phải Pixel emulator
+            # ============================================================
             fields = {}
             fields[3] = str(datetime.datetime.now())[:-7]
             fields[4] = "free fire"
-            fields[5] = 1
-            fields[7] = "1.132.9"
-            fields[8] = "Android OS 10 / API-29 (NHG47O/eng.build.20231013.013027)"
+            fields[7] = "1.132.11"
+            fields[8] = "Android OS 12 / API-31 (SP1A.210812.016)"
             fields[9] = "Handheld"
-            fields[10] = "TelKila"
+            fields[10] = "Viettel"
             fields[11] = "WIFI"
             fields[12] = 1708
             fields[13] = 750
             fields[14] = "440"
             fields[15] = "ARM64 FP ASIMD AES | 2850 | 8"
             fields[16] = 3968
-            fields[17] = "Mali-G610 MC6"
+            fields[17] = "Mali-G76 MP12"
             fields[18] = "OpenGL ES 3.2 v1.r32p1-01eac0.54329dee8f160f288c574caaf67bbe3f"
-            fields[19] = "Google|0ecc7b3b-6c41-462e-9050-26d835e84c53"
-            fields[20] = "116.97.105.60"
+            fields[19] = "samsung|SM-G975F"
+            fields[20] = "116.98.241.133"
             fields[21] = "en"
             fields[22] = str(self._data.open_id)
             fields[23] = "4"
             fields[24] = "Handheld"
-            fields[25] = "Google Pixel"
-            fields[26] = "SG"
+            fields[25] = "SM-G975F"
+            fields[26] = "VN"
             fields[29] = str(self._data.access_token)
             fields[30] = 1
-            fields[41] = "TelKila"
+            fields[41] = "Viettel"
             fields[42] = "WIFI"
             fields[57] = "7428b253defc164018c604a1ebbfebdf"
             fields[60] = 109029
@@ -392,7 +375,7 @@ class APIClient:
             fields[78] = 3
             fields[79] = 2
             fields[81] = "64"
-            fields[83] = "2019121229"
+            fields[83] = "2019121207"
             fields[85] = 3
             fields[86] = "OpenGLES2"
             fields[87] = 511
@@ -432,14 +415,20 @@ class APIClient:
                 "Accept-Encoding": "deflate, gzip",
             }
             r = requests.post(url, headers=headers, data=payload, verify=False, timeout=30)
+            print(f"[MajorLogin] HTTP {r.status_code}")
             if r.status_code != 200:
+                print(f"[MajorLogin] ❌ {r.text[:200]}")
                 return
 
             raw = r.content
+            print(f"[MajorLogin] RESPONSE LEN: {len(raw)}")
+
             decrypted = None
             try:
                 decrypted = unpad(AES.new(self.key, AES.MODE_CBC, self.iv).decrypt(raw), 16)
-            except Exception:
+                print(f"[MajorLogin] ✅ Response decrypted OK (len={len(decrypted)})")
+            except Exception as e:
+                print(f"[MajorLogin] ⚠️ Response NOT encrypted: {e}")
                 decrypted = raw
 
             pb = ProtoBuf(decrypted)
@@ -451,12 +440,15 @@ class APIClient:
                 key_extracted = _as_bytes(pb2.EXTRACT_FIELDS([22], mode="bytes"))
                 iv_extracted = _as_bytes(pb2.EXTRACT_FIELDS([23], mode="bytes"))
 
-            if key_extracted and iv_extracted and len(key_extracted) == 16 and len(iv_extracted) == 16:
+            if key_extracted and iv_extracted:
                 self._data.key = key_extracted
                 self._data.iv = iv_extracted
+                print(f"[MajorLogin] ✅ key={key_extracted.hex()}")
+                print(f"[MajorLogin] ✅ iv ={iv_extracted.hex()}")
             else:
                 self._data.key = self.key
                 self._data.iv = self.iv
+                print(f"[MajorLogin] ⚠️ key/iv hardcode")
 
             jwt_bytes = None
             o = 0
@@ -482,6 +474,7 @@ class APIClient:
                 o = idx + 1
 
             if not jwt_bytes:
+                print(f"[MajorLogin] ❌ Không tìm thấy JWT")
                 return
 
             login_token = jwt_bytes.decode('utf-8', 'replace')
@@ -499,41 +492,46 @@ class APIClient:
             self._data.server = "VN"
             self._data.base_url = "https://clientbp.ppmainecoonghj.com"
             self._data.login_time = int(time.time())
-        except Exception:
-            pass
+
+            print(f"[MajorLogin] ✅ OK account_id={account_id}")
+        except Exception as e:
+            print("[MajorLogin]", e)
 
     def GetLoginData(self):
         try:
             if not self._data.login_token:
+                print("[GetLoginData] ❌ login_token rỗng")
                 return
 
+            # ============================================================
+            # ANDROID THẬT — Samsung Galaxy S10+
+            # ============================================================
             fields = {}
             fields[3] = str(datetime.datetime.now())[:-7]
             fields[4] = "free fire"
-            fields[5] = 1
-            fields[7] = "1.132.9"
-            fields[8] = "Android OS 10 / API-29 (NHG47O/eng.build.20231013.013027)"
+            fields[7] = "1.132.11"
+            fields[8] = "Android OS 12 / API-31 (SP1A.210812.016)"
             fields[9] = "Handheld"
-            fields[10] = "TelKila"
+            fields[10] = "Viettel"
             fields[11] = "WIFI"
             fields[12] = 1708
             fields[13] = 750
             fields[14] = "440"
             fields[15] = "ARM64 FP ASIMD AES | 2850 | 8"
             fields[16] = 3968
-            fields[17] = "Mali-G610 MC6"
+            fields[17] = "Mali-G76 MP12"
             fields[18] = "OpenGL ES 3.2 v1.r32p1-01eac0.54329dee8f160f288c574caaf67bbe3f"
-            fields[19] = "Google|0ecc7b3b-6c41-462e-9050-26d835e84c53"
-            fields[20] = "116.97.105.60"
+            fields[19] = "samsung|SM-G975F"
+            fields[20] = "116.98.241.133"
             fields[21] = "en"
             fields[22] = str(self._data.open_id)
             fields[23] = "4"
             fields[24] = "Handheld"
-            fields[25] = "Google Pixel"
-            fields[26] = "SG"
+            fields[25] = "SM-G975F"
+            fields[26] = "VN"
             fields[29] = str(self._data.access_token)
             fields[30] = 1
-            fields[41] = "TelKila"
+            fields[41] = "Viettel"
             fields[42] = "WIFI"
             fields[57] = "7428b253defc164018c604a1ebbfebdf"
             fields[60] = 109029
@@ -552,7 +550,7 @@ class APIClient:
             fields[78] = 3
             fields[79] = 2
             fields[81] = "64"
-            fields[83] = "2019121229"
+            fields[83] = "2019121207"
             fields[85] = 3
             fields[86] = "OpenGLES2"
             fields[87] = 511
@@ -590,7 +588,9 @@ class APIClient:
                 "Authorization": f"Bearer {self._data.login_token}",
             }
             r = requests.post(url, headers=headers, data=payload, verify=False, timeout=30)
+            print(f"[GetLoginData] HTTP {r.status_code}")
             if r.status_code != 200:
+                print(f"[GetLoginData] ❌ {r.text[:200]}")
                 return
 
             raw = r.content
@@ -611,16 +611,11 @@ class APIClient:
                 self._data.chat_port, self._data.chat_ip = chat[-5:], chat[:-6]
             if len(sv) > 6:
                 self._data.online_port, self._data.online_ip = sv[-5:], sv[:-6]
-        except Exception:
-            pass
+            print(f"[GetLoginData] ✅ OK online={self._data.online_ip}:{self._data.online_port}")
+        except Exception as e:
+            print("[GetLoginData]", e)
 
     def _auth_packet(self, fox=True):
-        tok = self._data.login_token
-        if not tok:
-            return None
-        if isinstance(tok, bytes):
-            tok = tok.decode("utf-8", "replace")
-
         regions = self.logindata.get("19") or []
         if isinstance(regions, dict):
             regions = [regions]
@@ -628,30 +623,20 @@ class APIClient:
             lambda s: s[str(rec).upper()] if str(rec).upper() in s else None)(
             {str(x["2"]).upper(): x["1"] for x in regions if isinstance(x, dict) and "1" in x and "2" in x}
         )
-
-        if not self._data.key or not self._data.iv:
-            return None
-        if len(self._data.key) != 16 or len(self._data.iv) != 16:
-            return None
-
+        tok = self._data.login_token
+        if isinstance(tok, bytes):
+            tok = tok.decode("utf-8", "replace")
         encrypts = AES_CBC128(str(tok).encode(), self._data.key, self._data.iv)
-
-        if len(encrypts) == 0:
-            return None
-
         region = int(_scalar(esid(self._data.server)) or 1)
         aid = int(_scalar(self._data.account_id) or 0)
         kts = int(_scalar(self._data.login_time) or 0)
-
-        if aid == 0:
-            return None
-
-        cmd = 1 if fox else (101 + (aid % 50))
+        cmd = 1 if fox else 101
         hdr = (
             bytes([cmd & 0xFF, region & 0xFF])
             + struct.pack(">Q", aid)
             + struct.pack(">I", kts & 0xFFFFFFFF)
         )
+        print(f"[PKT] {'XT' if fox else 'LOBBY'}: cmd={cmd} region={region} aid={aid} kts={kts} enc={len(encrypts)}")
         if fox:
             return hdr + struct.pack(">I", len(encrypts)) + encrypts
         return hdr + struct.pack(">Q", len(encrypts)) + encrypts
@@ -659,16 +644,18 @@ class APIClient:
     def TAO_PACKET_XT(self) -> str:
         try:
             return self._auth_packet(True)
-        except Exception: return None
+        except Exception as e: print(e)
 
     def TAO_PACKET_LOBBY(self):
         try:
             return self._auth_packet(False)
-        except Exception: return None
+        except Exception as e: print(e)
 
     def auth(self, access_token, is_emulator=False):
         try:
             self.is_emulator = is_emulator
+            print(f"[auth] Bắt đầu — token={'guest' if ':' in access_token else 'access_token'}")
+
             if ":" in access_token:
                 uid, password = access_token.split(":")
                 self.auth_guest_token(int(uid), password)
@@ -676,23 +663,28 @@ class APIClient:
                 self.auth_token_inspect(access_token)
 
             if not self._data.access_token:
+                print("[auth] ❌ Không có access_token")
                 return "account not found"
+            print(f"[auth] ✅ open_id={self._data.open_id}")
 
             self.MajorLogin()
             if not self._data.login_token:
+                print("[auth] ❌ MajorLogin thất bại")
                 return "account not found"
 
             self.GetLoginData()
             if not self.logindata:
+                print("[auth] ❌ GetLoginData thất bại")
                 return "account not found"
 
             pkt = self.TAO_PACKET_XT()
             if not pkt:
+                print("[auth] ❌ TAO_PACKET_XT rỗng")
                 return "account not found"
 
             return self._build_api_response(pkt)
-        except Exception:
-            return "account not found"
+        except Exception as e:
+            print("[auth]", e)
 
     def _build_api_response(self, authpacket):
         if not self._data.login_token or not authpacket: return "account not found"
@@ -732,6 +724,7 @@ class APIClient:
         response["logindata"] = self.logindata
         response["GameServerAddress"] = saddress
         return response
+
 
 class FreeFireAPI:
     def __init__(self):
