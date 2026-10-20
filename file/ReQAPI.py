@@ -475,7 +475,8 @@ data.open_id or ""))
    fields[41] = "Verizon Wireless"
    fields[42] = "WIFI"
    fields[57] = str(tokendec.get("signature_md5", "1ac4b80ecf0478a44203bf8fac6120f5"))
-   fields[60] = 32969] = 29665
+   fields[60] = 32969
+   fields[61] = 29665
    fields[62] = 2479
    fields[63] = 900
    fields[64] = 31063
