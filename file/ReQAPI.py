@@ -6,7 +6,6 @@ from typing import Dict, Any, Optional, Tuple, Union, TypedDict, List
 from dataclasses import dataclass
 from enum import IntEnum
 
-
 class ProtoBuf:
     def __init__(self, data):
         self.data = data
@@ -213,24 +212,23 @@ class gayerr(Exception): pass
 
 @dataclass
 class account_data:
-    def __init__(self):
-        self.access_token = ""
-        self.open_id = ""
-        self.platform = 0x4
-        self.login_platform = 0x4
-        self.main_active_platform = 0x4
-        self.chat_ip = self.chat_port = self.online_ip = self.online_port = ""
-        self.create_time = None
-        self.expiry_time = None
-        self.guild_id = None
-        self.guild_code = None
-        self.login_token = None
-        self.account_id = None
-        self.server = None
-        self.base_url = None
-        self.login_time = None
-        self.key = None
-        self.iv = None
+    access_token = ""
+    open_id = ""
+    platform = 0x4
+    login_platform = 0x4
+    main_active_platform = 0x4
+    chat_ip = chat_port = online_ip = online_port = ""
+    create_time = None
+    expiry_time = None
+    guild_id = None
+    guild_code = None
+    login_token = None
+    account_id = None
+    server = None
+    base_url = None
+    login_time = None
+    key = None
+    iv = None
 
 
 class gringay:
@@ -250,11 +248,9 @@ class gringay:
         return time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(timestamp))
 
 def storeApps(package):
-    try:
-        I = requests.get(f"https://play.google.com/store/apps/%s" % package, timeout=15)
-        I = re.search(r'\[\[\["(\d+\.\d+\.\d+)"\]\]', I.text)
-        if I: return I.group(1)
-    except: pass
+    I = requests.get(f"https://play.google.com/store/apps/%s" % package)
+    I = re.search(r'\[\[\["(\d+\.\d+\.\d+)"\]\]', I.text)
+    if I: return I.group(1)
     return None
 
 def bdversion(ver: str = None):
@@ -265,7 +261,7 @@ def bdversion(ver: str = None):
                 result = play_store_app('com.dts.freefireth', lang="fr", country='fr')
                 ver = result['version']
             except Exception:
-                ver = "1.132.11"
+                ver = "1.132.9"
         r = requests.get(f'https://version.ggwhitehawk.com/live/ver.php?version={ver}&lang=en&device=android&channel=android&appsttore=googleplay&region=ME&whitelist_version=1.3.0&whitelist_sp_version=1.0.0&device_name=google%20G011A&device_CPU=ARMv7%20VFPv3%20NEON%20VMH&device_GPU=Adreno%20(TM)%20640&device_mem=1993', verify=False, timeout=10).json()
         data = {
             "server_url": r['server_url'],
@@ -277,7 +273,7 @@ def bdversion(ver: str = None):
         return {
             "server_url": "https://loginbp.ppmainecoonghj.com/",
             "latest_release_version": "OB55",
-            "remote_version": "1.132.11"
+            "remote_version": "1.132.9"
         }
 
 # Details: https://api.freefireservice.dnc.su/ff.status
@@ -291,7 +287,7 @@ class APIClient:
         self.is_emulator = False
         self.language = "en"
         self.base_url = detail_vers["server_url"]
-        self.client_version = "1.132.11"
+        self.client_version = "1.132.9"
         self.release_version = detail_vers.get("latest_release_version") or "OB55"
         self.key = bytes([89, 103, 38, 116, 99, 37, 68, 69, 117, 104, 54, 37, 90, 99, 94, 56])
         self.iv = bytes([54, 111, 121, 90, 68, 114, 50, 50, 69, 51, 121, 99, 104, 106, 77, 37])
@@ -308,30 +304,40 @@ class APIClient:
         })
 
     def auth_guest_token(self, uid, password):
-        payload = {
-            "uid": str(uid), "password": str(password),
-            "response_type": "token", "client_type": "2", "client_id": "100067", 
-            "client_secret": bytes([50, 101, 101, 52, 52, 56, 49, 57, 101, 57, 98, 52, 53, 57, 56, 56, 52, 53, 49, 52, 49, 48, 54, 55, 98, 50, 56, 49, 54, 50, 49, 56, 55, 52, 100, 48, 100, 53, 100, 55, 97, 102, 57, 100, 56, 102, 55, 101, 48, 48, 99, 49, 101, 53, 52, 55, 49,53, 98, 55, 100, 49, 101, 51]).decode()
-        }
         try:
+            password_hash = hashlib.sha256(str(password).encode()).hexdigest()
             data = requests.post(
-                "https://auth.garena.com/oauth/guest/token/grant",
-                data=payload,
+                "https://100067.connect.garena.com/api/v2/oauth/guest/token:grant",
                 headers={
-                    "Accept-Encoding": "gzip", "Accept-Encoding": "gzip, deflate",
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "User-Agent": "GarenaMSDK/4.0.44(M1811A2 ;Android 13;en;VN;app 1.132.11 2019121227;)",
-                }
+                    "Host": "100067.connect.garena.com",
+                    "User-Agent": "GarenaMSDK/4.0.44(Pixel ;Android 10;en;US;app 1.132.1 2019121229;)",
+                    "Content-Type": "application/json; charset=utf-8",
+                    "Accept": "application/json",
+                },
+                json={
+                    "client_id": 100067,
+                    "client_secret": "2ee44819e9b4598845141067b281621874d0d5d7af9d8f7e00c1e54715b7d1e3",
+                    "client_type": 2,
+                    "device_id": "",
+                    "password": password_hash,
+                    "response_type": "token",
+                    "uid": int(uid)
+                },
+                verify=False, timeout=30
             ).json()
-            if "access_token" not in data: return "account not found"
-            self._data.access_token = data["access_token"]
-            self._data.open_id = data["open_id"]
-            self._data.platform = data.get("platform", 0x4)
-            self._data.login_platform = data.get("login_platform", 0x4)
-            self._data.main_active_platform = data.get("main_active_platform")
-            self._data.create_time = data.get("create_time")
-            self._data.expiry_time = data.get("expiry_time")
-        except Exception as e: print(e)
+            if data.get("code") == 0 and "data" in data:
+                d = data["data"]
+                self._data.access_token = d.get("access_token")
+                self._data.open_id = d.get("open_id")
+                self._data.platform = int(d.get("platform", 4))
+                self._data.login_platform = self._data.platform
+                self._data.main_active_platform = self._data.platform
+                self._data.create_time = d.get("create_time")
+                self._data.expiry_time = d.get("expiry_time")
+                return
+            print("[auth_guest_token] fail:", data)
+        except Exception as e:
+            print("[auth_guest_token]", e)
 
     def auth_token_inspect(self, access_token):
         try:
@@ -339,81 +345,86 @@ class APIClient:
                 "https://auth.garena.com/oauth/token/inspect",
                 params={"token": access_token}
             ).json()
-            if "open_id" not in data: raise gayerr("Invalid access token")
+            if "open_id" not in data:
+                print("[auth_token_inspect] token không hợp lệ:", data)
+                return
             self._data.access_token = access_token
             self._data.open_id = data["open_id"]
-            self._data.platform = data.get("platform", 0x4)
-            self._data.login_platform = data.get("login_platform", 0x4)
-            self._data.main_active_platform = data.get("main_active_platform")
+            self._data.platform = int(data.get("platform", 4))
+            self._data.login_platform = self._data.platform
+            self._data.main_active_platform = self._data.platform
             self._data.create_time = data.get("create_time")
             self._data.expiry_time = data.get("expiry_time")
-        except Exception as e: pass
+            print(f"[auth_token_inspect] platform={self._data.platform}")
+        except Exception as e:
+            print("[auth_token_inspect]", e)
 
     def MajorLogin(self):
         try:
             fields = {}
             fields[3] = str(datetime.datetime.now())[:-7]
             fields[4] = "free fire"
-            fields[5] = 4
-            fields[7] = "1.132.11"
-            fields[8] = "Android OS 13 / API-33 (TKQ1.221114.001/V14.0.5.0.TMWINXM)"
+            fields[5] = 1
+            fields[7] = "1.132.9"
+            fields[8] = "Android OS 10 / API-29 (NHG47O/eng.build.20231013.013027)"
             fields[9] = "Handheld"
-            fields[10] = "Viettel"
+            fields[10] = "TelKila"
             fields[11] = "WIFI"
-            fields[12] = 2460
-            fields[13] = 1080
-            fields[14] = "396"
-            fields[15] = "ARM64 FP ASIMD AES | 2220 | 8"
-            fields[16] = 6144
-            fields[17] = "Mali-G88 MC2"
-            fields[18] = "OpenGL ES 3.2 v1.r38p1"
-            fields[19] = "Google|70a09a48-024f-41eb-b469-48ceeaddd717"
-            fields[20] = "103.16.33.109"
-            fields[21] = "vn"
+            fields[12] = 1708
+            fields[13] = 750
+            fields[14] = "440"
+            fields[15] = "ARM64 FP ASIMD AES | 2850 | 8"
+            fields[16] = 3968
+            fields[17] = "Mali-G610 MC6"
+            fields[18] = "OpenGL ES 3.2 v1.r32p1-01eac0.54329dee8f160f288c574caaf67bbe3f"
+            fields[19] = "Google|0ecc7b3b-6c41-462e-9050-26d835e84c53"
+            fields[20] = "116.97.105.60"
+            fields[21] = "en"
             fields[22] = str(self._data.open_id)
             fields[23] = "4"
             fields[24] = "Handheld"
-            fields[25] = "Xiaomi M1811A2"
-            fields[26] = "VN"
+            fields[25] = "Google Pixel"
+            fields[26] = "SG"
             fields[29] = str(self._data.access_token)
             fields[30] = 1
-            fields[41] = "Viettel"
+            fields[41] = "TelKila"
             fields[42] = "WIFI"
-            fields[57] = "1ac4b80ecf0478a44203bf8fac6120f5"
-            fields[60] = 108009
-            fields[61] = 4577
-            fields[62] = 5023
-            fields[63] = 4705
-            fields[64] = 108009
-            fields[65] = 4705
-            fields[66] = 108009
-            fields[67] = 4705
-            fields[70] = 4
+            fields[57] = "7428b253defc164018c604a1ebbfebdf"
+            fields[60] = 109029
+            fields[61] = 37616
+            fields[62] = 2048
+            fields[63] = 804
+            fields[64] = 37616
+            fields[65] = 109029
+            fields[66] = 37616
+            fields[67] = 109029
+            fields[70] = 2
             fields[73] = 3
-            fields[74] = "/data/app/~~Lcveu0bE3Su-0v-8dZs1iA==/com.dts.freefireth-OXz3AKXq1dG-OiCkvCxpzw==/lib/arm64"
+            fields[74] = "/data/app/com.dts.freefireth-oiglMJkEoNJlsRci10280Q==/lib/arm64"
             fields[76] = 1
-            fields[77] = "066a589fa3f5658377634fe7b1d88556|/data/app/~~Lcveu0bE3Su-0v-8dZs1iA==/com.dts.freefireth-OXz3AKXq1dG-OiCkvCxpzw==/base.apk"
-            fields[78] = 6
+            fields[77] = "b8e0cd5e295eee42f5860d3c86e483dd|/data/app/com.dts.freefireth-oiglMJkEoNJlsRci10280Q==/base.apk"
+            fields[78] = 3
             fields[79] = 2
             fields[81] = "64"
-            fields[83] = "2019121227"
+            fields[83] = "2019121229"
             fields[85] = 3
             fields[86] = "OpenGLES2"
-            fields[87] = 8191
+            fields[87] = 511
             fields[88] = 4
-            fields[90] = "Hồ Chí Minh"
-            fields[91] = "79"
-            fields[92] = 82257
-            fields[93] = "3rd_party"
-            fields[94] = "KqsHT4CPaUWuiOG6fcf+M5+h/P61J3pPOpRc30ZjhThtRk+NLj9s87M7wYZFCG9VwW5zxP5xxuTPaBBddXYNGsI/w5vWbgavlj7hZf5rGQKPgg3S"
+            fields[90] = "Hà Nội"
+            fields[91] = "01"
+            fields[92] = 4231
+            fields[93] = "android"
+            fields[94] = "KqsHT8at0g7Na/G7iOeF1IpesHMf+HoePFMFFE8Tq/dSk4fIbJ1j8TdV8OAyWIVnSmD2rM6vfFMtCD8Ig7iROgDJmIMrdtcB6orwuNRpMr4MVu3D7FoTcuQdq/8EyOkRQiUrbg=="
             fields[95] = 111207
             fields[96] = '{"cur_rate":null,"support_etc2":false}'
             fields[97] = 1
             fields[98] = 1
-            fields[99] = "0"
+            fields[99] = "4"
             fields[100] = "4"
-            fields[102] = bytes.fromhex('10554c14510e0a0134')
-            fields[104] = 82257
+            fields[102] = bytes.fromhex('4000434f07555f0637')
+            fields[103] = 1
+            fields[104] = 1797
             fields[105] = 1
             fields[106] = "https://dl.cdn.freefiremobile.com/live/ABHotUpdates/|https://dl-core.cdn.freefiremobile.com/live/ABHotUpdates/|4a0070ac356973792f002e0b25b96c3b"
             fields[107] = "c8e41b7a93f02d56e1a94c7b8203f5d1"
@@ -443,18 +454,21 @@ class APIClient:
             raw = r.content
             print(f"[MajorLogin] RESPONSE LEN: {len(raw)}")
 
+            # ⚠️ THỬ DECRYPT RESPONSE BẰNG KEY/IV HARDCODE
             decrypted = None
             try:
                 decrypted = unpad(AES.new(self.key, AES.MODE_CBC, self.iv).decrypt(raw), 16)
                 print(f"[MajorLogin] ✅ Response decrypted OK (len={len(decrypted)})")
             except Exception as e:
-                print(f"[MajorLogin] ⚠️ Response NOT encrypted: {e}")
+                print(f"[MajorLogin] ⚠️ Response NOT encrypted (hoặc key/iv khác): {e}")
                 decrypted = raw
 
+            # ⚠️ EXTRACT KEY/IV TỪ DECRYPTED (hoặc raw)
             pb = ProtoBuf(decrypted)
             key_extracted = _as_bytes(pb.EXTRACT_FIELDS([22], mode="bytes"))
             iv_extracted = _as_bytes(pb.EXTRACT_FIELDS([23], mode="bytes"))
 
+            # ⚠️ FALLBACK: thử offset 64
             if (not key_extracted or not iv_extracted) and len(decrypted) > 64:
                 pb2 = ProtoBuf(decrypted[64:])
                 key_extracted = _as_bytes(pb2.EXTRACT_FIELDS([22], mode="bytes"))
@@ -468,8 +482,11 @@ class APIClient:
             else:
                 self._data.key = self.key
                 self._data.iv = self.iv
-                print(f"[MajorLogin] ⚠️ key/iv hardcode")
+                print(f"[MajorLogin] ⚠️ key/iv hardcode (extract fail)")
+                print(f"[MajorLogin] key_extracted={key_extracted.hex() if key_extracted else None}")
+                print(f"[MajorLogin] iv_extracted ={iv_extracted.hex() if iv_extracted else None}")
 
+            # ⚠️ FIND JWT
             jwt_bytes = None
             o = 0
             while o < len(decrypted) - 1:
@@ -526,66 +543,67 @@ class APIClient:
             fields = {}
             fields[3] = str(datetime.datetime.now())[:-7]
             fields[4] = "free fire"
-            fields[5] = 4
-            fields[7] = "1.132.11"
-            fields[8] = "Android OS 13 / API-33 (TKQ1.221114.001/V14.0.5.0.TMWINXM)"
+            fields[5] = 1
+            fields[7] = "1.132.9"
+            fields[8] = "Android OS 10 / API-29 (NHG47O/eng.build.20231013.013027)"
             fields[9] = "Handheld"
-            fields[10] = "Viettel"
+            fields[10] = "TelKila"
             fields[11] = "WIFI"
-            fields[12] = 2460
-            fields[13] = 1080
-            fields[14] = "396"
-            fields[15] = "ARM64 FP ASIMD AES | 2220 | 8"
-            fields[16] = 6144
-            fields[17] = "Mali-G88 MC2"
-            fields[18] = "OpenGL ES 3.2 v1.r38p1"
-            fields[19] = "Google|70a09a48-024f-41eb-b469-48ceeaddd717"
-            fields[20] = "103.16.33.109"
-            fields[21] = "vn"
+            fields[12] = 1708
+            fields[13] = 750
+            fields[14] = "440"
+            fields[15] = "ARM64 FP ASIMD AES | 2850 | 8"
+            fields[16] = 3968
+            fields[17] = "Mali-G610 MC6"
+            fields[18] = "OpenGL ES 3.2 v1.r32p1-01eac0.54329dee8f160f288c574caaf67bbe3f"
+            fields[19] = "Google|0ecc7b3b-6c41-462e-9050-26d835e84c53"
+            fields[20] = "116.97.105.60"
+            fields[21] = "en"
             fields[22] = str(self._data.open_id)
             fields[23] = "4"
             fields[24] = "Handheld"
-            fields[25] = "Xiaomi M1811A2"
-            fields[26] = "VN"
+            fields[25] = "Google Pixel"
+            fields[26] = "SG"
             fields[29] = str(self._data.access_token)
             fields[30] = 1
-            fields[41] = "Viettel"
+            fields[41] = "TelKila"
             fields[42] = "WIFI"
-            fields[57] = "1ac4b80ecf0478a44203bf8fac6120f5"
-            fields[60] = 108009
-            fields[61] = 4577
-            fields[62] = 5023
-            fields[63] = 4705
-            fields[64] = 108009
-            fields[65] = 4705
-            fields[66] = 108009
-            fields[67] = 4705
-            fields[70] = 4
+            fields[57] = "7428b253defc164018c604a1ebbfebdf"
+            fields[60] = 109029
+            fields[61] = 37616
+            fields[62] = 2048
+            fields[63] = 804
+            fields[64] = 37616
+            fields[65] = 109029
+            fields[66] = 37616
+            fields[67] = 109029
+            fields[70] = 2
             fields[73] = 3
-            fields[74] = "/data/app/~~Lcveu0bE3Su-0v-8dZs1iA==/com.dts.freefireth-OXz3AKXq1dG-OiCkvCxpzw==/lib/arm64"
+            fields[74] = "/data/app/com.dts.freefireth-oiglMJkEoNJlsRci10280Q==/lib/arm64"
             fields[76] = 1
-            fields[77] = "066a589fa3f5658377634fe7b1d88556|/data/app/~~Lcveu0bE3Su-0v-8dZs1iA==/com.dts.freefireth-OXz3AKXq1dG-OiCkvCxpzw==/base.apk"
-            fields[78] = 6
+            fields[77] = "b8e0cd5e295eee42f5860d3c86e483dd|/data/app/com.dts.freefireth-oiglMJkEoNJlsRci10280Q==/base.apk"
+            fields[78] = 3
             fields[79] = 2
             fields[81] = "64"
-            fields[83] = "2019121227"
+            fields[83] = "2019121229"
             fields[85] = 3
             fields[86] = "OpenGLES2"
-            fields[87] = 8191
+            fields[87] = 511
             fields[88] = 4
-            fields[90] = "Hồ Chí Minh"
-            fields[91] = "79"
-            fields[92] = 82257
-            fields[93] = "3rd_party"
-            fields[94] = "KqsHT4CPaUWuiOG6fcf+M5+h/P61J3pPOpRc30ZjhThtRk+NLj9s87M7wYZFCG9VwW5zxP5xxuTPaBBddXYNGsI/w5vWbgavlj7hZf5rGQKPgg3S"
+            fields[90] = "Hà Nội"
+            fields[91] = "01"
+            fields[92] = 4231
+            fields[93] = "android"
+            fields[94] = "KqsHT8at0g7Na/G7iOeF1IpesHMf+HoePFMFFE8Tq/dSk4fIbJ1j8TdV8OAyWIVnSmD2rM6vfFMtCD8Ig7iROgDJmIMrdtcB6orwuNRpMr4MVu3D7FoTcuQdq/8EyOkRQiUrbg=="
             fields[95] = 111207
             fields[96] = '{"cur_rate":null,"support_etc2":false}'
             fields[97] = 1
             fields[98] = 1
-            fields[99] = "0"
+            fields[99] = "4"
             fields[100] = "4"
-            fields[102] = bytes.fromhex('10554c14510e0a0134')
-            fields[104] = 82257
+            fields[102] = bytes.fromhex('4000434f07555f0637')
+            fields[103] = 1
+            fields[104] = 1797
             fields[105] = 1
             fields[106] = "https://dl.cdn.freefiremobile.com/live/ABHotUpdates/|https://dl-core.cdn.freefiremobile.com/live/ABHotUpdates/|4a0070ac356973792f002e0b25b96c3b"
             fields[107] = "c8e41b7a93f02d56e1a94c7b8203f5d1"
@@ -610,6 +628,7 @@ class APIClient:
                 print(f"[GetLoginData] ❌ {r.text[:200]}")
                 return
 
+            # ⚠️ THỬ DECRYPT RESPONSE
             raw = r.content
             try:
                 dec = unpad(AES.new(self.key, AES.MODE_CBC, self.iv).decrypt(raw), 16)
@@ -740,7 +759,6 @@ class APIClient:
         response["logindata"] = self.logindata
         response["GameServerAddress"] = saddress
         return response
-
 
 class FreeFireAPI:
     def __init__(self):
