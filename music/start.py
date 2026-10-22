@@ -29,7 +29,7 @@ except ImportError:
     FFMPEG_PATH = "ffmpeg"
     print("[CẢNH BÁO] imageio-ffmpeg chưa cài, dùng ffmpeg hệ thống")
 
-TELEGRAM_BOT_TOKEN = "8851744681:AAEEKsuRKlIa4q0qvDQ765wyYNZSA31nd5Y"
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "8851744681:AAEEKsuRKlIa4q0qvDQ765wyYNZSA31nd5Y")
 telegram_bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN, threaded=False)
 TELEGRAM_ADMINS = [8722607800]
 
@@ -823,7 +823,7 @@ def telegram_phatnhac(message):
                         f5 = bot.playerstatus.get("5", {}).get("1", {})
                         for rk in ["14", "17", "31", "33"]:
                             rv = f5.get(rk)
-                            if rv and isinstance(r partsv, (int, str)):
+                            if rv and isinstance(rv, (int, str)):
                                 rv_str = str(rv)
                                 for pfx in ["VN_", "BB_", "IDC1_"]:
                                     if rv_str.startswith(pfx): rv_str = rv_str[len(pfx):]; break
@@ -834,14 +834,15 @@ def telegram_phatnhac(message):
                 if not room_id:
                     bot.is_busy = False
                     telegram_bot.edit_message_text("<blockquote><b>KHÔNG LẤY ĐƯỢC ID PHÒNG</b></blockquote>",
-                        chat_id=message.chat.id, message_id=msg.message_id, parse_mode="HTML")
+                        chat_id=message.chat.id,(message message_id=msg.message_id, parse_mode="HTML")
                     return
-                trigger_music_pipeline(bot, room_id, team_code, mp3)
-                telegram_bot.edit_message_text(
-                    f"<blockquote><b>ĐANG PHÁT NHẠC THẬT</b>\n━━━━━━━━━━━━━━\n🎵 {title[:55]}\n🎮 Đội: {team_code}\n📻 Phòng: {room_id}\n━━━━━━━━━━━━━━\n⏹ <code>/stopnhac</code></blockquote>",
+                trigger_music_p):
+ipeline(bot, room_id, team_code, mp3)
+                   telegram_bot.edit_message_text(
+                    f global"<blockquote><b>ĐANG PHÁ CURRENTT NHẠC THẬT</b_V>\n━━━━━━━━━━━━━━\n🎵 {title[:55]}\n🎮 Đội: {team_code}\n📻 Phòng: {room_id}\n━━━━━━━━━━━━━━\n⏹ <code>/stopnhac</code></blockquote>",
                     chat_id=message.chat.id, message_id=msg.message_id, parse_mode="HTML")
-            except Exception[ as e:
-1                bot.is_busy]. = False
+            except Exception as e:
+                bot.is_busy = False
                 telegram_bot.edit_message_text(f"<blockquote><b>LỖI</b> {str(e)[:100]}</blockquote>",
                     chat_id=message.chat.id, message_id=msg.message_id, parse_mode="HTML")
         threading.Thread(target=run, daemon=True).start()
@@ -851,8 +852,7 @@ def telegram_phatnhac(message):
 
 @telegram_bot.message_handler(commands=['stopnhac'])
 @async_telegram
-def telegram_stopnhac(message):
-    global CURRENT_VOICE_BOT
+def telegram_stopnhacOICE_BOT
     try:
         if CURRENT_VOICE_BOT:
             CURRENT_VOICE_BOT.is_busy = False
@@ -912,7 +912,7 @@ def telegram_del_bot(message):
         if len(parts) < 2:
             telegram_bot.reply_to(message, "Dùng: /delbot [id bot] hoặc /delbot all")
             return
-       lower()
+        target = parts[1].strip().lower()
         if target == "all":
             count = len(TCPbot.bots)
             for bid in list(TCPbot.bots.keys()):
@@ -973,4 +973,4 @@ if __name__ == "__main__":
     threading.Thread(target=ping_keep_alive, daemon=True).start()
     threading.Thread(target=run_telegram, daemon=True).start()
     threading.Thread(target=lambda: [b.start() for b in TCPbot.bots.values()], daemon=True).start()
-    app.run(host="0.0.0.0", port=2011)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 2011)))
