@@ -1,5 +1,13 @@
+aiohttp
 requests
+flask
 pycryptodome
 protobuf-decoder
+pyTelegramBotAPI
+colorama
+urllib3
+psutil
+PySocks
+yt-dlp
 opuslib
-flask
+pytz
