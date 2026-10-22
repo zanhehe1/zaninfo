@@ -59,12 +59,15 @@ class VoiceDispatcherGRTC:
         return pb_encode({1: voice_token, 2: pb_encode(device_dict), 3: auth_type, 4: "vn"})
 
     def decode_varint(self, data, start_idx):
-        result = 0; shift = 0; idx = start_idx
+        result = 0
+        shift = 0
+        idx = start_idx
         while True:
             b = data[idx]
             result |= (b & 0x7F) << shift
             idx += 1
-            if not (b & 0x80): break
+            if not (b & 0x80):
+                break
             shift += 7
         return result, idx
 
@@ -87,10 +90,14 @@ class VoiceDispatcherGRTC:
             voice_ip, voice_tcp_port = None, None
             idx = 0
             if idx < len(data) and data[idx] == 0x0A:
-                idx += 1; ip_len = data[idx]; idx += 1
-                voice_ip = data[idx:idx+ip_len].decode("utf-8"); idx += ip_len
+                idx += 1
+                ip_len = data[idx]
+                idx += 1
+                voice_ip = data[idx:idx+ip_len].decode("utf-8")
+                idx += ip_len
             if idx < len(data) and data[idx] == 0x10:
-                idx += 1; voice_tcp_port, _ = self.decode_varint(data, idx)
+                idx += 1
+                voice_tcp_port, _ = self.decode_varint(data, idx)
             if not voice_ip:
                 return None, None
             print(f"[VOICE-BƯỚC 2 OK] {voice_ip}:{voice_tcp_port}")
@@ -120,10 +127,15 @@ class VoiceTCPHandshakeGRTC:
         })
 
     def decode_varint(self, data, start_idx):
-        result = 0; shift = 0; idx = start_idx
+        result = 0
+        shift = 0
+        idx = start_idx
         while idx < len(data):
-            b = data[idx]; result |= (b & 0x7F) << shift; idx += 1
-            if not (b & 0x80): break
+            b = data[idx]
+            result |= (b & 0x7F) << shift
+            idx += 1
+            if not (b & 0x80):
+                break
             shift += 7
         return result, idx
 
@@ -140,7 +152,8 @@ class VoiceTCPHandshakeGRTC:
             fields_r1 = {}
             idx = 0
             while idx < len(resp1_payload):
-                tag_type = resp1_payload[idx]; idx += 1
+                tag_type = resp1_payload[idx]
+                idx += 1
                 field_num = tag_type >> 3
                 wire_type = tag_type & 0x07
                 if wire_type == 0:
@@ -148,16 +161,26 @@ class VoiceTCPHandshakeGRTC:
                     fields_r1[field_num] = val
                 elif wire_type == 2:
                     length, idx = self.decode_varint(resp1_payload, idx)
-                    raw = resp1_payload[idx:idx+length]; idx += length
+                    raw = resp1_payload[idx:idx+length]
+                    idx += length
                     fields_r1[field_num] = raw
-                else: break
+                else:
+                    break
             udp_port = fields_r1.get(2) or fields_r1.get(5)
             f13 = fields_r1.get(13, 0)
             f3 = fields_r1.get(3, 0)
-            ssrc = (f13 & 0xFFFFFFFF) if f13 else ((f3 & 0xFFFFFFFF) if f3 else random.randint(0x10000000, 0x7FFFFFFF))
+            if f13:
+                ssrc = f13 & 0xFFFFFFFF
+            elif f3:
+                ssrc = f3 & 0xFFFFFFFF
+            else:
+                ssrc = random.randint(0x10000000, 0x7FFFFFFF)
             f3_val = f3 & 0xFFFFFFFF
             f1_raw = fields_r1.get(1, b"")
-            custom_pb = (bytes([0x0A, len(f1_raw)]) + f1_raw) if f1_raw else resp1_payload
+            if f1_raw:
+                custom_pb = bytes([0x0A, len(f1_raw)]) + f1_raw
+            else:
+                custom_pb = resp1_payload
             writer.write(struct.pack(">I", len(custom_pb)) + custom_pb)
             await writer.drain()
             try:
@@ -211,7 +234,8 @@ class OpusVoiceClientGRTC:
         return bytes(header) + opus_data
 
     def udp_keepalive_loop(self):
-        ka_seq = 0xF00000; ka_ts = 0x74000000
+        ka_seq = 0xF00000
+        ka_ts = 0x74000000
         while self.is_running:
             time.sleep(2.0)
             try:
@@ -224,7 +248,8 @@ class OpusVoiceClientGRTC:
                 self.sock.sendto(bytes(pkt), (self.voice_ip, self.voice_udp_port))
                 ka_seq = (ka_seq + 1) & 0xFFFFFF
                 ka_ts = (ka_ts + 960) & 0xFFFFFFFF
-            except: pass
+            except Exception:
+                pass
 
     def _producer_thread(self, mp3_file, q):
         cmd = [FFMPEG_PATH, '-i', mp3_file,
@@ -245,10 +270,13 @@ class OpusVoiceClientGRTC:
                 q.put(opus_data, block=True, timeout=5.0)
         except Exception as e:
             print(f"[VOICE-PRODUCER LỖI] {e}")
-            try: q.put(None, block=False)
-            except: pass
+            try:
+                q.put(None, block=False)
+            except Exception:
+                pass
         finally:
-            proc.terminate(); proc.wait()
+            proc.terminate()
+            proc.wait()
 
     def start_music_stream(self, mp3_file, on_finish=None):
         self.is_running = True
@@ -285,15 +313,19 @@ class OpusVoiceClientGRTC:
                 packets_sent += 1
                 next_send += 0.020
                 sleep_for = next_send - time.perf_counter()
-                if sleep_for > 0: time.sleep(sleep_for)
-                elif sleep_for < -0.060: next_send = time.perf_counter()
+                if sleep_for > 0:
+                    time.sleep(sleep_for)
+                elif sleep_for < -0.060:
+                    next_send = time.perf_counter()
         except Exception as e:
             print(f"[VOICE-AUDIO LỖI] {e}")
         finally:
             self.is_running = False
             if on_finish:
-                try: on_finish()
-                except: pass
+                try:
+                    on_finish()
+                except Exception:
+                    pass
 
 
 def trigger_music_pipeline(bot, gvoice_room_id, gvoice_squad_id, music_file):
@@ -309,6 +341,7 @@ def trigger_music_pipeline(bot, gvoice_room_id, gvoice_squad_id, music_file):
 
         async def master_voice_pipeline():
             print(f"[VOICE-PIPELINE] Room={gvoice_room_id} Nhạc={music_file}")
+
             async def send_tcp_cmd(writer, cmd_id):
                 try:
                     clean_room_id = str(gvoice_room_id).replace("VN_", "")
@@ -320,19 +353,24 @@ def trigger_music_pipeline(bot, gvoice_room_id, gvoice_squad_id, music_file):
                     await writer.drain()
                 except Exception as e:
                     print(f"[VOICE-TX LỖI] CMD={cmd_id}: {e}")
+
             async def send_agora_join(writer):
                 try:
                     agora_pkt = bytes.fromhex("feffff7f")
                     writer.write(struct.pack(">I", len(agora_pkt)) + agora_pkt)
                     await writer.drain()
-                except: pass
+                except Exception:
+                    pass
+
             dispatcher = VoiceDispatcherGRTC()
             voice_ip, voice_tcp_port = await dispatcher.get_voice_server(_uid, gvoice_room_id, _app_id, _uuid)
-            if not voice_ip or not voice_tcp_port: return
+            if not voice_ip or not voice_tcp_port:
+                return
             await asyncio.sleep(0.1)
             handshake = VoiceTCPHandshakeGRTC(voice_ip, voice_tcp_port)
             udp_port, ssrc, fixed_2, v_reader, v_writer = await handshake.execute_handshake(_uid, gvoice_room_id, _app_id, _uuid)
-            if not udp_port or not ssrc: return
+            if not udp_port or not ssrc:
+                return
             await send_tcp_cmd(v_writer, 9)
             await asyncio.sleep(0.05)
             await send_agora_join(v_writer)
@@ -341,6 +379,7 @@ def trigger_music_pipeline(bot, gvoice_room_id, gvoice_squad_id, music_file):
             await asyncio.sleep(0.1)
             await send_tcp_cmd(v_writer, 24)
             await send_tcp_cmd(v_writer, 35)
+
             async def tcp_reader_and_keepalive():
                 last_cmd9_time = time.time()
                 music_started = False
@@ -348,11 +387,13 @@ def trigger_music_pipeline(bot, gvoice_room_id, gvoice_squad_id, music_file):
                     if time.time() - last_cmd9_time >= 18:
                         await send_tcp_cmd(v_writer, 9)
                         last_cmd9_time = time.time()
-                    phase = "header"; pay_len = 0
+                    phase = "header"
+                    pay_len = 0
                     try:
                         hdr = await asyncio.wait_for(v_reader.readexactly(4), timeout=1.0)
                         pay_len = struct.unpack(">I", hdr)[0]
-                        if pay_len == 0: continue
+                        if pay_len == 0:
+                            continue
                         if pay_len > 500_000:
                             print(f"[VOICE-TCP] pay_len lạ ({pay_len}), ngắt")
                             break
@@ -368,12 +409,15 @@ def trigger_music_pipeline(bot, gvoice_room_id, gvoice_squad_id, music_file):
                                 def _on_finish():
                                     print("[VOICE-FINISH] Hết nhạc")
                                     opus_client.is_running = False
-                                    try: v_writer.close()
-                                    except: pass
+                                    try:
+                                        v_writer.close()
+                                    except Exception:
+                                        pass
                                     try:
                                         bot.is_busy = False
                                         bot.rstatus = (0, 0)
-                                    except: pass
+                                    except Exception:
+                                        pass
                                 opus_client.start_music_stream(music_file, on_finish=_on_finish)
                         cmd_id = None
                         if len(payload) >= 3 and payload[0] == 0x0a:
@@ -394,9 +438,12 @@ def trigger_music_pipeline(bot, gvoice_room_id, gvoice_squad_id, music_file):
                             for _ in range(3):
                                 opus_client.send_open_mic()
                                 time.sleep(0.05)
-                        except: pass
+                        except Exception:
+                            pass
                         break
+
             await tcp_reader_and_keepalive()
+
         asyncio.set_event_loop(loop)
         try:
             loop.run_until_complete(master_voice_pipeline())
@@ -404,226 +451,269 @@ def trigger_music_pipeline(bot, gvoice_room_id, gvoice_squad_id, music_file):
             print(f"[VOICE-LOOP LỖI] {e}")
         finally:
             loop.close()
+
     threading.Thread(target=_start_music, daemon=True).start()
 
 
 class FreeFireTCP:
- def __init__(self, bot_config, manager):
-  self.bot_config = bot_config
-  self.manager = manager
-  self.running_event = threading.Event()
-  self.rstatus = (0, 0)
-  self.ids = []
-  self.status = True
-  self.started = False
-  self.base_url = "https://clientbp.ppmainecoonghj.com"
-  self.packetAuth = self.packetAuthLobby = self.playerstatus = None
-  self.AuthenCode = self.sock39699 = self.sock39801 = None
-  self.ChatIP = self.OnlineIP = self.OnlinePort = self.ChatPort = None
-  self.roomid = self.GuildIds = self.botid = None
-  self.key = self.iv = self.token = b''
-  self.botid = self.nickname = self.region = None
-  self._online_gen = 0
-  self._chat_gen = 0
-  self._online_lock = threading.Lock()
-  self.is_busy = False
+    def __init__(self, bot_config, manager):
+        self.bot_config = bot_config
+        self.manager = manager
+        self.running_event = threading.Event()
+        self.rstatus = (0, 0)
+        self.ids = []
+        self.status = True
+        self.started = False
+        self.base_url = "https://clientbp.ppmainecoonghj.com"
+        self.packetAuth = self.packetAuthLobby = self.playerstatus = None
+        self.AuthenCode = self.sock39699 = self.sock39801 = None
+        self.ChatIP = self.OnlineIP = self.OnlinePort = self.ChatPort = None
+        self.roomid = self.GuildIds = self.botid = None
+        self.key = self.iv = self.token = b''
+        self.botid = self.nickname = self.region = None
+        self._online_gen = 0
+        self._chat_gen = 0
+        self._online_lock = threading.Lock()
+        self.is_busy = False
 
- class bot_session:
-  def __init__(self, parent): self.par = parent
-  def __getattr__(self, name): return getattr(self.par._gen, name)
-  def reply(self, Id, Tp, Ms):
-   try:
-    if self.par.running_event.is_set() and self.par.sock39801:
-     self.par.sock39801.sendall(self.par._gen.send_message(Ms, Tp, Id))
-   except: pass
+    class bot_session:
+        def __init__(self, parent):
+            self.par = parent
 
- def _IIl(self, logindata, jsdata):
-   self._online_gen += 1
-   self._chat_gen += 1
-   self.cleanup()
-   time.sleep(0.5)
-   self._gen = TAO_PACKET(logindata, jsdata)
-   self._bot = self.bot_session(self)
-   self.running_event.set()
-   threading.Thread(target=self.connect39801, daemon=True).start()
-   time.sleep(1)
-   threading.Thread(target=self.connect39699, daemon=True).start()
+        def __getattr__(self, name):
+            return getattr(self.par._gen, name)
 
- def cleanup(self):
-  self.running_event.clear()
-  for sock in [self.sock39699, self.sock39801]:
-   try:
-    if sock:
-     try: sock.shutdown(socket.SHUT_RDWR)
-     except: pass
-     sock.close()
-   except: pass
-  self.sock39699 = self.sock39801 = None
+        def reply(self, Id, Tp, Ms):
+            try:
+                if self.par.running_event.is_set() and self.par.sock39801:
+                    self.par.sock39801.sendall(self.par._gen.send_message(Ms, Tp, Id))
+            except Exception:
+                pass
 
- def connect39801(self):
-  gen = self._chat_gen
-  if not self.running_event.is_set() or gen != self._chat_gen: return
-  client = None
-  try:
-   client = socket.create_connection((self.ChatIP, int(self.ChatPort)), timeout=10)
-   client.settimeout(10)
-   client.sendall(self.packetAuth)
-   print(f"[BOT] Chat OK {self.ChatIP}:{self.ChatPort}")
-   self.sock39801 = client
-   while self.running_event.is_set() and gen == self._chat_gen:
-    try:
-     data = client.recv(4096)
-     if len(data) == 0: break
-    except socket.timeout: continue
-    except: break
-  except Exception as e: print(f"Lỗi Chat: {e}")
-  finally:
-    if client:
-      try: client.close()
-      except: pass
-    if self.sock39801 is client: self.sock39801 = None
+    def _IIl(self, logindata, jsdata):
+        self._online_gen += 1
+        self._chat_gen += 1
+        self.cleanup()
+        time.sleep(0.5)
+        self._gen = TAO_PACKET(logindata, jsdata)
+        self._bot = self.bot_session(self)
+        self.running_event.set()
+        threading.Thread(target=self.connect39801, daemon=True).start()
+        time.sleep(1)
+        threading.Thread(target=self.connect39699, daemon=True).start()
 
- def connect39699(self):
-   gen = self._online_gen
-   if not self.running_event.is_set() or gen != self._online_gen: return
-   if not self._online_lock.acquire(blocking=False): return
-   client = None
-   try:
-      pkt = self.packetAuthLobby or self.packetAuth
-      if not pkt: return
-      client = socket.create_connection((self.OnlineIP, int(self.OnlinePort)), timeout=10)
-      client.settimeout(10)
-      client.sendall(pkt)
-      self.sock39699 = client
-      print(f"[BOT] Online OK uid={self.botid} {self.OnlineIP}:{self.OnlinePort}")
-      KEEPALIVE = ("f2", "f9", "f8", "9c", "bd", "cb", "c0", "c1", "dd")
-      while self.running_event.is_set() and gen == self._online_gen:
-         try:
-            data = client.recv(8192)
-            if len(data) == 0: break
-            hex_data = data.hex()
-            if len(data) <= 20 and hex_data[:2] in KEEPALIVE:
-               try: client.sendall(data)
-               except: pass
-               continue
-            if hex_data[:4] == "0f00":
-               try:
-                  decdata = json.loads(protobuf_dec(data.hex()[10:]))
-                  self.playerstatus = decdata
-               except: pass
-         except socket.timeout: continue
-         except: break
-   except Exception as e: print(f"Lỗi Online: {e}")
-   finally:
-    try: self._online_lock.release()
-    except: pass
-    if client:
-      try: client.close()
-      except: pass
-    if self.sock39699 is client: self.sock39699 = None
+    def cleanup(self):
+        self.running_event.clear()
+        for sock in [self.sock39699, self.sock39801]:
+            try:
+                if sock:
+                    try:
+                        sock.shutdown(socket.SHUT_RDWR)
+                    except Exception:
+                        pass
+                    sock.close()
+            except Exception:
+                pass
+        self.sock39699 = self.sock39801 = None
 
- def rstart(self):
-  access_token = self.bot_config['auth_bot_login']['access_token']
-  while self.running_event.is_set():
-   try:
-    data = FreeFireAPI().get(access_token, is_emulator=False)
-    if not data or data == "account not found" or (isinstance(data, str) and "account not found" in data):
-     print("[BOT] Đăng nhập thất bại, thử lại...")
-     time.sleep(10)
-     continue
-    if data.get("GuildData"):
-     self.AuthenCode = data.get("GuildData").get("secret_code")
-     self.GuildIds = data.get("GuildData").get("id")
-    self.packetAuth = bytes(data["UserAuthPacket"])
-    lobby = data.get("UserAuthPacketLobby")
-    self.packetAuthLobby = bytes(lobby) if lobby else self.packetAuth
-    self.botid = int(data["UserAccountUID"])
-    self.nickname = data.get("logindata", {}).get("4") or "Unknown"
-    self.region = str(data["LockRegion"])
-    self.token = data["UserAuthToken"]
-    self.ChatIP = data["GameServerAddress"]["chatip"]
-    self.OnlineIP = data["GameServerAddress"]["onlineip"]
-    self.OnlinePort = data["GameServerAddress"]["onlineport"]
-    self.ChatPort = data["GameServerAddress"]["chatport"]
-    self.key, self.iv = bytes(data["key"]), bytes(data["iv"])
-    self.base_url = data["BaseUrl"]
-    print(f"[BOT] Đăng nhập OK uid={self.botid} online={self.OnlineIP}:{self.OnlinePort}")
-    self._IIl(data["logindata"], data)
-    for _ in range(14555):
-     if not self.running_event.is_set(): break
-     time.sleep(1)
-   except Exception as e:
-    traceback.print_exc()
-    if self.running_event.is_set(): time.sleep(30)
+    def connect39801(self):
+        gen = self._chat_gen
+        if not self.running_event.is_set() or gen != self._chat_gen:
+            return
+        client = None
+        try:
+            client = socket.create_connection((self.ChatIP, int(self.ChatPort)), timeout=10)
+            client.settimeout(10)
+            client.sendall(self.packetAuth)
+            print(f"[BOT] Chat OK {self.ChatIP}:{self.ChatPort}")
+            self.sock39801 = client
+            while self.running_event.is_set() and gen == self._chat_gen:
+                try:
+                    data = client.recv(4096)
+                    if len(data) == 0:
+                        break
+                except socket.timeout:
+                    continue
+                except Exception:
+                    break
+        except Exception as e:
+            print(f"Lỗi Chat: {e}")
+        finally:
+            if client:
+                try:
+                    client.close()
+                except Exception:
+                    pass
+            if self.sock39801 is client:
+                self.sock39801 = None
 
- def start(self):
-  if self.started: return
-  self.started = True
-  self.running_event.set()
-  print(f"[BOT] Khởi động bot_id={self.bot_config.get('bot_id')}")
-  threading.Thread(target=self.rstart, daemon=True).start()
+    def connect39699(self):
+        gen = self._online_gen
+        if not self.running_event.is_set() or gen != self._online_gen:
+            return
+        if not self._online_lock.acquire(blocking=False):
+            return
+        client = None
+        try:
+            pkt = self.packetAuthLobby or self.packetAuth
+            if not pkt:
+                return
+            client = socket.create_connection((self.OnlineIP, int(self.OnlinePort)), timeout=10)
+            client.settimeout(10)
+            client.sendall(pkt)
+            self.sock39699 = client
+            print(f"[BOT] Online OK uid={self.botid} {self.OnlineIP}:{self.OnlinePort}")
+            KEEPALIVE = ("f2", "f9", "f8", "9c", "bd", "cb", "c0", "c1", "dd")
+            while self.running_event.is_set() and gen == self._online_gen:
+                try:
+                    data = client.recv(8192)
+                    if len(data) == 0:
+                        break
+                    hex_data = data.hex()
+                    if len(data) <= 20 and hex_data[:2] in KEEPALIVE:
+                        try:
+                            client.sendall(data)
+                        except Exception:
+                            pass
+                        continue
+                    if hex_data[:4] == "0f00":
+                        try:
+                            decdata = json.loads(protobuf_dec(data.hex()[10:]))
+                            self.playerstatus = decdata
+                        except Exception:
+                            pass
+                except socket.timeout:
+                    continue
+                except Exception:
+                    break
+        except Exception as e:
+            print(f"Lỗi Online: {e}")
+        finally:
+            try:
+                self._online_lock.release()
+            except Exception:
+                pass
+            if client:
+                try:
+                    client.close()
+                except Exception:
+                    pass
+            if self.sock39699 is client:
+                self.sock39699 = None
+
+    def rstart(self):
+        access_token = self.bot_config['auth_bot_login']['access_token']
+        while self.running_event.is_set():
+            try:
+                data = FreeFireAPI().get(access_token, is_emulator=False)
+                if not data or data == "account not found" or (isinstance(data, str) and "account not found" in data):
+                    print("[BOT] Đăng nhập thất bại, thử lại...")
+                    time.sleep(10)
+                    continue
+                if data.get("GuildData"):
+                    self.AuthenCode = data.get("GuildData").get("secret_code")
+                    self.GuildIds = data.get("GuildData").get("id")
+                self.packetAuth = bytes(data["UserAuthPacket"])
+                lobby = data.get("UserAuthPacketLobby")
+                self.packetAuthLobby = bytes(lobby) if lobby else self.packetAuth
+                self.botid = int(data["UserAccountUID"])
+                self.nickname = data.get("logindata", {}).get("4") or "Unknown"
+                self.region = str(data["LockRegion"])
+                self.token = data["UserAuthToken"]
+                self.ChatIP = data["GameServerAddress"]["chatip"]
+                self.OnlineIP = data["GameServerAddress"]["onlineip"]
+                self.OnlinePort = data["GameServerAddress"]["onlineport"]
+                self.ChatPort = data["GameServerAddress"]["chatport"]
+                self.key, self.iv = bytes(data["key"]), bytes(data["iv"])
+                self.base_url = data["BaseUrl"]
+                print(f"[BOT] Đăng nhập OK uid={self.botid} online={self.OnlineIP}:{self.OnlinePort}")
+                self._IIl(data["logindata"], data)
+                for _ in range(14555):
+                    if not self.running_event.is_set():
+                        break
+                    time.sleep(1)
+            except Exception as e:
+                traceback.print_exc()
+                if self.running_event.is_set():
+                    time.sleep(30)
+
+    def start(self):
+        if self.started:
+            return
+        self.started = True
+        self.running_event.set()
+        print(f"[BOT] Khởi động bot_id={self.bot_config.get('bot_id')}")
+        threading.Thread(target=self.rstart, daemon=True).start()
 
 
 class BOTMNG:
- def __init__(self):
-  self.bots = {}
-  self.config_lock = threading.RLock()
-  self.filename = "bot.json"
-  self.load_config()
-  threading.Thread(target=self._auto_run_all_bots, daemon=True).start()
+    def __init__(self):
+        self.bots = {}
+        self.config_lock = threading.RLock()
+        self.filename = "bot.json"
+        self.load_config()
+        threading.Thread(target=self._auto_run_all_bots, daemon=True).start()
 
- def _auto_run_all_bots(self):
-  time.sleep(2)
-  for bot_id, bot_instance in self.bots.items():
-   try:
-    if not bot_instance.started: bot_instance.start()
-   except: pass
+    def _auto_run_all_bots(self):
+        time.sleep(2)
+        for bot_id, bot_instance in self.bots.items():
+            try:
+                if not bot_instance.started:
+                    bot_instance.start()
+            except Exception:
+                pass
 
- def load_config(self):
-  try:
-   if os.path.exists(self.filename):
-    with open(self.filename, "r", encoding="utf-8") as f:
-     self.config = json.load(f)
-   else: self.config = {"bots": []}
-   if "bots" not in self.config: self.config["bots"] = []
-   for bot_data in self.config["bots"]:
-    bot_id = bot_data["bot_id"]
-    bot_instance = FreeFireTCP(bot_data, self)
-    if "botid" in bot_data: bot_instance.botid = bot_data["botid"]
-    if "nickname" in bot_data: bot_instance.nickname = bot_data["nickname"]
-    if "access_bot" in bot_data: bot_instance.bot_config["access_bot"] = bot_data["access_bot"]
-    self.bots[bot_id] = bot_instance
-  except Exception as e:
-   print(f"Lỗi tải cấu hình: {e}")
-   self.config = {"bots": []}
+    def load_config(self):
+        try:
+            if os.path.exists(self.filename):
+                with open(self.filename, "r", encoding="utf-8") as f:
+                    self.config = json.load(f)
+            else:
+                self.config = {"bots": []}
+            if "bots" not in self.config:
+                self.config["bots"] = []
+            for bot_data in self.config["bots"]:
+                bot_id = bot_data["bot_id"]
+                bot_instance = FreeFireTCP(bot_data, self)
+                if "botid" in bot_data:
+                    bot_instance.botid = bot_data["botid"]
+                if "nickname" in bot_data:
+                    bot_instance.nickname = bot_data["nickname"]
+                if "access_bot" in bot_data:
+                    bot_instance.bot_config["access_bot"] = bot_data["access_bot"]
+                self.bots[bot_id] = bot_instance
+        except Exception as e:
+            print(f"Lỗi tải cấu hình: {e}")
+            self.config = {"bots": []}
 
- def save_config(self):
-  try:
-   with self.config_lock:
-    for bot_id, bot_instance in self.bots.items():
-     for bot_config in self.config["bots"]:
-      if bot_config["bot_id"] == bot_id:
-       if hasattr(bot_instance, 'botid') and bot_instance.botid:
-        bot_config["botid"] = bot_instance.botid
-       if hasattr(bot_instance, 'nickname') and bot_instance.nickname:
-        bot_config["nickname"] = bot_instance.nickname
-    with open(self.filename, 'w', encoding='utf-8') as f:
-     json.dump(self.config, f, ensure_ascii=False, indent=2)
-  except: pass
+    def save_config(self):
+        try:
+            with self.config_lock:
+                for bot_id, bot_instance in self.bots.items():
+                    for bot_config in self.config["bots"]:
+                        if bot_config["bot_id"] == bot_id:
+                            if hasattr(bot_instance, 'botid') and bot_instance.botid:
+                                bot_config["botid"] = bot_instance.botid
+                            if hasattr(bot_instance, 'nickname') and bot_instance.nickname:
+                                bot_config["nickname"] = bot_instance.nickname
+                with open(self.filename, 'w', encoding='utf-8') as f:
+                    json.dump(self.config, f, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
 
- def add_bot(self, access_token):
-  with self.config_lock:
-   bot_id = 1 if not self.config["bots"] else max(b["bot_id"] for b in self.config["bots"]) + 1
-   new_bot = {
-    "bot_id": bot_id,
-    "auth_bot_login": {"access_token": access_token},
-    "access_bot": [],
-    "active-clan": True
-   }
-   self.config["bots"].append(new_bot)
-   self.save_config()
-   self.bots[bot_id] = FreeFireTCP(new_bot, self)
-   return {"status": True, "bot_id": bot_id}
+    def add_bot(self, access_token):
+        with self.config_lock:
+            bot_id = 1 if not self.config["bots"] else max(b["bot_id"] for b in self.config["bots"]) + 1
+            new_bot = {
+                "bot_id": bot_id,
+                "auth_bot_login": {"access_token": access_token},
+                "access_bot": [],
+                "active-clan": True
+            }
+            self.config["bots"].append(new_bot)
+            self.save_config()
+            self.bots[bot_id] = FreeFireTCP(new_bot, self)
+            return {"status": True, "bot_id": bot_id}
 
 
 TCPbot = BOTMNG()
@@ -635,37 +725,48 @@ def get_available_bots(count=1):
     for b in TCPbot.bots.values():
         if (b.running_event.is_set() and getattr(b, "sock39699", None) and not getattr(b, "is_busy", False)):
             available.append(b)
-            if len(available) == count: break
+            if len(available) == count:
+                break
     return available
 
 
 CHAT_GROUP_ID_1 = "@zancommunity"
 CHAT_GROUP_ID_2 = "@zanxchannel"
 
+
 def is_telegram_admin(user_id):
     return user_id in TELEGRAM_ADMINS
 
+
 def check_user_in_group(user_id):
-    if is_telegram_admin(user_id): return True
+    if is_telegram_admin(user_id):
+        return True
     in_g1 = in_g2 = False
     try:
         m = telegram_bot.get_chat_member(CHAT_GROUP_ID_1, user_id)
-        if m.status in ['member', 'creator', 'administrator']: in_g1 = True
-    except: pass
+        if m.status in ['member', 'creator', 'administrator']:
+            in_g1 = True
+    except Exception:
+        pass
     try:
         m = telegram_bot.get_chat_member(CHAT_GROUP_ID_2, user_id)
-        if m.status in ['member', 'creator', 'administrator']: in_g2 = True
-    except: pass
+        if m.status in ['member', 'creator', 'administrator']:
+            in_g2 = True
+    except Exception:
+        pass
     return in_g1 and in_g2
+
 
 def send_warn_join_group(message):
     telegram_bot.reply_to(message, "<blockquote><b>VUI LÒNG THAM GIA 2 NHÓM</b>\n@zancommunity\n@zanxchannel</blockquote>", parse_mode="HTML")
+
 
 def check_group_only(func):
     @wraps(func)
     def wrapper(message, *args, **kwargs):
         return func(message, *args, **kwargs)
     return wrapper
+
 
 def async_telegram(func):
     @wraps(func)
@@ -689,7 +790,8 @@ def _search_youtube(query, max_results=10):
             return []
         results = []
         for line in r.stdout.strip().split("\n"):
-            if not line.strip(): continue
+            if not line.strip():
+                continue
             try:
                 j = json.loads(line)
                 results.append({
@@ -698,11 +800,13 @@ def _search_youtube(query, max_results=10):
                     "duration": j.get("duration", 0),
                     "uploader": j.get("uploader", ""),
                 })
-            except: continue
+            except Exception:
+                continue
         return results
     except Exception as e:
         print(f"[NHẠC] Lỗi tìm: {e}")
         return []
+
 
 def _download_music(video_id, title):
     try:
@@ -744,11 +848,12 @@ def telegram_timnhac(message):
             return
         query = parts[1].strip()
         msg = telegram_bot.reply_to(message, f"<blockquote><b>ĐANG TÌM</b> <code>{query}</code>...</blockquote>", parse_mode="HTML")
+
         def run():
             try:
                 results = _search_youtube(query, 10)
                 if not results:
-                    telegram_bot.edit_message_text(f"<blockquote><b>KHÔNG TÌM THẤY</b></blockquote>",
+                    telegram_bot.edit_message_text("<blockquote><b>KHÔNG TÌM THẤY</b></blockquote>",
                         chat_id=message.chat.id, message_id=msg.message_id, parse_mode="HTML")
                     return
                 music_search_cache[message.from_user.id] = {"query": query, "results": results}
@@ -757,11 +862,12 @@ def telegram_timnhac(message):
                     dur = r.get("duration") or 0
                     m, s = divmod(int(dur), 60) if dur else (0, 0)
                     text += f"<b>{i}.</b> {r['title'][:50]}\n   ⏱ {m}:{s:02d} | 👤 {r.get('uploader','')[:20]}\n\n"
-                text += f"━━━━━━━━━━━━━━\n<code>/phatnhac [mã đội] [số]</code></blockquote>"
+                text += "━━━━━━━━━━━━━━\n<code>/phatnhac [mã đội] [số]</code></blockquote>"
                 telegram_bot.edit_message_text(text, chat_id=message.chat.id, message_id=msg.message_id, parse_mode="HTML")
             except Exception as e:
                 telegram_bot.edit_message_text(f"<blockquote><b>LỖI</b> {str(e)[:80]}</blockquote>",
                     chat_id=message.chat.id, message_id=msg.message_id, parse_mode="HTML")
+
         threading.Thread(target=run, daemon=True).start()
     except Exception as e:
         telegram_bot.reply_to(message, f"LỖI: {e}")
@@ -800,6 +906,7 @@ def telegram_phatnhac(message):
         msg = telegram_bot.reply_to(message,
             f"<blockquote><b>CHUẨN BỊ PHÁT</b>\n🎵 {title[:55]}\n🎮 Đội: {team_code}\n⏳ Đang tải nhạc...</blockquote>",
             parse_mode="HTML")
+
         def run():
             try:
                 mp3 = _download_music(video_id, title)
@@ -826,25 +933,28 @@ def telegram_phatnhac(message):
                             if rv and isinstance(rv, (int, str)):
                                 rv_str = str(rv)
                                 for pfx in ["VN_", "BB_", "IDC1_"]:
-                                    if rv_str.startswith(pfx): rv_str = rv_str[len(pfx):]; break
+                                    if rv_str.startswith(pfx):
+                                        rv_str = rv_str[len(pfx):]
+                                        break
                                 if rv_str.isdigit():
                                     room_id = "VN_" + rv_str
                                     break
-                    except: pass
+                    except Exception:
+                        pass
                 if not room_id:
                     bot.is_busy = False
                     telegram_bot.edit_message_text("<blockquote><b>KHÔNG LẤY ĐƯỢC ID PHÒNG</b></blockquote>",
-                        chat_id=message.chat.id,(message message_id=msg.message_id, parse_mode="HTML")
+                        chat_id=message.chat.id, message_id=msg.message_id, parse_mode="HTML")
                     return
-                trigger_music_p):
-ipeline(bot, room_id, team_code, mp3)
-                   telegram_bot.edit_message_text(
-                    f global"<blockquote><b>ĐANG PHÁ CURRENTT NHẠC THẬT</b_V>\n━━━━━━━━━━━━━━\n🎵 {title[:55]}\n🎮 Đội: {team_code}\n📻 Phòng: {room_id}\n━━━━━━━━━━━━━━\n⏹ <code>/stopnhac</code></blockquote>",
+                trigger_music_pipeline(bot, room_id, team_code, mp3)
+                telegram_bot.edit_message_text(
+                    f"<blockquote><b>ĐANG PHÁT NHẠC THẬT</b>\n━━━━━━━━━━━━━━\n🎵 {title[:55]}\n🎮 Đội: {team_code}\n📻 Phòng: {room_id}\n━━━━━━━━━━━━━━\n⏹ <code>/stopnhac</code></blockquote>",
                     chat_id=message.chat.id, message_id=msg.message_id, parse_mode="HTML")
             except Exception as e:
                 bot.is_busy = False
                 telegram_bot.edit_message_text(f"<blockquote><b>LỖI</b> {str(e)[:100]}</blockquote>",
                     chat_id=message.chat.id, message_id=msg.message_id, parse_mode="HTML")
+
         threading.Thread(target=run, daemon=True).start()
     except Exception as e:
         telegram_bot.reply_to(message, f"LỖI: {e}")
@@ -852,7 +962,8 @@ ipeline(bot, room_id, team_code, mp3)
 
 @telegram_bot.message_handler(commands=['stopnhac'])
 @async_telegram
-def telegram_stopnhacOICE_BOT
+def telegram_stopnhac(message):
+    global CURRENT_VOICE_BOT
     try:
         if CURRENT_VOICE_BOT:
             CURRENT_VOICE_BOT.is_busy = False
@@ -916,8 +1027,10 @@ def telegram_del_bot(message):
         if target == "all":
             count = len(TCPbot.bots)
             for bid in list(TCPbot.bots.keys()):
-                try: TCPbot.bots[bid].cleanup()
-                except: pass
+                try:
+                    TCPbot.bots[bid].cleanup()
+                except Exception:
+                    pass
                 del TCPbot.bots[bid]
             TCPbot.config["bots"] = []
             TCPbot.save_config()
@@ -927,8 +1040,10 @@ def telegram_del_bot(message):
         if bid not in TCPbot.bots:
             telegram_bot.reply_to(message, f"❌ Bot {bid} không tồn tại!")
             return
-        try: TCPbot.bots[bid].cleanup()
-        except: pass
+        try:
+            TCPbot.bots[bid].cleanup()
+        except Exception:
+            pass
         del TCPbot.bots[bid]
         TCPbot.config["bots"] = [b for b in TCPbot.config["bots"] if b.get("bot_id") != bid]
         TCPbot.save_config()
@@ -946,7 +1061,8 @@ def ping_keep_alive():
     while True:
         try:
             requests.get("https://zanmusic.onrender.com/", timeout=10)
-        except: pass
+        except Exception:
+            pass
         time.sleep(300)
 
 
