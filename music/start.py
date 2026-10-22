@@ -818,7 +818,7 @@ def telegram_phatnhac(message):
                     return
                 time.sleep(2.5)
                 room_id = None
-                if bot target.playerstatus:
+                if bot.playerstatus:
                     try:
                         f5 = bot.playerstatus.get("5", {}).get("1", {})
                         for rk in ["14", "17", "31", "33"]:
