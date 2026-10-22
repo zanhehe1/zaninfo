@@ -822,7 +822,7 @@ def telegram_phatnhac(message):
                     try:
                         f5 = bot.playerstatus.get("5", {}).get("1", {})
                         for rk in ["14", "17", "31", "33"]:
-                            rv = = f5.get(rk)
+                            rv = f5.get(rk)
                             if rv and isinstance(r partsv, (int, str)):
                                 rv_str = str(rv)
                                 for pfx in ["VN_", "BB_", "IDC1_"]:
