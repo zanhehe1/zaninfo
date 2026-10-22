@@ -1044,45 +1044,230 @@ def telegram_stopnhac(message):
 
 
 # ============================================================
-# SIMPLE ADMIN COMMANDS
+# ADMIN COMMANDS: /addbot /delbot /checkbot
 # ============================================================
 
 @telegram_bot.message_handler(commands=['addbot'])
 def telegram_add_bot(message):
     if not is_telegram_admin(message.from_user.id):
-        telegram_bot.reply_to(message, "Không có quyền!")
+        telegram_bot.reply_to(message, "❌ Không có quyền!")
         return
     try:
         parts = message.text.split()
         if len(parts) < 2:
-            telegram_bot.reply_to(message, "Dùng: /addbot [token]")
+            telegram_bot.reply_to(
+                message,
+                "<blockquote><b>SAI CÚ PHÁP</b>\n"
+                "Dùng: <code>/addbot [token]</code>\n"
+                "Ví dụ: <code>/addbot abc123def456...</code></blockquote>",
+                parse_mode="HTML"
+            )
             return
-        result = TCPbot.add_bot(parts[1])
-        if result["status"]:
+
+        token = parts[1].strip()
+
+        # Kiểm tra token đã tồn tại chưa
+        with TCPbot.config_lock:
+            for b in TCPbot.config.get("bots", []):
+                old_token = b.get("auth_bot_login", {}).get("access_token", "")
+                if old_token == token:
+                    telegram_bot.reply_to(
+                        message,
+                        f"❌ Token này đã tồn tại ở bot ID <b>{b.get('bot_id')}</b>!",
+                        parse_mode="HTML"
+                    )
+                    return
+
+        result = TCPbot.add_bot(token)
+        if result.get("status"):
             bot_id = result["bot_id"]
             TCPbot.bots[bot_id].start()
-            telegram_bot.reply_to(message, f"✅ Thêm bot ID {bot_id}")
+            telegram_bot.reply_to(
+                message,
+                f"<blockquote><b>✅ THÊM BOT THÀNH CÔNG</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"🤖 Bot ID: <code>{bot_id}</code>\n"
+                f"🔑 Token: <code>{token[:25]}...</code>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"⏳ Bot đang khởi động...</blockquote>",
+                parse_mode="HTML"
+            )
         else:
-            telegram_bot.reply_to(message, f"❌ {result.get('message', 'fail')}")
+            telegram_bot.reply_to(
+                message,
+                f"<blockquote><b>❌ THÊM BOT THẤT BẠI</b>\n"
+                f"Lý do: {result.get('message', 'unknown')}</blockquote>",
+                parse_mode="HTML"
+            )
     except Exception as e:
-        telegram_bot.reply_to(message, f"LỖI: {e}")
+        telegram_bot.reply_to(message, f"❌ LỖI: {str(e)[:100]}")
+
+
+@telegram_bot.message_handler(commands=['delbot'])
+def telegram_del_bot(message):
+    if not is_telegram_admin(message.from_user.id):
+        telegram_bot.reply_to(message, "❌ Không có quyền!")
+        return
+    try:
+        parts = message.text.split()
+        if len(parts) < 2:
+            telegram_bot.reply_to(
+                message,
+                "<blockquote><b>SAI CÚ PHÁP</b>\n"
+                "Dùng: <code>/delbot [botid]</code>\n"
+                "Hoặc: <code>/delbot all</code> (xóa tất cả)\n"
+                "Ví dụ: <code>/delbot 1</code></blockquote>",
+                parse_mode="HTML"
+            )
+            return
+
+        target = parts[1].strip().lower()
+
+        # ===== XÓA ALL =====
+        if target == "all":
+            count = len(TCPbot.bots)
+            if count == 0:
+                telegram_bot.reply_to(
+                    message,
+                    "<blockquote><b>⚠️ KHÔNG CÓ BOT</b>\nKhông có bot nào để xóa!</blockquote>",
+                    parse_mode="HTML"
+                )
+                return
+
+            for bid in list(TCPbot.bots.keys()):
+                try:
+                    TCPbot.bots[bid].cleanup()
+                except:
+                    pass
+                del TCPbot.bots[bid]
+
+            TCPbot.config["bots"] = []
+            TCPbot.save_config()
+
+            telegram_bot.reply_to(
+                message,
+                f"<blockquote><b>✅ ĐÃ XÓA TẤT CẢ</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"🗑 Đã xóa <b>{count}</b> bot khỏi hệ thống\n"
+                f"📁 Đã lưu <code>bot.json</code> rỗng</blockquote>",
+                parse_mode="HTML"
+            )
+            return
+
+        # ===== XÓA 1 BOT =====
+        try:
+            bid = int(target)
+        except:
+            telegram_bot.reply_to(
+                message,
+                "<blockquote><b>❌ LỖI</b>\nBot ID phải là số hoặc <code>all</code>!</blockquote>",
+                parse_mode="HTML"
+            )
+            return
+
+        if bid not in TCPbot.bots:
+            telegram_bot.reply_to(
+                message,
+                f"<blockquote><b>❌ KHÔNG TÌM THẤY</b>\nBot ID <code>{bid}</code> không tồn tại!</blockquote>",
+                parse_mode="HTML"
+            )
+            return
+
+        bot_name = getattr(TCPbot.bots[bid], 'nickname', 'Unknown')
+        bot_uid = getattr(TCPbot.bots[bid], 'botid', '?')
+
+        # Cleanup socket
+        try:
+            TCPbot.bots[bid].cleanup()
+        except:
+            pass
+
+        # Xóa khỏi RAM
+        del TCPbot.bots[bid]
+
+        # Xóa khỏi config
+        TCPbot.config["bots"] = [
+            b for b in TCPbot.config.get("bots", [])
+            if b.get("bot_id") != bid
+        ]
+        TCPbot.save_config()
+
+        telegram_bot.reply_to(
+            message,
+            f"<blockquote><b>✅ XÓA BOT THÀNH CÔNG</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"🤖 Bot ID: <code>{bid}</code>\n"
+            f"📛 Tên: <code>{bot_name}</code>\n"
+            f"🆔 UID: <code>{bot_uid}</code>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"📁 Đã xóa khỏi <code>bot.json</code></blockquote>",
+            parse_mode="HTML"
+        )
+    except Exception as e:
+        telegram_bot.reply_to(message, f"❌ LỖI: {str(e)[:100]}")
 
 
 @telegram_bot.message_handler(commands=['checkbot'])
 def telegram_checkbot(message):
     if not is_telegram_admin(message.from_user.id):
-        telegram_bot.reply_to(message, "Không có quyền!")
+        telegram_bot.reply_to(message, "❌ Không có quyền!")
         return
-    text = "<blockquote><b>DANH SÁCH BOT</b>\n━━━━━━━━━━━━━━\n"
-    for bid, bot in TCPbot.bots.items():
-        status = "🟢 Online" if bot.running_event.is_set() else "🔴 Offline"
-        busy = " (BUSY)" if getattr(bot, "is_busy", False) else ""
-        text += f"🤖 Bot {bid}: {status}{busy}\n"
-        text += f"   Tên: {getattr(bot, 'nickname', '?')}\n"
-        text += f"   UID: <code>{getattr(bot, 'botid', '?')}</code>\n\n"
-    text += "</blockquote>"
-    telegram_bot.reply_to(message, text, parse_mode="HTML")
+    try:
+        if not TCPbot.bots:
+            telegram_bot.reply_to(
+                message,
+                "<blockquote><b>📭 KHÔNG CÓ BOT</b>\nHệ thống chưa có bot nào!</blockquote>",
+                parse_mode="HTML"
+            )
+            return
 
+        total = len(TCPbot.bots)
+        online = sum(1 for b in TCPbot.bots.values() if b.running_event.is_set())
+        offline = total - online
+        busy = sum(1 for b in TCPbot.bots.values() if getattr(b, "is_busy", False))
+
+        text = (
+            f"<blockquote><b>📊 DANH SÁCH BOT</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"📦 Tổng: <b>{total}</b>\n"
+            f"🟢 Online: <b>{online}</b>\n"
+            f"🔴 Offline: <b>{offline}</b>\n"
+            f"⚡ Busy: <b>{busy}</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n\n"
+        )
+
+        for bid, bot in TCPbot.bots.items():
+            status_icon = "🟢" if bot.running_event.is_set() else "🔴"
+            status_text = "Online" if bot.running_event.is_set() else "Offline"
+            busy_tag = " <b>[BUSY]</b>" if getattr(bot, "is_busy", False) else ""
+            nickname = getattr(bot, 'nickname', '?') or '?'
+            bot_uid = getattr(bot, 'botid', '?') or '?'
+            region = getattr(bot, 'region', '?') or '?'
+
+            text += (
+                f"<b>🤖 Bot {bid}</b> {status_icon}{busy_tag}\n"
+                f"├ Tên: <code>{nickname}</code>\n"
+                f"├ UID: <code>{bot_uid}</code>\n"
+                f"├ Region: <code>{region}</code>\n"
+                f"└ Trạng thái: <b>{status_text}</b>\n\n"
+            )
+
+        text += "</blockquote>"
+
+        # Nếu quá dài, gửi file
+        if len(text) > 4000:
+            import io
+            plain = re.sub(r'<[^>]+>', '', text)
+            f = io.BytesIO(plain.encode('utf-8'))
+            f.name = "bots.txt"
+            telegram_bot.send_document(
+                message.chat.id, f,
+                caption=f"📊 Danh sách {total} bot"
+            )
+        else:
+            telegram_bot.reply_to(message, text, parse_mode="HTML")
+    except Exception as e:
+        telegram_bot.reply_to(message, f"❌ LỖI: {str(e)[:100]}")
 
 def run_telegram():
     print("Telegram bot đang chạy...")
