@@ -27,7 +27,7 @@ telegram_bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN, threaded=False)
 TELEGRAM_ADMINS = [8722607800]
 
 # ===== MUSIC CONFIG =====
-MUSIC_CACHE_DIR = "music_cache"
+MUSIC_CACHE_DIR = "/tmp/music_cache"
 os.makedirs(MUSIC_CACHE_DIR, exist_ok=True)
 music_search_cache = {}
 VOICE_APP_ID = "FFD58FB4F76F648C2A5E21EBCFA3AAE81B4C9B7D97"
