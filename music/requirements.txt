@@ -11,3 +11,4 @@ PySocks
 yt-dlp
 opuslib
 pytz
+imageio-ffmpeg
