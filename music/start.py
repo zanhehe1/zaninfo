@@ -878,87 +878,130 @@ def telegram_timnhac(message):
 def telegram_phatnhac(message):
     try:
         parts = message.text.split()
-        if len(parts) < 3:
-            telegram_bot.reply_to(message, "<blockquote><b>DÙNG:</b> <code>/phatnhac [mã đội] [số]</code></blockquote>", parse_mode="HTML")
+        if len(parts) < 2:
+            telegram_bot.reply_to(message, "<blockquote><b>DÙNG:</b>\n<code>/phatnhac [mã đội] [số]</code> → phát bài số\n<code>/phatnhac [mã đội]</code> → phát s1.mp3</blockquote>", parse_mode="HTML")
             return
         team_code = parts[1].strip()
         if not team_code.isdigit():
             telegram_bot.reply_to(message, "Mã đội phải là số!")
             return
-        choice = int(parts[2].strip())
-        user_cache = music_search_cache.get(message.from_user.id)
-        if not user_cache:
-            telegram_bot.reply_to(message, "Dùng /timnhac trước!")
-            return
-        results = user_cache.get("results", [])
-        if not (1 <= choice <= len(results)):
-            telegram_bot.reply_to(message, f"Số bài phải từ 1-{len(results)}")
-            return
-        selected = results[choice - 1]
-        title = selected.get("title", "Unknown")
-        video_id = selected.get("video_id", "")
+
         bots = get_available_bots(1)
         if not bots:
             telegram_bot.reply_to(message, "Không có bot rảnh!")
             return
         bot = bots[0]
         bot.is_busy = True
-        msg = telegram_bot.reply_to(message,
-            f"<blockquote><b>CHUẨN BỊ PHÁT</b>\n🎵 {title[:55]}\n🎮 Đội: {team_code}\n⏳ Đang tải nhạc...</blockquote>",
-            parse_mode="HTML")
 
-        def run():
+        # ===== TRƯỜNG HỢP 1: CÓ SỐ → PHÁT BÀI TỪ /timnhac =====
+        if len(parts) >= 3:
             try:
-                mp3 = _download_music(video_id, title)
-                if not mp3:
-                    bot.is_busy = False
-                    telegram_bot.edit_message_text("<blockquote><b>TẢI THẤT BẠI</b></blockquote>",
-                        chat_id=message.chat.id, message_id=msg.message_id, parse_mode="HTML")
-                    return
+                choice = int(parts[2].strip())
+            except ValueError:
+                bot.is_busy = False
+                telegram_bot.reply_to(message, "Số bài phải là số nguyên!")
+                return
+            user_cache = music_search_cache.get(message.from_user.id)
+            if not user_cache:
+                bot.is_busy = False
+                telegram_bot.reply_to(message, "Dùng /timnhac trước!")
+                return
+            results = user_cache.get("results", [])
+            if not (1 <= choice <= len(results)):
+                bot.is_busy = False
+                telegram_bot.reply_to(message, f"Số bài phải từ 1-{len(results)}")
+                return
+            selected = results[choice - 1]
+            title = selected.get("title", "Unknown")
+            video_id = selected.get("video_id", "")
+            msg = telegram_bot.reply_to(message,
+                f"<blockquote><b>CHUẨN BỊ PHÁT</b>\n🎵 {title[:55]}\n🎮 Đội: {team_code}\n⏳ Đang tải nhạc...</blockquote>",
+                parse_mode="HTML")
+
+            def run_music():
                 try:
-                    bot.sock39699.send(bot._bot.join_squad(int(team_code)))
-                    print(f"[PHÁT NHẠC] Vào đội {team_code}")
+                    mp3 = _download_music(video_id, title)
+                    if not mp3:
+                        bot.is_busy = False
+                        telegram_bot.edit_message_text("<blockquote><b>TẢI THẤT BẠI</b></blockquote>",
+                            chat_id=message.chat.id, message_id=msg.message_id, parse_mode="HTML")
+                        return
+                    _do_play(bot, team_code, mp3, title, msg, message)
                 except Exception as e:
                     bot.is_busy = False
-                    telegram_bot.edit_message_text(f"<blockquote><b>VÀO ĐỘI THẤT BẠI</b> {str(e)[:60]}</blockquote>",
+                    telegram_bot.edit_message_text(f"<blockquote><b>LỖI</b> {str(e)[:100]}</blockquote>",
                         chat_id=message.chat.id, message_id=msg.message_id, parse_mode="HTML")
-                    return
-                time.sleep(2.5)
-                room_id = None
-                if bot.playerstatus:
-                    try:
-                        f5 = bot.playerstatus.get("5", {}).get("1", {})
-                        for rk in ["14", "17", "31", "33"]:
-                            rv = f5.get(rk)
-                            if rv and isinstance(rv, (int, str)):
-                                rv_str = str(rv)
-                                for pfx in ["VN_", "BB_", "IDC1_"]:
-                                    if rv_str.startswith(pfx):
-                                        rv_str = rv_str[len(pfx):]
-                                        break
-                                if rv_str.isdigit():
-                                    room_id = "VN_" + rv_str
-                                    break
-                    except Exception:
-                        pass
-                if not room_id:
-                    bot.is_busy = False
-                    telegram_bot.edit_message_text("<blockquote><b>KHÔNG LẤY ĐƯỢC ID PHÒNG</b></blockquote>",
-                        chat_id=message.chat.id, message_id=msg.message_id, parse_mode="HTML")
-                    return
-                trigger_music_pipeline(bot, room_id, team_code, mp3)
-                telegram_bot.edit_message_text(
-                    f"<blockquote><b>ĐANG PHÁT NHẠC THẬT</b>\n━━━━━━━━━━━━━━\n🎵 {title[:55]}\n🎮 Đội: {team_code}\n📻 Phòng: {room_id}\n━━━━━━━━━━━━━━\n⏹ <code>/stopnhac</code></blockquote>",
-                    chat_id=message.chat.id, message_id=msg.message_id, parse_mode="HTML")
-            except Exception as e:
-                bot.is_busy = False
-                telegram_bot.edit_message_text(f"<blockquote><b>LỖI</b> {str(e)[:100]}</blockquote>",
-                    chat_id=message.chat.id, message_id=msg.message_id, parse_mode="HTML")
+            threading.Thread(target=run_music, daemon=True).start()
 
-        threading.Thread(target=run, daemon=True).start()
+        # ===== TRƯỜNG HỢP 2: KHÔNG SỐ → PHÁT s1.mp3 =====
+        else:
+            mp3 = "s1.mp3"
+            if not os.path.exists(mp3):
+                # thử tìm trong thư mục music
+                alt = os.path.join(os.path.dirname(os.path.abspath(__file__)), "s1.mp3")
+                if os.path.exists(alt):
+                    mp3 = alt
+                else:
+                    bot.is_busy = False
+                    telegram_bot.reply_to(message, "<blockquote><b>KHÔNG TÌM THẤY s1.mp3</b>\nUp file s1.mp3 cùng thư mục start.py</blockquote>", parse_mode="HTML")
+                    return
+            msg = telegram_bot.reply_to(message,
+                f"<blockquote><b>CHUẨN BỊ PHÁT</b>\n🎵 s1.mp3\n🎮 Đội: {team_code}</blockquote>",
+                parse_mode="HTML")
+
+            def run_default():
+                try:
+                    _do_play(bot, team_code, mp3, "s1.mp3", msg, message)
+                except Exception as e:
+                    bot.is_busy = False
+                    telegram_bot.edit_message_text(f"<blockquote><b>LỖI</b> {str(e)[:100]}</blockquote>",
+                        chat_id=message.chat.id, message_id=msg.message_id, parse_mode="HTML")
+            threading.Thread(target=run_default, daemon=True).start()
+
     except Exception as e:
         telegram_bot.reply_to(message, f"LỖI: {e}")
 
+
+def _do_play(bot, team_code, mp3, title, msg, message):
+    """Hàm dùng chung: join team + lấy room_id + trigger pipeline"""
+    try:
+        bot.sock39699.send(bot._bot.join_squad(int(team_code)))
+        print(f"[PHÁT NHẠC] Vào đội {team_code}", flush=True)
+    except Exception as e:
+        bot.is_busy = False
+        telegram_bot.edit_message_text(f"<blockquote><b>VÀO ĐỘI THẤT BẠI</b> {str(e)[:60]}</blockquote>",
+            chat_id=message.chat.id, message_id=msg.message_id, parse_mode="HTML")
+        return
+
+    time.sleep(2.5)
+    room_id = None
+    if bot.playerstatus:
+        try:
+            f5 = bot.playerstatus.get("5", {}).get("1", {})
+            for rk in ["14", "17", "31", "33"]:
+                rv = f5.get(rk)
+                if rv and isinstance(rv, (int, str)):
+                    rv_str = str(rv)
+                    for pfx in ["VN_", "BB_", "IDC1_"]:
+                        if rv_str.startswith(pfx):
+                            rv_str = rv_str[len(pfx):]
+                            break
+                    if rv_str.isdigit():
+                        room_id = "VN_" + rv_str
+                        break
+        except Exception:
+            pass
+
+    if not room_id:
+        bot.is_busy = False
+        telegram_bot.edit_message_text("<blockquote><b>KHÔNG LẤY ĐƯỢC ID PHÒNG</b></blockquote>",
+            chat_id=message.chat.id, message_id=msg.message_id, parse_mode="HTML")
+        return
+
+    trigger_music_pipeline(bot, room_id, team_code, mp3)
+    telegram_bot.edit_message_text(
+        f"<blockquote><b>ĐANG PHÁT NHẠC</b>\n━━━━━━━━━━━━━━\n🎵 {title[:55]}\n🎮 Đội: {team_code}\n📻 Phòng: {room_id}\n━━━━━━━━━━━━━━\n⏹ <code>/stopnhac</code></blockquote>",
+        chat_id=message.chat.id, message_id=msg.message_id, parse_mode="HTML")
 
 @telegram_bot.message_handler(commands=['stopnhac'])
 @async_telegram
