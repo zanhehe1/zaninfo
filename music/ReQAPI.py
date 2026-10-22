@@ -276,6 +276,8 @@ def bdversion(ver: str = None):
             "remote_version": "1.132.9"
         }
 
+# Details: https://api.freefireservice.dnc.su/ff.status
+# Telegram: @gringo_modz
 
 class APIClient:
     def __init__(self):
@@ -325,8 +327,7 @@ class APIClient:
             self._data.main_active_platform = data.get("main_active_platform")
             self._data.create_time = data.get("create_time")
             self._data.expiry_time = data.get("expiry_time")
-        except Exception:
-            pass
+        except Exception as e: print(e)
 
     def auth_token_inspect(self, access_token):
         try:
@@ -342,8 +343,7 @@ class APIClient:
             self._data.main_active_platform = data.get("main_active_platform")
             self._data.create_time = data.get("create_time")
             self._data.expiry_time = data.get("expiry_time")
-        except Exception:
-            pass
+        except Exception as e: pass
 
     def MajorLogin(self):
         try:
@@ -432,14 +432,20 @@ class APIClient:
                 "Accept-Encoding": "deflate, gzip",
             }
             r = requests.post(url, headers=headers, data=payload, verify=False, timeout=30)
+            print(f"[MajorLogin] HTTP {r.status_code}")
             if r.status_code != 200:
+                print(f"[MajorLogin] ❌ {r.text[:200]}")
                 return
 
             raw = r.content
+            print(f"[MajorLogin] RESPONSE LEN: {len(raw)}")
+
             decrypted = None
             try:
                 decrypted = unpad(AES.new(self.key, AES.MODE_CBC, self.iv).decrypt(raw), 16)
-            except Exception:
+                print(f"[MajorLogin] ✅ Response decrypted OK (len={len(decrypted)})")
+            except Exception as e:
+                print(f"[MajorLogin] ⚠️ Response NOT encrypted: {e}")
                 decrypted = raw
 
             pb = ProtoBuf(decrypted)
@@ -451,12 +457,15 @@ class APIClient:
                 key_extracted = _as_bytes(pb2.EXTRACT_FIELDS([22], mode="bytes"))
                 iv_extracted = _as_bytes(pb2.EXTRACT_FIELDS([23], mode="bytes"))
 
-            if key_extracted and iv_extracted and len(key_extracted) == 16 and len(iv_extracted) == 16:
+            if key_extracted and iv_extracted:
                 self._data.key = key_extracted
                 self._data.iv = iv_extracted
+                print(f"[MajorLogin] ✅ key={key_extracted.hex()}")
+                print(f"[MajorLogin] ✅ iv ={iv_extracted.hex()}")
             else:
                 self._data.key = self.key
                 self._data.iv = self.iv
+                print(f"[MajorLogin] ⚠️ key/iv hardcode")
 
             jwt_bytes = None
             o = 0
@@ -482,6 +491,7 @@ class APIClient:
                 o = idx + 1
 
             if not jwt_bytes:
+                print(f"[MajorLogin] ❌ Không tìm thấy JWT")
                 return
 
             login_token = jwt_bytes.decode('utf-8', 'replace')
@@ -499,12 +509,15 @@ class APIClient:
             self._data.server = "VN"
             self._data.base_url = "https://clientbp.ppmainecoonghj.com"
             self._data.login_time = int(time.time())
-        except Exception:
-            pass
+
+            print(f"[MajorLogin] ✅ OK account_id={account_id}")
+        except Exception as e:
+            print("[MajorLogin]", e)
 
     def GetLoginData(self):
         try:
             if not self._data.login_token:
+                print("[GetLoginData] ❌ login_token rỗng")
                 return
 
             fields = {}
@@ -590,7 +603,9 @@ class APIClient:
                 "Authorization": f"Bearer {self._data.login_token}",
             }
             r = requests.post(url, headers=headers, data=payload, verify=False, timeout=30)
+            print(f"[GetLoginData] HTTP {r.status_code}")
             if r.status_code != 200:
+                print(f"[GetLoginData] ❌ {r.text[:200]}")
                 return
 
             raw = r.content
@@ -611,16 +626,11 @@ class APIClient:
                 self._data.chat_port, self._data.chat_ip = chat[-5:], chat[:-6]
             if len(sv) > 6:
                 self._data.online_port, self._data.online_ip = sv[-5:], sv[:-6]
-        except Exception:
-            pass
+            print(f"[GetLoginData] ✅ OK online={self._data.online_ip}:{self._data.online_port}")
+        except Exception as e:
+            print("[GetLoginData]", e)
 
     def _auth_packet(self, fox=True):
-        tok = self._data.login_token
-        if not tok:
-            return None
-        if isinstance(tok, bytes):
-            tok = tok.decode("utf-8", "replace")
-
         regions = self.logindata.get("19") or []
         if isinstance(regions, dict):
             regions = [regions]
@@ -628,24 +638,13 @@ class APIClient:
             lambda s: s[str(rec).upper()] if str(rec).upper() in s else None)(
             {str(x["2"]).upper(): x["1"] for x in regions if isinstance(x, dict) and "1" in x and "2" in x}
         )
-
-        if not self._data.key or not self._data.iv:
-            return None
-        if len(self._data.key) != 16 or len(self._data.iv) != 16:
-            return None
-
+        tok = self._data.login_token
+        if isinstance(tok, bytes):
+            tok = tok.decode("utf-8", "replace")
         encrypts = AES_CBC128(str(tok).encode(), self._data.key, self._data.iv)
-
-        if len(encrypts) == 0:
-            return None
-
         region = int(_scalar(esid(self._data.server)) or 1)
         aid = int(_scalar(self._data.account_id) or 0)
         kts = int(_scalar(self._data.login_time) or 0)
-
-        if aid == 0:
-            return None
-
         cmd = 1 if fox else (101 + (aid % 50))
         hdr = (
             bytes([cmd & 0xFF, region & 0xFF])
@@ -659,16 +658,18 @@ class APIClient:
     def TAO_PACKET_XT(self) -> str:
         try:
             return self._auth_packet(True)
-        except Exception: return None
+        except Exception as e: print(e)
 
     def TAO_PACKET_LOBBY(self):
         try:
             return self._auth_packet(False)
-        except Exception: return None
+        except Exception as e: print(e)
 
     def auth(self, access_token, is_emulator=False):
         try:
             self.is_emulator = is_emulator
+            print(f"[auth] Bắt đầu — token={'guest' if ':' in access_token else 'access_token'}")
+
             if ":" in access_token:
                 uid, password = access_token.split(":")
                 self.auth_guest_token(int(uid), password)
@@ -676,23 +677,28 @@ class APIClient:
                 self.auth_token_inspect(access_token)
 
             if not self._data.access_token:
+                print("[auth] ❌ Không có access_token")
                 return "account not found"
+            print(f"[auth] ✅ open_id={self._data.open_id}")
 
             self.MajorLogin()
             if not self._data.login_token:
+                print("[auth] ❌ MajorLogin thất bại")
                 return "account not found"
 
             self.GetLoginData()
             if not self.logindata:
+                print("[auth] ❌ GetLoginData thất bại")
                 return "account not found"
 
             pkt = self.TAO_PACKET_XT()
             if not pkt:
+                print("[auth] ❌ TAO_PACKET_XT rỗng")
                 return "account not found"
 
             return self._build_api_response(pkt)
-        except Exception:
-            return "account not found"
+        except Exception as e:
+            print("[auth]", e)
 
     def _build_api_response(self, authpacket):
         if not self._data.login_token or not authpacket: return "account not found"
