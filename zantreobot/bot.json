@@ -263,7 +263,11 @@
         },
         {
           "uid": 18457983435,
-          "expire": "2054-03-08 06:31:21"
+          "expire": "2054-03-09 08:39:58"
+        },
+        {
+          "uid": 9883960202,
+          "expire": "2026-10-25 08:40:07"
         }
       ],
       "active-clan": true,
@@ -279,11 +283,60 @@
         {
           "uid": 93577258,
           "expire": "2026-11-21 07:24:18"
+        },
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-09 08:40:03"
         }
       ],
       "active-clan": true,
       "botid": 18827168156,
       "nickname": "thi؝؝؝."
+    },
+    {
+      "bot_id": 52,
+      "auth_bot_login": {
+        "access_token": "8330213454:D52F0AEE29C7BFEB324EBFE1DA0F0246501C6EB6DD2CF5A48F07311FB34613BD"
+      },
+      "access_bot": [
+        {
+          "uid": 4389961601,
+          "expire": "2026-10-29 09:44:19"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18837536652,
+      "nickname": "zan cute"
+    },
+    {
+      "bot_id": 53,
+      "auth_bot_login": {
+        "access_token": "8329954722:318DB2ACDEE6065C2CFAA0128A10515DD2008797925FEA0234F55F592FAB4A0A"
+      },
+      "access_bot": [
+        {
+          "uid": 9086472493,
+          "expire": "2026-11-06 08:41:54"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18836843309,
+      "nickname": "Boxyz@"
+    },
+    {
+      "bot_id": 54,
+      "auth_bot_login": {
+        "access_token": "8331332431:C631B729B5FE45316CFD30F0251643FAFFAC8F7C7BD54573F2599E66EE118C28"
+      },
+      "access_bot": [
+        {
+          "uid": 840494762,
+          "expire": "2026-10-30 12:24:55"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18840141979,
+      "nickname": "ngoc ngáo l"
     }
   ]
 }
