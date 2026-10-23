@@ -192,6 +192,10 @@
         {
           "uid": 1022221949,
           "expire": "2027-01-17 14:09:16"
+        },
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-09 13:28:08"
         }
       ],
       "active-clan": true,
@@ -337,6 +341,21 @@
       "active-clan": true,
       "botid": 18840141979,
       "nickname": "ngoc ngáo l"
+    },
+    {
+      "bot_id": 55,
+      "auth_bot_login": {
+        "access_token": "8331500402:5BED8A5267C0BBFA17776C40BC47D3152C81AC13634FAAE736B876914AFD78D7"
+      },
+      "access_bot": [
+        {
+          "uid": 353602463,
+          "expire": "2026-11-22 13:59:44"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18840591333,
+      "nickname": "thưn con mj"
     }
   ]
 }
