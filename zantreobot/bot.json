@@ -203,25 +203,6 @@
       "nickname": "@thaovy123."
     },
     {
-      "bot_id": 47,
-      "auth_bot_login": {
-        "access_token": "8326125097:6CBB8C62FBE53D69D76C52E611CEC22B5362AF677688AE1135B12B753355F108"
-      },
-      "access_bot": [
-        {
-          "uid": 18457983435,
-          "expire": "2054-03-08 05:46:26"
-        },
-        {
-          "uid": 281100969,
-          "expire": "2029-07-17 05:47:32"
-        }
-      ],
-      "active-clan": true,
-      "botid": 18826408519,
-      "nickname": "cha lũ dis_"
-    },
-    {
       "bot_id": 48,
       "auth_bot_login": {
         "access_token": "8323576339:D00013ABD89C0B1F2F8B11372CC04C58F36275572F18C486E94F51FA3B1021B4"
@@ -256,29 +237,6 @@
       "nickname": "mi xink؝"
     },
     {
-      "bot_id": 50,
-      "auth_bot_login": {
-        "access_token": "8321821240:D1BC624C4970472AA6D15C347C10A9F3EF3C64A5EBCBB0A448697FBD3F853A90"
-      },
-      "access_bot": [
-        {
-          "uid": 5149817139,
-          "expire": "2026-10-28 06:31:00"
-        },
-        {
-          "uid": 18457983435,
-          "expire": "2054-03-09 08:39:58"
-        },
-        {
-          "uid": 9883960202,
-          "expire": "2026-10-25 08:40:07"
-        }
-      ],
-      "active-clan": true,
-      "botid": 18815742018,
-      "nickname": "zan dev."
-    },
-    {
       "bot_id": 51,
       "auth_bot_login": {
         "access_token": "8326385177:BF35FBF7985E1CBA769B82E85C98B293234E9DC2327156DC08B3C9BC742751F2"
@@ -296,21 +254,6 @@
       "active-clan": true,
       "botid": 18827168156,
       "nickname": "thi؝؝؝."
-    },
-    {
-      "bot_id": 52,
-      "auth_bot_login": {
-        "access_token": "8330213454:D52F0AEE29C7BFEB324EBFE1DA0F0246501C6EB6DD2CF5A48F07311FB34613BD"
-      },
-      "access_bot": [
-        {
-          "uid": 4389961601,
-          "expire": "2026-10-29 09:44:19"
-        }
-      ],
-      "active-clan": true,
-      "botid": 18837536652,
-      "nickname": "zan cute"
     },
     {
       "bot_id": 53,
