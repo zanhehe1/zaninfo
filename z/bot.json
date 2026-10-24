@@ -8,7 +8,7 @@
       "access_bot": [
         {
           "uid": 18457983435,
-          "expire": "2054-03-09 08:37:28"
+          "expire": "2054-03-10 08:47:02"
         },
         {
           "uid": 3391643669,
@@ -27,7 +27,7 @@
       "access_bot": [
         {
           "uid": 18457983435,
-          "expire": "2054-03-09 08:37:34"
+          "expire": "2054-03-10 08:47:01"
         },
         {
           "uid": 3391643669,
@@ -37,6 +37,128 @@
       "active-clan": true,
       "botid": 18837834579,
       "nickname": "nguyn quy."
+    },
+    {
+      "bot_id": 3,
+      "auth_bot_login": {
+        "access_token": "8335107620:385F832FA6DD56DDEAE79D38D5B4C699CBA7FB57ADA7387FEE058683C2F7B7EC"
+      },
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-10 08:48:21"
+        },
+        {
+          "uid": 895016779,
+          "expire": "2027-01-31 08:57:11"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18849266161,
+      "nickname": "@nhat quang"
+    },
+    {
+      "bot_id": 4,
+      "auth_bot_login": {
+        "access_token": "8335337443:A68A9B0A8B66AC1F2C70055F3FD6321596D88A61E0E62CFCD1CE5AE566DA87F6"
+      },
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-10 08:56:42"
+        },
+        {
+          "uid": 895016779,
+          "expire": "2027-01-31 08:57:15"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18849792445,
+      "nickname": "@đời bạc vl"
+    },
+    {
+      "bot_id": 5,
+      "auth_bot_login": {
+        "access_token": "8330213454:D52F0AEE29C7BFEB324EBFE1DA0F0246501C6EB6DD2CF5A48F07311FB34613BD"
+      },
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-10 10:46:21"
+        },
+        {
+          "uid": 4389961601,
+          "expire": "2026-10-29 09:12:28"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18837536652,
+      "nickname": "zan cute"
+    },
+    {
+      "bot_id": 6,
+      "auth_bot_login": {
+        "access_token": "8326125097:6CBB8C62FBE53D69D76C52E611CEC22B5362AF677688AE1135B12B753355F108"
+      },
+      "access_bot": [
+        {
+          "uid": 281100969,
+          "expire": "2054-03-10 09:14:39"
+        },
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-10 10:48:12"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18826408519,
+      "nickname": "cha lũ dis_"
+    },
+    {
+      "bot_id": 7,
+      "auth_bot_login": {
+        "access_token": "8321821240:D1BC624C4970472AA6D15C347C10A9F3EF3C64A5EBCBB0A448697FBD3F853A90"
+      },
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-10 10:40:22"
+        },
+        {
+          "uid": 5149817139,
+          "expire": "2026-10-28 09:17:06"
+        },
+        {
+          "uid": 9883960202,
+          "expire": "2026-11-22 09:17:56"
+        },
+        {
+          "uid": 1877456038,
+          "expire": "2026-10-25 09:20:56"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18815742018,
+      "nickname": "zan dev."
+    },
+    {
+      "bot_id": 8,
+      "auth_bot_login": {
+        "access_token": "8335844040:554DF45934143A8DCB2C7208968B9D4B5F0F3741B6D1FE22EBFE228CEEF678FB"
+      },
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-10 10:48:47"
+        },
+        {
+          "uid": 281100969,
+          "expire": "2029-07-19 10:49:05"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18850935784,
+      "nickname": "thèm ăn đao"
     }
   ]
 }
