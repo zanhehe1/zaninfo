@@ -1,966 +1,649 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#060509">
-<meta name="description" content="Zan · nqbinhan — hồ sơ cá nhân, liên kết mạng xã hội và kỹ năng.">
-<title>Zan</title>
-<meta property="og:title" content="zan x nqbinhan">
-<meta property="og:description" content="Hồ sơ cá nhân, liên kết mạng xã hội và kỹ năng của zan.">
-<meta property="og:type" content="website">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%234d9dff'/%3E%3Cstop offset='1' stop-color='%237c6ef2'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Ctext x='32' y='46' font-size='40' font-weight='800' text-anchor='middle' fill='white' font-family='Arial,sans-serif'%3EZ%3C/text%3E%3C/svg%3E">
-<script>document.documentElement.classList.add('js');</script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --text:#fff;
-    --muted:#cfcfd6;
-    --rainbow:linear-gradient(90deg,#ff3b5c,#ff9d3b,#ffe83b,#4dff88,#3bd1ff,#7c6ef2,#ff3bd1,#ff3b5c);
-    --ease-out:cubic-bezier(.22,1,.36,1);
-    --spring:cubic-bezier(.34,1.56,.64,1);
-    font-family:'Be Vietnam Pro',sans-serif;
-  }
-  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html{ scroll-behavior:smooth; background:#060509; }
-  html,body{ margin:0; width:100%; min-height:100%; color:var(--text); overflow-x:hidden; }
-  body{ min-height:100vh; min-height:100svh; background:#060509; }
-  a{ color:inherit; text-decoration:none; }
-  ::selection{ background:#ff3b5c; color:#fff; }
-  :focus-visible{ outline:2px solid #fff; outline-offset:3px; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Free Fire Hex Decoder</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #e2e8f0;
+            --accent: #38bdf8;
+            --accent-hover: #0ea5e9;
+            --border: #334155;
+            --success: #22c55e;
+            --error: #ef4444;
+            --font-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
+        }
 
-  /* ===== NỀN ===== */
-  .bg{
-    position:fixed; top:0; left:0;
-    width:100vw; height:100vh; height:100svh;
-    z-index:0; overflow:hidden;
-    background:
-      radial-gradient(900px 600px at 15% -8%, rgba(77,157,255,.16), transparent 60%),
-      radial-gradient(800px 560px at 108% 12%, rgba(255,59,209,.14), transparent 60%),
-      radial-gradient(900px 700px at 50% 118%, rgba(124,110,242,.16), transparent 62%),
-      linear-gradient(165deg, #05060c 0%, #0a0a16 38%, #0d0a1a 62%, #060509 100%);
-    background-size:200% 200%, 200% 200%, 200% 200%, 100% 100%;
-    animation:bg-drift 22s ease-in-out infinite alternate;
-    transform:translate3d(0,0,0);
-    backface-visibility:hidden;
-  }
-  @keyframes bg-drift{
-    0%{ background-position:0% 0%, 100% 0%, 50% 100%, 0 0; }
-    100%{ background-position:10% 8%, 92% 10%, 46% 92%, 0 0; }
-  }
-  .bg::after{
-    content:''; position:absolute; inset:0;
-    background:radial-gradient(130% 90% at 50% 10%, transparent 40%, rgba(0,0,0,.42) 100%);
-  }
-  #weatherFx{ position:fixed; inset:0; width:100%; height:100%; z-index:3; pointer-events:none; opacity:.85; mix-blend-mode:screen; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-  /* ===== THANH TIẾN TRÌNH CUỘN ===== */
-  .progress{
-    position:fixed; top:0; left:0; right:0; height:3px; z-index:70;
-    transform:scaleX(0); transform-origin:0 50%;
-    background:var(--rainbow); background-size:300% auto;
-    animation:rainbow-flow 6s linear infinite;
-    pointer-events:none;
-  }
-  @keyframes rainbow-flow{ to{ background-position:300% center; } }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
 
-  /* ===== THANH ĐẦU TRANG ===== */
-  .topbar{
-    position:fixed; top:0; left:0; right:0; z-index:50; height:76px;
-    display:flex; align-items:center; justify-content:space-between;
-    padding:10px 24px;
-    background:rgba(10,9,16,.58);
-    backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
-    box-shadow:0 10px 30px rgba(0,0,0,.24);
-    transition:height .4s var(--ease-out), background .4s ease;
-  }
-  .topbar.scrolled{ height:62px; background:rgba(10,9,16,.8); }
-  .topbar::after{
-    content:''; position:absolute; left:0; right:0; bottom:-1px; height:2px;
-    background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.22) 12%,rgba(255,255,255,.72) 50%,rgba(255,255,255,.22) 88%,transparent 100%);
-    box-shadow:0 0 16px rgba(255,255,255,.16);
-  }
-  .brand{ display:flex; align-items:center; gap:9px; min-width:0; }
-  .brand-mark{
-    width:34px; height:34px; border-radius:11px; display:grid; place-items:center; flex-shrink:0;
-    background:linear-gradient(135deg,#4d9dff,#7c6ef2); color:#fff;
-    font-family:'Baloo 2',sans-serif; font-weight:800;
-    box-shadow:0 7px 18px rgba(77,157,255,.25);
-  }
-  .brand-title{
-    font-family:'Baloo 2',sans-serif; font-size:21px; line-height:1; font-weight:800; letter-spacing:.2px; white-space:nowrap;
-    background:linear-gradient(90deg,#4d9dff,#9b7cff,#ff5c91);
-    -webkit-background-clip:text; background-clip:text; color:transparent;
-  }
-  .brand-title span{ color:#fff; -webkit-text-fill-color:#fff; }
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: var(--accent);
+            text-align: center;
+            font-weight: 700;
+        }
 
-  .menu-btn{
-    position:relative; overflow:hidden;
-    width:42px; height:42px; border-radius:14px; cursor:pointer;
-    display:grid; place-items:center; color:#fff;
-    background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.16);
-    transition:background .28s ease, box-shadow .28s ease, transform .28s var(--ease-out);
-  }
-  .menu-dots{ display:flex; flex-direction:column; gap:4px; }
-  .menu-dots i{ width:4px; height:4px; border-radius:50%; background:#fff; display:block; }
+        p.subtitle {
+            color: #94a3b8;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
 
-  /* ===== MENU TRƯỢT ===== */
-  .menu-backdrop{
-    position:fixed; inset:0; z-index:80; background:rgba(0,0,0,.4);
-    opacity:0; pointer-events:none; transition:opacity .4s ease;
-  }
-  body.menu-open .menu-backdrop{ opacity:1; pointer-events:auto; }
-  .menu-panel{
-    position:fixed; top:0; right:0; z-index:90;
-    width:min(62vw,380px); min-width:260px; height:100vh; height:100dvh;
-    padding:92px 18px 28px; overflow:auto;
-    border-left:1px solid rgba(255,255,255,.18); border-radius:28px 0 0 28px;
-    background:linear-gradient(160deg,rgba(24,22,35,.97),rgba(10,9,16,.95));
-    backdrop-filter:blur(12px) saturate(120%); -webkit-backdrop-filter:blur(12px) saturate(120%);
-    box-shadow:-24px 0 70px rgba(0,0,0,.42), inset 1px 0 0 rgba(255,255,255,.08);
-    transform:translate3d(105%,0,0); visibility:hidden;
-    transition:transform .55s var(--ease-out), visibility 0s linear .55s;
-  }
-  body.menu-open .menu-panel{ transform:none; visibility:visible; transition:transform .55s var(--ease-out), visibility 0s; }
-  .menu-close{
-    position:absolute; top:16px; right:16px; overflow:hidden;
-    width:42px; height:42px; border-radius:14px; cursor:pointer; color:#fff;
-    display:grid; place-items:center;
-    background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.16);
-  }
-  .menu-close svg{ width:18px; height:18px; }
-  .menu-panel-title{ font-family:'Baloo 2',sans-serif; font-size:28px; font-weight:800; margin:0 0 4px; }
-  .menu-panel-sub{ color:rgba(255,255,255,.55); font-size:12.5px; margin-bottom:24px; }
-  .menu-item{
-    position:relative; overflow:hidden;
-    display:flex; align-items:center; width:100%;
-    padding:16px 15px; margin-bottom:12px; border-radius:18px; color:#fff;
-    font-size:15px; font-weight:600; background:rgba(255,255,255,.055);
-    border:1px solid rgba(255,255,255,.08); box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
-    opacity:0; translate:28px 0;
-    transition:transform .25s var(--ease-out), background .25s ease, border-color .25s ease, opacity .4s ease, translate .6s var(--spring);
-  }
-  body.menu-open .menu-item{
-    opacity:1; translate:0 0;
-    transition-delay:0s,0s,0s,calc(var(--i) * 70ms + 160ms),calc(var(--i) * 70ms + 160ms);
-  }
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border);
+        }
 
-  /* ===== BỐ CỤC ===== */
-  .page{
-    position:relative; z-index:2; min-height:100vh;
-    display:flex; flex-direction:column; align-items:center;
-    padding:108px 20px 96px;
-  }
-  .page::before{
-    content:''; position:absolute; left:50%; top:170px; width:200px; height:200px;
-    transform:translate(-50%,-50%); border-radius:50%;
-    background:radial-gradient(circle,rgba(112,154,255,.16),transparent 68%);
-    filter:blur(8px); pointer-events:none;
-    animation:soft-glow 5s ease-in-out infinite;
-  }
-  @keyframes soft-glow{
-    0%,100%{ opacity:.35; transform:translate(-50%,-50%) scale(.92); }
-    50%{ opacity:.85; transform:translate(-50%,-50%) scale(1.12); }
-  }
-  .hero{ display:flex; flex-direction:column; align-items:center; width:100%; }
-  .section{ width:100%; max-width:440px; scroll-margin-top:86px; }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
 
-  /* ===== HIỆN DẦN KHI LƯỚT ===== */
-  .rv{
-    transition:opacity .7s ease var(--d,0s), transform .9s var(--ease-out) var(--d,0s);
-  }
-  .rv-pop, .rv-avatar{ transition:opacity .6s ease var(--d,0s), transform 1s var(--spring) var(--d,0s); }
-  .js .rv:not(.in){ opacity:0; transform:translate3d(0,28px,0); }
-  .js .rv-l:not(.in){ transform:translate3d(-44px,0,0); }
-  .js .rv-r:not(.in){ transform:translate3d(44px,0,0); }
-  .js .rv-pop:not(.in){ transform:translate3d(0,22px,0) scale(.86); }
-  .js .rv-avatar:not(.in){ transform:scale(.45) rotate(-10deg); }
+        label {
+            font-weight: 600;
+            color: var(--accent);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
 
-  /* ===== AVATAR ===== */
-  .avatar-wrap{ position:relative; width:128px; height:128px; margin-bottom:22px; }
-  .avatar-pulse{
-    position:absolute; inset:-10px; border-radius:50%;
-    border:2px solid rgba(124,245,255,.5);
-    animation:pulse-out 2.8s ease-out infinite;
-  }
-  .avatar-pulse.delay{ animation-delay:1.4s; }
-  @keyframes pulse-out{
-    0%{ transform:scale(.85); opacity:.8; }
-    100%{ transform:scale(1.35); opacity:0; }
-  }
-  .avatar-ring{
-    position:relative; z-index:2; width:128px; height:128px; padding:4px; border-radius:50%; cursor:pointer;
-    background:conic-gradient(from 0deg,#ff3b5c,#ffb545,#7cf5ff,#8b5cf6,#ff3b5c);
-  }
-  .avatar-inner{ width:100%; height:100%; border-radius:50%; overflow:hidden; border:3px solid rgba(6,5,9,.9); background:#111; }
-  .avatar-inner img{ width:100%; height:100%; object-fit:cover; display:block; }
+        textarea {
+            width: 100%;
+            height: 150px;
+            background-color: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            color: var(--text);
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.2s;
+        }
 
-  .overline{ font-size:12.5px; font-weight:600; letter-spacing:2px; color:var(--muted); text-transform:uppercase; margin-bottom:8px; }
+        textarea:focus {
+            border-color: var(--accent);
+        }
 
-  /* ===== TÊN CẦU VỒNG ===== */
-  .name-wrap{ display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; }
-  #nameField{
-    margin:0; padding:0 6px;
-    font-family:'Baloo 2',sans-serif; font-weight:800;
-    font-size:clamp(38px,11vw,56px); line-height:1.1; text-align:center;
-    background:var(--rainbow); background-size:300% auto;
-    -webkit-background-clip:text; background-clip:text; color:transparent;
-    animation:rainbow-flow 6s linear infinite;
-    text-shadow:0 4px 30px rgba(0,0,0,.35);
-  }
-  .verified-badge{
-    width:30px; height:30px; flex-shrink:0; transform-origin:center;
-    filter:drop-shadow(0 2px 6px rgba(56,165,255,.4));
-    animation:badge-glow 3.5s ease-in-out infinite, badge-pop 4.8s cubic-bezier(.2,.8,.2,1) infinite;
-  }
-  @keyframes badge-glow{
-    0%,78%,100%{ filter:drop-shadow(0 2px 6px rgba(56,165,255,.4)); }
-    88%{ filter:drop-shadow(0 0 10px rgba(120,200,255,1)) drop-shadow(0 0 20px rgba(56,165,255,.9)); }
-  }
-  @keyframes badge-pop{
-    0%,78%,100%{ transform:scale(1) rotate(0deg); }
-    82%{ transform:scale(1.12) rotate(-4deg); }
-    86%{ transform:scale(1.02) rotate(3deg); }
-    90%{ transform:scale(1.06) rotate(0deg); }
-  }
-  .name-sub{
-    margin:8px 0 14px; text-align:center; color:rgba(255,255,255,.78);
-    font-size:15px; font-weight:700; letter-spacing:3.5px; text-transform:lowercase;
-    text-shadow:0 0 14px rgba(255,255,255,.18);
-  }
-  .typing-line{
-    min-height:22px; margin:-2px 0 22px; text-align:center;
-    color:rgba(255,255,255,.72); font-size:13px; font-weight:500; letter-spacing:.15px;
-    text-shadow:0 0 12px rgba(255,255,255,.12);
-  }
-  .typing-line::after{
-    content:''; display:inline-block; width:2px; height:15px; margin-left:4px; vertical-align:-2px;
-    background:rgba(255,255,255,.8); animation:caret-blink .75s steps(1,end) infinite;
-  }
-  @keyframes caret-blink{ 50%{ opacity:0; } }
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
 
-  /* ===== ICON MẠNG XÃ HỘI ===== */
-  .socials{ display:flex; gap:14px; margin-bottom:28px; }
-  .soc-btn{
-    position:relative; overflow:hidden;
-    width:58px; height:58px; border-radius:18px; cursor:pointer;
-    display:flex; align-items:center; justify-content:center; color:#fff;
-    background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.28);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.16), 0 8px 22px rgba(0,0,0,.28);
-    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
-    transition:transform .25s var(--ease-out), box-shadow .25s ease, background .25s ease, border-color .25s ease;
-  }
-  .soc-btn svg{
-    width:28px; height:28px; position:relative;
-    filter:drop-shadow(0 0 6px rgba(255,255,255,.85)) drop-shadow(0 0 14px rgba(255,255,255,.5));
-  }
+        button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #fff;
+            flex: 1;
+            min-width: 150px;
+        }
 
-  /* ===== DANH SÁCH LIÊN KẾT ===== */
-  .linklist{ display:flex; flex-direction:column; gap:12px; }
-  .link-row{
-    position:relative; overflow:hidden;
-    display:flex; align-items:center; gap:14px;
-    padding:14px 16px; border-radius:18px; cursor:pointer;
-    background:rgba(255,255,255,.075); border:1px solid rgba(255,255,255,.24);
-    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
-    box-shadow:0 10px 26px rgba(0,0,0,.35);
-    transition:transform .25s var(--ease-out), border-color .25s ease, box-shadow .25s ease;
-  }
-  .link-row::before{
-    content:''; position:absolute; left:0; top:0; bottom:0; width:4px;
-    background:var(--accent,linear-gradient(180deg,#8b5cf6,#ff3b5c));
-  }
-  .link-row::after{
-    content:''; position:absolute; top:0; left:-60%; width:50%; height:100%;
-    background:linear-gradient(120deg,transparent,rgba(255,255,255,.12),transparent);
-    transform:skewX(-20deg); animation:shine-sweep 3.6s ease-in-out infinite; pointer-events:none;
-  }
-  .linklist > :nth-child(2) .link-row::after{ animation-delay:.4s; }
-  .linklist > :nth-child(3) .link-row::after{ animation-delay:.8s; }
-  .linklist > :nth-child(4) .link-row::after{ animation-delay:1.2s; }
-  .linklist > :nth-child(5) .link-row::after{ animation-delay:1.6s; }
-  @keyframes shine-sweep{ 0%{ left:-60%; } 45%,100%{ left:130%; } }
-  .link-row.telegram-row{ --accent:linear-gradient(180deg,#42b3e5,#1e96d3); }
-  .link-row.tiktok-row{ --accent:linear-gradient(180deg,#25f4ee,#fe2c55); }
-  .link-row.instagram-row{ --accent:linear-gradient(180deg,#833AB4,#E1306C 55%,#FCAF45); }
-  .link-row.discord-row{ --accent:linear-gradient(180deg,#8b93ff,#5865F2); }
-  .link-row.website-row{ --accent:linear-gradient(180deg,#8b5cf6,#ff3b5c); }
-  .link-row .ic{
-    position:relative; z-index:2; width:42px; height:42px; border-radius:12px; flex-shrink:0;
-    display:flex; align-items:center; justify-content:center;
-    background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.24);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.16), 0 5px 16px rgba(0,0,0,.2);
-  }
-  .link-row .ic svg{ width:20px; height:20px; }
-  .ic.ig-bg, .ci-ic.ig-bg, .soc-btn.ig-bg{ background:radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%); border-color:rgba(255,255,255,.18); }
-  .ic.tt-bg, .ci-ic.tt-bg, .soc-btn.tt-bg{ background:#000; border-color:rgba(255,255,255,.18); }
-  .link-row .info{ position:relative; z-index:2; flex:1; min-width:0; }
-  .link-row .name{
-    font-family:'Baloo 2',sans-serif; font-weight:700; font-size:15.5px; letter-spacing:.2px; line-height:1.25;
-    background:var(--rainbow); background-size:300% auto;
-    -webkit-background-clip:text; background-clip:text; color:transparent;
-    animation:rainbow-flow 6s linear infinite;
-  }
-  .link-row .sub{ font-size:11.5px; color:var(--muted); font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .link-row .go{
-    position:relative; z-index:2; width:18px; height:18px; flex-shrink:0; opacity:.55;
-    transition:transform .3s var(--spring), opacity .3s ease;
-  }
+        .btn-primary {
+            background-color: var(--accent);
+            color: #0f172a;
+        }
 
-  /* ===== MY SKILL ===== */
-  .sec-head{ text-align:center; margin-bottom:22px; }
-  .sec-title{
-    margin:0; font-family:'Baloo 2',sans-serif; font-size:34px; font-weight:800; line-height:1.1;
-    background:linear-gradient(90deg,#35a8ff,#7c6ef2,#ff3bd1);
-    -webkit-background-clip:text; background-clip:text; color:transparent;
-  }
-  .sec-sub{ margin:6px 0 0; font-size:13px; color:rgba(255,255,255,.7); }
-  .skill-list{ display:flex; flex-direction:column; gap:14px; }
-  .skill{
-    position:relative; overflow:hidden;
-    padding:16px 18px 18px 20px; border-radius:20px; cursor:pointer;
-    background:rgba(255,255,255,.075); border:1px solid rgba(255,255,255,.24);
-    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
-    box-shadow:0 10px 26px rgba(0,0,0,.35);
-    transition:transform .25s var(--ease-out), border-color .25s ease, box-shadow .25s ease;
-  }
-  .skill::before{
-    content:''; position:absolute; left:0; top:0; bottom:0; width:4px;
-    background:linear-gradient(180deg,var(--a1),var(--a2));
-  }
-  .skill-top{ position:relative; display:flex; align-items:center; gap:14px; margin-bottom:14px; }
-  .skill .ic{
-    width:44px; height:44px; border-radius:13px; flex-shrink:0; display:grid; place-items:center;
-    background:linear-gradient(135deg,var(--a1),var(--a2));
-    box-shadow:0 8px 20px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.3);
-  }
-  .skill .ic svg{ width:22px; height:22px; fill:none; stroke:#fff; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
-  .skill-name{ font-family:'Baloo 2',sans-serif; font-weight:700; font-size:17px; line-height:1.2; }
-  .skill-sub{ font-size:12px; color:var(--muted); margin-top:1px; }
-  .skill-pct{
-    margin-left:auto; font-family:'Baloo 2',sans-serif; font-weight:800; font-size:24px; line-height:1;
-    font-variant-numeric:tabular-nums;
-    background:linear-gradient(90deg,var(--a1),var(--a2)); -webkit-background-clip:text; background-clip:text; color:transparent;
-  }
-  .bar{ position:relative; height:8px; border-radius:99px; background:rgba(255,255,255,.14); overflow:hidden; }
-  .bar i{
-    display:block; height:100%; border-radius:inherit;
-    background:linear-gradient(90deg,var(--a1),var(--a2));
-    box-shadow:0 0 14px var(--a1);
-    transform-origin:0 50%; transform:scaleX(calc(var(--lv) / 100));
-    transition:transform 1.5s var(--ease-out) calc(var(--d,0s) + .3s);
-  }
-  .js .rv:not(.in) .bar i{ transform:scaleX(0); }
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+        }
 
-  .chips{ display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-top:22px; }
-  .chip{
-    position:relative; overflow:hidden;
-    padding:9px 16px; border-radius:999px; cursor:pointer;
-    font-size:13px; font-weight:600;
-    background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.22);
-    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-    transition:transform .25s var(--ease-out), background .25s ease, border-color .25s ease;
-  }
-  .js .chips:not(.in) .chip{ opacity:0; }
-  .chips.in .chip{ animation:chip-in .7s var(--spring) backwards; animation-delay:calc(var(--i) * 70ms + var(--d,0s) + .15s); }
-  @keyframes chip-in{ from{ opacity:0; transform:translateY(16px) scale(.6); } }
+        .btn-secondary {
+            background-color: #334155;
+        }
 
-  /* ===== CHÂN TRANG ===== */
-  .foot{ margin-top:52px; text-align:center; font-size:12px; color:rgba(255,255,255,.5); letter-spacing:.4px; }
+        .btn-secondary:hover {
+            background-color: #475569;
+        }
 
-  /* ===== HIỆU ỨNG CHẠM ===== */
-  .ripple{ position:absolute; border-radius:50%; background:rgba(255,255,255,.3); pointer-events:none; z-index:1; }
-  .soc-btn:active, .link-row:active, .skill:active, .chip:active, .menu-item:active, .fab:active, .menu-btn:active, .menu-close:active{ transform:scale(.95); }
+        .result-section {
+            margin-top: 2rem;
+            border-top: 1px solid var(--border);
+            padding-top: 1.5rem;
+        }
 
-  @media (hover:hover){
-    .menu-btn:hover{ background:rgba(255,255,255,.16); }
-    .menu-item:hover{ background:rgba(255,255,255,.11); border-color:rgba(255,255,255,.18); }
-    .soc-btn:hover{
-      background:rgba(255,255,255,.11); border-color:rgba(255,255,255,.55);
-      box-shadow:inset 0 1px 0 rgba(255,255,255,.22), 0 10px 28px rgba(255,255,255,.1);
-      transform:translateY(-3px);
-    }
-    .link-row:hover{ transform:translateY(-3px); border-color:rgba(255,255,255,.42); box-shadow:0 16px 34px rgba(0,0,0,.35), 0 0 24px rgba(255,255,255,.06); }
-    .link-row:hover .go{ transform:translateX(4px); opacity:1; }
-    .skill:hover{ transform:translateY(-3px); border-color:rgba(255,255,255,.42); box-shadow:0 16px 34px rgba(0,0,0,.35); }
-    .chip:hover{ transform:translateY(-2px); background:rgba(255,255,255,.14); border-color:rgba(255,255,255,.45); }
-    .soc-btn:active, .link-row:active, .skill:active, .chip:active{ transform:scale(.95); }
-  }
+        .result-title {
+            font-size: 1.2rem;
+            color: var(--accent);
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
 
-  /* ===== NÚT NỔI ===== */
-  .fab{
-    position:fixed; bottom:18px; z-index:40; overflow:hidden;
-    width:48px; height:48px; border-radius:16px; cursor:pointer; color:#fff;
-    display:grid; place-items:center;
-    background:rgba(20,18,28,.78); border:1px solid rgba(255,255,255,.22);
-    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
-    box-shadow:0 10px 28px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12);
-    transition:transform .25s var(--ease-out), opacity .35s ease, visibility 0s;
-  }
-  .fab svg{ width:20px; height:20px; fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
-  .fab[hidden]{ display:none; }
-  .fab-top{ right:18px; }
-  .fab-top:not(.show){ opacity:0; visibility:hidden; transform:translateY(16px) scale(.8); transition:transform .35s var(--ease-out), opacity .3s ease, visibility 0s linear .35s; }
-  .fab-music{ left:18px; }
-  .eq{ display:flex; align-items:flex-end; gap:3px; height:18px; }
-  .eq i{ width:3px; height:100%; border-radius:2px; background:#fff; transform-origin:50% 100%; transform:scaleY(.22); transition:transform .3s ease; }
-  .fab-music.playing .eq i{ animation:eq 1s ease-in-out infinite; }
-  .fab-music.playing .eq i:nth-child(2){ animation-delay:-.35s; }
-  .fab-music.playing .eq i:nth-child(3){ animation-delay:-.7s; }
-  .fab-music.playing .eq i:nth-child(4){ animation-delay:-.15s; }
-  @keyframes eq{ 0%,100%{ transform:scaleY(.25); } 50%{ transform:scaleY(1); } }
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
 
-  @media (max-width:520px){
-    .topbar{ height:68px; padding:8px 16px; }
-    .topbar.scrolled{ height:58px; }
-    .brand-title{ font-size:19px; }
-    .page{ padding:98px 16px 96px; }
-    .name-wrap{ gap:6px; }
-    .name-sub{ font-size:17px; margin:10px 0 8px; letter-spacing:4px; }
-    .typing-line{ font-size:12.5px; margin-bottom:20px; }
-    .verified-badge{ width:26px; height:26px; }
-    .menu-panel{ width:72vw; min-width:0; padding:88px 14px 22px; border-radius:24px 0 0 24px; }
-    .menu-panel-title{ font-size:24px; }
-    .menu-item{ padding:14px 12px; font-size:14px; }
-    .link-row{ padding:15px 16px; border-radius:20px; }
-    .sec-title{ font-size:30px; }
-  }
+        @media (min-width: 768px) {
+            .result-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
 
-  @media (prefers-reduced-motion:reduce){
-    html{ scroll-behavior:auto; }
-    .bg{ animation:none; }
-    *,*::before,*::after{ animation:none !important; transition-duration:.01ms !important; transition-delay:0s !important; }
-    .rv, .js .rv:not(.in){ opacity:1 !important; transform:none !important; }
-    .js .chips:not(.in) .chip{ opacity:1; }
-    .js .rv:not(.in) .bar i{ transform:scaleX(calc(var(--lv) / 100)); }
-    .menu-item{ opacity:1; translate:0 0; }
-  }
+        .result-item {
+            background-color: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            overflow-wrap: break-word;
+            word-break: break-all;
+        }
 
-  /* ===== LIÊN HỆ ===== */
-  .contact{ margin-top:58px; }
-  .cta-card{
-    position:relative; overflow:hidden; text-align:center;
-    padding:24px 20px 24px; border-radius:22px;
-    background:rgba(255,255,255,.075); border:1px solid rgba(255,255,255,.24);
-    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
-    box-shadow:0 14px 34px rgba(0,0,0,.38);
-    transition:border-color .25s ease;
-  }
-  .cta-title{
-    margin:0; font-family:'Baloo 2',sans-serif; font-size:26px; font-weight:800; line-height:1.15;
-    background:linear-gradient(90deg,#35a8ff,#7c6ef2,#ff3bd1);
-    -webkit-background-clip:text; background-clip:text; color:transparent;
-  }
-  .cta-sub{ margin:6px 0 18px; font-size:13px; color:rgba(255,255,255,.72); }
-  .cta-row{ display:flex; flex-wrap:wrap; justify-content:center; gap:10px; }
-  .cta{
-    position:relative; overflow:hidden;
-    display:inline-flex; align-items:center; gap:8px;
-    padding:13px 20px; border:0; border-radius:999px; cursor:pointer; color:#fff;
-    font-family:'Be Vietnam Pro',sans-serif; font-size:14.5px; font-weight:700;
-    background:linear-gradient(135deg,#42b3e5,#7c6ef2 55%,#ff3bd1);
-    box-shadow:0 10px 26px rgba(124,110,242,.38);
-    transition:transform .25s var(--ease-out), box-shadow .25s ease;
-  }
-  .cta::after{
-    content:''; position:absolute; top:0; left:-60%; width:50%; height:100%;
-    background:linear-gradient(120deg,transparent,rgba(255,255,255,.3),transparent);
-    transform:skewX(-20deg); animation:shine-sweep 3.2s ease-in-out infinite; pointer-events:none;
-  }
-  .cta svg{ position:relative; z-index:2; width:18px; height:18px; flex-shrink:0; }
-  .cta span{ position:relative; z-index:2; }
-  .cta.ghost{
-    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.28);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.14); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-  }
-  .cta.ghost::after{ animation-delay:1.4s; }
-  .cta:active{ transform:scale(.95); }
+        .result-label {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
 
-  /* ===== THÔNG BÁO NHỎ ===== */
-  .toast{
-    position:fixed; left:50%; bottom:22px; z-index:100;
-    max-width:calc(100vw - 40px); padding:11px 18px; border-radius:999px;
-    font-size:13px; font-weight:600; text-align:center;
-    background:rgba(20,18,28,.92); border:1px solid rgba(255,255,255,.22);
-    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
-    box-shadow:0 12px 30px rgba(0,0,0,.4);
-    opacity:0; transform:translate(-50%,20px) scale(.9); pointer-events:none;
-    transition:opacity .3s ease, transform .5s var(--spring);
-  }
-  .toast.show{ opacity:1; transform:translate(-50%,0) scale(1); }
+        .result-value {
+            font-family: var(--font-mono);
+            font-size: 0.95rem;
+            color: var(--text);
+        }
 
-  /* ===== ÁNH SÁNG THEO CON TRỎ (máy tính) ===== */
-  @media (hover:hover){
-    .link-row:hover, .skill:hover, .cta-card:hover{
-      background-image:radial-gradient(240px circle at var(--mx,50%) var(--my,50%), rgba(255,255,255,.15), transparent 65%);
-    }
-    .cta-card:hover{ border-color:rgba(255,255,255,.42); }
-    .cta:hover{ transform:translateY(-2px); box-shadow:0 14px 32px rgba(124,110,242,.5); }
-    .cta.ghost:hover{ background:rgba(255,255,255,.14); border-color:rgba(255,255,255,.5); box-shadow:none; }
-  }
+        .result-value.highlight {
+            color: var(--success);
+            font-weight: bold;
+        }
 
-  /* ===== THÔNG TIN LIÊN HỆ ===== */
-  .contact-list{ display:flex; flex-direction:column; gap:10px; text-align:left; }
-  .contact-item{
-    position:relative; overflow:hidden; display:flex; align-items:center; gap:12px;
-    width:100%; padding:12px 14px; border-radius:16px; cursor:pointer;
-    color:#fff; font:inherit; text-align:left;
-    background:rgba(255,255,255,.055); border:1px solid rgba(255,255,255,.16);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.1), 0 10px 22px rgba(0,0,0,.3);
-    transition:transform .25s var(--ease-out), background .25s ease, border-color .25s ease;
-  }
-  .contact-item::after{
-    content:''; position:absolute; top:0; left:-60%; width:50%; height:100%;
-    background:linear-gradient(120deg,transparent,rgba(255,255,255,.14),transparent);
-    transform:skewX(-20deg); animation:shine-sweep 3.4s ease-in-out infinite; pointer-events:none;
-  }
-  .contact-list > :nth-child(2)::after{ animation-delay:.5s; }
-  .contact-list > :nth-child(3)::after{ animation-delay:1s; }
-  .contact-list > :nth-child(4)::after{ animation-delay:1.5s; }
-  .ci-ic{
-    position:relative; width:40px; height:40px; border-radius:30% 32% 34% 32% / 34% 32% 34% 32%; overflow:hidden; flex-shrink:0; display:grid; place-items:center;
-    background:linear-gradient(135deg,var(--a1),var(--a2));
-    background:linear-gradient(135deg, color-mix(in srgb, var(--a1) 88%, black 12%), color-mix(in srgb, var(--a2) 78%, black 30%));
-    box-shadow:0 6px 16px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.3), 0 0 0 rgba(0,0,0,0);
-    animation:ci-glow 3.2s ease-in-out infinite;
-  }
-  @keyframes ci-glow{
-    0%,100%{ box-shadow:0 6px 16px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.3), 0 0 0 rgba(0,0,0,0); }
-    50%{ box-shadow:0 6px 16px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.3), 0 0 20px 2px var(--a1); }
-  }
-  .ci-ic svg{ width:20px; height:20px; }
-  .ci-text{ flex:1; min-width:0; display:flex; flex-direction:column; }
-  .ci-label{ font-size:11.5px; color:var(--muted); font-weight:500; }
-  .ci-value{ font-family:'Baloo 2',sans-serif; font-weight:700; font-size:16px; line-height:1.25; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .ci-act{
-    flex-shrink:0; padding:6px 12px; border-radius:999px; font-size:12px; font-weight:700;
-    background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.22);
-  }
-  .contact-item:active{ transform:scale(.97); }
-  @media (hover:hover){
-    .contact-item:hover{ transform:translateY(-2px); background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.4); }
-  }
-</style>
+        .result-value.error {
+            color: var(--error);
+        }
+
+        .pre-block {
+            background-color: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 400px;
+            overflow-y: auto;
+            line-height: 1.5;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-ok {
+            background-color: rgba(34, 197, 94, 0.2);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .status-fail {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: var(--error);
+            border: 1px solid var(--error);
+        }
+
+        .status-warn {
+            background-color: rgba(234, 179, 8, 0.2);
+            color: #eab308;
+            border: 1px solid #eab308;
+        }
+
+        .error-msg {
+            color: var(--error);
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+
+        /* Loading animation */
+        .loader {
+            border: 4px solid var(--border);
+            border-top: 4px solid var(--accent);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 1rem auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loader.active {
+            display: block;
+        }
+    </style>
 </head>
 <body>
 
-<div class="bg"></div>
-<canvas id="weatherFx" aria-hidden="true"></canvas>
-<div class="progress" id="progress" aria-hidden="true"></div>
+    <h1>🔥 Free Fire Hex Decoder</h1>
+    <p class="subtitle">Dán mã Hex vào bên dưới để giải mã thông tin đăng nhập</p>
 
-<header class="topbar" id="topbar">
-  <a class="brand" href="#profile" data-nav>
-    <div class="brand-mark">Z</div>
-    <div class="brand-title">zan <span>x</span> nqbinhan</div>
-  </a>
-  <button class="menu-btn" id="menuBtn" aria-label="Mở menu" aria-expanded="false" aria-controls="menuPanel">
-    <span class="menu-dots"><i></i><i></i><i></i></span>
-  </button>
-</header>
-
-<div class="menu-backdrop" id="menuBackdrop"></div>
-<nav class="menu-panel" id="menuPanel" aria-label="Menu" aria-hidden="true">
-  <button class="menu-close" id="menuClose" aria-label="Đóng menu">
-    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
-  </button>
-  <div class="menu-panel-title">Menu</div>
-  <div class="menu-panel-sub">Chào mừng bạn ghé thăm.</div>
-  <a class="menu-item" style="--i:0" href="#profile" data-nav>Profile</a>
-  <a class="menu-item" style="--i:1" href="#links" data-nav>Liên kết</a>
-  <a class="menu-item" style="--i:2" href="https://t.me/zanxgay" target="_blank" rel="noopener noreferrer">Liên hệ Admin</a>
-</nav>
-
-<main class="page" id="profile">
-
-  <!-- ===== HERO ===== -->
-  <section class="hero">
-    <div class="rv rv-avatar">
-      <div class="avatar-wrap">
-        <div class="avatar-pulse"></div>
-        <div class="avatar-pulse delay"></div>
-        <div class="avatar-ring">
-          <div class="avatar-inner"><img src="data:image/webp;base64,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" alt="Ảnh đại diện của zan"></div>
+    <div class="container">
+        <div class="input-group">
+            <label for="hexInput">Mã Hex (MajorLogin / GetLoginData / Auth Packet)</label>
+            <textarea id="hexInput" placeholder="Dán mã hex vào đây... (Ví dụ: 0a0b... )"></textarea>
         </div>
-      </div>
+
+        <div class="button-group">
+            <button class="btn-primary" onclick="decodeHex()">🔍 Giải Mã</button>
+            <button class="btn-secondary" onclick="clearAll()">🗑️ Xóa</button>
+            <button class="btn-secondary" onclick="pasteFromClipboard()">📋 Dán</button>
+        </div>
+
+        <div class="loader" id="loader"></div>
+        <div class="error-msg" id="errorMsg" style="display: none;"></div>
+
+        <div class="result-section" id="resultSection" style="display: none;">
+            <div class="result-title">📊 Kết Quả Giải Mã</div>
+            
+            <div class="result-grid" id="resultGrid">
+                <!-- Kết quả sẽ được đổ vào đây -->
+            </div>
+
+            <div class="result-title" style="margin-top: 1.5rem;">📄 Chi Tiết (Dữ Liệu Thô)</div>
+            <div class="pre-block" id="rawDetails"></div>
+        </div>
     </div>
 
-    <div class="rv overline">Trang chủ · Hồ sơ cá nhân</div>
-    <div class="rv rv-pop">
-      <div class="name-wrap">
-        <h1 id="nameField">zan cute</h1>
-        <svg class="verified-badge" viewBox="0 0 24 24" fill="none">
-      <path d="M12.0,1.0 L13.81,2.88 L16.21,1.84 L17.17,4.27 L19.78,4.22 L19.73,6.83 L22.16,7.79 L21.12,10.19 L23.0,12.0 L21.12,13.81 L22.16,16.21 L19.73,17.17 L19.78,19.78 L17.17,19.73 L16.21,22.16 L13.81,21.12 L12.0,23.0 L10.19,21.12 L7.79,22.16 L6.83,19.73 L4.22,19.78 L4.27,17.17 L1.84,16.21 L2.88,13.81 L1.0,12.0 L2.88,10.19 L1.84,7.79 L4.27,6.83 L4.22,4.22 L6.83,4.27 L7.79,1.84 L10.19,2.88 Z" fill="#3897F0"/>
-      <path d="M8.8 12.2l2.2 2.2 4.2-4.6" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-      </div>
-    </div>
-    <div class="rv name-sub">nqbinhan</div>
-    <div class="rv typing-line" id="typingLine" aria-live="polite"></div>
+    <script>
+        // Hàm chuyển đổi Hex string thành mảng byte
+        function hexToBytes(hex) {
+            hex = hex.replace(/\s/g, '');
+            if (hex.length % 2 !== 0) {
+                throw new Error("Mã Hex có độ dài không hợp lệ (phải là số chẵn)");
+            }
+            const bytes = [];
+            for (let i = 0; i < hex.length; i += 2) {
+                bytes.push(parseInt(hex.substr(i, 2), 16));
+            }
+            return bytes;
+        }
 
-    <div class="socials">
-      <div class="rv rv-pop"><a class="soc-btn" href="https://www.tiktok.com/@deocanthuonghai09" target="_blank" rel="noopener" aria-label="TikTok">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M16 2.9h-3.2v13.9a2.9 2.9 0 1 1-2.1-2.79v-3.3a6.2 6.2 0 1 0 5.3 6.14V9.2a7.9 7.9 0 0 0 4.5 1.4V7.4a4.65 4.65 0 0 1-2.9-1.04A4.7 4.7 0 0 1 16 2.9z" fill="white"/></svg>
-      </a></div>
-      <div class="rv rv-pop"><a class="soc-btn" href="https://t.me/zanxgay" target="_blank" rel="noopener" aria-label="Telegram">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M21.5 3.5L2.7 10.9c-1.2.5-1.2 1.2-.2 1.5l4.8 1.5 1.8 5.6c.2.6.4.8.9.8.4 0 .6-.2.9-.5l2.2-2.1 4.6 3.4c.8.5 1.4.2 1.6-.8l3-14c.3-1.3-.5-1.9-1.8-1.4z" fill="white"/></svg>
-      </a></div>
-      <div class="rv rv-pop"><a class="soc-btn" href="https://www.instagram.com/abcdxyzlqtc" target="_blank" rel="noopener" aria-label="Instagram">
-        <svg viewBox="0 0 24 24" fill="none"><rect x="3.3" y="3.3" width="17.4" height="17.4" rx="5" stroke="white" stroke-width="1.7"/><circle cx="12" cy="12" r="4.3" stroke="white" stroke-width="1.7"/><circle cx="17.1" cy="6.9" r="1.05" fill="white"/></svg>
-      </a></div>
-      <div class="rv rv-pop"><a class="soc-btn" href="https://discord.com/users/nqbinhan_" target="_blank" rel="noopener" aria-label="Discord">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M18.9 6.4A15.6 15.6 0 0 0 15.1 5.2l-.2.35a11.3 11.3 0 0 1 3 1.2 12.6 12.6 0 0 0-11.8 0 11 11 0 0 1 3-1.2l-.2-.35A15.4 15.4 0 0 0 5.1 6.4C2.9 9.7 2.3 12.9 2.6 16.05a15.7 15.7 0 0 0 4.7 2.35l.6-1a10 10 0 0 1-1.6-.75c.14-.1.27-.2.4-.3a11.2 11.2 0 0 0 9.6 0c.13.1.26.2.4.3a10 10 0 0 1-1.6.75l.6 1a15.6 15.6 0 0 0 4.7-2.35c.35-3.65-.55-6.8-2.5-9.65zM9.7 13.9c-.75 0-1.35-.68-1.35-1.5s.6-1.5 1.35-1.5 1.36.68 1.35 1.5c0 .82-.6 1.5-1.35 1.5zm4.6 0c-.74 0-1.35-.68-1.35-1.5s.6-1.5 1.35-1.5 1.36.68 1.35 1.5c0 .82-.6 1.5-1.35 1.5z" fill="white"/></svg>
-      </a></div>
-    </div>
-  </section>
+        // Hàm đọc Varint từ mảng byte
+        function readVarint(bytes, pos) {
+            let result = 0;
+            let shift = 0;
+            while (pos < bytes.length) {
+                const b = bytes[pos++];
+                result |= (b & 0x7F) << shift;
+                if ((b & 0x80) === 0) {
+                    break;
+                }
+                shift += 7;
+            }
+            return { value: result, pos: pos };
+        }
 
-  <!-- ===== LIÊN KẾT ===== -->
-  <section class="section" id="links" aria-label="Liên kết">
-    <div class="linklist">
-      <div class="rv rv-l"><a class="link-row telegram-row" href="https://t.me/zanxgay" target="_blank" rel="noopener">
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M21.5 3.5L2.7 10.9c-1.2.5-1.2 1.2-.2 1.5l4.8 1.5 1.8 5.6c.2.6.4.8.9.8.4 0 .6-.2.9-.5l2.2-2.1 4.6 3.4c.8.5 1.4.2 1.6-.8l3-14c.3-1.3-.5-1.9-1.8-1.4z" fill="white"/></svg></div>
-        <div class="info"><div class="name">Telegram</div><div class="sub">@zanxgay</div></div>
-        <svg class="go" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
-      </a></div>
-      <div class="rv rv-r"><a class="link-row tiktok-row" href="https://www.tiktok.com/@deocanthuonghai09" target="_blank" rel="noopener">
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M16 2.9h-3.2v13.9a2.9 2.9 0 1 1-2.1-2.79v-3.3a6.2 6.2 0 1 0 5.3 6.14V9.2a7.9 7.9 0 0 0 4.5 1.4V7.4a4.65 4.65 0 0 1-2.9-1.04A4.7 4.7 0 0 1 16 2.9z" fill="white"/></svg></div>
-        <div class="info"><div class="name">TikTok</div><div class="sub">@deocanthuonghai09</div></div>
-        <svg class="go" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
-      </a></div>
-      <div class="rv rv-l"><a class="link-row instagram-row" href="https://www.instagram.com/abcdxyzlqtc" target="_blank" rel="noopener">
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none"><rect x="3.3" y="3.3" width="17.4" height="17.4" rx="5" stroke="white" stroke-width="1.7"/><circle cx="12" cy="12" r="4.3" stroke="white" stroke-width="1.7"/><circle cx="17.1" cy="6.9" r="1.05" fill="white"/></svg></div>
-        <div class="info"><div class="name">Instagram</div><div class="sub">@abcdxyzlqtc</div></div>
-        <svg class="go" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
-      </a></div>
-      <div class="rv rv-r"><a class="link-row discord-row" href="https://discord.com/users/nqbinhan_" target="_blank" rel="noopener">
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M18.9 6.4A15.6 15.6 0 0 0 15.1 5.2l-.2.35a11.3 11.3 0 0 1 3 1.2 12.6 12.6 0 0 0-11.8 0 11 11 0 0 1 3-1.2l-.2-.35A15.4 15.4 0 0 0 5.1 6.4C2.9 9.7 2.3 12.9 2.6 16.05a15.7 15.7 0 0 0 4.7 2.35l.6-1a10 10 0 0 1-1.6-.75c.14-.1.27-.2.4-.3a11.2 11.2 0 0 0 9.6 0c.13.1.26.2.4.3a10 10 0 0 1-1.6.75l.6 1a15.6 15.6 0 0 0 4.7-2.35c.35-3.65-.55-6.8-2.5-9.65zM9.7 13.9c-.75 0-1.35-.68-1.35-1.5s.6-1.5 1.35-1.5 1.36.68 1.35 1.5c0 .82-.6 1.5-1.35 1.5zm4.6 0c-.74 0-1.35-.68-1.35-1.5s.6-1.5 1.35-1.5 1.36.68 1.35 1.5c0 .82-.6 1.5-1.35 1.5z" fill="white"/></svg></div>
-        <div class="info"><div class="name">Discord</div><div class="sub">nqbinhan_</div></div>
-        <svg class="go" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
-      </a></div>
-      <div class="rv rv-l"><a class="link-row website-row" href="https://cutes.lol/zanx09" target="_blank" rel="noopener">
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="white" stroke-width="1.6"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" stroke="white" stroke-width="1.6"/></svg></div>
-        <div class="info"><div class="name">Website</div><div class="sub">cutes.lol/zanx09</div></div>
-        <svg class="go" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
-      </a></div>
-    </div>
-  </section>
+        // Hàm parse Protobuf thủ công
+        function parseProtobuf(bytes, startOffset = 0) {
+            const fields = {};
+            let pos = startOffset;
 
-  <!-- ===== LIÊN HỆ ===== -->
-  <section class="section contact" id="contact" aria-labelledby="contactTitle">
-    <div class="rv rv-pop"><div class="cta-card">
-      <h2 class="cta-title" id="contactTitle">Contact</h2>
-      <p class="cta-sub">Bấm vào thông tin bên dưới để liên hệ mình.</p>
-      <div class="contact-list">
-        <a class="contact-item" href="https://t.me/zanxgay" target="_blank" rel="noopener" style="--a1:#42b3e5;--a2:#1e96d3">
-          <span class="ci-ic"><svg viewBox="0 0 24 24" fill="none"><path d="M21.5 3.5L2.7 10.9c-1.2.5-1.2 1.2-.2 1.5l4.8 1.5 1.8 5.6c.2.6.4.8.9.8.4 0 .6-.2.9-.5l2.2-2.1 4.6 3.4c.8.5 1.4.2 1.6-.8l3-14c.3-1.3-.5-1.9-1.8-1.4z" fill="white"/></svg></span>
-          <span class="ci-text"><span class="ci-label">Telegram</span><span class="ci-value">@zanxgay</span></span>
-          <span class="ci-act">Nhắn</span>
-        </a>
-        <button class="contact-item" type="button" data-copy="nqbinhan_" style="--a1:#6b74f8;--a2:#4752C4">
-          <span class="ci-ic"><svg viewBox="0 0 24 24" fill="none"><path d="M18.9 6.4A15.6 15.6 0 0 0 15.1 5.2l-.2.35a11.3 11.3 0 0 1 3 1.2 12.6 12.6 0 0 0-11.8 0 11 11 0 0 1 3-1.2l-.2-.35A15.4 15.4 0 0 0 5.1 6.4C2.9 9.7 2.3 12.9 2.6 16.05a15.7 15.7 0 0 0 4.7 2.35l.6-1a10 10 0 0 1-1.6-.75c.14-.1.27-.2.4-.3a11.2 11.2 0 0 0 9.6 0c.13.1.26.2.4.3a10 10 0 0 1-1.6.75l.6 1a15.6 15.6 0 0 0 4.7-2.35c.35-3.65-.55-6.8-2.5-9.65zM9.7 13.9c-.75 0-1.35-.68-1.35-1.5s.6-1.5 1.35-1.5 1.36.68 1.35 1.5c0 .82-.6 1.5-1.35 1.5zm4.6 0c-.74 0-1.35-.68-1.35-1.5s.6-1.5 1.35-1.5 1.36.68 1.35 1.5c0 .82-.6 1.5-1.35 1.5z" fill="white"/></svg></span>
-          <span class="ci-text"><span class="ci-label">Discord</span><span class="ci-value">nqbinhan_</span></span>
-          <span class="ci-act">Nhắn</span>
-        </button>
-        <a class="contact-item" href="https://www.instagram.com/abcdxyzlqtc" target="_blank" rel="noopener" style="--a1:#833AB4;--a2:#E1306C">
-          <span class="ci-ic ig-bg"><svg viewBox="0 0 24 24" fill="none"><rect x="4.4" y="4.4" width="15.2" height="15.2" rx="4.6" stroke="white" stroke-width="1.8"/><circle cx="12" cy="12" r="3.9" stroke="white" stroke-width="1.8"/><circle cx="16.6" cy="7.4" r="1" fill="white"/></svg></span>
-          <span class="ci-text"><span class="ci-label">Instagram</span><span class="ci-value">@abcdxyzlqtc</span></span>
-          <span class="ci-act">Nhắn</span>
-        </a>
-        <a class="contact-item" href="https://www.tiktok.com/@deocanthuonghai09" target="_blank" rel="noopener" style="--a1:#25f4ee;--a2:#fe2c55">
-          <span class="ci-ic tt-bg"><svg viewBox="0 0 24 24" fill="none"><path d="M16.5 2h-3.2v13.9a2.9 2.9 0 1 1-2.1-2.79v-3.3a6.2 6.2 0 1 0 5.3 6.14V9.2a7.9 7.9 0 0 0 4.5 1.4V7.4a4.65 4.65 0 0 1-2.9-1.04A4.7 4.7 0 0 1 16.5 2.8z" fill="#EE1D52"/><path d="M15.4 2h-3.2v13.9a2.9 2.9 0 1 1-2.1-2.79v-3.3a6.2 6.2 0 1 0 5.3 6.14V9.2a7.9 7.9 0 0 0 4.5 1.4V7.4a4.65 4.65 0 0 1-2.9-1.04A4.7 4.7 0 0 1 15.4 2.8z" fill="#25F4EE"/><path d="M16 2.9h-3.2v13.9a2.9 2.9 0 1 1-2.1-2.79v-3.3a6.2 6.2 0 1 0 5.3 6.14V9.2a7.9 7.9 0 0 0 4.5 1.4V7.4a4.65 4.65 0 0 1-2.9-1.04A4.7 4.7 0 0 1 16 2.9z" fill="#fff"/></svg></span>
-          <span class="ci-text"><span class="ci-label">TikTok</span><span class="ci-value">@deocanthuonghai09</span></span>
-          <span class="ci-act">Nhắn</span>
-        </a>
-      </div>
-    </div></div>
-  </section>
+            while (pos < bytes.length) {
+                try {
+                    const keyRes = readVarint(bytes, pos);
+                    const key = keyRes.value;
+                    pos = keyRes.pos;
+                    
+                    const fieldNum = key >> 3;
+                    const wireType = key & 0x07;
 
-  <footer class="rv foot">zan x nqbinhan · © 2026</footer>
-</main>
+                    if (wireType === 0) {
+                        const valRes = readVarint(bytes, pos);
+                        pos = valRes.pos;
+                        fields[fieldNum] = valRes.value;
+                    } else if (wireType === 2) {
+                        const lenRes = readVarint(bytes, pos);
+                        const len = lenRes.value;
+                        pos = lenRes.pos;
+                        
+                        if (pos + len > bytes.length) break;
+                        const val = bytes.slice(pos, pos + len);
+                        pos += len;
+                        
+                        // Thử decode UTF-8 xem có phải string không
+                        const str = new TextDecoder('utf-8').decode(new Uint8Array(val));
+                        fields[fieldNum] = str;
+                    } else if (wireType === 5) {
+                        if (pos + 4 > bytes.length) break;
+                        const val = bytes.slice(pos, pos + 4);
+                        pos += 4;
+                        fields[fieldNum] = Array.from(val);
+                    } else if (wireType === 1) {
+                        if (pos + 8 > bytes.length) break;
+                        const val = bytes.slice(pos, pos + 8);
+                        pos += 8;
+                        fields[fieldNum] = Array.from(val);
+                    } else {
+                        break;
+                    }
+                } catch (e) {
+                    break;
+                }
+            }
+            return fields;
+        }
 
-<!-- Nút nổi -->
-<button class="fab fab-music" id="musicBtn" aria-label="Bật/tắt nhạc" hidden>
-  <span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-</button>
-<button class="fab fab-top" id="toTop" aria-label="Lên đầu trang">
-  <svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-</button>
+        // Hàm giải mã JWT
+        function decodeJWT(token) {
+            try {
+                const parts = token.split('.');
+                if (parts.length !== 3) return null;
+                const payload = parts[1];
+                const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+                return JSON.parse(decoded);
+            } catch (e) {
+                return null;
+            }
+        }
 
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
+        // Hàm trích xuất JWT từ chuỗi
+        function findJWT(str) {
+            const regex = /eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g;
+            const matches = str.match(regex);
+            return matches ? matches[0] : null;
+        }
 
-<audio id="bgMusic" src="nguoi den roi lai di.mp3" preload="auto" loop playsinline></audio>
+        // Hàm chính giải mã
+        function decodeHex() {
+            const hexInput = document.getElementById('hexInput').value;
+            const resultSection = document.getElementById('resultSection');
+            const errorMsg = document.getElementById('errorMsg');
+            const resultGrid = document.getElementById('resultGrid');
+            const rawDetails = document.getElementById('rawDetails');
+            const loader = document.getElementById('loader');
 
-<script>
-(function(){
-  'use strict';
-  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const $ = (s, r) => (r || document).querySelector(s);
-  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+            // Reset
+            errorMsg.style.display = 'none';
+            resultSection.style.display = 'none';
+            resultGrid.innerHTML = '';
+            rawDetails.textContent = '';
 
-  /* ---------- Gõ chữ dưới tên (đổi câu liên tục) ---------- */
-  const typingLine = $('#typingLine');
-  const phrases = [
-    'Kết nối với mình qua các link bên dưới.',
-    'Cần hỗ trợ gì cứ nhắn mình.'
-  ];
-  let pi = 0, ci = 0, deleting = false;
-  function type(){
-    const text = phrases[pi];
-    if (!deleting){
-      ci++;
-      typingLine.textContent = text.slice(0, ci);
-      if (ci >= text.length){ deleting = true; return setTimeout(type, 1800); }
-      return setTimeout(type, 55);
-    }
-    ci--;
-    typingLine.textContent = text.slice(0, ci);
-    if (ci <= 0){ deleting = false; pi = (pi + 1) % phrases.length; return setTimeout(type, 450); }
-    setTimeout(type, 30);
-  }
-  if (reduce){ typingLine.textContent = phrases[0]; } else { type(); }
+            if (!hexInput.trim()) {
+                showError("Vui lòng nhập mã Hex cần giải mã.");
+                return;
+            }
 
-  /* ---------- Menu ---------- */
-  const menuBtn = $('#menuBtn'), menuPanel = $('#menuPanel'), backdrop = $('#menuBackdrop');
-  function setMenu(open){
-    document.body.classList.toggle('menu-open', open);
-    document.body.style.overflow = open ? 'hidden' : '';
-    menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-    menuPanel.setAttribute('aria-hidden', open ? 'false' : 'true');
-  }
-  menuBtn.addEventListener('click', () => setMenu(true));
-  $('#menuClose').addEventListener('click', () => setMenu(false));
-  backdrop.addEventListener('click', () => setMenu(false));
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(false); });
+            loader.classList.add('active');
 
-  /* ---------- Cuộn mượt tới mục ---------- */
-  $$('[data-nav]').forEach(a => a.addEventListener('click', e => {
-    const id = a.getAttribute('href');
-    if (!id || id.charAt(0) !== '#') return;
-    e.preventDefault();
-    const wasOpen = document.body.classList.contains('menu-open');
-    setMenu(false);
-    setTimeout(() => {
-      if (id === '#profile') window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
-      else { const t = $(id); if (t) t.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }); }
-    }, wasOpen ? 320 : 0);
-  }));
+            setTimeout(() => {
+                try {
+                    const bytes = hexToBytes(hexInput);
+                    
+                    let parsedData = {};
+                    let parsedSuccess = false;
+                    let startOffset = 0;
 
-  /* ---------- Nảy khi bấm + gợn sóng ---------- */
-  const SPRING = 'a, button, .skill, .chip, .avatar-ring, .name-wrap';
-  const RIPPLE = '.soc-btn, .link-row, .menu-item, .menu-btn, .menu-close, .skill, .chip, .fab, .cta, .contact-item';
-  const springFrames = [
-    { transform: 'scale(.93)' },
-    { transform: 'scale(1.08)', offset: .35 },
-    { transform: 'scale(.98)',  offset: .6 },
-    { transform: 'scale(1.02)', offset: .8 },
-    { transform: 'scale(1)' }
-  ];
-  document.addEventListener('click', e => {
-    if (reduce) return;
-    const el = e.target.closest(SPRING);
-    if (!el || !el.animate) return;
-    el.animate(springFrames, { duration: 650, easing: 'cubic-bezier(.2,.8,.2,1)' });
-  });
-  document.addEventListener('pointerdown', e => {
-    if (reduce) return;
-    const el = e.target.closest(RIPPLE);
-    if (!el || !el.animate) return;
-    const r = el.getBoundingClientRect();
-    const d = Math.max(r.width, r.height) * 1.8;
-    const s = document.createElement('span');
-    s.className = 'ripple';
-    s.style.cssText = 'width:' + d + 'px;height:' + d + 'px;left:' + (e.clientX - r.left - d / 2) + 'px;top:' + (e.clientY - r.top - d / 2) + 'px';
-    el.appendChild(s);
-    const a = s.animate(
-      [{ transform: 'scale(0)', opacity: .55 }, { transform: 'scale(1)', opacity: 0 }],
-      { duration: 650, easing: 'cubic-bezier(.22,1,.36,1)' }
-    );
-    a.onfinish = () => s.remove();
-  }, { passive: true });
+                    // Thử parse với offset 0
+                    let tempParsed = parseProtobuf(bytes, 0);
+                    
+                    // Nếu không có field 1, 8 hoặc 21, thử parse với offset 64 (gói MajorLogin)
+                    if (!tempParsed[1] && !tempParsed[21] && bytes.length > 64) {
+                        const tempParsed64 = parseProtobuf(bytes, 64);
+                        if (tempParsed64[1] || tempParsed64[21] || tempParsed64[22]) {
+                            parsedData = tempParsed64;
+                            startOffset = 64;
+                            parsedSuccess = true;
+                        } else {
+                            parsedData = tempParsed;
+                        }
+                    } else {
+                        parsedData = tempParsed;
+                        parsedSuccess = true;
+                    }
 
-  /* ---------- Hiện dần khi lướt xuống ---------- */
-  function countUp(el, to, delay){
-    if (reduce){ el.textContent = to; return; }
-    const dur = 1400;
-    el.textContent = 0;
-    setTimeout(() => {
-      const t0 = performance.now();
-      (function step(t){
-        const p = Math.min(1, (t - t0) / dur);
-        el.textContent = Math.round(to * (1 - Math.pow(1 - p, 4)));
-        if (p < 1) requestAnimationFrame(step);
-      })(t0);
-    }, delay);
-  }
-  const revealEls = $$('.rv');
-  if (!('IntersectionObserver' in window)){
-    revealEls.forEach(el => el.classList.add('in'));
-  } else {
-    const io = new IntersectionObserver(entries => {
-      const batch = entries.filter(en => en.isIntersecting).map(en => en.target);
-      batch.sort((a, b) => (a.compareDocumentPosition(b) & 4) ? -1 : 1);
-      batch.forEach((el, i) => {
-        const delay = Math.min(i * 0.09, 0.7);
-        el.style.setProperty('--d', delay + 's');
-        el.classList.add('in');
-        $$('[data-count]', el).forEach(n => countUp(n, parseInt(n.textContent, 10) || 0, (delay + .3) * 1000));
-        io.unobserve(el);
-      });
-    }, { threshold: 0.18, rootMargin: '0px 0px -6% 0px' });
-    revealEls.forEach(el => io.observe(el));
-  }
+                    // Nếu vẫn không có, thử toàn bộ
+                    if (!parsedSuccess) {
+                        parsedData = parseProtobuf(bytes, 0);
+                    }
 
-  /* ---------- Cuộn: thanh tiến trình, topbar, nút lên đầu ---------- */
-  const progress = $('#progress'), topbar = $('#topbar'), toTop = $('#toTop');
-  let ticking = false;
-  function onScroll(){
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(() => {
-      const y = window.scrollY || 0;
-      const max = document.documentElement.scrollHeight - window.innerHeight;
-      progress.style.transform = 'scaleX(' + (max > 0 ? Math.min(1, y / max) : 0) + ')';
-      topbar.classList.toggle('scrolled', y > 24);
-      toTop.classList.toggle('show', y > 520);
-      ticking = false;
-    });
-  }
-  window.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', onScroll, { passive: true });
-  onScroll();
-  toTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' }));
+                    // Trích xuất thông tin
+                    let accountId = null;
+                    let nickname = null;
+                    let lockRegion = null;
+                    let onlineIp = null;
+                    let onlinePort = null;
+                    let chatIp = null;
+                    let chatPort = null;
+                    let key = null;
+                    let iv = null;
+                    let timestamp = null;
+                    let clientVersion = null;
+                    let releaseVersion = null;
+                    let isEmulator = null;
+                    let jwtToken = null;
+                    let regionName = null;
 
-  /* ---------- Tuyết rơi ---------- */
-  (function(){
-    const canvas = $('#weatherFx');
-    const ctx = canvas && canvas.getContext('2d');
-    if (!ctx || reduce) return;
-    let w = 0, h = 0, flakes = [];
-    function resize(){
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      w = window.innerWidth; h = window.innerHeight;
-      canvas.width = Math.floor(w * dpr); canvas.height = Math.floor(h * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const n = Math.min(90, Math.max(42, Math.floor(w / 6)));
-      flakes = Array.from({ length: n }, () => {
-        const depth = Math.random();
-        return {
-          x: Math.random() * w, y: Math.random() * h, depth,
-          r: depth * 2.6 + .6,
-          vy: depth * .85 + .35,
-          sway: depth * 1.1 + .3,
-          phase: Math.random() * Math.PI * 2,
-          tw: Math.random() * .012 + .004,
-          a: depth * .6 + .32
-        };
-      });
-    }
-    function frame(t){
-      requestAnimationFrame(frame);
-      if (document.hidden) return;
-      ctx.clearRect(0, 0, w, h);
-      for (const f of flakes){
-        f.y += f.vy;
-        f.phase += f.tw;
-        f.x += Math.sin(t * .0007 + f.phase) * f.sway * .05;
-        if (f.y > h + 10){ f.y = -10; f.x = Math.random() * w; }
-        if (f.x < -10) f.x = w + 10;
-        if (f.x > w + 10) f.x = -10;
-        ctx.beginPath(); ctx.fillStyle = 'rgba(255,255,255,' + (f.a * .25) + ')'; ctx.arc(f.x, f.y, f.r * 2.4, 0, 6.2832); ctx.fill();
-        ctx.beginPath(); ctx.fillStyle = 'rgba(255,255,255,' + f.a + ')';        ctx.arc(f.x, f.y, f.r, 0, 6.2832);      ctx.fill();
-      }
-    }
-    resize();
-    window.addEventListener('resize', resize, { passive: true });
-    requestAnimationFrame(frame);
-  })();
+                    // Tìm JWT trong toàn bộ dữ liệu
+                    const rawString = bytes.map(b => String.fromCharCode(b)).join('');
+                    const foundJwt = findJWT(rawString);
+                    
+                    if (foundJwt) {
+                        jwtToken = foundJwt;
+                        const jwtData = decodeJWT(foundJwt);
+                        if (jwtData) {
+                            accountId = jwtData.account_id || null;
+                            nickname = jwtData.nickname || null;
+                            lockRegion = jwtData.lock_region || null;
+                            clientVersion = jwtData.client_version || null;
+                            releaseVersion = jwtData.release_version || null;
+                            isEmulator = jwtData.is_emulator !== undefined ? jwtData.is_emulator : null;
+                        }
+                    }
 
-  /* ---------- Nhạc nền ---------- */
-  (function(){
-    const audio = $('#bgMusic'), btn = $('#musicBtn');
-    if (!audio || !btn) return;
-    const setState = on => { btn.classList.toggle('playing', on); };
-    const play = () => { const p = audio.play(); if (p && p.then) p.then(() => setState(true)).catch(() => setState(false)); };
+                    // Lấy Key/IV/Timestamp từ field 21, 22, 23
+                    if (parsedData[21]) timestamp = parsedData[21];
+                    
+                    if (parsedData[22]) {
+                        try {
+                            key = bytesToHex(parsedData[22]);
+                        } catch (e) {}
+                    }
+                    if (parsedData[23]) {
+                        try {
+                            iv = bytesToHex(parsedData[23]);
+                        } catch (e) {}
+                    }
 
-    audio.addEventListener('loadedmetadata', () => { btn.hidden = false; });
-    audio.addEventListener('canplay', () => { btn.hidden = false; });
-    audio.addEventListener('play', () => setState(true));
-    audio.addEventListener('pause', () => setState(false));
-    btn.addEventListener('click', () => audio.paused ? play() : audio.pause());
+                    // Lấy Account ID từ field 1
+                    if (parsedData[1] && !accountId) {
+                        accountId = parsedData[1];
+                    }
 
-    // Trình duyệt thường chặn tự phát: thử ngay, rồi phát ở lần chạm đầu tiên.
-    play();
-    const events = ['click', 'touchend', 'keydown'];
-    function first(e){
-      if (e.target && e.target.closest && e.target.closest('#musicBtn')) return;
-      if (audio.paused) play();
-      events.forEach(n => document.removeEventListener(n, first, true));
-    }
-    events.forEach(n => document.addEventListener(n, first, true));
-  })();
+                    // Lấy Nickname từ field 4 (nếu có)
+                    if (parsedData[4] && typeof parsedData[4] === 'string') {
+                        nickname = parsedData[4];
+                    }
 
-  /* ---------- Ánh sáng theo con trỏ ---------- */
-  if (window.matchMedia && window.matchMedia('(hover:hover)').matches){
-    document.addEventListener('pointermove', e => {
-      const el = e.target.closest && e.target.closest('.link-row, .skill, .cta-card');
-      if (!el) return;
-      const r = el.getBoundingClientRect();
-      el.style.setProperty('--mx', (e.clientX - r.left) + 'px');
-      el.style.setProperty('--my', (e.clientY - r.top) + 'px');
-    }, { passive: true });
-  }
+                    // Lấy Online IP/Port từ field 14 (Online Server)
+                    if (parsedData[14] && typeof parsedData[14] === 'string') {
+                        const str = parsedData[14];
+                        if (str.length > 6) {
+                            onlineIp = str.substring(0, str.length - 6);
+                            onlinePort = str.substring(str.length - 6);
+                        }
+                    }
 
-  /* ---------- Thông báo nhỏ + sao chép ---------- */
-  const toast = $('#toast');
-  let toastTimer;
-  function showToast(msg){
-    toast.textContent = msg;
-    toast.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
-  }
-  function copyText(text){
-    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
-    return new Promise((resolve, reject) => {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;font-size:16px';
-      document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0, text.length);
-      let ok = false;
-      try { ok = document.execCommand('copy'); } catch (err) {}
-      ta.remove();
-      ok ? resolve() : reject();
-    });
-  }
-  $$('[data-copy]').forEach(b => b.addEventListener('click', () => {
-    const v = b.getAttribute('data-copy');
-    copyText(v).then(() => showToast('Đã sao chép: ' + v)).catch(() => showToast('Hãy chép tay: ' + v));
-  }));
+                    // Lấy Chat IP/Port từ field 32 (Chat Server)
+                    if (parsedData[32] && typeof parsedData[32] === 'string') {
+                        const str = parsedData[32];
+                        if (str.length > 6) {
+                            chatIp = str.substring(0, str.length - 6);
+                            chatPort = str.substring(str.length - 6);
+                        }
+                    }
 
-  /* ---------- Bấm avatar: pháo giấy ---------- */
-  const avatarRing = $('.avatar-ring');
-  if (avatarRing && !reduce) avatarRing.addEventListener('click', () => {
-    const r = avatarRing.getBoundingClientRect();
-    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-    const colors = ['#ff3b5c', '#ff9d3b', '#ffe83b', '#4dff88', '#3bd1ff', '#7c6ef2', '#ff3bd1'];
-    for (let i = 0; i < 24; i++){
-      const s = document.createElement('span');
-      const size = 6 + Math.random() * 6;
-      s.style.cssText = 'position:fixed;left:' + cx + 'px;top:' + cy + 'px;width:' + size + 'px;height:' + (size * (Math.random() > .5 ? 1 : .45)) +
-        'px;border-radius:' + (Math.random() > .5 ? '50%' : '2px') + ';background:' + colors[i % colors.length] + ';pointer-events:none;z-index:95';
-      document.body.appendChild(s);
-      const ang = Math.random() * Math.PI * 2, dist = 70 + Math.random() * 90;
-      const dx = Math.cos(ang) * dist, dy = Math.sin(ang) * dist;
-      const a = s.animate([
-        { transform: 'translate(-50%,-50%) translate(0,0) rotate(0deg) scale(1)', opacity: 1 },
-        { transform: 'translate(-50%,-50%) translate(' + dx + 'px,' + dy + 'px) rotate(' + (Math.random() * 540 - 270) + 'deg) scale(1)', opacity: 1, offset: .6 },
-        { transform: 'translate(-50%,-50%) translate(' + (dx * 1.1) + 'px,' + (dy + 50) + 'px) rotate(' + (Math.random() * 720 - 360) + 'deg) scale(.6)', opacity: 0 }
-      ], { duration: 900 + Math.random() * 400, easing: 'cubic-bezier(.2,.7,.3,1)' });
-      a.onfinish = () => s.remove();
-    }
-  });
-})();
-</script>
+                    // Tìm Region Name từ toàn bộ dữ liệu (Cao Bằng, Hà Nội...)
+                    const regionRegex = /(Cao Bằng|Hà Nội|Hồ Chí Minh|Đà Nẵng|Hải Phòng|Cần Thơ|Singapore|Thailand|Indonesia)/i;
+                    const regionMatch = rawString.match(regionRegex);
+                    if (regionMatch) {
+                        regionName = regionMatch[0];
+                    }
+
+                    // Hiển thị kết quả
+                    resultSection.style.display = 'block';
+                    
+                    const addResultItem = (label, value, isHighlight = false) => {
+                        if (value === null || value === undefined || value === '') return;
+                        
+                        const div = document.createElement('div');
+                        div.className = 'result-item';
+                        
+                        const labelDiv = document.createElement('div');
+                        labelDiv.className = 'result-label';
+                        labelDiv.textContent = label;
+                        
+                        const valueDiv = document.createElement('div');
+                        valueDiv.className = 'result-value' + (isHighlight ? ' highlight' : '');
+                        valueDiv.textContent = value;
+                        
+                        div.appendChild(labelDiv);
+                        div.appendChild(valueDiv);
+                        resultGrid.appendChild(div);
+                    };
+
+                    // Hiển thị thông tin chính
+                    if (accountId) addResultItem("🆔 Account ID", accountId, true);
+                    if (nickname) addResultItem("👤 Nickname", nickname, true);
+                    if (lockRegion) addResultItem("🌍 Lock Region", lockRegion);
+                    if (regionName) addResultItem("📍 Vị trí", regionName);
+                    if (clientVersion) addResultItem("📱 Client Version", clientVersion);
+                    if (releaseVersion) addResultItem("🔖 Release Version", releaseVersion);
+                    if (isEmulator !== null) addResultItem("💻 Is Emulator", isEmulator ? "Có (Emulator)" : "Không (Real Device)");
+                    
+                    if (onlineIp) addResultItem("🌐 Online IP", onlineIp, true);
+                    if (onlinePort) addResultItem("🔌 Online Port", onlinePort, true);
+                    if (chatIp) addResultItem("💬 Chat IP", chatIp);
+                    if (chatPort) addResultItem("💬 Chat Port", chatPort);
+                    
+                    if (timestamp) addResultItem("⏰ Timestamp", timestamp);
+                    if (key) addResultItem("🔑 Key (Hex)", key);
+                    if (iv) addResultItem("🔒 IV (Hex)", iv);
+                    if (jwtToken) addResultItem("🎫 JWT Token", jwtToken.substring(0, 80) + "...");
+
+                    // Hiển thị chi tiết thô (tất cả các field)
+                    let rawOutput = `=== CHI TIẾT PROTOBUF (Offset: ${startOffset}) ===\n\n`;
+                    for (const [fieldNum, value] of Object.entries(parsedData)) {
+                        rawOutput += `Field ${fieldNum}: `;
+                        if (typeof value === 'string') {
+                            // Nếu là chuỗi in được, hiển thị dạng text, nếu không hiển thị hex
+                            const isPrintable = /^[\x20-\x7E\s]+$/.test(value);
+                            if (isPrintable && value.length > 0) {
+                                rawOutput += `"${value}"\n`;
+                            } else {
+                                rawOutput += `[Bytes] ${value}\n`;
+                            }
+                        } else {
+                            rawOutput += `${value}\n`;
+                        }
+                    }
+                    
+                    rawOutput += `\n=== JWT DECODED ===\n\n`;
+                    if (jwtToken) {
+                        const jwtData = decodeJWT(jwtToken);
+                        if (jwtData) {
+                            rawOutput += JSON.stringify(jwtData, null, 2) + '\n';
+                        } else {
+                            rawOutput += `Không thể giải mã JWT\n`;
+                        }
+                    } else {
+                        rawOutput += `Không tìm thấy JWT trong gói tin\n`;
+                    }
+
+                    rawDetails.textContent = rawOutput;
+
+                } catch (err) {
+                    showError("Lỗi khi giải mã: " + err.message);
+                } finally {
+                    loader.classList.remove('active');
+                }
+            }, 100);
+        }
+
+        // Hàm chuyển mảng byte sang Hex string
+        function bytesToHex(bytes) {
+            if (Array.isArray(bytes)) {
+                return bytes.map(b => b.toString(16).padStart(2, '0')).join('');
+            }
+            if (typeof bytes === 'string') {
+                // Nếu là string, chuyển sang hex
+                const arr = [];
+                for (let i = 0; i < bytes.length; i++) {
+                    arr.push(bytes.charCodeAt(i).toString(16).padStart(2, '0'));
+                }
+                return arr.join('');
+            }
+            return '';
+        }
+
+        // Hiển thị lỗi
+        function showError(msg) {
+            const errorMsg = document.getElementById('errorMsg');
+            errorMsg.textContent = "❌ " + msg;
+            errorMsg.style.display = 'block';
+            document.getElementById('resultSection').style.display = 'none';
+        }
+
+        // Xóa tất cả
+        function clearAll() {
+            document.getElementById('hexInput').value = '';
+            document.getElementById('resultSection').style.display = 'none';
+            document.getElementById('errorMsg').style.display = 'none';
+        }
+
+        // Dán từ clipboard
+        async function pasteFromClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                document.getElementById('hexInput').value = text;
+            } catch (err) {
+                alert("Không thể truy cập clipboard. Vui lòng dán thủ công (Ctrl+V).");
+            }
+        }
+    </script>
 </body>
 </html>
