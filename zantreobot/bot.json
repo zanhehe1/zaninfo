@@ -314,6 +314,21 @@
       "active-clan": true,
       "botid": 18861565767,
       "nickname": "mi w vy"
+    },
+    {
+      "bot_id": 57,
+      "auth_bot_login": {
+        "access_token": "8341777334:F1CE351CDE5491D6CB1968311F196484803A8B14B8917AFC160B19AA3321C31D"
+      },
+      "access_bot": [
+        {
+          "uid": 1186542760,
+          "expire": "2026-11-01 15:09:03"
+        }
+      ],
+      "active-clan": true,
+      "botid": 18865132041,
+      "nickname": "secvkbacgau؝"
     }
   ]
 }
