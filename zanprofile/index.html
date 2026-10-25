@@ -4,298 +4,355 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Free Fire Hex Decoder</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
         :root {
-            --bg: #0f172a;
-            --card-bg: #1e293b;
-            --text: #e2e8f0;
-            --accent: #38bdf8;
-            --accent-hover: #0ea5e9;
-            --border: #334155;
-            --success: #22c55e;
+            --bg: #0a0e17;
+            --bg-gradient: radial-gradient(ellipse at top, #1a2332 0%, #0a0e17 50%);
+            --card-bg: #111827;
+            --card-bg-alt: #0d1420;
+            --text: #e5e7eb;
+            --text-muted: #9ca3af;
+            --accent: #00d4ff;
+            --accent-glow: rgba(0, 212, 255, 0.3);
+            --accent-hover: #00b8e6;
+            --border: #1f2937;
+            --border-light: #374151;
+            --success: #10b981;
+            --success-bg: rgba(16, 185, 129, 0.1);
             --error: #ef4444;
-            --font-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
+            --error-bg: rgba(239, 68, 68, 0.1);
+            --warning: #f59e0b;
+            --font-main: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            background-color: var(--bg);
+            background: var(--bg);
+            background-image: var(--bg-gradient);
+            background-attachment: fixed;
             color: var(--text);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: var(--font-main);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 2rem;
+            padding: 3rem 1.5rem;
+            line-height: 1.6;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
         }
 
         h1 {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-            color: var(--accent);
-            text-align: center;
+            font-size: 2.5rem;
             font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff 0%, #7c3aed 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.02em;
         }
 
-        p.subtitle {
-            color: #94a3b8;
-            margin-bottom: 2rem;
-            text-align: center;
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1rem;
+            font-weight: 400;
         }
 
         .container {
             width: 100%;
-            max-width: 900px;
-            background-color: var(--card-bg);
+            max-width: 920px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 2.5rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--border);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            background: var(--card-bg-alt);
+            padding: 0.4rem;
             border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
             border: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 0.75rem 1.25rem;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            transition: all 0.25s ease;
+            font-family: var(--font-main);
+            min-width: 140px;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, var(--accent) 0%, #0099cc 100%);
+            color: #0a0e17;
+            box-shadow: 0 4px 12px var(--accent-glow);
+        }
+
+        .tab:hover:not(.active) {
+            color: var(--text);
+            background: var(--border);
         }
 
         .input-group {
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            gap: 0.75rem;
             margin-bottom: 1.5rem;
         }
 
         label {
             font-weight: 600;
             color: var(--accent);
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.08em;
         }
 
         textarea {
             width: 100%;
-            height: 150px;
-            background-color: #0f172a;
+            height: 180px;
+            background: var(--card-bg-alt);
             border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
+            border-radius: 12px;
+            padding: 1.25rem;
             color: var(--text);
             font-family: var(--font-mono);
             font-size: 0.9rem;
             resize: vertical;
             outline: none;
-            transition: border-color 0.2s;
+            transition: all 0.25s ease;
+            line-height: 1.6;
         }
 
         textarea:focus {
             border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        textarea::placeholder {
+            color: #4b5563;
         }
 
         .button-group {
             display: flex;
-            gap: 1rem;
+            gap: 0.75rem;
             flex-wrap: wrap;
         }
 
         button {
-            padding: 0.75rem 1.5rem;
+            padding: 0.85rem 1.75rem;
             border: none;
-            border-radius: 8px;
-            font-size: 1rem;
+            border-radius: 10px;
+            font-size: 0.95rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
-            color: #fff;
+            transition: all 0.25s ease;
+            font-family: var(--font-main);
             flex: 1;
-            min-width: 150px;
+            min-width: 140px;
         }
 
         .btn-primary {
-            background-color: var(--accent);
-            color: #0f172a;
+            background: linear-gradient(135deg, var(--accent) 0%, #0099cc 100%);
+            color: #0a0e17;
+            box-shadow: 0 4px 12px var(--accent-glow);
         }
 
         .btn-primary:hover {
-            background-color: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px var(--accent-glow);
         }
 
         .btn-secondary {
-            background-color: #334155;
+            background: var(--border);
+            color: var(--text);
         }
 
         .btn-secondary:hover {
-            background-color: #475569;
+            background: var(--border-light);
         }
 
         .result-section {
-            margin-top: 2rem;
+            margin-top: 2.5rem;
             border-top: 1px solid var(--border);
-            padding-top: 1.5rem;
+            padding-top: 2rem;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .result-title {
-            font-size: 1.2rem;
+            font-size: 1.15rem;
             color: var(--accent);
-            margin-bottom: 1rem;
+            margin-bottom: 1.25rem;
             font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .result-grid {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 1rem;
+            gap: 0.85rem;
         }
 
         @media (min-width: 768px) {
-            .result-grid {
-                grid-template-columns: 1fr 1fr;
-            }
+            .result-grid { grid-template-columns: 1fr 1fr; }
         }
 
         .result-item {
-            background-color: #0f172a;
+            background: var(--card-bg-alt);
             border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
+            border-radius: 10px;
+            padding: 1rem 1.15rem;
             overflow-wrap: break-word;
-            word-break: break-all;
+            word-break: break-word;
+            transition: all 0.2s ease;
+        }
+
+        .result-item:hover {
+            border-color: var(--border-light);
+        }
+
+        .result-item.highlight-item {
+            border-color: rgba(16, 185, 129, 0.4);
+            background: var(--success-bg);
         }
 
         .result-label {
-            font-size: 0.8rem;
-            color: #94a3b8;
+            font-size: 0.75rem;
+            color: var(--text-muted);
             text-transform: uppercase;
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.4rem;
             font-weight: 600;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.08em;
         }
 
         .result-value {
             font-family: var(--font-mono);
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             color: var(--text);
+            line-height: 1.5;
         }
 
         .result-value.highlight {
             color: var(--success);
-            font-weight: bold;
-        }
-
-        .result-value.error {
-            color: var(--error);
+            font-weight: 600;
         }
 
         .pre-block {
-            background-color: #0f172a;
+            background: var(--card-bg-alt);
             border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
+            border-radius: 10px;
+            padding: 1.25rem;
             margin-top: 1rem;
             font-family: var(--font-mono);
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             white-space: pre-wrap;
-            word-break: break-all;
-            max-height: 400px;
+            word-break: break-word;
+            max-height: 450px;
             overflow-y: auto;
-            line-height: 1.5;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .status-ok {
-            background-color: rgba(34, 197, 94, 0.2);
-            color: var(--success);
-            border: 1px solid var(--success);
-        }
-
-        .status-fail {
-            background-color: rgba(239, 68, 68, 0.2);
-            color: var(--error);
-            border: 1px solid var(--error);
-        }
-
-        .status-warn {
-            background-color: rgba(234, 179, 8, 0.2);
-            color: #eab308;
-            border: 1px solid #eab308;
+            line-height: 1.7;
+            color: var(--text-muted);
         }
 
         .error-msg {
             color: var(--error);
             font-weight: 600;
-            margin-top: 1rem;
+            margin-top: 1.5rem;
+            padding: 1rem 1.25rem;
+            background: var(--error-bg);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 10px;
+            font-size: 0.9rem;
         }
 
-        /* Loading animation */
-        .loader {
-            border: 4px solid var(--border);
-            border-top: 4px solid var(--accent);
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 1rem auto;
-            display: none;
+        .footer {
+            margin-top: 2rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-align: center;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .loader.active {
-            display: block;
-        }
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--card-bg-alt); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
     </style>
 </head>
 <body>
 
-    <h1>🔥 Free Fire Hex Decoder</h1>
-    <p class="subtitle">Dán mã Hex vào bên dưới để giải mã thông tin đăng nhập</p>
+    <div class="header">
+        <h1>Free Fire Hex Decoder</h1>
+        <p class="subtitle">Cong cu giai ma goi tin MajorLogin va GetLoginData</p>
+    </div>
 
     <div class="container">
+        <div class="tabs">
+            <button class="tab active" onclick="setMode('auto')" id="tab-auto">Auto Detect</button>
+            <button class="tab" onclick="setMode('request')" id="tab-request">Request (AES)</button>
+            <button class="tab" onclick="setMode('response')" id="tab-response">Response (ProtoBuf)</button>
+        </div>
+
         <div class="input-group">
-            <label for="hexInput">Mã Hex (MajorLogin / GetLoginData / Auth Packet)</label>
-            <textarea id="hexInput" placeholder="Dán mã hex vào đây... (Ví dụ: 0a0b... )"></textarea>
+            <label for="hexInput">Ma Hex</label>
+            <textarea id="hexInput" placeholder="Dan ma hex vao day..."></textarea>
         </div>
 
         <div class="button-group">
-            <button class="btn-primary" onclick="decodeHex()">🔍 Giải Mã</button>
-            <button class="btn-secondary" onclick="clearAll()">🗑️ Xóa</button>
-            <button class="btn-secondary" onclick="pasteFromClipboard()">📋 Dán</button>
+            <button class="btn-primary" onclick="decodeHex()">Giai Ma</button>
+            <button class="btn-secondary" onclick="clearAll()">Xoa</button>
+            <button class="btn-secondary" onclick="pasteFromClipboard()">Dan</button>
         </div>
 
-        <div class="loader" id="loader"></div>
         <div class="error-msg" id="errorMsg" style="display: none;"></div>
 
         <div class="result-section" id="resultSection" style="display: none;">
-            <div class="result-title">📊 Kết Quả Giải Mã</div>
-            
-            <div class="result-grid" id="resultGrid">
-                <!-- Kết quả sẽ được đổ vào đây -->
-            </div>
-
-            <div class="result-title" style="margin-top: 1.5rem;">📄 Chi Tiết (Dữ Liệu Thô)</div>
+            <div class="result-title" id="resultTitle">Ket Qua Giai Ma</div>
+            <div class="result-grid" id="resultGrid"></div>
+            <div class="result-title" style="margin-top: 1.75rem;">Chi Tiet Day Du</div>
             <div class="pre-block" id="rawDetails"></div>
         </div>
     </div>
 
+    <div class="footer">
+        Free Fire Hex Decoder - Ho tro MajorLogin va GetLoginData
+    </div>
+
     <script>
-        // Hàm chuyển đổi Hex string thành mảng byte
+        const DEFAULT_KEY_HEX = "5967267463254445756836255a635e38";
+        const DEFAULT_IV_HEX = "366f795a4472323245337963686a4d25";
+
+        let currentMode = 'auto';
+
         function hexToBytes(hex) {
             hex = hex.replace(/\s/g, '');
-            if (hex.length % 2 !== 0) {
-                throw new Error("Mã Hex có độ dài không hợp lệ (phải là số chẵn)");
-            }
+            if (hex.length % 2 !== 0) throw new Error("Do dai Hex khong hop le");
             const bytes = [];
             for (let i = 0; i < hex.length; i += 2) {
                 bytes.push(parseInt(hex.substr(i, 2), 16));
@@ -303,22 +360,50 @@
             return bytes;
         }
 
-        // Hàm đọc Varint từ mảng byte
+        function bytesToHex(bytes) {
+            if (Array.isArray(bytes)) {
+                return bytes.map(b => b.toString(16).padStart(2, '0')).join('');
+            }
+            if (typeof bytes === 'string') {
+                const arr = [];
+                for (let i = 0; i < bytes.length; i++) {
+                    arr.push(bytes.charCodeAt(i).toString(16).padStart(2, '0'));
+                }
+                return arr.join('');
+            }
+            return '';
+        }
+
+        function decryptAES(hexData, keyHex, ivHex) {
+            try {
+                const key = CryptoJS.enc.Hex.parse(keyHex);
+                const iv = CryptoJS.enc.Hex.parse(ivHex);
+                const encrypted = CryptoJS.enc.Hex.parse(hexData);
+                
+                const decrypted = CryptoJS.AES.decrypt(
+                    { ciphertext: encrypted },
+                    key,
+                    { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }
+                );
+                
+                return decrypted.toString(CryptoJS.enc.Hex);
+            } catch (e) {
+                return null;
+            }
+        }
+
         function readVarint(bytes, pos) {
             let result = 0;
             let shift = 0;
             while (pos < bytes.length) {
                 const b = bytes[pos++];
                 result |= (b & 0x7F) << shift;
-                if ((b & 0x80) === 0) {
-                    break;
-                }
+                if ((b & 0x80) === 0) break;
                 shift += 7;
             }
             return { value: result, pos: pos };
         }
 
-        // Hàm parse Protobuf thủ công
         function parseProtobuf(bytes, startOffset = 0) {
             const fields = {};
             let pos = startOffset;
@@ -345,9 +430,12 @@
                         const val = bytes.slice(pos, pos + len);
                         pos += len;
                         
-                        // Thử decode UTF-8 xem có phải string không
-                        const str = new TextDecoder('utf-8').decode(new Uint8Array(val));
-                        fields[fieldNum] = str;
+                        try {
+                            const str = new TextDecoder('utf-8', { fatal: true }).decode(new Uint8Array(val));
+                            fields[fieldNum] = str;
+                        } catch (e) {
+                            fields[fieldNum] = Array.from(val);
+                        }
                     } else if (wireType === 5) {
                         if (pos + 4 > bytes.length) break;
                         const val = bytes.slice(pos, pos + 4);
@@ -368,7 +456,6 @@
             return fields;
         }
 
-        // Hàm giải mã JWT
         function decodeJWT(token) {
             try {
                 const parts = token.split('.');
@@ -381,84 +468,143 @@
             }
         }
 
-        // Hàm trích xuất JWT từ chuỗi
         function findJWT(str) {
             const regex = /eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g;
             const matches = str.match(regex);
             return matches ? matches[0] : null;
         }
 
-        // Hàm chính giải mã
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-' + mode).classList.add('active');
+        }
+
         function decodeHex() {
             const hexInput = document.getElementById('hexInput').value;
             const resultSection = document.getElementById('resultSection');
             const errorMsg = document.getElementById('errorMsg');
             const resultGrid = document.getElementById('resultGrid');
             const rawDetails = document.getElementById('rawDetails');
-            const loader = document.getElementById('loader');
+            const resultTitle = document.getElementById('resultTitle');
 
-            // Reset
             errorMsg.style.display = 'none';
             resultSection.style.display = 'none';
             resultGrid.innerHTML = '';
             rawDetails.textContent = '';
 
             if (!hexInput.trim()) {
-                showError("Vui lòng nhập mã Hex cần giải mã.");
+                showError("Vui long nhap ma Hex.");
                 return;
             }
 
-            loader.classList.add('active');
+            try {
+                const hexClean = hexInput.replace(/\s/g, '');
+                const bytes = hexToBytes(hexClean);
 
-            setTimeout(() => {
-                try {
-                    const bytes = hexToBytes(hexInput);
+                let detectedType = currentMode;
+
+                if (currentMode === 'auto') {
+                    const decrypted = decryptAES(hexClean, DEFAULT_KEY_HEX, DEFAULT_IV_HEX);
+                    if (decrypted && decrypted.length > 0) {
+                        const decBytes = hexToBytes(decrypted);
+                        const decParsed = parseProtobuf(decBytes, 0);
+                        if (decParsed[4] === "free fire" || decParsed[7]) {
+                            detectedType = 'request';
+                        } else {
+                            detectedType = 'response';
+                        }
+                    } else {
+                        detectedType = 'response';
+                    }
+                }
+
+                if (detectedType === 'request') {
+                    resultTitle.textContent = "KET QUA GIAI MA REQUEST (AES)";
+                    
+                    const decrypted = decryptAES(hexClean, DEFAULT_KEY_HEX, DEFAULT_IV_HEX);
+                    
+                    if (!decrypted) {
+                        showError("Khong the giai ma AES. Co the day khong phai Request gui len, hoac Key/IV da bi thay doi.");
+                        return;
+                    }
+
+                    resultSection.style.display = 'block';
+                    
+                    const decBytes = hexToBytes(decrypted);
+                    const parsed = parseProtobuf(decBytes, 0);
+
+                    const addResultItem = (label, value, isHighlight = false) => {
+                        if (value === null || value === undefined || value === '') return;
+                        const div = document.createElement('div');
+                        div.className = 'result-item' + (isHighlight ? ' highlight-item' : '');
+                        
+                        const labelDiv = document.createElement('div');
+                        labelDiv.className = 'result-label';
+                        labelDiv.textContent = label;
+                        
+                        const valueDiv = document.createElement('div');
+                        valueDiv.className = 'result-value' + (isHighlight ? ' highlight' : '');
+                        valueDiv.textContent = value;
+                        
+                        div.appendChild(labelDiv);
+                        div.appendChild(valueDiv);
+                        resultGrid.appendChild(div);
+                    };
+
+                    if (parsed[3]) addResultItem("Timestamp", parsed[3]);
+                    if (parsed[4]) addResultItem("App Name", parsed[4], true);
+                    if (parsed[7]) addResultItem("Client Version", parsed[7], true);
+                    if (parsed[8]) addResultItem("OS Version", parsed[8]);
+                    if (parsed[10]) addResultItem("Carrier", parsed[10]);
+                    if (parsed[17]) addResultItem("GPU", parsed[17]);
+                    if (parsed[20]) addResultItem("IP", parsed[20]);
+                    if (parsed[21]) addResultItem("Language", parsed[21]);
+                    if (parsed[22]) addResultItem("Open ID", parsed[22]);
+                    if (parsed[25]) addResultItem("Device Model", parsed[25]);
+                    if (parsed[26]) addResultItem("Region", parsed[26]);
+                    if (parsed[29]) addResultItem("Access Token", String(parsed[29]).substring(0, 50) + "...");
+                    if (parsed[41]) addResultItem("Network", parsed[41]);
+                    if (parsed[90]) addResultItem("Location", parsed[90]);
+                    if (parsed[93]) addResultItem("Platform", parsed[93]);
+
+                    let rawOutput = "DECRYPTED HEX (AES)\n\n" + decrypted + "\n\nPARSED FIELDS\n\n";
+                    for (const [fieldNum, value] of Object.entries(parsed)) {
+                        rawOutput += "Field " + fieldNum + ": ";
+                        if (typeof value === 'string') {
+                            rawOutput += '"' + value + '"\n';
+                        } else {
+                            rawOutput += JSON.stringify(value) + "\n";
+                        }
+                    }
+                    rawDetails.textContent = rawOutput;
+
+                } else {
+                    resultTitle.textContent = "KET QUA GIAI MA RESPONSE (PROTOBUF)";
                     
                     let parsedData = {};
-                    let parsedSuccess = false;
                     let startOffset = 0;
 
-                    // Thử parse với offset 0
                     let tempParsed = parseProtobuf(bytes, 0);
                     
-                    // Nếu không có field 1, 8 hoặc 21, thử parse với offset 64 (gói MajorLogin)
                     if (!tempParsed[1] && !tempParsed[21] && bytes.length > 64) {
                         const tempParsed64 = parseProtobuf(bytes, 64);
                         if (tempParsed64[1] || tempParsed64[21] || tempParsed64[22]) {
                             parsedData = tempParsed64;
                             startOffset = 64;
-                            parsedSuccess = true;
                         } else {
                             parsedData = tempParsed;
                         }
                     } else {
                         parsedData = tempParsed;
-                        parsedSuccess = true;
                     }
 
-                    // Nếu vẫn không có, thử toàn bộ
-                    if (!parsedSuccess) {
-                        parsedData = parseProtobuf(bytes, 0);
-                    }
+                    let accountId = null, nickname = null, lockRegion = null;
+                    let onlineIp = null, onlinePort = null, chatIp = null, chatPort = null;
+                    let key = null, iv = null, timestamp = null;
+                    let clientVersion = null, releaseVersion = null, isEmulator = null;
+                    let jwtToken = null, regionName = null;
 
-                    // Trích xuất thông tin
-                    let accountId = null;
-                    let nickname = null;
-                    let lockRegion = null;
-                    let onlineIp = null;
-                    let onlinePort = null;
-                    let chatIp = null;
-                    let chatPort = null;
-                    let key = null;
-                    let iv = null;
-                    let timestamp = null;
-                    let clientVersion = null;
-                    let releaseVersion = null;
-                    let isEmulator = null;
-                    let jwtToken = null;
-                    let regionName = null;
-
-                    // Tìm JWT trong toàn bộ dữ liệu
                     const rawString = bytes.map(b => String.fromCharCode(b)).join('');
                     const foundJwt = findJWT(rawString);
                     
@@ -475,31 +621,12 @@
                         }
                     }
 
-                    // Lấy Key/IV/Timestamp từ field 21, 22, 23
                     if (parsedData[21]) timestamp = parsedData[21];
-                    
-                    if (parsedData[22]) {
-                        try {
-                            key = bytesToHex(parsedData[22]);
-                        } catch (e) {}
-                    }
-                    if (parsedData[23]) {
-                        try {
-                            iv = bytesToHex(parsedData[23]);
-                        } catch (e) {}
-                    }
+                    if (parsedData[22]) key = bytesToHex(parsedData[22]);
+                    if (parsedData[23]) iv = bytesToHex(parsedData[23]);
+                    if (parsedData[1] && !accountId) accountId = parsedData[1];
+                    if (parsedData[4] && typeof parsedData[4] === 'string') nickname = parsedData[4];
 
-                    // Lấy Account ID từ field 1
-                    if (parsedData[1] && !accountId) {
-                        accountId = parsedData[1];
-                    }
-
-                    // Lấy Nickname từ field 4 (nếu có)
-                    if (parsedData[4] && typeof parsedData[4] === 'string') {
-                        nickname = parsedData[4];
-                    }
-
-                    // Lấy Online IP/Port từ field 14 (Online Server)
                     if (parsedData[14] && typeof parsedData[14] === 'string') {
                         const str = parsedData[14];
                         if (str.length > 6) {
@@ -508,7 +635,6 @@
                         }
                     }
 
-                    // Lấy Chat IP/Port từ field 32 (Chat Server)
                     if (parsedData[32] && typeof parsedData[32] === 'string') {
                         const str = parsedData[32];
                         if (str.length > 6) {
@@ -517,21 +643,16 @@
                         }
                     }
 
-                    // Tìm Region Name từ toàn bộ dữ liệu (Cao Bằng, Hà Nội...)
                     const regionRegex = /(Cao Bằng|Hà Nội|Hồ Chí Minh|Đà Nẵng|Hải Phòng|Cần Thơ|Singapore|Thailand|Indonesia)/i;
                     const regionMatch = rawString.match(regionRegex);
-                    if (regionMatch) {
-                        regionName = regionMatch[0];
-                    }
+                    if (regionMatch) regionName = regionMatch[0];
 
-                    // Hiển thị kết quả
                     resultSection.style.display = 'block';
-                    
+
                     const addResultItem = (label, value, isHighlight = false) => {
                         if (value === null || value === undefined || value === '') return;
-                        
                         const div = document.createElement('div');
-                        div.className = 'result-item';
+                        div.className = 'result-item' + (isHighlight ? ' highlight-item' : '');
                         
                         const labelDiv = document.createElement('div');
                         labelDiv.className = 'result-label';
@@ -546,102 +667,69 @@
                         resultGrid.appendChild(div);
                     };
 
-                    // Hiển thị thông tin chính
-                    if (accountId) addResultItem("🆔 Account ID", accountId, true);
-                    if (nickname) addResultItem("👤 Nickname", nickname, true);
-                    if (lockRegion) addResultItem("🌍 Lock Region", lockRegion);
-                    if (regionName) addResultItem("📍 Vị trí", regionName);
-                    if (clientVersion) addResultItem("📱 Client Version", clientVersion);
-                    if (releaseVersion) addResultItem("🔖 Release Version", releaseVersion);
-                    if (isEmulator !== null) addResultItem("💻 Is Emulator", isEmulator ? "Có (Emulator)" : "Không (Real Device)");
+                    if (accountId) addResultItem("Account ID", accountId, true);
+                    if (nickname) addResultItem("Nickname", nickname, true);
+                    if (lockRegion) addResultItem("Lock Region", lockRegion);
+                    if (regionName) addResultItem("Vi tri", regionName);
+                    if (clientVersion) addResultItem("Client Version", clientVersion);
+                    if (releaseVersion) addResultItem("Release Version", releaseVersion);
+                    if (isEmulator !== null) addResultItem("Is Emulator", isEmulator ? "Co (Emulator)" : "Khong (Real Device)");
                     
-                    if (onlineIp) addResultItem("🌐 Online IP", onlineIp, true);
-                    if (onlinePort) addResultItem("🔌 Online Port", onlinePort, true);
-                    if (chatIp) addResultItem("💬 Chat IP", chatIp);
-                    if (chatPort) addResultItem("💬 Chat Port", chatPort);
+                    if (onlineIp) addResultItem("Online IP", onlineIp, true);
+                    if (onlinePort) addResultItem("Online Port", onlinePort, true);
+                    if (chatIp) addResultItem("Chat IP", chatIp);
+                    if (chatPort) addResultItem("Chat Port", chatPort);
                     
-                    if (timestamp) addResultItem("⏰ Timestamp", timestamp);
-                    if (key) addResultItem("🔑 Key (Hex)", key);
-                    if (iv) addResultItem("🔒 IV (Hex)", iv);
-                    if (jwtToken) addResultItem("🎫 JWT Token", jwtToken.substring(0, 80) + "...");
+                    if (timestamp) addResultItem("Timestamp", timestamp);
+                    if (key) addResultItem("Key (Hex)", key);
+                    if (iv) addResultItem("IV (Hex)", iv);
+                    if (jwtToken) addResultItem("JWT Token", jwtToken.substring(0, 80) + "...");
 
-                    // Hiển thị chi tiết thô (tất cả các field)
-                    let rawOutput = `=== CHI TIẾT PROTOBUF (Offset: ${startOffset}) ===\n\n`;
+                    let rawOutput = "PARSED PROTOBUF (Offset: " + startOffset + ")\n\n";
                     for (const [fieldNum, value] of Object.entries(parsedData)) {
-                        rawOutput += `Field ${fieldNum}: `;
+                        rawOutput += "Field " + fieldNum + ": ";
                         if (typeof value === 'string') {
-                            // Nếu là chuỗi in được, hiển thị dạng text, nếu không hiển thị hex
-                            const isPrintable = /^[\x20-\x7E\s]+$/.test(value);
-                            if (isPrintable && value.length > 0) {
-                                rawOutput += `"${value}"\n`;
-                            } else {
-                                rawOutput += `[Bytes] ${value}\n`;
-                            }
+                            rawOutput += '"' + value + '"\n';
                         } else {
-                            rawOutput += `${value}\n`;
+                            rawOutput += JSON.stringify(value) + "\n";
                         }
                     }
                     
-                    rawOutput += `\n=== JWT DECODED ===\n\n`;
+                    rawOutput += "\nJWT DECODED\n\n";
                     if (jwtToken) {
                         const jwtData = decodeJWT(jwtToken);
-                        if (jwtData) {
-                            rawOutput += JSON.stringify(jwtData, null, 2) + '\n';
-                        } else {
-                            rawOutput += `Không thể giải mã JWT\n`;
-                        }
+                        if (jwtData) rawOutput += JSON.stringify(jwtData, null, 2) + "\n";
                     } else {
-                        rawOutput += `Không tìm thấy JWT trong gói tin\n`;
+                        rawOutput += "Khong tim thay JWT trong goi tin\n";
                     }
 
                     rawDetails.textContent = rawOutput;
-
-                } catch (err) {
-                    showError("Lỗi khi giải mã: " + err.message);
-                } finally {
-                    loader.classList.remove('active');
                 }
-            }, 100);
+
+            } catch (err) {
+                showError("Loi khi giai ma: " + err.message);
+            }
         }
 
-        // Hàm chuyển mảng byte sang Hex string
-        function bytesToHex(bytes) {
-            if (Array.isArray(bytes)) {
-                return bytes.map(b => b.toString(16).padStart(2, '0')).join('');
-            }
-            if (typeof bytes === 'string') {
-                // Nếu là string, chuyển sang hex
-                const arr = [];
-                for (let i = 0; i < bytes.length; i++) {
-                    arr.push(bytes.charCodeAt(i).toString(16).padStart(2, '0'));
-                }
-                return arr.join('');
-            }
-            return '';
-        }
-
-        // Hiển thị lỗi
         function showError(msg) {
             const errorMsg = document.getElementById('errorMsg');
-            errorMsg.textContent = "❌ " + msg;
+            errorMsg.textContent = msg;
             errorMsg.style.display = 'block';
             document.getElementById('resultSection').style.display = 'none';
         }
 
-        // Xóa tất cả
         function clearAll() {
             document.getElementById('hexInput').value = '';
             document.getElementById('resultSection').style.display = 'none';
             document.getElementById('errorMsg').style.display = 'none';
         }
 
-        // Dán từ clipboard
         async function pasteFromClipboard() {
             try {
                 const text = await navigator.clipboard.readText();
                 document.getElementById('hexInput').value = text;
             } catch (err) {
-                alert("Không thể truy cập clipboard. Vui lòng dán thủ công (Ctrl+V).");
+                alert("Khong the truy cap clipboard. Vui long dan thu cong (Ctrl+V).");
             }
         }
     </script>
