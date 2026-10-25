@@ -1,3 +1,7 @@
+try:
+    import panel as _panel_early  # bắt log console từ lúc khởi động cho web panel
+except Exception:
+    pass
 import threading, json, socket, time, random, datetime, aiohttp, asyncio, os, struct
 import datetime as dt
 import string
@@ -4488,6 +4492,11 @@ class BOTMNG:
 
 TCPbot = BOTMNG()
 app = Flask(__name__)
+try:
+    from panel import init_panel
+    init_panel(app, TCPbot)
+except Exception as _e:
+    print(f"[PANEL] ❌ Không bật được web panel: {_e}")
 
 # ====== LỆNH /START - MENU QUẢN LÝ BOT ======
 @telegram_bot.message_handler(commands=['start', 'help', 'menu'])
