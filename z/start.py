@@ -7,8 +7,8 @@ import datetime as dt
 import string
 import lib
 from lib import *
-from zandev.GPackGEN import *
-from zandev.ReQAPI import *
+from GPackGEN import *
+from ReQAPI import *
 from flask import Flask, jsonify, request 
 from functools import wraps
 temp_tokens = {}
