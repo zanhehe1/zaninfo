@@ -276,9 +276,6 @@ def bdversion(ver: str = None):
             "remote_version": "1.132.9"
         }
 
-# Details: https://api.freefireservice.dnc.su/ff.status
-# Telegram: @gringo_modz
-
 class APIClient:
     def __init__(self):
         self._data = account_data()
@@ -619,8 +616,9 @@ class APIClient:
             }
             r = requests.post(url, headers=headers, data=payload, verify=False, timeout=30)
             print(f"[GetLoginData] HTTP {r.status_code}")
+            
             if r.status_code != 200:
-                print(f"[GetLoginData] ❌ {r.text[:200]}")
+                print(f"[GetLoginData] ❌ Lỗi từ Garena: {r.text[:200]}")
                 return
 
             raw = r.content
@@ -629,6 +627,10 @@ class APIClient:
                 data = json.loads(protobuf_dec(dec.hex()))
             except:
                 data = json.loads(protobuf_dec(raw.hex()))
+
+            if not data:
+                print("[GetLoginData] ❌ Data trả về rỗng!")
+                return
 
             self.logindata = data
             self._data.guild_id = data.get("20")
@@ -644,6 +646,7 @@ class APIClient:
             print(f"[GetLoginData] ✅ OK online={self._data.online_ip}:{self._data.online_port}")
         except Exception as e:
             print("[GetLoginData]", e)
+
     def _auth_packet(self, fox=True):
         regions = self.logindata.get("19") or []
         if isinstance(regions, dict):
@@ -672,12 +675,14 @@ class APIClient:
     def TAO_PACKET_XT(self) -> str:
         try:
             return self._auth_packet(True)
-        except Exception as e: print(e)
+        except Exception as e: 
+            print(e)
 
     def TAO_PACKET_LOBBY(self):
         try:
             return self._auth_packet(False)
-        except Exception as e: print(e)
+        except Exception as e: 
+            print(e)
 
     def auth(self, access_token, is_emulator=False):
         try:
@@ -715,12 +720,17 @@ class APIClient:
             print("[auth]", e)
 
     def _build_api_response(self, authpacket):
-        if not self._data.login_token or not authpacket: return "account not found"
-        if not self._data.key or not self._data.iv: return "account not found"
+        if not self._data.login_token or not authpacket: 
+            return "account not found"
+        if not self._data.key or not self._data.iv: 
+            return "account not found"
+            
         tok = self._data.login_token
         if isinstance(tok, bytes):
             tok = tok.decode("utf-8", "replace")
+            
         data = gringay.tokendecode(tok)
+        
         if self._data.guild_id:
             guild = {}
             guild["id"] = self._data.guild_id
@@ -733,12 +743,15 @@ class APIClient:
         saddress["chatport"] = self._data.chat_port
         saddress["onlineip"] = self._data.online_ip
         saddress["onlineport"] = self._data.online_port
+        
         response = {}
         response["CreateTime"] = gringay.format_timestamp(self._data.create_time)
         response["ExpiryTime"] = gringay.format_timestamp(self._data.expiry_time)
         response["UserAuthPacket"] = list(authpacket)
+        
         lobby_pkt = self.TAO_PACKET_LOBBY()
         response["UserAuthPacketLobby"] = list(lobby_pkt) if lobby_pkt else list(authpacket)
+        
         response["UserAuthToken"] = tok
         response["UserNickName"] = data.get("nickname") if data else None
         response["UserAccountUID"] = data.get("account_id") if data else None
@@ -751,7 +764,9 @@ class APIClient:
         response["iv"] = list(self._data.iv)
         response["logindata"] = self.logindata
         response["GameServerAddress"] = saddress
+        
         return response
+
 
 class FreeFireAPI:
     def __init__(self):
