@@ -366,67 +366,67 @@ class APIClient:
             fields[4] = "free fire"
             fields[5] = 1
             fields[7] = "1.132.9"
-            fields[8] = "Android OS 10 / API-29 (NHG47O/eng.build.20231013.013027)"
+            fields[8] = "Android OS 13 / API-33 (TP1A.220624.014)"
             fields[9] = "Handheld"
-            fields[10] = "TelKila"
+            fields[10] = "Singtel"
             fields[11] = "WIFI"
-            fields[12] = 1708
-            fields[13] = 750
-            fields[14] = "440"
+            fields[12] = 1280
+            fields[13] = 720
+            fields[14] = "240"
             fields[15] = "ARM64 FP ASIMD AES | 2850 | 8"
-            fields[16] = 3968
-            fields[17] = "Mali-G610 MC6"
-            fields[18] = "OpenGL ES 3.2 v1.r32p1-01eac0.54329dee8f160f288c574caaf67bbe3f"
+            fields[16] = 7597
+            fields[17] = "Adreno (TM) 730"
+            fields[18] = "OpenGL ES 3.2"
             fields[19] = "Google|0ecc7b3b-6c41-462e-9050-26d835e84c53"
             fields[20] = "116.97.105.60"
             fields[21] = "en"
             fields[22] = str(self._data.open_id)
             fields[23] = "4"
             fields[24] = "Handheld"
-            fields[25] = "Google Pixel"
-            fields[26] = "SG"
+            fields[25] = "OnePlus CPH2411"
+            fields[26] = "VN"
             fields[29] = str(self._data.access_token)
             fields[30] = 1
-            fields[41] = "TelKila"
+            fields[41] = "Singtel"
             fields[42] = "WIFI"
-            fields[57] = "7428b253defc164018c604a1ebbfebdf"
-            fields[60] = 109029
-            fields[61] = 37616
-            fields[62] = 2048
-            fields[63] = 804
-            fields[64] = 37616
-            fields[65] = 109029
-            fields[66] = 37616
-            fields[67] = 109029
+            fields[57] = "1ac4b80ecf0478a44203bf8fac6120f5"
+            fields[60] = 30000
+            fields[61] = 15000
+            fields[62] = 5000
+            fields[63] = 900
+            fields[64] = 28000
+            fields[65] = 34308
+            fields[66] = 28000
+            fields[67] = 34308
             fields[70] = 2
             fields[73] = 3
-            fields[74] = "/data/app/com.dts.freefireth-oiglMJkEoNJlsRci10280Q==/lib/arm64"
-            fields[76] = 1
-            fields[77] = "b8e0cd5e295eee42f5860d3c86e483dd|/data/app/com.dts.freefireth-oiglMJkEoNJlsRci10280Q==/base.apk"
-            fields[78] = 3
-            fields[79] = 2
-            fields[81] = "64"
-            fields[83] = "2019121229"
+            fields[74] = "/data/app/~~iw-K-GR3srU7dLE-UxJ4bg==/com.dts.freefiremax-kbPhw3SUYautW0I_oayB_A==/lib/arm"
+            fields[76] = 2
+            fields[77] = "428775ab8c8845bd341b5357ec61d15e|/data/app/~~iw-K-GR3srU7dLE-UxJ4bg==/com.dts.freefiremax-kbPhw3SUYautW0I_oayB_A==/base.apk"
+            fields[78] = 2
+            fields[79] = 1
+            fields[81] = "32"
+            fields[83] = "2019118525"
             fields[85] = 3
             fields[86] = "OpenGLES2"
-            fields[87] = 511
+            fields[87] = 4095
             fields[88] = 4
             fields[90] = "Hà Nội"
             fields[91] = "01"
-            fields[92] = 4231
-            fields[93] = "android"
-            fields[94] = "KqsHT8at0g7Na/G7iOeF1IpesHMf+HoePFMFFE8Tq/dSk4fIbJ1j8TdV8OAyWIVnSmD2rM6vfFMtCD8Ig7iROgDJmIMrdtcB6orwuNRpMr4MVu3D7FoTcuQdq/8EyOkRQiUrbg=="
+            fields[92] = 12000
+            fields[93] = "android_max"
+            fields[94] = "KqsHT2gyPt7vUCc9SCjv2ioi3WEZSEL86ErvXB38suVVK/Z4IVt78ESl/r2S15C1pqu/j6ZmgFL7HbwoFiiVconX08ooKiisQffvEAPCo/C+Lahr"
             fields[95] = 111207
-            fields[96] = '{"cur_rate":null,"support_etc2":false}'
+            fields[96] = '{"cur_rate":null,"support_etc2":true}'
             fields[97] = 1
             fields[98] = 1
             fields[99] = "4"
             fields[100] = "4"
-            fields[102] = bytes.fromhex('4000434f07555f0637')
+            fields[102] = {}
             fields[103] = 1
-            fields[104] = 1797
+            fields[104] = 77149
             fields[105] = 1
-            fields[106] = "https://dl.cdn.freefiremobile.com/live/ABHotUpdates/|https://dl-core.cdn.freefiremobile.com/live/ABHotUpdates/|4a0070ac356973792f002e0b25b96c3b"
+            fields[106] = "https://dl.cdn.freefiremobile.com/live/ABHotUpdates/|https://dl-core.cdn.freefiremobile.com/live/ABHotUpdates/|6b2078db9d22dd98f8e9386a39af8462"
             fields[107] = "c8e41b7a93f02d56e1a94c7b8203f5d1"
 
             payload = AES_CBC128(pb_encode(fields), self.key, self.iv)
@@ -454,21 +454,18 @@ class APIClient:
             raw = r.content
             print(f"[MajorLogin] RESPONSE LEN: {len(raw)}")
 
-            # ⚠️ THỬ DECRYPT RESPONSE BẰNG KEY/IV HARDCODE
             decrypted = None
             try:
                 decrypted = unpad(AES.new(self.key, AES.MODE_CBC, self.iv).decrypt(raw), 16)
                 print(f"[MajorLogin] ✅ Response decrypted OK (len={len(decrypted)})")
             except Exception as e:
-                print(f"[MajorLogin] ⚠️ Response NOT encrypted (hoặc key/iv khác): {e}")
+                print(f"[MajorLogin] ⚠️ Response NOT encrypted: {e}")
                 decrypted = raw
 
-            # ⚠️ EXTRACT KEY/IV TỪ DECRYPTED (hoặc raw)
             pb = ProtoBuf(decrypted)
             key_extracted = _as_bytes(pb.EXTRACT_FIELDS([22], mode="bytes"))
             iv_extracted = _as_bytes(pb.EXTRACT_FIELDS([23], mode="bytes"))
 
-            # ⚠️ FALLBACK: thử offset 64
             if (not key_extracted or not iv_extracted) and len(decrypted) > 64:
                 pb2 = ProtoBuf(decrypted[64:])
                 key_extracted = _as_bytes(pb2.EXTRACT_FIELDS([22], mode="bytes"))
@@ -482,11 +479,8 @@ class APIClient:
             else:
                 self._data.key = self.key
                 self._data.iv = self.iv
-                print(f"[MajorLogin] ⚠️ key/iv hardcode (extract fail)")
-                print(f"[MajorLogin] key_extracted={key_extracted.hex() if key_extracted else None}")
-                print(f"[MajorLogin] iv_extracted ={iv_extracted.hex() if iv_extracted else None}")
+                print(f"[MajorLogin] ⚠️ key/iv hardcode")
 
-            # ⚠️ FIND JWT
             jwt_bytes = None
             o = 0
             while o < len(decrypted) - 1:
@@ -534,7 +528,8 @@ class APIClient:
         except Exception as e:
             print("[MajorLogin]", e)
 
-    def GetLoginData(self):
+
+     def GetLoginData(self):
         try:
             if not self._data.login_token:
                 print("[GetLoginData] ❌ login_token rỗng")
@@ -545,67 +540,67 @@ class APIClient:
             fields[4] = "free fire"
             fields[5] = 1
             fields[7] = "1.132.9"
-            fields[8] = "Android OS 10 / API-29 (NHG47O/eng.build.20231013.013027)"
+            fields[8] = "Android OS 13 / API-33 (TP1A.220624.014)"
             fields[9] = "Handheld"
-            fields[10] = "TelKila"
+            fields[10] = "Singtel"
             fields[11] = "WIFI"
-            fields[12] = 1708
-            fields[13] = 750
-            fields[14] = "440"
+            fields[12] = 1280
+            fields[13] = 720
+            fields[14] = "240"
             fields[15] = "ARM64 FP ASIMD AES | 2850 | 8"
-            fields[16] = 3968
-            fields[17] = "Mali-G610 MC6"
-            fields[18] = "OpenGL ES 3.2 v1.r32p1-01eac0.54329dee8f160f288c574caaf67bbe3f"
+            fields[16] = 7597
+            fields[17] = "Adreno (TM) 730"
+            fields[18] = "OpenGL ES 3.2"
             fields[19] = "Google|0ecc7b3b-6c41-462e-9050-26d835e84c53"
             fields[20] = "116.97.105.60"
             fields[21] = "en"
             fields[22] = str(self._data.open_id)
             fields[23] = "4"
             fields[24] = "Handheld"
-            fields[25] = "Google Pixel"
-            fields[26] = "SG"
+            fields[25] = "OnePlus CPH2411"
+            fields[26] = "VN"
             fields[29] = str(self._data.access_token)
             fields[30] = 1
-            fields[41] = "TelKila"
+            fields[41] = "Singtel"
             fields[42] = "WIFI"
-            fields[57] = "7428b253defc164018c604a1ebbfebdf"
-            fields[60] = 109029
-            fields[61] = 37616
-            fields[62] = 2048
-            fields[63] = 804
-            fields[64] = 37616
-            fields[65] = 109029
-            fields[66] = 37616
-            fields[67] = 109029
+            fields[57] = "1ac4b80ecf0478a44203bf8fac6120f5"
+            fields[60] = 30000
+            fields[61] = 15000
+            fields[62] = 5000
+            fields[63] = 900
+            fields[64] = 28000
+            fields[65] = 34308
+            fields[66] = 28000
+            fields[67] = 34308
             fields[70] = 2
             fields[73] = 3
-            fields[74] = "/data/app/com.dts.freefireth-oiglMJkEoNJlsRci10280Q==/lib/arm64"
-            fields[76] = 1
-            fields[77] = "b8e0cd5e295eee42f5860d3c86e483dd|/data/app/com.dts.freefireth-oiglMJkEoNJlsRci10280Q==/base.apk"
-            fields[78] = 3
-            fields[79] = 2
-            fields[81] = "64"
-            fields[83] = "2019121229"
+            fields[74] = "/data/app/~~iw-K-GR3srU7dLE-UxJ4bg==/com.dts.freefiremax-kbPhw3SUYautW0I_oayB_A==/lib/arm"
+            fields[76] = 2
+            fields[77] = "428775ab8c8845bd341b5357ec61d15e|/data/app/~~iw-K-GR3srU7dLE-UxJ4bg==/com.dts.freefiremax-kbPhw3SUYautW0I_oayB_A==/base.apk"
+            fields[78] = 2
+            fields[79] = 1
+            fields[81] = "32"
+            fields[83] = "2019118525"
             fields[85] = 3
             fields[86] = "OpenGLES2"
-            fields[87] = 511
+            fields[87] = 4095
             fields[88] = 4
             fields[90] = "Hà Nội"
             fields[91] = "01"
-            fields[92] = 4231
-            fields[93] = "android"
-            fields[94] = "KqsHT8at0g7Na/G7iOeF1IpesHMf+HoePFMFFE8Tq/dSk4fIbJ1j8TdV8OAyWIVnSmD2rM6vfFMtCD8Ig7iROgDJmIMrdtcB6orwuNRpMr4MVu3D7FoTcuQdq/8EyOkRQiUrbg=="
+            fields[92] = 12000
+            fields[93] = "android_max"
+            fields[94] = "KqsHT2gyPt7vUCc9SCjv2ioi3WEZSEL86ErvXB38suVVK/Z4IVt78ESl/r2S15C1pqu/j6ZmgFL7HbwoFiiVconX08ooKiisQffvEAPCo/C+Lahr"
             fields[95] = 111207
-            fields[96] = '{"cur_rate":null,"support_etc2":false}'
+            fields[96] = '{"cur_rate":null,"support_etc2":true}'
             fields[97] = 1
             fields[98] = 1
             fields[99] = "4"
             fields[100] = "4"
-            fields[102] = bytes.fromhex('4000434f07555f0637')
+            fields[102] = {}
             fields[103] = 1
-            fields[104] = 1797
+            fields[104] = 77149
             fields[105] = 1
-            fields[106] = "https://dl.cdn.freefiremobile.com/live/ABHotUpdates/|https://dl-core.cdn.freefiremobile.com/live/ABHotUpdates/|4a0070ac356973792f002e0b25b96c3b"
+            fields[106] = "https://dl.cdn.freefiremobile.com/live/ABHotUpdates/|https://dl-core.cdn.freefiremobile.com/live/ABHotUpdates/|6b2078db9d22dd98f8e9386a39af8462"
             fields[107] = "c8e41b7a93f02d56e1a94c7b8203f5d1"
 
             payload = AES_CBC128(pb_encode(fields), self.key, self.iv)
@@ -628,7 +623,6 @@ class APIClient:
                 print(f"[GetLoginData] ❌ {r.text[:200]}")
                 return
 
-            # ⚠️ THỬ DECRYPT RESPONSE
             raw = r.content
             try:
                 dec = unpad(AES.new(self.key, AES.MODE_CBC, self.iv).decrypt(raw), 16)
@@ -650,7 +644,6 @@ class APIClient:
             print(f"[GetLoginData] ✅ OK online={self._data.online_ip}:{self._data.online_port}")
         except Exception as e:
             print("[GetLoginData]", e)
-
     def _auth_packet(self, fox=True):
         regions = self.logindata.get("19") or []
         if isinstance(regions, dict):
