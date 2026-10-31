@@ -17,3 +17,5 @@ pillow
 python-multipart
 Unidecode
 flask
+opuslib
+colorama
