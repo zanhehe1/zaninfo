@@ -1640,7 +1640,7 @@ Telegram: @zanxgay""")
 
     except Exception as e:
         self._bot.reply(cid, type, "[B][c]Lỗi /rcute")
-   elif message.startswith("/l"):
+   elif message and message.startswith("/l"):
         try:
             parts = message.strip().split()
             
@@ -1655,7 +1655,7 @@ Telegram: @zanxgay""")
                 except:
                     pass
                     
-            # 3. Thêm UID của Bot (nếu chưa có trong danh sách)
+            # 3. Thêm UID của Bot
             if self.botid:
                 try:
                     bot_uid = int(self.botid)
@@ -1673,7 +1673,7 @@ Telegram: @zanxgay""")
                     unique_uids.append(u)
             target_uids = unique_uids
 
-            # 5. Lọc bỏ các UID rác/bot hệ thống nếu có
+            # 5. Lọc bỏ UID rác
             target_uids = [u for u in target_uids if u not in [1300000081, 1315000007]]
 
             emotes = [
@@ -1703,9 +1703,7 @@ Telegram: @zanxgay""")
             def send_emote(u, emo):
                 try:
                     if self.sock39699:
-                        self.sock39699.send(
-                            self._bot.play_emote(emo, [u])
-                        )
+                        self.sock39699.send(self._bot.play_emote(emo, [u]))
                 except Exception as e:
                     print("EMOTE ERROR:", e)
 
@@ -1713,18 +1711,11 @@ Telegram: @zanxgay""")
                 if self.stop_actions.is_set():
                     break
 
-                shuffled = random.sample(
-                    emotes,
-                    len(target_uids)
-                )
-
+                shuffled = random.sample(emotes, len(target_uids))
                 threads = []
 
                 for u, emo in zip(target_uids, shuffled):
-                    t = threading.Thread(
-                        target=send_emote,
-                        args=(u, emo)
-                    )
+                    t = threading.Thread(target=send_emote, args=(u, emo))
                     t.start()
                     threads.append(t)
 
@@ -1737,21 +1728,18 @@ Telegram: @zanxgay""")
                     time.sleep(0.1)
 
             if self.stop_actions.is_set():
-                self._bot.reply(
-                    cid,
-                    type,
-                    "[B][C][ff0000]⏹️ Đã dừng theo yêu cầu!"
-                )
+                self._bot.reply(cid, type, "[B][C][ff0000]⏹️ Đã dừng theo yêu cầu!")
             else:
-                done_msg = f"[B][C][FFFFFF]Hoàn Tất Random Full Súng 7!\n[FFFFFF]Thể Loại Lệnh: [00ffb3]Random Full Súng 7\n\n[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n[C0C0C0]Mỗi UID đã nhận 22 hành động random khác nhau!"
-                self._bot.reply(cid, type, done_msg)
+                self._bot.reply(
+                    cid, type,
+                    f"[B][C][FFFFFF]Hoàn Tất Random Full Súng 7!\n"
+                    f"[FFFFFF]Thể Loại Lệnh: [00ffb3]Random Full Súng 7\n\n"
+                    f"[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n"
+                    f"[C0C0C0]Mỗi UID đã nhận 22 hành động random khác nhau!"
+                )
 
         except Exception as e:
-            self._bot.reply(
-                cid,
-                type,
-                "[B][C][ff0000]Lỗi khi chạy /l"
-            )
+            self._bot.reply(cid, type, "[B][C][ff0000]Lỗi khi chạy /l")
             print("L CMD ERROR:", e)
                 
    elif message.startswith("/clag"):
