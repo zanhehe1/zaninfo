@@ -2369,128 +2369,110 @@ Telegram: @zanxgay""")
         self._bot.reply(cid, type, "[B][c]Lỗi /rcute")
    elif message.startswith("/l"):
     try:
+       target_uids = [int(uid)]
+       
+       parts = message.strip().split()
+       if len(parts) > 1:
+            extra_uids = [int(x) for x in parts[1:] if x.isdigit()]
+            target_uids.extend(extra_uids)
 
-      parts = message.strip().split()
+       if self.botid:
+            try:
+                 bot_uid = int(self.botid)
+                 if bot_uid not in target_uids:
+                      target_uids.append(bot_uid)
+            except:
+                 pass
 
-      if len(parts) < 2:
-         return self._bot.reply(
-            cid, type,
-            "[B][C][ff0000]Sai cú pháp!\n\n"
-            "[ffffff]Ví dụ:\n"
-            "[00ff00]/l uid1 uid2 uid3"
-         )
+       seen = set()
+       unique_uids = []
+       for u in target_uids:
+            if u not in seen:
+                 seen.add(u)
+                 unique_uids.append(u)
+       target_uids = unique_uids
 
-      try:
-         target_uids = [int(x) for x in parts[1:]]
-      except:
-         return self._bot.reply(
-            cid, type,
-            "[B][C][ff0000]UID không hợp lệ!"
-         )
+       target_uids = [u for u in target_uids if u not in [1300000081, 1315000007]]
 
-      if not target_uids:
-         return self._bot.reply(
-            cid, type,
-            "[B][C][ff0000]Cần ít nhất 1 UID!"
-         )
+       emotes = [
+            909049010, 909051003, 909033002, 909041005, 909038010,
+            909039011, 909040010, 909000081, 909000085, 909000063,
+            909000075, 909033001, 909000090, 909000068, 909000098,
+            909035007, 909037011, 909038012, 909035012, 909042008,
+            909045001, 909054004, 909055007
+       ]
 
-      # Loại bỏ UID bot nếu user nhập trùng + luôn thêm bot vào cuối
-      if self.botid:
-         try:
-            bot_uid = int(self.botid)
-            target_uids = [u for u in target_uids if u != bot_uid]
-            target_uids.append(bot_uid)
-         except:
-            pass
+       self.stop_actions.clear()
 
-      # Loại bỏ UID trùng nhau
-      seen = set()
-      unique_uids = []
-      for u in target_uids:
-         if u not in seen:
-            seen.add(u)
-            unique_uids.append(u)
-      target_uids = unique_uids
-
-      emotes = [
-         909049010, 909051003, 909033002, 909041005, 909038010,
-         909039011, 909040010, 909000081, 909000085, 909000063,
-         909000075, 909033001, 909000090, 909000068, 909000098,
-         909035007, 909037011, 909038012, 909035012, 909042008,
-         909045001, 909054004, 909055007
-      ]
-
-      self.stop_actions.clear()
-
-      self._bot.reply(
-         cid,
-         type,
-         "[B][C][FFFFFF]Xin chào!\n"
-         "[FFFFFF]Loại lệnh: [00ffb3]RANDOM FULL SÚNG 7\n\n"
-         "[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n"
-         "[C0C0C0]Developer: @zanxgay"
-      )
-
-      self._bot.reply(
-         cid,
-         type,
-         f"[B][C][00ff00]『 ACTIVE 』 → {len(target_uids)} UID\n"
-         "[ffffff]Telegram: [00fffb]@zanxgay"
-      )
-
-      def send_emote(uid, emo):
-         try:
-            if self.sock39699:
-               self.sock39699.send(
-                  self._bot.play_emote(emo, [uid])
-               )
-         except Exception as e:
-            print("EMOTE ERROR:", e)
-
-      for _ in range(21):
-         if self.stop_actions.is_set():
-            break
-
-         shuffled = random.sample(
-            emotes,
-            len(target_uids)
-         )
-
-         threads = []
-
-         for uid, emo in zip(target_uids, shuffled):
-            t = threading.Thread(
-               target=send_emote,
-               args=(uid, emo)
-            )
-            t.start()
-            threads.append(t)
-
-         for t in threads:
-            t.join()
-
-         for _ in range(65):
-            if self.stop_actions.is_set():
-               break
-            time.sleep(0.1)
-
-      if self.stop_actions.is_set():
-         self._bot.reply(
+       self._bot.reply(
             cid,
             type,
-            "[B][C][ff0000]⏹️ Đã dừng theo yêu cầu!"
-         )
-      else:
-         done_msg = f"[B][C][FFFFFF]Hoàn Tất Random Full Súng 7!\n[FFFFFF]Thể Loại Lệnh: [00ffb3]Random Full Súng 7\n\n[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n[C0C0C0]Mỗi UID đã nhận 22 hành động random khác nhau!"
-         self._bot.reply(cid, type, done_msg)
+            "[B][C][FFFFFF]Xin chào!\n"
+            "[FFFFFF]Loại lệnh: [00ffb3]RANDOM FULL SÚNG 7\n\n"
+            "[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n"
+            "[C0C0C0]Developer: @zanxgay"
+       )
+
+       self._bot.reply(
+            cid,
+            type,
+            f"[B][C][00ff00]『 ACTIVE 』 → {len(target_uids)} UID\n"
+            "[ffffff]Telegram: [00fffb]@zanxgay"
+       )
+
+       def send_emote(t_uid, emo):
+            try:
+                 if self.sock39699:
+                      self.sock39699.send(
+                           self._bot.play_emote(emo, [t_uid])
+                      )
+            except Exception as e:
+                 print("EMOTE ERROR:", e)
+
+       for _ in range(21):
+            if self.stop_actions.is_set():
+                 break
+
+            shuffled = random.sample(
+                 emotes,
+                 len(target_uids)
+            )
+
+            threads = []
+
+            for t_uid, emo in zip(target_uids, shuffled):
+                 t = threading.Thread(
+                      target=send_emote,
+                      args=(t_uid, emo)
+                 )
+                 t.start()
+                 threads.append(t)
+
+            for t in threads:
+                 t.join()
+
+            for _ in range(65):
+                 if self.stop_actions.is_set():
+                      break
+                 time.sleep(0.1)
+
+       if self.stop_actions.is_set():
+            self._bot.reply(
+                 cid,
+                 type,
+                 "[B][C][ff0000]⏹️ Đã dừng theo yêu cầu!"
+            )
+       else:
+            done_msg = f"[B][C][FFFFFF]Hoàn Tất Random Full Súng 7!\n[FFFFFF]Thể Loại Lệnh: [00ffb3]Random Full Súng 7\n\n[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n[C0C0C0]Mỗi UID đã nhận 22 hành động random khác nhau!"
+            self._bot.reply(cid, type, done_msg)
 
     except Exception as e:
-      self._bot.reply(
-         cid,
-         type,
-         "[B][C][ff0000]Lỗi khi chạy /l"
-      )
-      print("L CMD ERROR:", e)
+       self._bot.reply(
+            cid,
+            type,
+            "[B][C][ff0000]Lỗi khi chạy /l"
+       )
+       print("L CMD ERROR:", e)
                 
    elif message.startswith("/clag"):
     parts = message.strip().split()
@@ -4317,15 +4299,19 @@ Developer: @zanxgay
         print("N CMD ERROR:", e)
                             
    elif message.startswith("/5"):
-                if len(message) > 3:
-                    self.GenSquads(5, cid, message.split()[1], type, name)
-                    return
-                self.GenSquads(5, cid, uid, type, name)
+    if len(message) > 3:
+        self.GenSquads(5, cid, message.split()[1], type, name)
+        return
+    self.GenSquads(5, cid, uid, type, name)
+    return
 
    elif message.startswith("/6"):
-    if len(message) > 3: self.GenSquads(6, cid, message.split()[1], type); return
-    self.GenSquads(6, cid, uid, type)
-
+    if len(message) > 3:
+        self.GenSquads(6, cid, message.split()[1], type, name)
+        return
+    self.GenSquads(6, cid, uid, type, name)
+    return
+ 
    elif message.startswith("/status"):
     text = get_user_input(str(message))
     if ":" in text: self._bot.reply(cid, type, text); return
