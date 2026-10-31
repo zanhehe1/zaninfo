@@ -8,7 +8,7 @@
       "access_bot": [
         {
           "uid": 18457983435,
-          "expire": "2054-03-15 10:55:50"
+          "expire": "2054-03-17 09:31:15"
         },
         {
           "uid": 3391643669,
@@ -46,7 +46,7 @@
       "access_bot": [
         {
           "uid": 18457983435,
-          "expire": "2054-03-15 10:49:22"
+          "expire": "2054-03-17 09:58:40"
         },
         {
           "uid": 895016779,
@@ -65,11 +65,15 @@
       "access_bot": [
         {
           "uid": 18457983435,
-          "expire": "2054-03-15 10:56:07"
+          "expire": "2054-03-17 09:59:57"
         },
         {
           "uid": 895016779,
           "expire": "2027-01-31 08:57:15"
+        },
+        {
+          "uid": 281100969,
+          "expire": "2027-02-07 10:04:30"
         }
       ],
       "active-clan": true,
@@ -84,7 +88,7 @@
       "access_bot": [
         {
           "uid": 18457983435,
-          "expire": "2054-03-15 10:14:47"
+          "expire": "2054-03-17 09:31:17"
         }
       ],
       "active-clan": true,
@@ -103,11 +107,7 @@
         },
         {
           "uid": 18457983435,
-          "expire": "2054-03-15 10:28:42"
-        },
-        {
-          "uid": 18246589975,
-          "expire": "2026-10-30 07:57:35"
+          "expire": "2054-03-17 09:45:38"
         }
       ],
       "active-clan": true,
@@ -122,7 +122,7 @@
       "access_bot": [
         {
           "uid": 18457983435,
-          "expire": "2054-03-15 10:45:16"
+          "expire": "2054-03-17 09:58:26"
         },
         {
           "uid": 9883960202,
@@ -164,27 +164,12 @@
         },
         {
           "uid": 18457983435,
-          "expire": "2054-03-15 10:43:12"
+          "expire": "2054-03-17 09:53:50"
         }
       ],
       "active-clan": true,
       "botid": 18847711836,
       "nickname": "@tuilatipo"
-    },
-    {
-      "bot_id": 10,
-      "auth_bot_login": {
-        "access_token": "8349426307:1EBF49CDCAAADFAB17311CA7D9D6973AAFC0210F47A172A533C888F7CC8E95DF"
-      },
-      "access_bot": [
-        {
-          "uid": 18457983435,
-          "expire": "2054-03-15 10:19:56"
-        }
-      ],
-      "active-clan": true,
-      "botid": 18880344151,
-      "nickname": "tuilatipo℅"
     },
     {
       "bot_id": 11,
@@ -198,7 +183,7 @@
         },
         {
           "uid": 18457983435,
-          "expire": "2054-03-15 10:48:54"
+          "expire": "2054-03-17 09:55:48"
         }
       ],
       "active-clan": true,
@@ -219,16 +204,6 @@
       "active-clan": true,
       "botid": 18931486080,
       "nickname": "roblox kid.5"
-    },
-    {
-      "bot_id": 13,
-      "auth_bot_login": {
-        "access_token": "50b7255d200610518966da8a66cca29e3364d1f15e808ae1cf9d4da9e97dfa95"
-      },
-      "access_bot": [],
-      "active-clan": true,
-      "botid": 18931486084,
-      "nickname": "roblox kid.7"
     }
   ]
 }
