@@ -2709,7 +2709,7 @@ Developer: @zanxgay
         )
         print("N CMD ERROR:", e)   
     
-   elif message.startswith("/abc"):
+   elif message and message.startswith("/abc"):
         try:
             parts = message.strip().split()
             
@@ -2724,7 +2724,7 @@ Developer: @zanxgay
                 except:
                     pass
                     
-            # 3. Thêm UID của Bot (nếu chưa có trong danh sách)
+            # 3. Thêm UID của Bot
             if self.botid:
                 try:
                     bot_uid = int(self.botid)
@@ -2742,7 +2742,7 @@ Developer: @zanxgay
                     unique_uids.append(u)
             target_uids = unique_uids
 
-            # 5. Lọc bỏ các UID rác/bot hệ thống nếu có
+            # 5. Lọc bỏ UID rác
             target_uids = [u for u in target_uids if u not in [1300000081, 1315000007]]
 
             default_emotes = [
@@ -2772,14 +2772,11 @@ Developer: @zanxgay
             for emo in default_emotes:
                 if self.stop_actions.is_set():
                     break
-
                 if not self.sock39699:
                     break
 
                 try:
-                    self.sock39699.send(
-                        self._bot.play_emote(emo, target_uids)
-                    )
+                    self.sock39699.send(self._bot.play_emote(emo, target_uids))
                 except Exception as e:
                     print(f"[ABC] send err: {e}")
 
@@ -2789,10 +2786,7 @@ Developer: @zanxgay
                     time.sleep(0.1)
 
             if self.stop_actions.is_set():
-                self._bot.reply(
-                    cid, type,
-                    "[B][C][ff0000]⏹️ Đã dừng theo yêu cầu!"
-                )
+                self._bot.reply(cid, type, "[B][C][ff0000]⏹️ Đã dừng theo yêu cầu!")
             else:
                 self._bot.reply(
                     cid, type,
@@ -2801,10 +2795,7 @@ Developer: @zanxgay
                 )
 
         except Exception as e:
-            self._bot.reply(
-                cid, type,
-                "[B][C][ff0000]Lỗi khi chạy /abc"
-            )
+            self._bot.reply(cid, type, "[B][C][ff0000]Lỗi khi chạy /abc")
             print("ABC CMD ERROR:", e)
         
    elif message.startswith("/hw"):
