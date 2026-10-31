@@ -32,6 +32,7 @@ class TAO_PACKET:
    (s + datetime.timedelta(days=(7 - s.weekday())))
    .replace(hour=6, minute=0, second=0, microsecond=0)
    .timestamp())
+
  def accept_request_invite(self, uid, rc):
   fields = {}
   fields[0] = 5
@@ -49,6 +50,31 @@ class TAO_PACKET:
   fields[2][10] = rc
   return self._builder(fields=list(fields.items()))
  
+ def cutmmdi_zan(self, idcut):
+  fields = {}
+  fields[0] = 5
+  fields[1] = 35
+  fields[2] = {}
+  fields[2][1] = int(idcut)
+  return self._builder(fields=list(fields.items()))
+
+ def ghost_custom(self, teamcode, custom_name):
+        colors = ["[FF0000]", "[00FF00]", "[0000FF]", "[FFFF00]", "[FF00FF]", "[00FFFF]"]
+        color = random.choice(colors)
+        fields = {}
+        fields[0] = 5
+        fields[1] = 61
+        fields[2] = {}
+        fields[2][1] = int(teamcode)
+        fields[2][2] = {}
+        fields[2][2][1] = int(teamcode)
+        fields[2][2][3] = f"[b][c]{color}{custom_name}"
+        fields[2][2][6] = int(time.time())
+        fields[2][2][7] = 1
+        fields[2][2][9] = 1
+        fields[2][3] = "1"
+        return self._builder(fields=list(fields.items()))
+
 
  def send_message(self, message, messageType, chatid):
   fields = {}
@@ -347,7 +373,11 @@ class TAO_PACKET:
   fields[2] = {}
   return self._builder(fields=list(fields.items()))
 
- def musicbycdanh(self):
+ # ============================================================
+ # VOICE / MUSIC PACKETS (dynamic room_id)
+ # ============================================================
+ def play_music_packet(self, room_id):
+  """Gửi packet voice handshake cho room cụ thể (room_id động)."""
   fields = {}
   fields[0] = 1
   fields[1] = 55
@@ -365,15 +395,23 @@ class TAO_PACKET:
   fields[12] = "SM-A145F"
   fields[13] = 1
   fields[14] = "s5e3830"
+
+  clean_room = str(room_id).replace("VN_", "")
+  voice_token = f"FFD58FB4F76F648C2A5E21EBCFA3AAE81B4C9B7D97VN_{clean_room}"
+
   packet_data = {}
-  packet_data[0] = 5 
+  packet_data[0] = 5
   packet_data[1] = 88
   packet_data[2] = fields
   packet_data[3] = 4529
-  packet_data[4] = "FFD58FB4F76F648C2A5E21EBCFA3AAE81B4C9B7D97VN_2091883097607888896"
-  packet_data[5] = "all"  
-  return self._builder(fields=list(packet_data.items()))    
- 
+  packet_data[4] = voice_token
+  packet_data[5] = "all"
+  return self._builder(fields=list(packet_data.items()))
+
+ def open_micro(self):
+  """Mở micro (dùng room_id mặc định — chỉ khi không có room_id động)."""
+  return self.play_music_packet("2091883097607888896")
+
  def invite_squad(self, user_id, invite_type):
   fields = {}
   fields[0] = 5
@@ -420,7 +458,6 @@ class TAO_PACKET:
   fields[2][34][2] = 8
   fields[2][34][3] = bytes([15,6,21,8,10,11,19,12,17,4,14,20,7,2,1,5,16,3,13,18])
   return self._builder(fields=list(fields.items()))
-  
 
  def leave_squad(self, uid: int = 0x1):
   fields = {}
