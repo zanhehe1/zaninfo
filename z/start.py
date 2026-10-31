@@ -2807,7 +2807,7 @@ Developer: @zanxgay
             )
             print("ABC CMD ERROR:", e)
 
-    except Exception as e:
+     except Exception as e:
         self._bot.reply(
             cid, type,
             "[B][C][ff0000]Lỗi khi chạy /abc"
