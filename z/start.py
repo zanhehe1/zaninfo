@@ -2806,13 +2806,6 @@ Developer: @zanxgay
                 "[B][C][ff0000]Lỗi khi chạy /abc"
             )
             print("ABC CMD ERROR:", e)
-
-      except Exception as e:
-        self._bot.reply(
-            cid, type,
-            "[B][C][ff0000]Lỗi khi chạy /abc"
-        )
-        print("ABC CMD ERROR:", e)
         
    elif message.startswith("/hw"):
     try:
