@@ -529,7 +529,7 @@ class APIClient:
             print("[MajorLogin]", e)
 
 
-     def GetLoginData(self):
+    def GetLoginData(self):
         try:
             if not self._data.login_token:
                 print("[GetLoginData] ❌ login_token rỗng")
