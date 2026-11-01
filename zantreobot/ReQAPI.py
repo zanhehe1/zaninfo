@@ -302,60 +302,55 @@ class APIClient:
         })
 
     def auth_guest_token(self, uid, password):
-        try:
-            password_hash = hashlib.sha256(str(password).encode()).hexdigest()
+      payload = {
+            "uid": str(uid),
+            "password": str(password),
+            "response_type": "token",
+            "client_type": "2",
+            "client_id": "100067",
+            "client_secret": bytes([50,101,101,52,52,56,49,57,101,57,98,52,53,57,56,56,52,53,49,52,49,48,54,55,98,50,56,49,54,50,49,56,55,52,100,48,100,53,100,55,97,102,57,100,56,102,55,101,48,48,99,49,101,53,52,55,49,53,98,55,100,49,101,51]).decode()
+      }
+      try:
             data = requests.post(
-                "https://100067.connect.garena.com/api/v2/oauth/guest/token:grant",
-                headers={
-                    "Host": "100067.connect.garena.com",
-                    "User-Agent": "GarenaMSDK/4.0.44(Pixel ;Android 10;en;US;app 1.132.1 2019121229;)",
-                    "Content-Type": "application/json; charset=utf-8",
-                    "Accept": "application/json",
-                },
-                json={
-                    "client_id": 100067,
-                    "client_secret": "2ee44819e9b4598845141067b281621874d0d5d7af9d8f7e00c1e54715b7d1e3",
-                    "client_type": 2,
-                    "device_id": "",
-                    "password": password_hash,
-                    "response_type": "token",
-                    "uid": int(uid)
-                },
-                verify=False, timeout=30
+                  "https://auth.garena.com/oauth/guest/token/grant",
+                  data=payload,
+                  headers={
+                        "Accept-Encoding": "gzip, deflate",
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "User-Agent": "Mozilla/5.0 (Android 9; Mobile; rv:91.0) Gecko/91.0 Firefox/91.0",
+                  },
+                  timeout=15,
             ).json()
-            if data.get("code") == 0 and "data" in data:
-                d = data["data"]
-                self._data.access_token = d.get("access_token")
-                self._data.open_id = d.get("open_id")
-                self._data.platform = int(d.get("platform", 4))
-                self._data.login_platform = self._data.platform
-                self._data.main_active_platform = self._data.platform
-                self._data.create_time = d.get("create_time")
-                self._data.expiry_time = d.get("expiry_time")
-                return
-            print("[auth_guest_token] fail:", data)
-        except Exception as e:
-            print("[auth_guest_token]", e)
-
-    def auth_token_inspect(self, access_token):
-        try:
-            data = requests.get(
-                "https://auth.garena.com/oauth/token/inspect",
-                params={"token": access_token}
-            ).json()
-            if "open_id" not in data:
-                print("[auth_token_inspect] token không hợp lệ:", data)
-                return
-            self._data.access_token = access_token
+            if "access_token" not in data:
+                  return "account not found"
+            self._data.access_token = data["access_token"]
             self._data.open_id = data["open_id"]
-            self._data.platform = int(data.get("platform", 4))
-            self._data.login_platform = self._data.platform
-            self._data.main_active_platform = self._data.platform
+            self._data.platform = data.get("platform", 0x4)
+            self._data.login_platform = data.get("login_platform", 0x4)
+            self._data.main_active_platform = data.get("main_active_platform")
             self._data.create_time = data.get("create_time")
             self._data.expiry_time = data.get("expiry_time")
-            print(f"[auth_token_inspect] platform={self._data.platform}")
-        except Exception as e:
-            print("[auth_token_inspect]", e)
+      except Exception as e:
+            print(e)
+
+    def auth_token_inspect(self, access_token):
+      try:
+            data = requests.get(
+                  "https://auth.garena.com/oauth/token/inspect",
+                  params={"token": access_token},
+                  timeout=36,
+            ).json()
+            if "open_id" not in data:
+                  raise gayerr("Invalid access token")
+            self._data.access_token = access_token
+            self._data.open_id = data["open_id"]
+            self._data.platform = data.get("platform", 0x4)
+            self._data.login_platform = data.get("login_platform", 0x4)
+            self._data.main_active_platform = data.get("main_active_platform")
+            self._data.create_time = data.get("create_time")
+            self._data.expiry_time = data.get("expiry_time")
+      except Exception as e:
+            pass
 
     def MajorLogin(self):
      try:
