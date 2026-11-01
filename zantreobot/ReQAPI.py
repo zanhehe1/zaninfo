@@ -304,38 +304,35 @@ class APIClient:
         })
 
     def auth_guest_token(self, uid, password):
+        payload = {
+            "uid": str(uid),
+            "password": str(password),
+            "response_type": "token",
+            "client_type": "2",
+            "client_id": "100067",
+            "client_secret": "2ee44819e9b4598845141067b281621874d0d5d7af9d8f7e00c1e54715b7d1e3",
+        }
         try:
-            password_hash = hashlib.sha256(str(password).encode()).hexdigest()
             data = requests.post(
-                "https://100067.connect.garena.com/api/v2/oauth/guest/token:grant",
+                "https://auth.garena.com/oauth/guest/token/grant",
+                data=payload,
                 headers={
-                    "Host": "100067.connect.garena.com",
-                    "User-Agent": "GarenaMSDK/4.0.44(Pixel ;Android 10;en;US;app 1.132.1 2019121229;)",
-                    "Content-Type": "application/json; charset=utf-8",
-                    "Accept": "application/json",
+                    "Accept-Encoding": "gzip, deflate",
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "User-Agent": "Mozilla/5.0 (Android 9; Mobile; rv:91.0) Gecko/91.0 Firefox/91.0",
                 },
-                json={
-                    "client_id": 100067,
-                    "client_secret": "2ee44819e9b4598845141067b281621874d0d5d7af9d8f7e00c1e54715b7d1e3",
-                    "client_type": 2,
-                    "device_id": "",
-                    "password": password_hash,
-                    "response_type": "token",
-                    "uid": int(uid)
-                },
-                verify=False, timeout=30
+                timeout=15,
             ).json()
-            if data.get("code") == 0 and "data" in data:
-                d = data["data"]
-                self._data.access_token = d.get("access_token")
-                self._data.open_id = d.get("open_id")
-                self._data.platform = int(d.get("platform", 4))
-                self._data.login_platform = self._data.platform
-                self._data.main_active_platform = self._data.platform
-                self._data.create_time = d.get("create_time")
-                self._data.expiry_time = d.get("expiry_time")
+            if "access_token" not in data:
+                print("[auth_guest_token] fail:", data)
                 return
-            print("[auth_guest_token] fail:", data)
+            self._data.access_token = data["access_token"]
+            self._data.open_id = data["open_id"]
+            self._data.platform = data.get("platform", 0x4)
+            self._data.login_platform = data.get("login_platform", 0x4)
+            self._data.main_active_platform = data.get("main_active_platform")
+            self._data.create_time = data.get("create_time")
+            self._data.expiry_time = data.get("expiry_time")
         except Exception as e:
             print("[auth_guest_token]", e)
 
