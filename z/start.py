@@ -2630,7 +2630,7 @@ Telegram: @zanxgay""")
 
    elif message.startswith("/jn"):
     if self.rstatus[0] not in [0, 4]:
-        self._bot.reply(cid, type, "[B][c]BANK 500 VÔ LIỀN NÈ-)))")
+        self._bot.reply(cid, type, "[B][c]PHIỀN)")
         return
 
     parts = message.replace("/jn", "").replace(":", " ").split()
@@ -2683,7 +2683,6 @@ Telegram: @zanxgay""")
 f"""[B][c]--------------------------------------
 [00FF00]Bot Đã Join Đội Thành Công
 Teamcode: {team_code}
-Đã xóa UID team cũ!
 Developer: @zanxgay
 """
     )
