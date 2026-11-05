@@ -8,7 +8,7 @@ import string
 import lib
 from lib import *
 from GPackGEN import *
-from ReQAPI import *
+from zandev.ReQAPI import *
 from flask import Flask, jsonify, request 
 from functools import wraps
 temp_tokens = {}
@@ -1739,7 +1739,7 @@ Telegram: @zanxgay""")
 [F8F8FF] Đã Cập Nhật Xong OB55!
 
 [b][c] Admin Bot:
-[F8F8FF]Tiktok: @deocanthuonghai09
+[F8F8FF]Tiktok: @itsmyfault.9
 [F8F8FF]Telegram: @zanxgay
 
 [b][c]Developer
@@ -1812,7 +1812,7 @@ Telegram: @zanxgay""")
         msg = f"""[B][C][FFFFFF]Xin Chào!
 [FFFFFF]Thể Loại Lệnh: [00ffb3]Full Súng 7
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã join nhóm thành công đang tiến hành bật full súng 7 để phong bạt!"""
         
         self._bot.reply(cid, type, msg)
@@ -1857,7 +1857,7 @@ Telegram: @zanxgay""")
                 done_msg = f"""[B][C][FFFFFF]Thành Công!
 [FFFFFF]Thể Loại Lệnh: [00ffb3]Full Súng 7
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã bật full hành động lv7 để phong bạt và sẽ rời đội ngay!"""
                 
                 self._bot.reply(cid, type, done_msg)
@@ -1943,7 +1943,7 @@ Telegram: @zanxgay""")
         msg = f"""[B][C][FFFFFF]Xin Chào!
 [FFFFFF]Thể Loại Lệnh: [FF4500]Hành Động CTE 28
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã join nhóm thành công đang tiến hành hành động CTE 28 để phong bạt!"""
 
         self._bot.reply(cid, type, msg)
@@ -1988,7 +1988,7 @@ Telegram: @zanxgay""")
                 done_msg = f"""[B][C][FFFFFF]Thành Công!
 [FFFFFF]Thể Loại Lệnh: [FF4500]Hành Động CTE 28
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã hành động CTE 28 thành công và sẽ rời đội ngay!"""
 
                 self._bot.reply(cid, type, done_msg)
@@ -2116,7 +2116,7 @@ Telegram: @zanxgay""")
         msg = f"""[B][C][FFFFFF]Xin Chào!
 [FFFFFF]Thể Loại Lệnh: [FF69B4]Random Cute 15
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã join nhóm thành công đang tiến hành random cute 15 để phong bạt!"""
 
         self._bot.reply(cid, type, msg)
@@ -2161,7 +2161,7 @@ Telegram: @zanxgay""")
                 done_msg = f"""[B][C][FFFFFF]Thành Công!
 [FFFFFF]Thể Loại Lệnh: [FF69B4]Random Cổ
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã random cổ thành công và sẽ rời đội ngay!"""
 
                 self._bot.reply(cid, type, done_msg)
@@ -2208,7 +2208,7 @@ Telegram: @zanxgay""")
         msg = f"""[B][C][FFFFFF]Xin Chào!
 [FFFFFF]Thể Loại Lệnh: [FF8C00]Random Ngầu 18
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã join nhóm thành công đang tiến hành random ngầu 18 để phong bạt!"""
 
         self._bot.reply(cid, type, msg)
@@ -2253,7 +2253,7 @@ Telegram: @zanxgay""")
                 done_msg = f"""[B][C][FFFFFF]Thành Công!
 [FFFFFF]Thể Loại Lệnh: [FF8C00]Random Ngầu
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã random ngầu thành công và sẽ rời đội ngay!"""
 
                 self._bot.reply(cid, type, done_msg)
@@ -2303,7 +2303,7 @@ Telegram: @zanxgay""")
         msg = f"""[B][C][FFFFFF]Xin Chào!
 [FFFFFF]Thể Loại Lệnh: [FF1493]Random Cute
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã join nhóm thành công đang tiến hành random cute 18 để phong bạt!"""
 
         self._bot.reply(cid, type, msg)
@@ -2355,7 +2355,7 @@ Telegram: @zanxgay""")
                 done_msg = f"""[B][C][FFFFFF]Thành Công!
 [FFFFFF]Thể Loại Lệnh: [FF1493]Random Cute 
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã random cute thành công và sẽ rời đội ngay!"""
 
                 self._bot.reply(cid, type, done_msg)
@@ -2409,7 +2409,7 @@ Telegram: @zanxgay""")
             type,
             "[B][C][FFFFFF]Xin chào!\n"
             "[FFFFFF]Loại lệnh: [00ffb3]RANDOM FULL SÚNG 7\n\n"
-            "[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n"
+            "[FFFFFF]TikTok Admin: [00ffff]@itsmyfault.9\n"
             "[C0C0C0]Developer: @zanxgay"
        )
 
@@ -2463,7 +2463,7 @@ Telegram: @zanxgay""")
                  "[B][C][ff0000]⏹️ Đã dừng theo yêu cầu!"
             )
        else:
-            done_msg = f"[B][C][FFFFFF]Hoàn Tất Random Full Súng 7!\n[FFFFFF]Thể Loại Lệnh: [00ffb3]Random Full Súng 7\n\n[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n[C0C0C0]Mỗi UID đã nhận 22 hành động random khác nhau!"
+            done_msg = f"[B][C][FFFFFF]Hoàn Tất Random Full Súng 7!\n[FFFFFF]Thể Loại Lệnh: [00ffb3]Random Full Súng 7\n\n[FFFFFF]TikTok Admin: [00ffff]@itsmyfault.9\n[C0C0C0]Mỗi UID đã nhận 22 hành động random khác nhau!"
             self._bot.reply(cid, type, done_msg)
 
     except Exception as e:
@@ -2630,7 +2630,7 @@ Telegram: @zanxgay""")
 
    elif message.startswith("/jn"):
     if self.rstatus[0] not in [0, 4]:
-        self._bot.reply(cid, type, "[B][c]PHIỀN)")
+        self._bot.reply(cid, type, "[B][c]PHIỀN")
         return
 
     parts = message.replace("/jn", "").replace(":", " ").split()
@@ -2711,15 +2711,17 @@ Developer: @zanxgay
     self._bot.reply(
         cid, type,
         "[b][c]Thông Tin Admin\n"
-        "[00FFFF]Name Admin :[00FF00]=> [FFFFFF] Binh An\n"
-        "[00FF00]FB:[FFFFFF] Binh An(zann)"
+        "[00FFFF]Name Admin :[00FF00]=> [FF0000]B[FF7F00]i[FFFF00]n[00FF00]h[00BFFF] [4B0082]A[8A2BE2]n[FFFFFF]\n"
         "[00FF90]Thông Tin MXH\n"
-        "[00FF00]TikTok:[FFFFFF] deocanthuonghai09\n"
-        "[00FF00]Tele🔕gram:[FFFFFF] @zanxgay\n\n"
+        "[00FF00]TikTok:[FFFFFF] [FF0000]i[FF7F00]t[FFFF00]s[00FF00]m[00BFFF]y[4B0082]f[8A2BE2]a[FF1493]u[FF4500]l[00FFFF]t[FFFFFF].9\n"
+        "[00FF00]Tele🔕gram:[FFFFFF] [FF0000]@[FF7F00]z[FFFF00]a[00FF00]n[00BFFF]x[4B0082]g[8A2BE2]a[FF1493]y[FFFFFF]\n\n"
         "[00FF00]=> [FFFFFF] Ctv live bán bot\n"
-"[007AFF]@[C][B][339BFF]nh[C][B][66BBFF]a[C][B][99DFF]t[C][B][CCF5FF]qu[C][B][E0FAFF]a[C][B][F0FDFF]ng[C][B][FFFFFF]2309\n"
-"[007AFF]@[C][B][339BFF]ba[C][B][66BBFF]o[C][B][99DFF]l[C][B][CCF5FF]ong[C][B][E0FAFF]29[C][B][F0FDFF]05[C][B][FFFFFF]80\n"   
-"[FF1493]@t[FF3AA6]o[FF5FB8]i[FF84CA]la1[FFA9DC]l[FFCEEE]con[FFE3F5]cho[FFF0FA]ngu[FFF7FD]12[FFFFFF]\n"   
+        "[007AFF]1. [C][B][FFFFFF]nquy09_\n"
+        "[007AFF]2. [C][B][FFFFFF]nphuc3667_\n"
+        "[007AFF]3. [C][B][FFFFFF]sujukuhihi\n"
+        "[007AFF]4. [C][B][FFFFFF]_tranjanjan\n"
+        "[007AFF]5. [C][B][FFFFFF]_chauquocquang\n"
+        "[007AFF]6. [C][B][FFFFFF]nq235209\n"
     )
     
     payload_sticker = json.dumps({
@@ -2946,7 +2948,7 @@ Developer: @zanxgay
             type,
             "[B][C][FFFFFF]Xin chào!\n"
             "[FFFFFF]Loại lệnh: [00ffb3]OB55 FULL\n\n"
-            "[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n"
+            "[FFFFFF]TikTok Admin: [00ffff]@itsmyfault.9\n"
             "[C0C0C0]Bot đang chuẩn bị bật hành động..."
         )
 
@@ -3284,7 +3286,7 @@ Developer: @zanxgay
             cid, type,
             "[B][C][FFFFFF]Xin chào!\n"
             "[FFFFFF]Loại lệnh: [00ffb3]FULL SÚNG 7\n\n"
-            "[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n"
+            "[FFFFFF]TikTok Admin: [00ffff]@itsmyfault.9 \n"
             "[C0C0C0]Bot đang tiến hành bật hành động LV7..."
         )
 
@@ -3387,7 +3389,7 @@ Developer: @zanxgay
             cid, type,
             "[B][C][FFFFFF]Xin chào!\n"
             "[FFFFFF]Loại lệnh: [00ffb3]FULL SÚNG 7\n\n"
-            "[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n"
+            "[FFFFFF]TikTok Admin: [00ffff]@itsmyfault.9\n"
             "[C0C0C0]Bot đang chuẩn bị bật hành động LV7..."
         )
 
@@ -3465,7 +3467,7 @@ Developer: @zanxgay
             cid, type,
             "[B][C][FFFFFF]Xin chào!\n"
             "[FFFFFF]Loại lệnh: [00ffb3]FULL SÚNG 7\n\n"
-            "[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n"
+            "[FFFFFF]TikTok Admin: [00ffff]@itsmyfault.9\n"
             "[C0C0C0]Bot đang chuẩn bị bật hành động LV7..."
         )
         
@@ -3527,7 +3529,7 @@ Developer: @zanxgay
             cid, type,
             "[B][C][FFFFFF]Xin chào!\n"
             "[FFFFFF]Loại lệnh: [00ffb3]RANDOM FULL SÚNG 7\n\n"
-            "[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n"
+            "[FFFFFF]TikTok Admin: [00ffff]@itsmyfault.9\n"
             "[C0C0C0]Developer: @zanxgay"
         )
         self._bot.reply(
@@ -3571,7 +3573,7 @@ Developer: @zanxgay
                 cid, type,
                 f"[B][C][FFFFFF]Hoàn Tất Random Full Súng 7!\n"
                 f"[FFFFFF]Thể Loại Lệnh: [00ffb3]Random Full Súng 7\n\n"
-                f"[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n"
+                f"[FFFFFF]TikTok Admin: [00ffff]@itsmyfault.9\n"
                 f"[C0C0C0]Mỗi UID đã nhận 21 hành động random khác nhau!"
             )
         return
@@ -3638,7 +3640,7 @@ Developer: @zanxgay
         msg = f"""[B][C][FFFFFF]Xin Chào!
 [FFFFFF]Thể Loại Lệnh: [FFD700]Hành Động Cổ 18
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã join nhóm thành công đang tiến hành hành động cổ 18 để phong bạt!"""
 
         self._bot.reply(cid, type, msg)
@@ -3690,7 +3692,7 @@ Developer: @zanxgay
                 done_msg = f"""[B][C][FFFFFF]Thành Công!
 [FFFFFF]Thể Loại Lệnh: [FFD700]Hành Động Cổ 18
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã hành động cổ 18 thành công và sẽ rời đội ngay!"""
 
                 self._bot.reply(cid, type, done_msg)
@@ -3742,7 +3744,7 @@ Developer: @zanxgay
         msg = f"""[B][C][FFFFFF]Xin Chào!
 [FFFFFF]Thể Loại Lệnh: [FF4500]Hành Động Hài 18
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã join nhóm thành công đang tiến hành hành động hài 18 để phong bạt!"""
 
         self._bot.reply(cid, type, msg)
@@ -3794,7 +3796,7 @@ Developer: @zanxgay
                 done_msg = f"""[B][C][FFFFFF]Thành Công!
 [FFFFFF]Thể Loại Lệnh: [FF4500]Hành Động Hài 18
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã hành động hài 18 thành công và sẽ rời đội ngay!"""
 
                 self._bot.reply(cid, type, done_msg)
@@ -3954,7 +3956,7 @@ Developer: @zanxgay
         msg = f"""[B][C][FFFFFF]Xin Chào!
 [FFFFFF]Thể Loại Lệnh: [FF00FF]Zlv
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã join nhóm thành công đang tiến hành zlv để phong bạt!"""
 
         self._bot.reply(cid, type, msg)
@@ -4006,7 +4008,7 @@ Developer: @zanxgay
                 done_msg = f"""[B][C][FFFFFF]Thành Công!
 [FFFFFF]Thể Loại Lệnh: [FF00FF]Zlv
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã zalo ver 18 thành công và sẽ rời đội ngay!"""
 
                 self._bot.reply(cid, type, done_msg)
@@ -4064,7 +4066,7 @@ Developer: @zanxgay
             cid, type,
             "[B][C][FFFFFF]Xin chào!\n"
             "[FFFFFF]Loại lệnh: [00ffb3]HÀNH ĐỘNG CTE\n\n"
-            "[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n"
+            "[FFFFFF]TikTok Admin: [00ffff]@itsmyfault.9\n"
             "[C0C0C0]Bot đang tiến hành bật hành động CTE..."
         )
 
@@ -4155,7 +4157,7 @@ Developer: @zanxgay
             cid, type,
             "[B][C][FFFFFF]Xin chào!\n"
             "[FFFFFF]Loại lệnh: [00ffb3]HÀNH ĐỘNG CỔ\n\n"
-            "[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n"
+            "[FFFFFF]TikTok Admin: [00ffff]@itsmyfault.9\n"
             "[C0C0C0]Bot đang tiến hành bật hành động cổ..."
         )
 
@@ -4245,7 +4247,7 @@ Developer: @zanxgay
             cid, type,
             "[B][C][FFFFFF]Xin chào!\n"
             "[FFFFFF]Loại lệnh: [00ffb3]Hành Động ngầu\n\n"
-            "[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n"
+            "[FFFFFF]TikTok Admin: [00ffff]@itsmyfault.9\n"
             "[C0C0C0]Bot đang tiến hành bật hành động Ngầu..."
         )
 
@@ -4610,7 +4612,7 @@ Developer: @zanxgay
 
             if self.sock39699:
                try:
-                  g01 = "[B][c]\n[%s]Dịch vụ: [U]LIKE - BOT - API.[/U][%s]\n\nTelegram: [00FFFF]@zanxgay& [00FF00]TikTok: [00FFFF]deocanthuonghai09\n[000000]"%(grcolor(), grcolor())
+                  g01 = "[B][c]\n[%s]Dịch vụ: [U]LIKE - BOT - API.[/U][%s]\n\nTelegram: [00FFFF]@zanxgay& [00FF00]TikTok: [00FFFF]itsmyfault.9\n[000000]"%(grcolor(), grcolor())
                   g02 = "\n".join([f"[{grcolor()}]BinhAn  " * 8 for _ in range(55)])
                   self.sock39699.send(self._bot.reject_invite(random.choice([g01, g02]), uid, uid))
                except Exception as e:
@@ -4721,7 +4723,7 @@ Developer: @zanxgay
             if self.sock39801:
                self.sock39801.send(self._bot.join_channel(uid, recruit_code, None))
             time.sleep(1.2)
-            self._bot.reply(uid, None, "[B][C][00FF00]đị[c]t m[c]ẹ gar[b]ena\n[00FF00]TikTok: [FF69B4]@deocanthuonghai09\n[00FF00]Tele[c]gr[c]am: [87CEEB]@zanxgay\n[00FF00]Group: [FFD700]ht[c]tps://t.[b]me/zancommunity")
+            self._bot.reply(uid, None, "[B][C][00FF00]đị[c]t m[c]ẹ gar[b]ena\n[00FF00]TikTok: [FF69B4]@itsmyfault.9\n[00FF00]Tele[c]gr[c]am: [87CEEB]@zanxgay\n[00FF00]Group: [FFD700]ht[c]tps://t.[b]me/zancommunity")
             self.rstatus = (10, '')
             self.ids.extend(extract_uid_fields(data))
          except Exception as e:
@@ -5664,23 +5666,24 @@ def request_join_clan(jwt_token, clan_id, region="VN"):
     KEY = bytes([89,103,38,116,99,37,68,69,117,104,54,37,90,99,94,56])
     IV = bytes([54,111,121,90,68,114,50,50,69,51,121,99,104,106,77,37])
     
+    # Dùng endpoint cũ ppmainecoonghj cho đồng bộ với bot
     REGION_SERVER_MAP = {
-        "VN": "https://clientbp.ggpolarbear.com",
-        "TH": "https://clientbp.ggpolarbear.com",
-        "ID": "https://clientbp.ggpolarbear.com",
-        "SG": "https://clientbp.ggpolarbear.com",
-        "MY": "https://clientbp.ggpolarbear.com",
-        "IN": "https://client.ind.freefiremobile.com",
-        "PK": "https://clientbp.ggblueshark.com",
-        "BD": "https://clientbp.ggwhitehawk.com",
-        "BR": "https://client.us.freefiremobile.com",
-        "NA": "https://client.us.freefiremobile.com",
-        "ME": "https://clientbp.ggblueshark.com",
-        "EU": "https://clientbp.ggpolarbear.com",
-        "RU": "https://clientbp.ggpolarbear.com",
+        "VN": "https://clientbp.ppmainecoonghj.com",
+        "TH": "https://clientbp.ppmainecoonghj.com",
+        "ID": "https://clientbp.ppmainecoonghj.com",
+        "SG": "https://clientbp.ppmainecoonghj.com",
+        "MY": "https://clientbp.ppmainecoonghj.com",
+        "IN": "https://clientbp.ppmainecoonghj.com",
+        "PK": "https://clientbp.ppmainecoonghj.com",
+        "BD": "https://clientbp.ppmainecoonghj.com",
+        "BR": "https://clientbp.ppmainecoonghj.com",
+        "NA": "https://clientbp.ppmainecoonghj.com",
+        "ME": "https://clientbp.ppmainecoonghj.com",
+        "EU": "https://clientbp.ppmainecoonghj.com",
+        "RU": "https://clientbp.ppmainecoonghj.com",
     }
     
-    server_url = REGION_SERVER_MAP.get(region.upper(), "https://clientbp.ggpolarbear.com")
+    server_url = REGION_SERVER_MAP.get(region.upper(), "https://clientbp.ppmainecoonghj.com")
     
     msg = ReqCLan_pb2.MyMessage()
     msg.field_1 = int(clan_id)
@@ -5696,7 +5699,8 @@ def request_join_clan(jwt_token, clan_id, region="VN"):
         "ReleaseVersion": "OB55",
         "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 9)",
         "Connection": "Keep-Alive",
-        "Accept-Encoding": "gzip"
+        "Accept-Encoding": "gzip",
+        "Host": "clientbp.ppmainecoonghj.com"
     }
     
     try:
@@ -5712,6 +5716,7 @@ def request_join_clan(jwt_token, clan_id, region="VN"):
     except Exception as e:
         return False, f"❌ Lỗi: {str(e)}"
 
+
 def quit_clan(jwt_token, clan_id, region="VN"):
     """Rời clan"""
     import requests
@@ -5721,23 +5726,24 @@ def quit_clan(jwt_token, clan_id, region="VN"):
     KEY = bytes([89,103,38,116,99,37,68,69,117,104,54,37,90,99,94,56])
     IV = bytes([54,111,121,90,68,114,50,50,69,51,121,99,104,106,77,37])
     
+    # Dùng endpoint cũ ppmainecoonghj cho đồng bộ với bot
     REGION_SERVER_MAP = {
-        "VN": "https://clientbp.ggpolarbear.com",
-        "TH": "https://clientbp.ggpolarbear.com",
-        "ID": "https://clientbp.ggpolarbear.com",
-        "SG": "https://clientbp.ggpolarbear.com",
-        "MY": "https://clientbp.ggpolarbear.com",
-        "IN": "https://client.ind.freefiremobile.com",
-        "PK": "https://clientbp.ggblueshark.com",
-        "BD": "https://clientbp.ggwhitehawk.com",
-        "BR": "https://client.us.freefiremobile.com",
-        "NA": "https://client.us.freefiremobile.com",
-        "ME": "https://clientbp.ggblueshark.com",
-        "EU": "https://clientbp.ggpolarbear.com",
-        "RU": "https://clientbp.ggpolarbear.com",
+        "VN": "https://clientbp.ppmainecoonghj.com",
+        "TH": "https://clientbp.ppmainecoonghj.com",
+        "ID": "https://clientbp.ppmainecoonghj.com",
+        "SG": "https://clientbp.ppmainecoonghj.com",
+        "MY": "https://clientbp.ppmainecoonghj.com",
+        "IN": "https://clientbp.ppmainecoonghj.com",
+        "PK": "https://clientbp.ppmainecoonghj.com",
+        "BD": "https://clientbp.ppmainecoonghj.com",
+        "BR": "https://clientbp.ppmainecoonghj.com",
+        "NA": "https://clientbp.ppmainecoonghj.com",
+        "ME": "https://clientbp.ppmainecoonghj.com",
+        "EU": "https://clientbp.ppmainecoonghj.com",
+        "RU": "https://clientbp.ppmainecoonghj.com",
     }
     
-    server_url = REGION_SERVER_MAP.get(region.upper(), "https://clientbp.ggpolarbear.com")
+    server_url = REGION_SERVER_MAP.get(region.upper(), "https://clientbp.ppmainecoonghj.com")
     
     msg = QuitClanReq_pb2.QuitClanReq()
     msg.field_1 = int(clan_id)
@@ -5753,7 +5759,8 @@ def quit_clan(jwt_token, clan_id, region="VN"):
         "ReleaseVersion": "OB55",
         "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 9)",
         "Connection": "Keep-Alive",
-        "Accept-Encoding": "gzip"
+        "Accept-Encoding": "gzip",
+        "Host": "clientbp.ppmainecoonghj.com"
     }
     
     try:
@@ -5766,7 +5773,6 @@ def quit_clan(jwt_token, clan_id, region="VN"):
             return False, f"❌ Thất bại! Status: {r.status_code}"
     except Exception as e:
         return False, f"❌ Lỗi: {str(e)}"
-
 
 # ===== LỆNH TELEGRAM: /voqd =====
 @telegram_bot.message_handler(commands=['voqd'])
@@ -8232,6 +8238,10 @@ def add_admin():
 @app.route("/kb", methods=["GET"])
 def api_kb_get():
     try:
+        import requests
+        from Crypto.Cipher import AES
+        from Crypto.Util.Padding import pad
+        
         uid = request.args.get('uid')
         bot_id = request.args.get('botid')
         
@@ -8254,11 +8264,12 @@ def api_kb_get():
             
         token = getattr(bot, 'token', None)
         if not token:
+            token = bot.bot_config.get('auth_bot_login', {}).get('access_token')
+        if not token:
             return jsonify({'status': 'error', 'message': 'No token'}), 400
             
         bot_uid = getattr(bot, 'botid', '')
         
-        # Gửi kết bạn trực tiếp 
         try:
             def encrypt_uid(x):
                 dec = ['80','81','82','83','84','85','86','87','88','89','8a','8b','8c','8d','8e','8f','90','91','92','93','94','95','96','97','98','99','9a','9b','9c','9d','9e','9f','a0','a1','a2','a3','a4','a5','a6','a7','a8','a9','aa','ab','ac','ad','ae','af','b0','b1','b2','b3','b4','b5','b6','b7','b8','b9','ba','bb','bc','bd','be','bf','c0','c1','c2','c3','c4','c5','c6','c7','c8','c9','ca','cb','cc','cd','ce','cf','d0','d1','d2','d3','d4','d5','d6','d7','d8','d9','da','db','dc','dd','de','df','e0','e1','e2','e3','e4','e5','e6','e7','e8','e9','ea','eb','ec','ed','ee','ef','f0','f1','f2','f3','f4','f5','f6','f7','f8','f9','fa','fb','fc','fd','fe','ff']
@@ -8290,8 +8301,6 @@ def api_kb_get():
             
             Key = bytes([89, 103, 38, 116, 99, 37, 68, 69, 117, 104, 54, 37, 90, 99, 94, 56])
             Iv = bytes([54, 111, 121, 90, 68, 114, 50, 50, 69, 51, 121, 99, 104, 106, 77, 37])
-            from Crypto.Cipher import AES
-            from Crypto.Util.Padding import pad
             
             encrypted_id = encrypt_uid(uid)
             if not encrypted_id:
@@ -8301,11 +8310,11 @@ def api_kb_get():
             cipher = AES.new(Key, AES.MODE_CBC, Iv)
             data = cipher.encrypt(pad(bytes.fromhex(plain_text_payload), AES.block_size))
             
-            import requests
+            # Đã sửa lại domain chuẩn (tránh lỗi không kết nối)
             domains = [
-                'https://clientbp.ggpolarbear.com/RequestAddingFriend',
-                'https://clientbp.ggpolarbear.com/RequestAddingFriend',
-                'https://clientbp.ggpolarbear.com/RequestAddingFriend ',
+                'https://clientbp.ppmainecoonghj.com/RequestAddingFriend',
+                'https://clientbp.ppmainecoonghj.com/RequestAddingFriend',
+                'https://clientbp.ppmainecoonghj.com/RequestAddingFriend',
             ]
             
             headers = {
@@ -8324,7 +8333,7 @@ def api_kb_get():
             
             for url in domains:
                 try:
-                    response = requests.post(url, headers=headers, data=data, verify=False, timeout=10)
+                    response = requests.post(url, headers=headers, data=data, verify=False, timeout=15)
                     text = response.text
                     
                     if response.status_code == 200:
@@ -8340,7 +8349,11 @@ def api_kb_get():
                     elif 'BR_FRIEND_ALREADY_SENT_REQUEST' in text:
                         msg = "Đã gửi yêu cầu trước đó!"
                         break
-                except:
+                    elif 'BR_ACCOUNT_NOT_FOUND' in text or 'BR_USER_NOT_FOUND' in text:
+                        msg = "Không tìm thấy UID này!"
+                        break
+                except Exception as e:
+                    print(f"[KB API] Domain {url} lỗi: {e}")
                     continue
             
             if success:
@@ -8361,8 +8374,8 @@ def api_kb_get():
             return jsonify({'status': 'error', 'message': str(e)}), 500
             
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
-        
+        return jsonify({'status': 'error', 'message': str(e)}), 500     
+                   
 @app.route("/kb/all", methods=["GET"])
 def api_kb_all_get():
     try:
@@ -9749,4 +9762,4 @@ if __name__ == "__main__":
     start_ping_thread() 
     threading.Thread(target=run_telegram, daemon=True).start()
     threading.Thread(target=sbot, daemon=True).start()
-    app.run(host="0.0.0.0", port=2008)
+    app.run(host="0.0.0.0", port=2009)
