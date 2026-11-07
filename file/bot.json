@@ -3,55 +3,36 @@
     {
       "bot_id": 1,
       "auth_bot_login": {
-        "access_token": "6848f93374f97c22f95d19dee14738dec1025bda8b9afc03e53446f760a440b2"
+        "access_token": "aa4658a4f3b79afafb8361e8f545201d084cc7918a0df12f604d1106b113223a"
       },
       "access_bot": [
         {
           "uid": 18457983435,
-          "expire": "2054-03-17 11:21:16"
+          "expire": "2054-03-24 08:51:44"
         }
       ],
       "active-clan": true,
-      "botid": 18941543630,
-      "nickname": "zanxdev.9313"
+      "botid": 19023576194,
+      "nickname": "xedochat1230"
     },
     {
       "bot_id": 2,
       "auth_bot_login": {
-        "access_token": "b0a39f032d4dc08bb19fbc79479259d41b8890c72eb6e9512d6408a1731faf07"
+        "access_token": "18e197b8245a002ba82ec79a431253d77826b48f7ae55c3b2bf73d61d27c7cb9"
       },
       "access_bot": [
         {
           "uid": 18457983435,
-          "expire": "2054-03-17 11:34:52"
+          "expire": "2054-03-24 08:51:59"
         },
         {
-          "uid": 1084412076,
-          "expire": "2026-11-30 11:25:27"
+          "uid": 1543649391,
+          "expire": "2027-02-14 08:52:04"
         }
       ],
       "active-clan": true,
-      "botid": 18961842905,
-      "nickname": "NgAnhKiet؝.1"
-    },
-    {
-      "bot_id": 3,
-      "auth_bot_login": {
-        "access_token": "8b8ef3a9ad305b79c92b8dbf9c9ea8984acaf1f16fd404a8ec52ef6ad6b9e2e8"
-      },
-      "access_bot": [
-        {
-          "uid": 18457983435,
-          "expire": "2054-03-17 11:31:39"
-        },
-        {
-          "uid": 128002096,
-          "expire": "2026-11-07 11:31:40"
-        }
-      ],
-      "active-clan": true,
-      "botid": 18961906797,
-      "nickname": "ngducminhdz."
+      "botid": 19025940313,
+      "nickname": "quỳnh chó؝؝؝"
     }
   ]
 }
