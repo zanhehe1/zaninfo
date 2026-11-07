@@ -17,3 +17,4 @@ uvicorn
 pillow
 python-multipart
 unidecode
+opuslib
