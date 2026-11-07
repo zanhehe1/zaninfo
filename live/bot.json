@@ -1,0 +1,186 @@
+{
+  "bots": [
+    {
+      "bot_id": 2,
+      "auth_bot_login": {
+        "access_token": "33109f8ff32fe120c44aae78757529bb8c03ef7ac6da86a3dec42d5692046be0"
+      },
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-22 10:57:31"
+        },
+        {
+          "uid": 281100969,
+          "expire": "2027-02-10 07:02:40"
+        }
+      ],
+      "active-clan": true,
+      "botid": 19001387781,
+      "nickname": "sori3bj.0182"
+    },
+    {
+      "bot_id": 3,
+      "auth_bot_login": {
+        "access_token": "c4b7c99e92321353985201b797e6333f86770d77c9891ac1fdfb07300fa70a8a"
+      },
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-22 11:20:12"
+        },
+        {
+          "uid": 281100969,
+          "expire": "2027-02-10 07:02:35"
+        }
+      ],
+      "active-clan": true,
+      "botid": 19001387823,
+      "nickname": "sori3bj.4516"
+    },
+    {
+      "bot_id": 4,
+      "auth_bot_login": {
+        "access_token": "d2607c4ca8aa61611cca1b62e959156bb004ca26962663a2fd10a45fe42227a0"
+      },
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-22 09:39:30"
+        },
+        {
+          "uid": 3391643669,
+          "expire": "2027-02-10 09:20:16"
+        }
+      ],
+      "active-clan": true,
+      "botid": 19003346764,
+      "nickname": "nguyenquy.02"
+    },
+    {
+      "bot_id": 5,
+      "auth_bot_login": {
+        "access_token": "0b4060739ed0cadc9e4a5d4900be676849bde2aa6a76d434fb078bf24dcd3353"
+      },
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-22 10:26:24"
+        },
+        {
+          "uid": 3391643669,
+          "expire": "2027-02-10 09:20:23"
+        }
+      ],
+      "active-clan": true,
+      "botid": 19003346720,
+      "nickname": "nguyenquy.23"
+    },
+    {
+      "bot_id": 6,
+      "auth_bot_login": {
+        "access_token": "4794055c673c38c266416f7334ee5d9a8f0c4925c901bb5978456aa355033e76"
+      },
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-22 11:12:24"
+        },
+        {
+          "uid": 3391643669,
+          "expire": "2027-02-10 09:20:26"
+        }
+      ],
+      "active-clan": true,
+      "botid": 19003346715,
+      "nickname": "nguyenquy.13"
+    },
+    {
+      "bot_id": 7,
+      "auth_bot_login": {
+        "access_token": "af9873e76dfebdc15a41f9fdb33e900982a04efab93bf048bb1a212af442aa35"
+      },
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-22 11:24:27"
+        },
+        {
+          "uid": 281100969,
+          "expire": "2027-02-11 11:23:28"
+        }
+      ],
+      "active-clan": true,
+      "botid": 19015509123,
+      "nickname": "háº­nÂ gÃ¡iÂ dis."
+    },
+    {
+      "bot_id": 8,
+      "auth_bot_login": {
+        "access_token": "3853e87a02bb54dcaf70c0709fe211500b47c0eb1d8f9ffdad1cfa5b78f6a4a4"
+      },
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-22 10:52:20"
+        },
+        {
+          "uid": 281100969,
+          "expire": "2027-02-11 11:41:10"
+        }
+      ],
+      "active-clan": true,
+      "botid": 19015703289,
+      "nickname": "mÃ yÂ xamfÂ kh."
+    },
+    {
+      "bot_id": 9,
+      "auth_bot_login": {
+        "access_token": "14b8504674b9e34fbd1bb0944e48d0adc900bd1aeada6dacdd9ade1874c0cfc0"
+      },
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-22 10:45:05"
+        },
+        {
+          "uid": 895016779,
+          "expire": "2027-02-12 11:01:39"
+        }
+      ],
+      "active-clan": true,
+      "botid": 19023425438,
+      "nickname": "nquangcte.61"
+    },
+    {
+      "bot_id": 10,
+      "auth_bot_login": {
+        "access_token": "905815c4e75250ce55829cb82c31465b6ffda0a82d2274ce174e34d13829970a"
+      },
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-22 11:32:16"
+        }
+      ],
+      "active-clan": true,
+      "botid": 19026517170,
+      "nickname": "nquangcte.67"
+    },
+    {
+      "bot_id": 11,
+      "auth_bot_login": {
+        "access_token": "9e0f6a7855629971eb765e5c700ddd74b71039e4850886e55ad02615d49ec7d5"
+      },
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-22 11:32:22"
+        }
+      ],
+      "active-clan": true,
+      "botid": 19026517207,
+      "nickname": "nquangcte.51"
+    }
+  ]
+}
