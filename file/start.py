@@ -9738,7 +9738,7 @@ def restart_bot():
     os.execv(sys.executable, ['python'] + sys.argv)
 
 def ping_api_keep_alive():
-    url = "https://zanlivebotcrv.onrender.com/"
+    url = "https://zankhacfile1.onrender.com/"
     
     while True:
         try:
