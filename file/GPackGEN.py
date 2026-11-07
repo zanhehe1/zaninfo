@@ -49,6 +49,31 @@ class TAO_PACKET:
   fields[2][10] = rc
   return self._builder(fields=list(fields.items()))
  
+ def cutmmdi_zan(self, idcut):
+  fields = {}
+  fields[0] = 5
+  fields[1] = 35
+  fields[2] = {}
+  fields[2][1] = int(idcut)
+  return self._builder(fields=list(fields.items()))
+
+ def ghost_custom(self, teamcode, custom_name):
+        colors = ["[FF0000]", "[00FF00]", "[0000FF]", "[FFFF00]", "[FF00FF]", "[00FFFF]"]
+        color = random.choice(colors)
+        fields = {}
+        fields[0] = 5
+        fields[1] = 61
+        fields[2] = {}
+        fields[2][1] = int(teamcode)
+        fields[2][2] = {}
+        fields[2][2][1] = int(teamcode)
+        fields[2][2][3] = f"[b][c]{color}{custom_name}"
+        fields[2][2][6] = int(time.time())
+        fields[2][2][7] = 1
+        fields[2][2][9] = 1
+        fields[2][3] = "1"
+        return self._builder(fields=list(fields.items()))
+
 
  def send_message(self, message, messageType, chatid):
   fields = {}

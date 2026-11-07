@@ -1,4 +1,4 @@
-import requests, json, base64, time, struct, datetime, re, hmac, hashlib, random
+import requests, json, base64, time, struct, datetime, re, hmac, hashlib, random, uuid
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 from protobuf_decoder.protobuf_decoder import Parser
@@ -229,6 +229,7 @@ class account_data:
     login_time = None
     key = None
     iv = None
+    device_id = None
 
 
 class gringay:
@@ -276,6 +277,7 @@ def bdversion(ver: str = None):
             "remote_version": "1.132.9"
         }
 
+
 class APIClient:
     def __init__(self):
         self._data = account_data()
@@ -301,38 +303,35 @@ class APIClient:
         })
 
     def auth_guest_token(self, uid, password):
+        payload = {
+            "uid": str(uid),
+            "password": str(password),
+            "response_type": "token",
+            "client_type": "2",
+            "client_id": "100067",
+            "client_secret": bytes([50,101,101,52,52,56,49,57,101,57,98,52,53,57,56,56,52,53,49,52,49,48,54,55,98,50,56,49,54,50,49,56,55,52,100,48,100,53,100,55,97,102,57,100,56,102,55,101,48,48,99,49,101,53,52,55,49,53,98,55,100,49,101,51]).decode()
+        }
         try:
-            password_hash = hashlib.sha256(str(password).encode()).hexdigest()
             data = requests.post(
-                "https://100067.connect.garena.com/api/v2/oauth/guest/token:grant",
+                "https://auth.garena.com/oauth/guest/token/grant",
+                data=payload,
                 headers={
-                    "Host": "100067.connect.garena.com",
-                    "User-Agent": "GarenaMSDK/4.0.44(Pixel ;Android 10;en;US;app 1.132.1 2019121229;)",
-                    "Content-Type": "application/json; charset=utf-8",
-                    "Accept": "application/json",
+                    "Accept-Encoding": "gzip, deflate",
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "User-Agent": "Mozilla/5.0 (Android 9; Mobile; rv:91.0) Gecko/91.0 Firefox/91.0",
                 },
-                json={
-                    "client_id": 100067,
-                    "client_secret": "2ee44819e9b4598845141067b281621874d0d5d7af9d8f7e00c1e54715b7d1e3",
-                    "client_type": 2,
-                    "device_id": "",
-                    "password": password_hash,
-                    "response_type": "token",
-                    "uid": int(uid)
-                },
-                verify=False, timeout=30
+                timeout=15,
             ).json()
-            if data.get("code") == 0 and "data" in data:
-                d = data["data"]
-                self._data.access_token = d.get("access_token")
-                self._data.open_id = d.get("open_id")
-                self._data.platform = int(d.get("platform", 4))
-                self._data.login_platform = self._data.platform
-                self._data.main_active_platform = self._data.platform
-                self._data.create_time = d.get("create_time")
-                self._data.expiry_time = d.get("expiry_time")
+            if "access_token" not in data:
+                print("[auth_guest_token] fail:", data)
                 return
-            print("[auth_guest_token] fail:", data)
+            self._data.access_token = data["access_token"]
+            self._data.open_id = data["open_id"]
+            self._data.platform = data.get("platform", 0x4)
+            self._data.login_platform = data.get("login_platform", 0x4)
+            self._data.main_active_platform = data.get("main_active_platform")
+            self._data.create_time = data.get("create_time")
+            self._data.expiry_time = data.get("expiry_time")
         except Exception as e:
             print("[auth_guest_token]", e)
 
@@ -340,91 +339,94 @@ class APIClient:
         try:
             data = requests.get(
                 "https://auth.garena.com/oauth/token/inspect",
-                params={"token": access_token}
+                params={"token": access_token},
+                timeout=36,
             ).json()
             if "open_id" not in data:
-                print("[auth_token_inspect] token không hợp lệ:", data)
-                return
+                raise gayerr("Invalid access token")
             self._data.access_token = access_token
             self._data.open_id = data["open_id"]
-            self._data.platform = int(data.get("platform", 4))
-            self._data.login_platform = self._data.platform
-            self._data.main_active_platform = self._data.platform
+            self._data.platform = data.get("platform", 0x4)
+            self._data.login_platform = data.get("login_platform", 0x4)
+            self._data.main_active_platform = data.get("main_active_platform")
             self._data.create_time = data.get("create_time")
             self._data.expiry_time = data.get("expiry_time")
-            print(f"[auth_token_inspect] platform={self._data.platform}")
         except Exception as e:
-            print("[auth_token_inspect]", e)
+            pass
 
     def MajorLogin(self):
         try:
+            if not self._data.device_id:
+                self._data.device_id = f"Google|{uuid.uuid4()}"
+
             fields = {}
             fields[3] = str(datetime.datetime.now())[:-7]
             fields[4] = "free fire"
             fields[5] = 1
-            fields[7] = "1.132.9"
-            fields[8] = "Android OS 13 / API-33 (TP1A.220624.014)"
+            fields[7] = "1.132.15"
+            fields[8] = "Android OS 16 / API-36 (BP2A.250605.031.A3/compiler260821111235)"
             fields[9] = "Handheld"
-            fields[10] = "Singtel"
+            fields[10] = "VNPT Corp"
             fields[11] = "WIFI"
-            fields[12] = 1280
-            fields[13] = 720
-            fields[14] = "240"
-            fields[15] = "ARM64 FP ASIMD AES | 2850 | 8"
-            fields[16] = 7597
-            fields[17] = "Adreno (TM) 730"
-            fields[18] = "OpenGL ES 3.2"
-            fields[19] = "Google|0ecc7b3b-6c41-462e-9050-26d835e84c53"
-            fields[20] = "116.97.105.60"
-            fields[21] = "en"
+            fields[12] = 2800
+            fields[13] = 1260
+            fields[14] = "403"
+            fields[15] = "ARM64 FP ASIMD AES | 6028 | 8"
+            fields[16] = 11284
+            fields[17] = "Adreno (TM) 735"
+            fields[18] = "OpenGL ES 3.2 V@0762.41 (GIT@f6b5df5188, I29aebc4401, 1758283784) (Date:09/19/25)"
+            fields[19] = self._data.device_id
+            fields[20] = "123.27.167.36"
+            fields[21] = "vn"
             fields[22] = str(self._data.open_id)
             fields[23] = "4"
             fields[24] = "Handheld"
-            fields[25] = "OnePlus CPH2411"
+            fields[25] = "vivo V2352A"
             fields[26] = "VN"
             fields[29] = str(self._data.access_token)
             fields[30] = 1
-            fields[41] = "Singtel"
+            fields[41] = "VNPT Corp"
             fields[42] = "WIFI"
-            fields[57] = "1ac4b80ecf0478a44203bf8fac6120f5"
-            fields[60] = 30000
-            fields[61] = 15000
-            fields[62] = 5000
+            fields[57] = "7428b253defc164018c604a1ebbfebdf"
+            fields[60] = 228423
+            fields[61] = 145375
+            fields[62] = 7639
             fields[63] = 900
-            fields[64] = 28000
-            fields[65] = 34308
-            fields[66] = 28000
-            fields[67] = 34308
+            fields[64] = 145503
+            fields[65] = 228423
+            fields[66] = 145503
+            fields[67] = 228423
             fields[70] = 2
             fields[73] = 3
-            fields[74] = "/data/app/~~iw-K-GR3srU7dLE-UxJ4bg==/com.dts.freefiremax-kbPhw3SUYautW0I_oayB_A==/lib/arm"
-            fields[76] = 2
-            fields[77] = "428775ab8c8845bd341b5357ec61d15e|/data/app/~~iw-K-GR3srU7dLE-UxJ4bg==/com.dts.freefiremax-kbPhw3SUYautW0I_oayB_A==/base.apk"
-            fields[78] = 2
-            fields[79] = 1
-            fields[81] = "32"
-            fields[83] = "2019118525"
+            fields[74] = "/data/app/~~-y-UIr3gmLEdmMjW2LQb8Q==/com.dts.freefireth--DZnru7704bHkg4HUT_TmA==/lib/arm64"
+            fields[76] = 1
+            fields[77] = "b8e0cd5e295eee42f5860d3c86e483dd|/data/app/~~-y-UIr3gmLEdmMjW2LQb8Q==/com.dts.freefireth--DZnru7704bHkg4HUT_TmA==/base.apk"
+            fields[78] = 3
+            fields[79] = 2
+            fields[81] = "64"
+            fields[83] = "2019121229"
             fields[85] = 3
             fields[86] = "OpenGLES2"
-            fields[87] = 4095
+            fields[87] = 8191
             fields[88] = 4
             fields[90] = "Hà Nội"
             fields[91] = "01"
-            fields[92] = 12000
-            fields[93] = "android_max"
-            fields[94] = "KqsHT2gyPt7vUCc9SCjv2ioi3WEZSEL86ErvXB38suVVK/Z4IVt78ESl/r2S15C1pqu/j6ZmgFL7HbwoFiiVconX08ooKiisQffvEAPCo/C+Lahr"
-            fields[95] = 111207
-            fields[96] = '{"cur_rate":null,"support_etc2":true}'
+            fields[92] = 6390
+            fields[93] = "android"
+            fields[94] = "KqsHT1CLbxae244E4dTGVqfMNKgyfNgwdom5oUKUVVi5ketwd/fNOTTK7CCFbGyfUhCvdLIJVGPVNaJUo6gmLWB4RQfS+M90qolEywjfzgJysWyD"
+            fields[95] = 110009
+            fields[96] = '{"cur_rate":[60,90,120,144],"support_etc2":false}'
             fields[97] = 1
             fields[98] = 1
             fields[99] = "4"
             fields[100] = "4"
             fields[102] = {}
+            fields[102][8] = 3771217491960797021
             fields[103] = 1
-            fields[104] = 77149
+            fields[104] = 61996
             fields[105] = 1
-            fields[106] = "https://dl.cdn.freefiremobile.com/live/ABHotUpdates/|https://dl-core.cdn.freefiremobile.com/live/ABHotUpdates/|6b2078db9d22dd98f8e9386a39af8462"
-            fields[107] = "c8e41b7a93f02d56e1a94c7b8203f5d1"
+            fields[106] = "https://dl.gmc.freefiremobile.com/live/ABHotUpdates/|https://core-gmc.freefiremobile.com/live/ABHotUpdates/|dff941d41e6e3a9e76f05ed71fdc8d87"
+            fields[107] = "1.16032533697c9e9e"
 
             payload = AES_CBC128(pb_encode(fields), self.key, self.iv)
             url = "https://loginbp.ppmainecoonghj.com/MajorLogin"
@@ -525,7 +527,6 @@ class APIClient:
         except Exception as e:
             print("[MajorLogin]", e)
 
-
     def GetLoginData(self):
         try:
             if not self._data.login_token:
@@ -536,71 +537,76 @@ class APIClient:
             fields[3] = str(datetime.datetime.now())[:-7]
             fields[4] = "free fire"
             fields[5] = 1
-            fields[7] = "1.132.9"
-            fields[8] = "Android OS 13 / API-33 (TP1A.220624.014)"
+            fields[7] = "1.132.15"
+            fields[8] = "Android OS 16 / API-36 (BP2A.250605.031.A3/compiler260821111235)"
             fields[9] = "Handheld"
-            fields[10] = "Singtel"
+            fields[10] = "VNPT Corp"
             fields[11] = "WIFI"
-            fields[12] = 1280
-            fields[13] = 720
-            fields[14] = "240"
-            fields[15] = "ARM64 FP ASIMD AES | 2850 | 8"
-            fields[16] = 7597
-            fields[17] = "Adreno (TM) 730"
-            fields[18] = "OpenGL ES 3.2"
-            fields[19] = "Google|0ecc7b3b-6c41-462e-9050-26d835e84c53"
-            fields[20] = "116.97.105.60"
-            fields[21] = "en"
+            fields[12] = 2800
+            fields[13] = 1260
+            fields[14] = "403"
+            fields[15] = "ARM64 FP ASIMD AES | 6028 | 8"
+            fields[16] = 11284
+            fields[17] = "Adreno (TM) 735"
+            fields[18] = "OpenGL ES 3.2 V@0762.41 (GIT@f6b5df5188, I29aebc4401, 1758283784) (Date:09/19/25)"
+            fields[19] = self._data.device_id
+            fields[20] = "123.27.167.36"
+            fields[21] = "vn"
             fields[22] = str(self._data.open_id)
             fields[23] = "4"
             fields[24] = "Handheld"
-            fields[25] = "OnePlus CPH2411"
+            fields[25] = "vivo V2352A"
             fields[26] = "VN"
             fields[29] = str(self._data.access_token)
             fields[30] = 1
-            fields[41] = "Singtel"
+            fields[41] = "VNPT Corp"
             fields[42] = "WIFI"
-            fields[57] = "1ac4b80ecf0478a44203bf8fac6120f5"
-            fields[60] = 30000
-            fields[61] = 15000
-            fields[62] = 5000
+            fields[57] = "7428b253defc164018c604a1ebbfebdf"
+            fields[60] = 228423
+            fields[61] = 145375
+            fields[62] = 7639
             fields[63] = 900
-            fields[64] = 28000
-            fields[65] = 34308
-            fields[66] = 28000
-            fields[67] = 34308
+            fields[64] = 145503
+            fields[65] = 228423
+            fields[66] = 145503
+            fields[67] = 228423
             fields[70] = 2
             fields[73] = 3
-            fields[74] = "/data/app/~~iw-K-GR3srU7dLE-UxJ4bg==/com.dts.freefiremax-kbPhw3SUYautW0I_oayB_A==/lib/arm"
-            fields[76] = 2
-            fields[77] = "428775ab8c8845bd341b5357ec61d15e|/data/app/~~iw-K-GR3srU7dLE-UxJ4bg==/com.dts.freefiremax-kbPhw3SUYautW0I_oayB_A==/base.apk"
-            fields[78] = 2
-            fields[79] = 1
-            fields[81] = "32"
-            fields[83] = "2019118525"
+            fields[74] = "/data/app/~~-y-UIr3gmLEdmMjW2LQb8Q==/com.dts.freefireth--DZnru7704bHkg4HUT_TmA==/lib/arm64"
+            fields[76] = 1
+            fields[77] = "b8e0cd5e295eee42f5860d3c86e483dd|/data/app/~~-y-UIr3gmLEdmMjW2LQb8Q==/com.dts.freefireth--DZnru7704bHkg4HUT_TmA==/base.apk"
+            fields[78] = 3
+            fields[79] = 2
+            fields[81] = "64"
+            fields[83] = "2019121229"
             fields[85] = 3
             fields[86] = "OpenGLES2"
-            fields[87] = 4095
+            fields[87] = 8191
             fields[88] = 4
             fields[90] = "Hà Nội"
             fields[91] = "01"
-            fields[92] = 12000
-            fields[93] = "android_max"
-            fields[94] = "KqsHT2gyPt7vUCc9SCjv2ioi3WEZSEL86ErvXB38suVVK/Z4IVt78ESl/r2S15C1pqu/j6ZmgFL7HbwoFiiVconX08ooKiisQffvEAPCo/C+Lahr"
-            fields[95] = 111207
-            fields[96] = '{"cur_rate":null,"support_etc2":true}'
+            fields[92] = 6390
+            fields[93] = "android"
+            fields[94] = "KqsHT1CLbxae244E4dTGVqfMNKgyfNgwdom5oUKUVVi5ketwd/fNOTTK7CCFbGyfUhCvdLIJVGPVNaJUo6gmLWB4RQfS+M90qolEywjfzgJysWyD"
+            fields[95] = 110009
+            fields[96] = '{"cur_rate":[60,90,120,144],"support_etc2":false}'
             fields[97] = 1
             fields[98] = 1
             fields[99] = "4"
             fields[100] = "4"
             fields[102] = {}
+            fields[102][8] = 3771217491960797021
             fields[103] = 1
-            fields[104] = 77149
+            fields[104] = 61996
             fields[105] = 1
-            fields[106] = "https://dl.cdn.freefiremobile.com/live/ABHotUpdates/|https://dl-core.cdn.freefiremobile.com/live/ABHotUpdates/|6b2078db9d22dd98f8e9386a39af8462"
-            fields[107] = "c8e41b7a93f02d56e1a94c7b8203f5d1"
+            fields[106] = "https://dl.gmc.freefiremobile.com/live/ABHotUpdates/|https://core-gmc.freefiremobile.com/live/ABHotUpdates/|dff941d41e6e3a9e76f05ed71fdc8d87"
+            fields[107] = "1.16032533697c9e9e"
 
-            payload = AES_CBC128(pb_encode(fields), self.key, self.iv)
+            key = self.key
+            iv = self.iv
+            print(f"[GetLoginData] key/iv hardcode")
+
+            payload = AES_CBC128(pb_encode(fields), key, iv)
             url = f"{self._data.base_url}/GetLoginData"
             headers = {
                 "X-Unity-Version": "2018.4.12f1",
@@ -616,23 +622,22 @@ class APIClient:
             }
             r = requests.post(url, headers=headers, data=payload, verify=False, timeout=30)
             print(f"[GetLoginData] HTTP {r.status_code}")
-            
             if r.status_code != 200:
-                print(f"[GetLoginData] ❌ Lỗi từ Garena: {r.text[:200]}")
+                print(f"[GetLoginData] ❌ body={r.content[:300]!r}")
                 return
-
             raw = r.content
             try:
-                dec = unpad(AES.new(self.key, AES.MODE_CBC, self.iv).decrypt(raw), 16)
+                dec = unpad(AES.new(key, AES.MODE_CBC, iv).decrypt(raw), 16)
                 data = json.loads(protobuf_dec(dec.hex()))
             except:
                 data = json.loads(protobuf_dec(raw.hex()))
-
-            if not data:
-                print("[GetLoginData] ❌ Data trả về rỗng!")
-                return
-
             self.logindata = data
+            _ts_new = _scalar(data.get("21"))
+            if _ts_new:
+                self._data.login_time = int(_ts_new)
+                print(f"[GetLoginData] ✅ login_time update = {_ts_new}")
+            else:
+                print(f"[GetLoginData] ⚠️ login_time giữ nguyên = {self._data.login_time}")
             self._data.guild_id = data.get("20")
             self._data.guild_code = data.get("55")
             sv = _scalar(data.get("14"))
@@ -643,7 +648,7 @@ class APIClient:
                 self._data.chat_port, self._data.chat_ip = chat[-5:], chat[:-6]
             if len(sv) > 6:
                 self._data.online_port, self._data.online_ip = sv[-5:], sv[:-6]
-            print(f"[GetLoginData] ✅ OK online={self._data.online_ip}:{self._data.online_port}")
+            print(f"[GetLoginData] ✅ OK online={self._data.online_ip}:{self._data.online_port} chat={self._data.chat_ip}:{self._data.chat_port}")
         except Exception as e:
             print("[GetLoginData]", e)
 
@@ -662,6 +667,7 @@ class APIClient:
         region = int(_scalar(esid(self._data.server)) or 1)
         aid = int(_scalar(self._data.account_id) or 0)
         kts = int(_scalar(self._data.login_time) or 0)
+        print(f"[_auth_packet] fox={fox} server={self._data.server} region={region} aid={aid} kts={kts}")
         cmd = 1 if fox else (101 + (aid % 50))
         hdr = (
             bytes([cmd & 0xFF, region & 0xFF])
@@ -675,83 +681,70 @@ class APIClient:
     def TAO_PACKET_XT(self) -> str:
         try:
             return self._auth_packet(True)
-        except Exception as e: 
+        except Exception as e:
             print(e)
 
     def TAO_PACKET_LOBBY(self):
         try:
             return self._auth_packet(False)
-        except Exception as e: 
+        except Exception as e:
             print(e)
 
     def auth(self, access_token, is_emulator=False):
         try:
             self.is_emulator = is_emulator
             print(f"[auth] Bắt đầu — token={'guest' if ':' in access_token else 'access_token'}")
-
             if ":" in access_token:
                 uid, password = access_token.split(":")
                 self.auth_guest_token(int(uid), password)
             else:
                 self.auth_token_inspect(access_token)
-
             if not self._data.access_token:
                 print("[auth] ❌ Không có access_token")
                 return "account not found"
             print(f"[auth] ✅ open_id={self._data.open_id}")
-
             self.MajorLogin()
             if not self._data.login_token:
                 print("[auth] ❌ MajorLogin thất bại")
                 return "account not found"
-
             self.GetLoginData()
             if not self.logindata:
                 print("[auth] ❌ GetLoginData thất bại")
                 return "account not found"
-
             pkt = self.TAO_PACKET_XT()
             if not pkt:
                 print("[auth] ❌ TAO_PACKET_XT rỗng")
                 return "account not found"
-
             return self._build_api_response(pkt)
         except Exception as e:
             print("[auth]", e)
 
     def _build_api_response(self, authpacket):
-        if not self._data.login_token or not authpacket: 
+        if not self._data.login_token or not authpacket:
             return "account not found"
-        if not self._data.key or not self._data.iv: 
+        if not self._data.key or not self._data.iv:
             return "account not found"
-            
         tok = self._data.login_token
         if isinstance(tok, bytes):
             tok = tok.decode("utf-8", "replace")
-            
         data = gringay.tokendecode(tok)
-        
         if self._data.guild_id:
             guild = {}
             guild["id"] = self._data.guild_id
             guild["secret_code"] = self._data.guild_code
         else:
             guild = False
-
         saddress = {}
         saddress["chatip"] = self._data.chat_ip
         saddress["chatport"] = self._data.chat_port
         saddress["onlineip"] = self._data.online_ip
         saddress["onlineport"] = self._data.online_port
-        
         response = {}
         response["CreateTime"] = gringay.format_timestamp(self._data.create_time)
         response["ExpiryTime"] = gringay.format_timestamp(self._data.expiry_time)
         response["UserAuthPacket"] = list(authpacket)
-        
         lobby_pkt = self.TAO_PACKET_LOBBY()
         response["UserAuthPacketLobby"] = list(lobby_pkt) if lobby_pkt else list(authpacket)
-        
         response["UserAuthToken"] = tok
         response["UserNickName"] = data.get("nickname") if data else None
         response["UserAccountUID"] = data.get("account_id") if data else None
@@ -764,7 +757,7 @@ class APIClient:
         response["iv"] = list(self._data.iv)
         response["logindata"] = self.logindata
         response["GameServerAddress"] = saddress
-        
+        response["device_id"] = self._data.device_id
         return response
 
 
