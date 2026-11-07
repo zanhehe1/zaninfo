@@ -4781,7 +4781,6 @@ Developer: @zanxgay
     time.sleep(0.35)
    
  def GenSquads(self, team, cid, uid, Type, name):
-    Type = 2
 
     wait_count = 0
     while not self.sock39699 and wait_count < 20:
