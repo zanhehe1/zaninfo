@@ -45,22 +45,24 @@
       "nickname": "xedochat123."
     },
     {
-      "bot_id": 5,
-      "auth_bot_login": {
-        "access_token": "8422862283:9E3194BBBDBD98755F38BCA4CE2F66EEB9539823DD59442C7531327518AF6DAA"
-      },
-      "access_bot": [],
-      "active-clan": true,
-      "botid": 19062405025,
-      "nickname": "Thượng Lưuu"
-    },
-    {
       "bot_id": 6,
       "auth_bot_login": {
         "access_token": "2db872bca9b3ff3ca455a75c0776717663dfe61122915dec99888107e5f6d383"
       },
       "access_bot": [],
-      "active-clan": true
+      "active-clan": true,
+      "botid": 19063388969,
+      "nickname": "bolavanquanw"
+    },
+    {
+      "bot_id": 7,
+      "auth_bot_login": {
+        "access_token": "8425176819:81D3352544466DFD9E9478C454B0F64F148108A95FA4EAC0AD12FF7347725CBB"
+      },
+      "access_bot": [],
+      "active-clan": true,
+      "botid": 19069248859,
+      "nickname": "Thượng Lưuu."
     }
   ]
 }
