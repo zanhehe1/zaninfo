@@ -78,6 +78,21 @@
       "active-clan": true,
       "botid": 19081554092,
       "nickname": "đâm hình sự؝"
+    },
+    {
+      "bot_id": 9,
+      "auth_bot_login": {
+        "access_token": "8429074863:4EEC736482521B7FFD5E64D010A3AA55E7DEAD5BB5B25F2142CAA7E1AEC59114"
+      },
+      "access_bot": [
+        {
+          "uid": 1614835136,
+          "expire": "2026-11-18 07:05:31"
+        }
+      ],
+      "active-clan": true,
+      "botid": 19081830747,
+      "nickname": "maiphgxgon"
     }
   ]
 }
