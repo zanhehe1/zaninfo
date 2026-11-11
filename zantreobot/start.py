@@ -8972,7 +8972,7 @@ def restart_bot():
     os.execv(sys.executable, ['python'] + sys.argv)
 
 def ping_api_keep_alive():
-    url = "https://zantreobothi.onrender.com/"
+    url = "https://zantreobotsv.onrender.com"
     
     while True:
         try:
