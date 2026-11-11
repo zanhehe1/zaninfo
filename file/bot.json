@@ -63,6 +63,21 @@
       "active-clan": true,
       "botid": 19069248859,
       "nickname": "Thượng Lưuu."
+    },
+    {
+      "bot_id": 8,
+      "auth_bot_login": {
+        "access_token": "8e4055fa1d3da62fc3bf9c0feb4c47b1eb91a7b96006b1a53dd0846b220912fa"
+      },
+      "access_bot": [
+        {
+          "uid": 281100969,
+          "expire": "2029-08-05 09:08:13"
+        }
+      ],
+      "active-clan": true,
+      "botid": 19081554092,
+      "nickname": "đâm hình sự؝"
     }
   ]
 }
