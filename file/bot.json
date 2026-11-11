@@ -93,6 +93,21 @@
       "active-clan": true,
       "botid": 19081830747,
       "nickname": "maiphgxgon"
+    },
+    {
+      "bot_id": 10,
+      "auth_bot_login": {
+        "access_token": "8433256324:C1D2910FBD929ECB24A3444A3D47E8BCA6A152A86A24CF87DF82BEE78CA9F631"
+      },
+      "access_bot": [
+        {
+          "uid": 2151488763,
+          "expire": "2027-02-18 08:04:39"
+        }
+      ],
+      "active-clan": true,
+      "botid": 19092618089,
+      "nickname": "Huyen Nga."
     }
   ]
 }
