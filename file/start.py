@@ -9761,4 +9761,4 @@ if __name__ == "__main__":
     start_ping_thread() 
     threading.Thread(target=run_telegram, daemon=True).start()
     threading.Thread(target=sbot, daemon=True).start()
-    app.run(host="0.0.0.0", port=2009)
+    app.run(host="0.0.0.0", port=2008)
