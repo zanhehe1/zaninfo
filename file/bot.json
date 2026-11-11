@@ -8,7 +8,7 @@
       "access_bot": [
         {
           "uid": 18457983435,
-          "expire": "2054-03-24 08:51:59"
+          "expire": "2054-03-28 13:35:15"
         },
         {
           "uid": 1543649391,
@@ -28,6 +28,10 @@
         {
           "uid": 120265227,
           "expire": "2029-08-02 14:34:11"
+        },
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-28 13:35:27"
         }
       ],
       "active-clan": true,
@@ -39,7 +43,12 @@
       "auth_bot_login": {
         "access_token": "af2eef51f1a307a728b69f832c319649c2ef82f873e478dd8f4b4abc1f836baf"
       },
-      "access_bot": [],
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-28 13:18:33"
+        }
+      ],
       "active-clan": true,
       "botid": 19059690780,
       "nickname": "xedochat123."
@@ -49,7 +58,12 @@
       "auth_bot_login": {
         "access_token": "2db872bca9b3ff3ca455a75c0776717663dfe61122915dec99888107e5f6d383"
       },
-      "access_bot": [],
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-28 13:29:20"
+        }
+      ],
       "active-clan": true,
       "botid": 19063388969,
       "nickname": "bolavanquanw"
@@ -59,7 +73,12 @@
       "auth_bot_login": {
         "access_token": "8425176819:81D3352544466DFD9E9478C454B0F64F148108A95FA4EAC0AD12FF7347725CBB"
       },
-      "access_bot": [],
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-28 13:29:04"
+        }
+      ],
       "active-clan": true,
       "botid": 19069248859,
       "nickname": "Thượng Lưuu."
@@ -73,6 +92,10 @@
         {
           "uid": 281100969,
           "expire": "2029-08-05 09:08:13"
+        },
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-28 13:26:33"
         }
       ],
       "active-clan": true,
@@ -88,6 +111,10 @@
         {
           "uid": 1614835136,
           "expire": "2026-11-18 07:05:31"
+        },
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-28 13:36:15"
         }
       ],
       "active-clan": true,
@@ -103,11 +130,83 @@
         {
           "uid": 2151488763,
           "expire": "2027-02-18 08:04:39"
+        },
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-28 13:37:54"
         }
       ],
       "active-clan": true,
       "botid": 19092618089,
       "nickname": "Huyen Nga."
+    },
+    {
+      "bot_id": 11,
+      "auth_bot_login": {
+        "access_token": "8433494643:AD950C0CF37E5E67DFA0FB36E42C355CCB9FB15E770EC44A40425800DB876136"
+      },
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-28 13:23:16"
+        },
+        {
+          "uid": 1869813434,
+          "expire": "2027-01-19 11:24:29"
+        }
+      ],
+      "active-clan": true,
+      "botid": 19093313610,
+      "nickname": "bo meomewv2."
+    },
+    {
+      "bot_id": 12,
+      "auth_bot_login": {
+        "access_token": "8434094242:EBDBB768A4C343587E8C377F0C2D9B8670A0B41162481F7CD8EE7BA28A40A784"
+      },
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-28 12:26:50"
+        },
+        {
+          "uid": 4644064231,
+          "expire": "2026-11-18 11:45:00"
+        }
+      ],
+      "active-clan": true,
+      "botid": 19095036576,
+      "nickname": "Van trunw."
+    },
+    {
+      "bot_id": 13,
+      "auth_bot_login": {
+        "access_token": "30091327a040367dfbbd377045266b2bbdcd961b22f6b4101ed457f9d6de4d56"
+      },
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-28 13:36:17"
+        }
+      ],
+      "active-clan": true,
+      "botid": 19095932668,
+      "nickname": "chedocux؝؝؝."
+    },
+    {
+      "bot_id": 14,
+      "auth_bot_login": {
+        "access_token": "b39f56d1bc4f0bd30a4f66737baf75ebe3031025d445830d32f953ee17e8c523"
+      },
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-28 13:30:39"
+        }
+      ],
+      "active-clan": true,
+      "botid": 19095980245,
+      "nickname": "xedochat123%"
     }
   ]
 }
