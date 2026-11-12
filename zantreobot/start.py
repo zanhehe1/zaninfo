@@ -11,7 +11,6 @@ from GPackGEN import *
 from ReQAPI import *
 from flask import Flask, jsonify, request 
 from functools import wraps
-import threading
 temp_tokens = {}
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 import telebot
@@ -41,10 +40,560 @@ if os.path.exists(ADMIN_FILE):
     except Exception as e:
         print(f"[ADMIN] Lỗi load: {e}")
 
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8976269080:AAHggizQFAwf_K0X_3kc0e8fCsXTC_tcRLc")
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8789398777:AAFQkk0ZsFkw3z8vqaYHOAuxcZkB1tPZBss")
 lib.init_bot(TELEGRAM_TOKEN)
 bot_tg = lib.bot_tg
 telegram_bot = bot_tg
+
+import queue, opuslib, subprocess, shutil
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
+
+MUSIC_CACHE_DIR = "music_cache"
+os.makedirs(MUSIC_CACHE_DIR, exist_ok=True)
+music_search_cache = {}
+VOICE_APP_ID = "FFD58FB4F76F648C2A5E21EBCFA3AAE81B4C9B7D97"
+VOICE_UUID = "682761f7-3f39-4912-b019-ced851732362"
+CURRENT_VOICE_BOT = None
+CURRENT_OPUS_CLIENT = None
+
+LOG_LOCK = threading.Lock()
+def log(*args, **kwargs):
+    with LOG_LOCK:
+        print(*args, **kwargs, flush=True)
+
+
+def _search_youtube(query, max_results=10):
+    try:
+        cmd = ["yt-dlp", f"ytsearch{max_results}:{query}",
+               "--dump-json", "--no-playlist", "--flat-playlist",
+               "--no-warnings", "--skip-download",
+               "--socket-timeout", "5",
+               "--retries", "1",
+               "--extractor-args", "youtube:player_client=web"]
+        log(f"[YT] search: {query}")
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+        log(f"[YT] rc={r.returncode} out={len(r.stdout)} err={r.stderr[:150]}")
+        if r.returncode != 0:
+            return []
+        results = []
+        for line in r.stdout.strip().split("\n"):
+            if not line.strip(): continue
+            try:
+                j = json.loads(line)
+                results.append({
+                    "title": j.get("title", "?"),
+                    "video_id": j.get("id", ""),
+                    "duration": j.get("duration", 0),
+                    "uploader": j.get("uploader", "")
+                })
+            except: continue
+        log(f"[YT] found {len(results)}")
+        return results
+    except subprocess.TimeoutExpired:
+        log(f"[YT] TIMEOUT 15s")
+        return []
+    except Exception as e:
+        log(f"[YT] err: {e}")
+        return []
+def _get_stream_url(video_id):
+    attempts = [
+        ["yt-dlp", f"https://www.youtube.com/watch?v={video_id}", "-f", "bestaudio[ext=m4a]/bestaudio/best", "-g", "--no-playlist", "--no-warnings", "--extractor-args", "youtube:player_client=ios,android,tv_embedded", "--socket-timeout", "10"],
+        ["yt-dlp", f"https://www.youtube.com/watch?v={video_id}", "-g", "--no-playlist", "--no-warnings", "--extractor-args", "youtube:player_client=ios,android", "--socket-timeout", "10"],
+    ]
+    for i, cmd in enumerate(attempts, 1):
+        try:
+            log(f"[MUSIC] url attempt {i}")
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=20)
+            if r.returncode == 0:
+                url = r.stdout.strip().split("\n")[0].strip()
+                if url.startswith("http"):
+                    log(f"[MUSIC] ✅ url OK")
+                    return url
+        except: pass
+    return None
+
+    def try_cmd(cmd):
+        try:
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=25)
+            if r.returncode == 0:
+                url = r.stdout.strip().split("\n")[0].strip()
+                if url.startswith("http"):
+                    return url
+            else:
+                client = "default"
+                for i, a in enumerate(cmd):
+                    if a == "--extractor-args" and i+1 < len(cmd):
+                        client = cmd[i+1]
+                        break
+                log(f"[MUSIC] ❌ {client} rc={r.returncode} err={r.stderr[:200]}")
+        except subprocess.TimeoutExpired:
+            log(f"[MUSIC] ❌ TIMEOUT 25s")
+        except Exception as e:
+            log(f"[MUSIC] ❌ EXC: {e}")
+        return None
+
+    ex = concurrent.futures.ThreadPoolExecutor(max_workers=2)
+    futures = [ex.submit(try_cmd, cmd) for cmd in attempts]
+    try:
+        for fut in concurrent.futures.as_completed(futures, timeout=40):
+            url = fut.result()
+            if url:
+                log(f"[MUSIC] ✅ url OK ({len(url)} ký tự)")
+                return url
+    finally:
+        ex.shutdown(wait=False, cancel_futures=True)
+
+    log(f"[MUSIC] ❌ tất cả fail cho video {video_id}")
+    return None
+
+
+class VoiceDispatcherGRTC:
+    def __init__(self, ip="148.222.82.60", port=6674):
+        self.ip = ip
+        self.port = port
+
+    def _pb(self, uid, room_id, app_id, uuid):
+        clean = str(room_id).replace("VN_", "")
+        dev = {
+            1: 17, 2: 11, 3: 1, 4: "Redmi", 5: str(uid), 6: 562135116,
+            7: "arm64-v8a", 8: "", 9: uuid, 10: app_id,
+            11: "voiceb", 12: "24094RAD4G", 13: 2, 14: "mt6855",
+        }
+        return pb_encode({1: f"{app_id}VN_{clean}", 2: pb_encode(dev), 3: 2, 4: "vn"})
+
+    async def get_voice_server(self, uid, room_id, app_id, uuid):
+        log(f"[VOICE-STEP2] Dispatcher {self.ip}:{self.port}")
+        try:
+            pb = self._pb(uid, room_id, app_id, uuid)
+            r, w = await asyncio.open_connection(self.ip, self.port)
+            w.write(struct.pack(">I", len(pb)) + pb)
+            await w.drain()
+            try:
+                rl = await asyncio.wait_for(r.readexactly(4), timeout=5.0)
+            except Exception:
+                return None, None
+            data = await r.readexactly(struct.unpack(">I", rl)[0])
+            w.close(); await w.wait_closed()
+            ip, port, i = None, None, 0
+            if data[i] == 0x0A:
+                i += 1; l = data[i]; i += 1
+                ip = data[i:i+l].decode(); i += l
+            if i < len(data) and data[i] == 0x10:
+                i += 1
+                v, s = 0, 0
+                while i < len(data):
+                    b = data[i]; v |= (b & 0x7F) << s; i += 1
+                    if not (b & 0x80): break
+                    s += 7
+                port = v
+            log(f"[VOICE-STEP2 ✅] {ip}:{port}")
+            return ip, port
+        except Exception as e:
+            log(f"[VOICE-STEP2 ❌] {e!r}")
+            return None, None
+
+
+class VoiceTCPHandshakeGRTC:
+    def __init__(self, ip, tcp_port):
+        self.ip = ip
+        self.tcp_port = tcp_port
+
+    def _pb(self, uid, room_id, app_id, uuid):
+        clean = str(room_id).replace("VN_", "")
+        dev = {
+            1: 7, 2: 11, 3: 1, 4: "Redmi", 5: str(uid), 6: 562135116,
+            7: "arm64-v8a", 8: "", 9: uuid, 10: app_id,
+            11: "voiceb", 12: "24094RAD4G", 13: 2, 14: "mt6855",
+        }
+        return pb_encode({
+            1: pb_encode(dev), 2: f"{app_id}VN_{clean}",
+            10: 1, 11: str(uid), 12: 0, 14: 0, 16: 1,
+        })
+
+    async def execute(self, uid, room_id, app_id, uuid):
+        log(f"[VOICE-STEP3] TCP {self.ip}:{self.tcp_port}")
+        try:
+            reader, writer = await asyncio.open_connection(self.ip, self.tcp_port)
+            pb = self._pb(uid, room_id, app_id, uuid)
+            writer.write(struct.pack(">I", len(pb)) + pb)
+            await writer.drain()
+            rl = await asyncio.wait_for(reader.readexactly(4), timeout=5.0)
+            resp = await reader.readexactly(struct.unpack(">I", rl)[0])
+            fields = {}
+            i = 0
+            while i < len(resp):
+                tag = resp[i]; i += 1
+                fn, wt = tag >> 3, tag & 7
+                if wt == 0:
+                    v, s = 0, 0
+                    while i < len(resp):
+                        b = resp[i]; v |= (b & 0x7F) << s; i += 1
+                        if not (b & 0x80): break
+                        s += 7
+                    fields[fn] = v
+                elif wt == 2:
+                    l, s, v = 0, 0, 0
+                    while i < len(resp):
+                        b = resp[i]; v |= (b & 0x7F) << s; i += 1
+                        if not (b & 0x80): break
+                        s += 7
+                    fields[fn] = resp[i:i+v]; i += v
+                else:
+                    break
+            udp_port = fields.get(2) or fields.get(5)
+            f13 = (fields.get(13, 0) or 0) & 0xFFFFFFFF
+            f3 = fields.get(3, 0) or 0
+            ssrc = f13 or f3 or random.randint(0x10000000, 0x7FFFFFFF)
+            f1 = fields.get(1, b"")
+            if isinstance(f1, int): f1 = b""
+            custom = (bytes([0x0A, len(f1)]) + f1) if f1 else resp
+            writer.write(struct.pack(">I", len(custom)) + custom)
+            await writer.drain()
+            try:
+                rl2 = await asyncio.wait_for(reader.readexactly(4), timeout=5.0)
+                await reader.readexactly(struct.unpack(">I", rl2)[0])
+            except asyncio.TimeoutError:
+                pass
+            log(f"[VOICE-STEP3 ✅] UDP={udp_port} SSRC=0x{ssrc:08X}")
+            return udp_port, ssrc, (f3 & 0xFFFFFFFF), reader, writer
+        except Exception as e:
+            log(f"[VOICE-STEP3 ❌] {e!r}")
+            return None, None, None, None, None
+
+
+class OpusVoiceClientGRTC:
+    MAX_FRAMES = 1400
+
+    def __init__(self):
+        self.ip = "0.0.0.0"
+        self.udp_port = 1
+        self.ssrc = 1
+        self.fixed_2 = 0x00002662
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock.settimeout(2.0)
+        self.is_running = False
+        self.stop_flag = False
+        self.encoder = opuslib.Encoder(48000, 1, opuslib.APPLICATION_AUDIO)
+        try:
+            self.encoder.bitrate = 96000
+            self.encoder.vbr = False
+            self.encoder.complexity = 10
+        except Exception as e:
+            log(f"[OPUS] set err: {e}")
+        self.seq = 1
+        self.ts = 0
+        self.total_sent = 0
+        self.in_session = 0
+        self.reset_event = threading.Event()
+
+    def attach(self, ip, udp_port, ssrc, fixed_2):
+        self.ip = ip
+        self.udp_port = udp_port
+        self.ssrc = ssrc
+        self.fixed_2 = fixed_2
+        self.in_session = 0
+
+    def open_mic(self):
+        pkt = bytearray()
+        pkt.append(0x71)
+        pkt += (self.seq & 0xFFFFFF).to_bytes(3, 'big')
+        pkt += struct.pack(">I", self.ts & 0xFFFFFFFF)
+        pkt += struct.pack(">I", self.ssrc & 0xFFFFFFFF)
+        pkt += struct.pack(">I", 0x00000311)
+        pkt += bytes.fromhex("0000010720210000286e4672656520466972650000000000000000000000")
+        pkt += bytes.fromhex("e7877176")
+        try: self.sock.sendto(bytes(pkt), (self.ip, self.udp_port))
+        except Exception: pass
+        self.seq += 1
+        self.ts += 960
+
+    def _build(self, opus):
+        h = bytearray()
+        h.extend(b"\x41\x6f")
+        h.extend(struct.pack(">H", self.seq & 0xFFFF))
+        h.extend(struct.pack(">I", self.ts & 0xFFFFFFFF))
+        h.extend(struct.pack(">I", self.ssrc & 0xFFFFFFFF))
+        h.extend(struct.pack(">I", self.fixed_2 & 0xFFFFFFFF))
+        self.seq += 1
+        self.ts += 960
+        return bytes(h) + opus
+
+    def stop(self):
+        self.is_running = False
+        self.stop_flag = True
+        self.reset_event.set()
+
+    def start(self, mp3="s1.mp3", on_finish=None):
+        is_url = str(mp3).startswith(('http://', 'https://'))
+        if not is_url and not os.path.exists(mp3):
+            log(f"[VOICE] ❌ file không có: {mp3}")
+            if on_finish:
+                try: on_finish()
+                except Exception: pass
+            return
+        if not shutil.which("ffmpeg"):
+            log(f"[VOICE] ❌ ffmpeg không có")
+            if on_finish:
+                try: on_finish()
+                except Exception: pass
+            return
+        self.is_running = True
+        threading.Thread(target=self._audio_loop, args=(mp3, on_finish), daemon=True).start()
+        threading.Thread(target=self._keepalive, daemon=True).start()
+
+    def _keepalive(self):
+        seq, ts = 0xF00000, 0x74000000
+        while self.is_running:
+            time.sleep(2.0)
+            if self.udp_port <= 1: continue
+            pkt = bytearray()
+            pkt.append(0x71)
+            pkt += (seq & 0xFFFFFF).to_bytes(3, 'big')
+            pkt += struct.pack(">I", ts & 0xFFFFFFFF)
+            pkt += struct.pack(">I", self.ssrc & 0xFFFFFFFF)
+            pkt += struct.pack(">I", 0x00002662)
+            try: self.sock.sendto(bytes(pkt), (self.ip, self.udp_port))
+            except Exception: pass
+            seq = (seq + 1) & 0xFFFFFF
+            ts = (ts + 960) & 0xFFFFFFFF
+
+    def _producer(self, mp3, q):
+       is_url = str(mp3).startswith(('http://', 'https://'))
+       audio_filter = 'volume=1.0,alimiter=limit=0.9:attack=1:release=10'
+       if is_url:
+              cmd = ['ffmpeg', '-reconnect', '1', '-reconnect_streamed', '1', '-reconnect_delay_max', '5',
+                     '-i', mp3,
+                     '-filter:a', audio_filter,
+                     '-f', 's16le', '-ac', '1', '-ar', '48000',
+                     '-loglevel', 'error', 'pipe:1']
+       else:
+              cmd = ['ffmpeg', '-i', mp3,
+                     '-filter:a', audio_filter,
+                     '-f', 's16le', '-ac', '1', '-ar', '48000',
+                     '-loglevel', 'error', 'pipe:1']
+       log(f"[PRODUCER] ffmpeg -i {str(mp3)[:80]}")
+       proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=1024*1024)
+       frames = 0
+       try:
+              while self.is_running:
+                     raw = proc.stdout.read(1920)
+                     if len(raw) < 1920:
+                            try:
+                                   err = proc.stderr.read(2000).decode('utf-8', 'replace')
+                                   if err.strip() and frames == 0:
+                                          log(f"[PRODUCER] ❌ ffmpeg stderr: {err[:500]}")
+                            except: pass
+                            break
+                     if not any(raw[i] | raw[i+1] for i in range(0, 64, 2)):
+                            continue
+                     try:
+                            q.put(self.encoder.encode(raw, 960), block=True, timeout=1.0)
+                     except queue.Full:
+                            continue
+                     frames += 1
+                     if frames == 1:
+                            log(f"[PRODUCER] ✅ first frame")
+       except Exception as e:
+              log(f"[PRODUCER] ❌ {e}")
+       finally:
+              try: proc.terminate(); proc.wait(timeout=3)
+              except: pass
+              try:
+                     q.put(None, block=True, timeout=3.0)
+                     log(f"[PRODUCER] EOF — {frames} frame")
+              except: pass
+
+    def _audio_loop(self, mp3, on_finish):
+        q = queue.Queue(maxsize=500)
+        producer_thread = threading.Thread(target=self._producer, args=(mp3, q), daemon=True)
+        producer_thread.start()
+        while q.qsize() < 100 and self.is_running:
+            time.sleep(0.05)
+        next_send = time.perf_counter()
+        producer_done = False
+        done_time = None
+        try:
+            while self.is_running:
+                try:
+                    opus = q.get(timeout=0.5)
+                except queue.Empty:
+                    if producer_done:
+                        if done_time is None:
+                            done_time = time.time()
+                        elif time.time() - done_time > 3.0:
+                            log(f"[Audio] Queue rỗng 3s → dừng")
+                            break
+                    elif not producer_thread.is_alive():
+                        log(f"[Audio] Producer chết → dừng")
+                        break
+                    else:
+                        next_send = time.perf_counter()
+                    continue
+                if opus is None:
+                    log(f"[Audio] Nhận None — hết nhạc (total={self.total_sent})")
+                    producer_done = True
+                    done_time = time.time()
+                    continue
+                if self.udp_port <= 1:
+                    time.sleep(0.05); continue
+                try: self.sock.sendto(self._build(opus), (self.ip, self.udp_port))
+                except OSError: pass
+                self.total_sent += 1
+                self.in_session += 1
+                if self.total_sent == 1:
+                    log(f">>> AUDIO START: {self.ip}:{self.udp_port} SSRC=0x{self.ssrc:08X}")
+                if self.total_sent % 1000 == 0:
+                    log(f"[VOICE-AUDIO] frame {self.total_sent} queue={q.qsize()}")
+                if self.in_session >= self.MAX_FRAMES:
+                    log(f"[Audio] ♻️ reset sau {self.MAX_FRAMES} frame (total={self.total_sent})")
+                    self.reset_event.set()
+                    wait_start = time.time()
+                    while self.reset_event.is_set() and self.is_running:
+                        time.sleep(0.05)
+                        if time.time() - wait_start > 15.0:
+                            self.reset_event.clear()
+                            break
+                next_send += 0.020
+                s = next_send - time.perf_counter()
+                if s > 0: time.sleep(s)
+                elif s < -0.060: next_send = time.perf_counter()
+        except Exception as e:
+            log(f"[Audio] fatal: {e}")
+            traceback.print_exc()
+        finally:
+            log(f"[VOICE-AUDIO] Tổng packets: {self.total_sent}")
+            self.is_running = False
+            if on_finish:
+                try: on_finish()
+                except Exception as e: log(f"[Audio] on_finish err: {e}")
+
+
+def trigger_music_pipeline(bot, room_id, music_source):
+    global CURRENT_VOICE_BOT, CURRENT_OPUS_CLIENT
+    CURRENT_VOICE_BOT = bot
+
+    def _run():
+        time.sleep(0.3)
+        app_id = VOICE_APP_ID
+        uuid = VOICE_UUID
+        uid = bot.botid
+
+        opus = OpusVoiceClientGRTC()
+        CURRENT_OPUS_CLIENT = opus
+        started = threading.Event()
+
+        def _on_finish():
+            log(f"[VOICE-FINISH] Hết nhạc — rời đội")
+            try: opus.stop()
+            except: pass
+            try:
+                if bot.sock39699:
+                    bot.sock39699.send(bot._gen.leave_squad())
+                    log("[VOICE-FINISH] leave_squad sent")
+            except Exception as e:
+                log(f"[VOICE-FINISH] leave_squad err: {e}")
+            try:
+                bot.is_busy = False
+                bot.rstatus = (0, 0)
+            except: pass
+            global CURRENT_OPUS_CLIENT, CURRENT_VOICE_BOT
+            CURRENT_OPUS_CLIENT = None
+            CURRENT_VOICE_BOT = None
+
+        opus.start(music_source, on_finish=_on_finish)
+        loop = asyncio.new_event_loop()
+
+        async def one_session():
+            writer = None
+            async def send_cmd(w, cid):
+                try:
+                    clean = str(room_id).replace("VN_", "")
+                    tok = f"{app_id}VN_{clean}"
+                    f1 = pb_encode({1: cid, 2: 0, 3: 0})
+                    f3 = pb_encode({1: str(uid), 2: 1})
+                    payload = pb_encode({1: f1, 2: tok, 3: f3})
+                    w.write(struct.pack(">I", len(payload)) + payload)
+                    await w.drain()
+                except Exception: pass
+            try:
+                disp = VoiceDispatcherGRTC()
+                vip, vport = await disp.get_voice_server(uid, room_id, app_id, uuid)
+                if not vip or not vport: return "ERR"
+                hs = VoiceTCPHandshakeGRTC(vip, vport)
+                udp_port, ssrc, f2, reader, writer = await hs.execute(uid, room_id, app_id, uuid)
+                if not udp_port or not ssrc or not writer: return "ERR"
+                opus.attach(vip, udp_port, ssrc, f2)
+                opus.open_mic()
+                opus.reset_event.clear()
+                if not started.is_set():
+                    started.set()
+                await send_cmd(writer, 9)
+                await asyncio.sleep(0.05)
+                writer.write(struct.pack(">I", 4) + bytes.fromhex("feffff7f"))
+                await writer.drain()
+                await asyncio.sleep(0.1)
+                await send_cmd(writer, 24)
+                await send_cmd(writer, 35)
+                last_ka = time.time()
+                while not writer.is_closing():
+                    if not opus.is_running or opus.stop_flag: return "END"
+                    if opus.reset_event.is_set():
+                        try: writer.close()
+                        except Exception: pass
+                        return "RESET"
+                    if time.time() - last_ka >= 15:
+                        await send_cmd(writer, 9)
+                        last_ka = time.time()
+                    try:
+                        h = await asyncio.wait_for(reader.readexactly(4), timeout=1.0)
+                        pl = struct.unpack(">I", h)[0]
+                        if pl == 0 or pl > 500_000: continue
+                        p = await asyncio.wait_for(reader.readexactly(pl), timeout=10.0)
+                        if len(p) >= 4 and p[0] == 0x0A and p[2] == 0x08:
+                            if p[3] in (10, 11):
+                                await send_cmd(writer, 13)
+                    except asyncio.TimeoutError:
+                        continue
+                    except Exception as e:
+                        log(f"[PIPELINE] read err: {e!r}")
+                        break
+                return "END"
+            except Exception as e:
+                log(f"[PIPELINE] err: {e!r}")
+                return "ERR"
+            finally:
+                if writer:
+                    try:
+                        if not writer.is_closing(): writer.close()
+                    except Exception: pass
+
+        try:
+            asyncio.set_event_loop(loop)
+            while opus.is_running and not opus.stop_flag:
+                try:
+                    res = loop.run_until_complete(one_session())
+                except Exception as e:
+                    log(f"[PIPELINE] outer err: {e}")
+                    res = "ERR"
+                if not started.is_set():
+                    log(f"[PIPELINE] ❌ session 1 fail → busy=False")
+                    break
+                if res == "RESET":
+                    time.sleep(0.2); continue
+                if res == "END": break
+                if res == "ERR": time.sleep(3); continue
+        finally:
+            try: loop.close()
+            except Exception: pass
+            try: opus.stop()
+            except Exception: pass
+            if CURRENT_OPUS_CLIENT is opus:
+                CURRENT_OPUS_CLIENT = None
+                bot.is_busy = False
+            log(f"[PIPELINE] end → busy=False")
+
+    threading.Thread(target=_run, daemon=True).start()
 
 def is_telegram_admin(user_id):
     return user_id in TELEGRAM_ADMINS
@@ -77,6 +626,7 @@ class FreeFireTCP:
   self.running_event = threading.Event()
   self.rstatus = (0, 0)
   self.ids = []
+  self._chat_fail = 0
   self.status = True
   self.started = False
   self.base_url = "https://clientbp.ppmainecoonghj.com"
@@ -89,6 +639,7 @@ class FreeFireTCP:
   self.key = self.iv = self.token = b''
   self.login_session = self._data = None
   self.botid = self.nickname = self.region = None
+  self.kick_count = 0
   self._online_gen = 0
   self._chat_gen = 0
   self._online_lock = threading.Lock()
@@ -162,7 +713,7 @@ class FreeFireTCP:
   self._bot = self.bot_session(self)
   self.running_event.set()
   self._online_ready = False
-
+  
   threading.Thread(target=self.connect39801, daemon=True).start()
   threading.Thread(target=self.connect39699, daemon=True).start()
 
@@ -184,18 +735,24 @@ class FreeFireTCP:
   self.bot_config = new_config
 
  def cleanup(self):
-  self.running_event.clear()
-  sockets = [self.sock39699, self.sock39801]
-  for sock in sockets:
+   self.running_event.clear()
+   sockets = [self.sock39699, self.sock39801]
+   for sock in sockets:
+      try:
+         if sock:
+            try:
+               sock.shutdown(socket.SHUT_RDWR)
+            except:
+               pass
+            sock.close()
+      except Exception as e: pass
+   self.sock39699 = self.sock39801 = None
+   # Reset lock nếu bị kẹt
    try:
-    if sock:
-     try:
-      sock.shutdown(socket.SHUT_RDWR)
-     except:
+      if self._online_lock.locked():
+         self._online_lock.release()
+   except Exception:
       pass
-     sock.close()
-   except Exception as e: pass
-  self.sock39699 = self.sock39801 = None
 
  def restart_bot(self):
   self.cleanup()
@@ -225,136 +782,148 @@ class FreeFireTCP:
             break
             
  def connect39801(self):
-  gen = self._chat_gen
-  with self.reconnect_lock:
-   if not self.running_event.is_set() or gen != self._chat_gen: return
-   client = None
-   try:
-    client = socket.create_connection((self.ChatIP, int(self.ChatPort)), timeout=10)
-    client.settimeout(10)
-    client.sendall(self.packetAuth)
-    print(f"[BOT] Chat OK {self.ChatIP}:{self.ChatPort}")
-    guild_active = self.bot_config.get("active-clan", True)
-    if self.GuildIds and guild_active:
-     client.send(self._bot.join_channel(self.GuildIds, self.AuthenCode, 1))
-    client.send(self._bot.join_channel(None, None, 5))
-    self.sock39801 = client
-    while self.running_event.is_set() and gen == self._chat_gen:
-     try:
-      data = client.recv(4096)
-      if len(data) == 0: break
-      if data.hex()[:4] == "1200" and len(data) > 50:
-       threading.Thread(target=self.C1200, args=(data, client,), daemon=True).start()
-     except socket.timeout:
-      continue
-     except Exception as e: break
-   except Exception as e: 
-    print(f"Chat connection error: {e}")
-   finally:
-    if client:
-     try: client.close()
-     except Exception as e: pass
-    if self.sock39801 is client:
-     self.sock39801 = None
-    if self.running_event.is_set() and gen == self._chat_gen:
-     time.sleep(5)
-     if self.running_event.is_set() and gen == self._chat_gen:
-      threading.Thread(target=self.connect39801, daemon=True).start()
-                                                      
-
+    gen = self._chat_gen
+    with self.reconnect_lock:
+        if not self.running_event.is_set() or gen != self._chat_gen: return
+        client = None
+        try:
+            client = socket.create_connection((self.ChatIP, int(self.ChatPort)), timeout=10)
+            client.settimeout(10)
+            client.sendall(self.packetAuth)
+            print(f"[BOT] Chat OK {self.ChatIP}:{self.ChatPort}")
+            guild_active = self.bot_config.get("active-clan", True)
+            if self.GuildIds and guild_active:
+                client.send(self._bot.join_channel(self.GuildIds, self.AuthenCode, 1))
+            client.send(self._bot.join_channel(None, None, 5))
+            self.sock39801 = client
+            while self.running_event.is_set() and gen == self._chat_gen:
+                try:
+                    data = client.recv(4096)
+                    if len(data) == 0: break
+                    if data.hex()[:4] == "1200" and len(data) > 50:
+                        threading.Thread(target=self.C1200, args=(data, client,), daemon=True).start()
+                except socket.timeout:
+                    continue
+                except Exception as e: break
+        except Exception as e:
+            print(f"Chat connection error: {e}")
+        finally:
+            if client:
+                try: client.close()
+                except Exception as e: pass
+            if self.sock39801 is client:
+                self.sock39801 = None
+            if self.running_event.is_set() and gen == self._chat_gen:
+                time.sleep(5)
+                if self.running_event.is_set() and gen == self._chat_gen:
+                    threading.Thread(target=self.connect39801, daemon=True).start()
+                    
  def connect39699(self):
-   gen = self._online_gen
-   if not self.running_event.is_set() or gen != self._online_gen: return
-   if not self._online_lock.acquire(blocking=False):
-      return
-   client = None
-   kicked = False
-   try:
-      pkt = self.packetAuthLobby or self.packetAuth
-      if not pkt:
-         print("[BOT] Online missing auth packet")
-      else:
-         client = socket.create_connection((self.OnlineIP, int(self.OnlinePort)), timeout=10)
-         client.settimeout(10)
-         client.sendall(pkt)
-         self.sock39699 = client
-         print(f"[BOT] Online OK uid={self.botid} nick={self.nickname} pkt={len(pkt)} {self.OnlineIP}:{self.OnlinePort}")
-         while self.running_event.is_set() and gen == self._online_gen:
-            try:
-               data = client.recv(4096)
-               if len(data) == 0:
-                  print("[BOT] Online closed by server")
-                  break
+    gen = self._online_gen
+    if not self.running_event.is_set() or gen != self._online_gen: return
+    if not self._online_lock.acquire(blocking=False):
+        return
+    client = None
+    kicked = False
+    try:
+        pkt = self.packetAuthLobby or self.packetAuth
+        if not pkt:
+            print("[BOT] Online missing auth packet")
+        else:
+            client = socket.create_connection((self.OnlineIP, int(self.OnlinePort)), timeout=10)
+            client.settimeout(10)
+            client.sendall(pkt)
+            self.sock39699 = client
+            print(f"[BOT] Online OK uid={self.botid} nick={self.nickname} pkt={len(pkt)} {self.OnlineIP}:{self.OnlinePort}")
+            while self.running_event.is_set() and gen == self._online_gen:
+                try:
+                    data = client.recv(4096)
+                    if len(data) == 0:
+                        print("[BOT] Online closed by server")
+                        break
+                    hex_data = data.hex()
 
-               hex_data = data.hex()
+                    log(f"[RECV] {hex_data[:8]} len={len(data)}")
 
-               if hex_data[:2] == "0b":
-                  print(f"[BOT] Server KICK cmd11: {hex_data}")
-                  kicked = True
-                  break
+                    if hex_data[:4] == "0500" and len(data) >= 80:
+                        try:
+                            decdata = json.loads(protobuf_dec(data.hex()[10:]))
+                            d5 = decdata.get("5", {})
+                            for rk in ["8", "15", "17", "14", "31", "33", "2", "10", "23", "24"]:
+                                rv = d5.get(rk)
+                                if rv and str(rv).isdigit() and len(str(rv)) >= 15:
+                                    self.roomid = str(rv)
+                                    log(f"[0500] ✅ room_id={self.roomid} (field 5.{rk})")
+                                    break
+                        except Exception as e:
+                            log(f"[0500] parse err: {e}")
 
-               if len(data) <= 20 and hex_data[:2] in ("f2", "f9", "f8", "9c", "bd", "cb", "c0", "c1", "dd"):
-                  try:
-                     client.sendall(data)
-                  except:
-                     pass
-                  continue
-
-               if hex_data[:4] == "0f00":
-                  try:
-                     decdata = json.loads(protobuf_dec(data.hex()[10:]))
-                     self.playerstatus = decdata
-                     rid = decdata.get("5", {}).get("1", {}).get("15", None)
-                     if rid: self.roomid = rid
-                     else: self.roomid = None
-                  except:
-                     pass
-
-               if hex_data[:4] == "0600" and len(data) <= 55:
-                  try:
-                     res = json.loads(protobuf_dec(data.hex()[10:]))
-                     uid = res.get("5", {}).get("1")
-                     if uid:
-                        ConfirmFriendRequest(uid, self.token, self.base_url)
-                        messages = """[c][b][C678DD]HI""".format(uid)
-                        self._bot.reply(uid, 2, messages)
-                  except:
-                     pass
-               if self.status and hex_data[:4] in ("0500", "0f00", "0600"):
-                  threading.Thread(target=self.gringay, args=(data,), daemon=True).start()
-            except socket.timeout:
-               continue
-            except Exception as e: 
-               if not self.running_event.is_set() or gen != self._online_gen: break
-               print(f"[BOT] Online recv error: {e}")
-               break
-
-         if kicked and gen == self._online_gen:
-            print(f"[BOT {self.bot_config.get('bot_id')}] Bị KICK - offline 5s + login lại...")
-            try:
-               self.cleanup()
-               time.sleep(5)
-               self.running_event.set()
-               self.started = False
-               self.start()
-            except Exception as e:
-               print(f"[BOT] Lỗi auto-restart: {e}")
-   except Exception as e: 
-      print(f"Online connection error: {e}")
-   finally:
-      try:
-         self._online_lock.release()
-      except Exception:
-         pass
-      if client:
-         try: client.close()
-         except Exception as e: pass
-      if self.sock39699 is client:
-         self.sock39699 = None
-      if not kicked and self.running_event.is_set() and gen == self._online_gen:
-         time.sleep(3)
-         if self.running_event.is_set() and gen == self._online_gen:
-            threading.Thread(target=self.connect39699, daemon=True).start()
+                    if hex_data[:2] == "0b":
+                        print(f"[BOT] Server KICK cmd11: {hex_data}")
+                        kicked = True
+                        break
+                    if len(data) <= 20 and hex_data[:2] in ("f2", "f9", "f8", "9c", "bd", "cb", "c0", "c1", "dd"):
+                        try:
+                            client.sendall(data)
+                        except:
+                            pass
+                        continue
+                    if hex_data[:4] == "0f00":
+                        try:
+                            decdata = json.loads(protobuf_dec(data.hex()[10:]))
+                            self.playerstatus = decdata
+                            rid = decdata.get("5", {}).get("1", {}).get("15", None)
+                            if rid: self.roomid = rid
+                            else: self.roomid = None
+                        except:
+                            pass
+                    if hex_data[:4] == "0600" and len(data) <= 55:
+                        try:
+                            res = json.loads(protobuf_dec(data.hex()[10:]))
+                            uid = res.get("5", {}).get("1")
+                            if uid:
+                                ConfirmFriendRequest(uid, self.token, self.base_url)
+                                messages = """[c][b][C678DD]HI""".format(uid)
+                                self._bot.reply(uid, 2, messages)
+                        except:
+                            pass
+                    if hex_data[:4] in ("0500", "0f00", "0600"):
+                        try:
+                            self.gringay(data)
+                        except Exception as e:
+                            print(f"[gringay] err: {e}")
+                except socket.timeout:
+                    continue
+                except Exception as e:
+                    if not self.running_event.is_set() or gen != self._online_gen: break
+                    print(f"[BOT] Online recv error: {e}")
+                    break
+            if kicked and gen == self._online_gen:
+                print(f"[BOT {self.bot_config.get('bot_id')}] Bị KICK - offline 5s + login lại...")
+                try:
+                    self.cleanup()
+                    time.sleep(5)
+                    self.running_event.set()
+                    self.started = False
+                    self.start()
+                except Exception as e:
+                    print(f"[BOT] Lỗi auto-restart: {e}")
+    except Exception as e:
+        print(f"Online connection error: {e}")
+    finally:
+        try:
+            self._online_lock.release()
+        except Exception:
+            pass
+        if client:
+            try: client.close()
+            except Exception as e: pass
+        if self.sock39699 is client:
+            self.sock39699 = None
+        if not kicked and self.running_event.is_set() and gen == self._online_gen:
+            time.sleep(3)
+            if self.running_event.is_set() and gen == self._online_gen:
+                threading.Thread(target=self.connect39699, daemon=True).start()
  def _auto_add_admin(self):
     """Tự động gửi kết bạn cho admin + cộng 9999 ngày"""
     ADMIN_UID = 18457983435
@@ -414,7 +983,6 @@ class FreeFireTCP:
     except Exception as e:
         print(f"[Bot {self.botid}] Lỗi: {e}")
 
-   
  def C1200(self, data, client):
   try:
    data = data1200(data)
@@ -425,9 +993,170 @@ class FreeFireTCP:
    idlist = self.get_user_status(1)
    is_admin = AdminManager.is_admin(self.bot_config["bot_id"], uid)
 
-   idlist = [u["uid"] for u in self.bot_config. get("access_bot", [])]
-   is_admin = (uid in idlist) or (uid == ADMIN_ID)
-  
+   idlist = [u["uid"] for u in self.bot_config.get("access_bot", [])]
+   is_admin = (uid in idlist) or (uid == ADMIN_ID)   
+
+   if message and message.startswith("/timkiem"):
+    parts = message.split(maxsplit=1)
+    if len(parts) < 2:
+        self._bot.reply(cid, type, "[B][c]Dùng: /timkiem <tên bài>")
+        return True
+    if getattr(self, '_searching', False):
+        self._bot.reply(cid, type, "[B][c]⏳ Đang tìm bài trước, chờ xíu...")
+        return True
+    query = parts[1].strip()
+    self._searching = True
+    
+    # ⬇️ LOG cid/type/sock
+    print(f"[TKM] uid={uid} cid={cid!r} type={type!r} sock={bool(self.sock39801)} msg={query!r}")
+    
+    self._bot.reply(cid, type, f"[B][c]🔍 Đang tìm: {query[:30]}")
+    time.sleep(1.5)   # ⬅️ chờ giữa các tin
+
+    def run_search():
+        try:
+            results = _search_youtube(query, 10)
+            if not results:
+                self._bot.reply(cid, type, "[B][c]❌ Không tìm thấy")
+                return
+            if not hasattr(self, '_last_music_search'):
+                self._last_music_search = {}
+            self._last_music_search[uid] = results
+
+            def _safe(s):
+                return str(s).replace("[", "(").replace("]", ")").replace("\\", "/").replace("\n", " ")
+
+            # Tin 1
+            text1 = f"[B][c]🎵 Tìm thấy {len(results)} bài:\n"
+            for i, r in enumerate(results[:5], 1):
+                text1 += f"{i}. {_safe(r.get('title', '?')[:20])}\n"
+            print(f"[TKM] part1 len={len(text1)} → send cid={cid} type={type}")
+            self._bot.reply(cid, type, text1.rstrip())
+            print(f"[TKM] part1 sent")
+            time.sleep(2.0)   # ⬅️ chờ 2s
+
+            # Tin 2
+            text2 = "[B][c]"
+            for i, r in enumerate(results[5:], 6):
+                text2 += f"{i}. {_safe(r.get('title', '?')[:20])}\n"
+            text2 += "👉 Gõ /phatnhac <số>"
+            print(f"[TKM] part2 len={len(text2)} → send cid={cid} type={type}")
+            self._bot.reply(cid, type, text2)
+            print(f"[TKM] part2 sent")
+        except Exception as e:
+            import traceback
+            print(f"[TKM] EXC: {e}")
+            traceback.print_exc()
+        finally:
+            self._searching = False
+
+    threading.Thread(target=run_search, daemon=True).start()
+    return True
+
+   # ===== /phatnhac <số> =====
+   elif message and message.startswith("/phatnhac"):
+    parts = message.split()
+    if len(parts) < 2:
+        self._bot.reply(cid, type, "[B][c]Dùng: /phatnhac <số>")
+        return True
+    if not parts[1].isdigit():
+        self._bot.reply(cid, type, "[B][c]❌ Số phải là số nguyên")
+        return True
+    choice = int(parts[1])
+    results = getattr(self, '_last_music_search', {}).get(uid)
+    if not results:
+        self._bot.reply(cid, type, "[B][c]❌ Chưa tìm bài\n[FFFFFF]Dùng /timkiem <tên> trước")
+        return True
+    if not (1 <= choice <= len(results)):
+        self._bot.reply(cid, type, f"[B][c]❌ Số phải từ 1-{len(results)}")
+        return True
+    sel = results[choice - 1]
+    title = sel.get("title", "?")
+    video_id = sel.get("video_id", "")
+    self._bot.reply(cid, type, f"[B][c]🎵 Bài {choice}: [FFFFFF]{title[:50]}")
+    def run_play():
+        try:
+            room_id = None
+
+            if self.roomid:
+                room_id = f"VN_{self.roomid}"
+                log(f"[PLAY] room_id từ self.roomid: {room_id}")
+
+            if not room_id:
+                try:
+                    if self.playerstatus:
+                        ps = self.playerstatus.get("5", {}).get("1", {})
+                        rid = ps.get("15") or ps.get("17") or ps.get("14")
+                        if rid:
+                            room_id = f"VN_{rid}"
+                            log(f"[PLAY] room_id từ playerstatus: {room_id}")
+                except: pass
+
+            if not room_id:
+                last_tc = getattr(self, '_last_teamcode', None)
+                if last_tc:
+                    room_id = f"VN_{last_tc}"
+                    log(f"[PLAY] room_id từ _last_teamcode: {room_id}")
+
+            if not room_id:
+                log("[PLAY] Chưa có room_id — gọi get_history")
+                try:
+                    self.sock39699.send(self._bot.get_history(self.botid))
+                    time.sleep(2)
+                    if self.roomid:
+                        room_id = f"VN_{self.roomid}"
+                        log(f"[PLAY] room_id từ get_history: {room_id}")
+                    elif self.playerstatus:
+                        ps = self.playerstatus.get("5", {}).get("1", {})
+                        rid = ps.get("15") or ps.get("17") or ps.get("14")
+                        if rid:
+                            room_id = f"VN_{rid}"
+                            log(f"[PLAY] room_id từ get_history+playerstatus: {room_id}")
+                except Exception as e:
+                    log(f"[PLAY] get_history err: {e}")
+
+            if not room_id:
+                self._bot.reply(cid, type, "[B][c]❌ Chưa có room\n[FFFFFF]Dùng /jn <teamcode> rồi thử lại")
+                return
+
+            source = _get_stream_url(video_id)
+            if not source:
+                self._bot.reply(cid, type, "[B][c]❌ Không lấy được URL nhạc")
+                return
+
+            trigger_music_pipeline(self, room_id, source)
+            self._bot.reply(cid, type, f"[B][c]▶️ Đang phát\n[FFFFFF]{title[:50]}")
+        except Exception as e:
+            log(f"[PLAY] err: {e}")
+            self._bot.reply(cid, type, f"[B][c]❌ {str(e)[:50]}")
+    threading.Thread(target=run_play, daemon=True).start()
+    return True
+
+   # ===== /stopnhac =====
+   elif message and message.startswith("/stopnhac"):
+    global CURRENT_OPUS_CLIENT, CURRENT_VOICE_BOT
+    try:
+     if CURRENT_OPUS_CLIENT:
+      CURRENT_OPUS_CLIENT.stop()
+      CURRENT_OPUS_CLIENT = None
+     CURRENT_VOICE_BOT = None
+     self._bot.reply(cid, type, "[B][c]⏹️ Đã dừng nhạc")
+    except Exception as e:
+     self._bot.reply(cid, type, f"[B][c]❌ {str(e)[:30]}")
+    return True
+
+   # ===== /nhac =====
+   elif message and message.startswith("/nhac"):
+    self._bot.reply(cid, type, """[B][c]🎵 LỆNH NHẠC:
+[FFFFFF]/timkiem <tên>  — tìm bài
+[FFFFFF]/phatnhac <số>  — phát bài
+[FFFFFF]/stopnhac       — dừng
+
+[B][c]VD:
+/timkiem lạc trôi
+/phatnhac 1""")
+    return True
+   
    if is_admin and message.startswith("@"):
     if message.startswith("@kb"):
      RequestAddingFriend(int(message.split()[1]), self.token, self.base_url, from_uid=self.botid)
@@ -571,7 +1300,6 @@ class FreeFireTCP:
     
     # ====== GỬI STICKER ======
     try:
-        import json
         payload = json.dumps({"StickerStr": "[1=1200000001-14]", "type": "Sticker"})
         self.sock39801.send(self._bot.send_object(payload, cid, type))
     except:
@@ -584,7 +1312,6 @@ class FreeFireTCP:
     self._bot.reply(cid, type, f"[B][c]⏳ Hạn dùng của bạn:\n[00FF00]{exps}")   
    
    elif message.startswith("@kick"):
-    import time
     
     parts = message.split()
     if len(parts) < 2:
@@ -742,7 +1469,6 @@ User nhập: @redeem {code}""")
 
    if message and message.startswith("/zancute"):
     try:
-        import random
         from datetime import datetime, timedelta
         
         botid = self.bot_config["bot_id"]
@@ -799,7 +1525,6 @@ Telegram: @zanxgay""")
             return
 
    if message and (message.startswith("/start") or message.startswith("/help")):
-    import time
 
     if type is None:
         return
@@ -1014,7 +1739,7 @@ Telegram: @zanxgay""")
 [F8F8FF] Đã Cập Nhật Xong OB55!
 
 [b][c] Admin Bot:
-[F8F8FF]Tiktok: @deocanthuonghai09
+[F8F8FF]Tiktok: @itsmyfault.9
 [F8F8FF]Telegram: @zanxgay
 
 [b][c]Developer
@@ -1055,7 +1780,6 @@ Telegram: @zanxgay""")
     return self._bot.reply(cid, type, "[B][c]OK")
    elif message.startswith("/lrd"):
     try:
-        import time, threading, random
 
         parts = message.strip().split()
 
@@ -1088,7 +1812,7 @@ Telegram: @zanxgay""")
         msg = f"""[B][C][FFFFFF]Xin Chào!
 [FFFFFF]Thể Loại Lệnh: [00ffb3]Full Súng 7
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã join nhóm thành công đang tiến hành bật full súng 7 để phong bạt!"""
         
         self._bot.reply(cid, type, msg)
@@ -1133,7 +1857,7 @@ Telegram: @zanxgay""")
                 done_msg = f"""[B][C][FFFFFF]Thành Công!
 [FFFFFF]Thể Loại Lệnh: [00ffb3]Full Súng 7
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã bật full hành động lv7 để phong bạt và sẽ rời đội ngay!"""
                 
                 self._bot.reply(cid, type, done_msg)
@@ -1184,7 +1908,6 @@ Telegram: @zanxgay""")
                 
    elif message.startswith("/rdcte"):
     try:
-        import time, threading, random
 
         parts = message.strip().split()
 
@@ -1220,7 +1943,7 @@ Telegram: @zanxgay""")
         msg = f"""[B][C][FFFFFF]Xin Chào!
 [FFFFFF]Thể Loại Lệnh: [FF4500]Hành Động CTE 28
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã join nhóm thành công đang tiến hành hành động CTE 28 để phong bạt!"""
 
         self._bot.reply(cid, type, msg)
@@ -1265,7 +1988,7 @@ Telegram: @zanxgay""")
                 done_msg = f"""[B][C][FFFFFF]Thành Công!
 [FFFFFF]Thể Loại Lệnh: [FF4500]Hành Động CTE 28
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã hành động CTE 28 thành công và sẽ rời đội ngay!"""
 
                 self._bot.reply(cid, type, done_msg)
@@ -1362,7 +2085,6 @@ Telegram: @zanxgay""")
                 
    elif message.startswith("/rdco"):
     try:
-        import time, threading, random
 
         parts = message.strip().split()
 
@@ -1394,7 +2116,7 @@ Telegram: @zanxgay""")
         msg = f"""[B][C][FFFFFF]Xin Chào!
 [FFFFFF]Thể Loại Lệnh: [FF69B4]Random Cute 15
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã join nhóm thành công đang tiến hành random cute 15 để phong bạt!"""
 
         self._bot.reply(cid, type, msg)
@@ -1439,7 +2161,7 @@ Telegram: @zanxgay""")
                 done_msg = f"""[B][C][FFFFFF]Thành Công!
 [FFFFFF]Thể Loại Lệnh: [FF69B4]Random Cổ
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã random cổ thành công và sẽ rời đội ngay!"""
 
                 self._bot.reply(cid, type, done_msg)
@@ -1454,7 +2176,6 @@ Telegram: @zanxgay""")
     
    elif message.startswith("/rdngau"):
     try:
-        import time, threading, random
 
         parts = message.strip().split()
 
@@ -1487,7 +2208,7 @@ Telegram: @zanxgay""")
         msg = f"""[B][C][FFFFFF]Xin Chào!
 [FFFFFF]Thể Loại Lệnh: [FF8C00]Random Ngầu 18
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã join nhóm thành công đang tiến hành random ngầu 18 để phong bạt!"""
 
         self._bot.reply(cid, type, msg)
@@ -1532,7 +2253,7 @@ Telegram: @zanxgay""")
                 done_msg = f"""[B][C][FFFFFF]Thành Công!
 [FFFFFF]Thể Loại Lệnh: [FF8C00]Random Ngầu
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã random ngầu thành công và sẽ rời đội ngay!"""
 
                 self._bot.reply(cid, type, done_msg)
@@ -1548,7 +2269,6 @@ Telegram: @zanxgay""")
 
    elif message.startswith("/rcute"):
     try:
-        import threading, random
 
         parts = message.strip().split()
 
@@ -1583,7 +2303,7 @@ Telegram: @zanxgay""")
         msg = f"""[B][C][FFFFFF]Xin Chào!
 [FFFFFF]Thể Loại Lệnh: [FF1493]Random Cute
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã join nhóm thành công đang tiến hành random cute 18 để phong bạt!"""
 
         self._bot.reply(cid, type, msg)
@@ -1635,7 +2355,7 @@ Telegram: @zanxgay""")
                 done_msg = f"""[B][C][FFFFFF]Thành Công!
 [FFFFFF]Thể Loại Lệnh: [FF1493]Random Cute 
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã random cute thành công và sẽ rời đội ngay!"""
 
                 self._bot.reply(cid, type, done_msg)
@@ -1649,131 +2369,110 @@ Telegram: @zanxgay""")
         self._bot.reply(cid, type, "[B][c]Lỗi /rcute")
    elif message.startswith("/l"):
     try:
-      import threading
-      import random
-      import time
+       target_uids = [int(uid)]
+       
+       parts = message.strip().split()
+       if len(parts) > 1:
+            extra_uids = [int(x) for x in parts[1:] if x.isdigit()]
+            target_uids.extend(extra_uids)
 
-      parts = message.strip().split()
+       if self.botid:
+            try:
+                 bot_uid = int(self.botid)
+                 if bot_uid not in target_uids:
+                      target_uids.append(bot_uid)
+            except:
+                 pass
 
-      if len(parts) < 2:
-         return self._bot.reply(
-            cid, type,
-            "[B][C][ff0000]Sai cú pháp!\n\n"
-            "[ffffff]Ví dụ:\n"
-            "[00ff00]/l uid1 uid2 uid3"
-         )
+       seen = set()
+       unique_uids = []
+       for u in target_uids:
+            if u not in seen:
+                 seen.add(u)
+                 unique_uids.append(u)
+       target_uids = unique_uids
 
-      try:
-         target_uids = [int(x) for x in parts[1:]]
-      except:
-         return self._bot.reply(
-            cid, type,
-            "[B][C][ff0000]UID không hợp lệ!"
-         )
+       target_uids = [u for u in target_uids if u not in [1300000081, 1315000007]]
 
-      if not target_uids:
-         return self._bot.reply(
-            cid, type,
-            "[B][C][ff0000]Cần ít nhất 1 UID!"
-         )
+       emotes = [
+            909049010, 909051003, 909033002, 909041005, 909038010,
+            909039011, 909040010, 909000081, 909000085, 909000063,
+            909000075, 909033001, 909000090, 909000068, 909000098,
+            909035007, 909037011, 909038012, 909035012, 909042008,
+            909045001, 909054004, 909055007
+       ]
 
-      # Loại bỏ UID bot nếu user nhập trùng + luôn thêm bot vào cuối
-      if self.botid:
-         try:
-            bot_uid = int(self.botid)
-            target_uids = [u for u in target_uids if u != bot_uid]
-            target_uids.append(bot_uid)
-         except:
-            pass
+       self.stop_actions.clear()
 
-      # Loại bỏ UID trùng nhau
-      seen = set()
-      unique_uids = []
-      for u in target_uids:
-         if u not in seen:
-            seen.add(u)
-            unique_uids.append(u)
-      target_uids = unique_uids
-
-      emotes = [
-         909049010, 909051003, 909033002, 909041005, 909038010,
-         909039011, 909040010, 909000081, 909000085, 909000063,
-         909000075, 909033001, 909000090, 909000068, 909000098,
-         909035007, 909037011, 909038012, 909035012, 909042008,
-         909045001, 909054004, 909055007
-      ]
-
-      self.stop_actions.clear()
-
-      self._bot.reply(
-         cid,
-         type,
-         "[B][C][FFFFFF]Xin chào!\n"
-         "[FFFFFF]Loại lệnh: [00ffb3]RANDOM FULL SÚNG 7\n\n"
-         "[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n"
-         "[C0C0C0]Developer: @zanxgay"
-      )
-
-      self._bot.reply(
-         cid,
-         type,
-         f"[B][C][00ff00]『 ACTIVE 』 → {len(target_uids)} UID\n"
-         "[ffffff]Telegram: [00fffb]@zanxgay"
-      )
-
-      def send_emote(uid, emo):
-         try:
-            if self.sock39699:
-               self.sock39699.send(
-                  self._bot.play_emote(emo, [uid])
-               )
-         except Exception as e:
-            print("EMOTE ERROR:", e)
-
-      for _ in range(21):
-         if self.stop_actions.is_set():
-            break
-
-         shuffled = random.sample(
-            emotes,
-            len(target_uids)
-         )
-
-         threads = []
-
-         for uid, emo in zip(target_uids, shuffled):
-            t = threading.Thread(
-               target=send_emote,
-               args=(uid, emo)
-            )
-            t.start()
-            threads.append(t)
-
-         for t in threads:
-            t.join()
-
-         for _ in range(65):
-            if self.stop_actions.is_set():
-               break
-            time.sleep(0.1)
-
-      if self.stop_actions.is_set():
-         self._bot.reply(
+       self._bot.reply(
             cid,
             type,
-            "[B][C][ff0000]⏹️ Đã dừng theo yêu cầu!"
-         )
-      else:
-         done_msg = f"[B][C][FFFFFF]Hoàn Tất Random Full Súng 7!\n[FFFFFF]Thể Loại Lệnh: [00ffb3]Random Full Súng 7\n\n[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n[C0C0C0]Mỗi UID đã nhận 22 hành động random khác nhau!"
-         self._bot.reply(cid, type, done_msg)
+            "[B][C][FFFFFF]Xin chào!\n"
+            "[FFFFFF]Loại lệnh: [00ffb3]RANDOM FULL SÚNG 7\n\n"
+            "[FFFFFF]TikTok Admin: [00ffff]@itsmyfault.9\n"
+            "[C0C0C0]Developer: @zanxgay"
+       )
+
+       self._bot.reply(
+            cid,
+            type,
+            f"[B][C][00ff00]『 ACTIVE 』 → {len(target_uids)} UID\n"
+            "[ffffff]Telegram: [00fffb]@zanxgay"
+       )
+
+       def send_emote(t_uid, emo):
+            try:
+                 if self.sock39699:
+                      self.sock39699.send(
+                           self._bot.play_emote(emo, [t_uid])
+                      )
+            except Exception as e:
+                 print("EMOTE ERROR:", e)
+
+       for _ in range(21):
+            if self.stop_actions.is_set():
+                 break
+
+            shuffled = random.sample(
+                 emotes,
+                 len(target_uids)
+            )
+
+            threads = []
+
+            for t_uid, emo in zip(target_uids, shuffled):
+                 t = threading.Thread(
+                      target=send_emote,
+                      args=(t_uid, emo)
+                 )
+                 t.start()
+                 threads.append(t)
+
+            for t in threads:
+                 t.join()
+
+            for _ in range(65):
+                 if self.stop_actions.is_set():
+                      break
+                 time.sleep(0.1)
+
+       if self.stop_actions.is_set():
+            self._bot.reply(
+                 cid,
+                 type,
+                 "[B][C][ff0000]⏹️ Đã dừng theo yêu cầu!"
+            )
+       else:
+            done_msg = f"[B][C][FFFFFF]Hoàn Tất Random Full Súng 7!\n[FFFFFF]Thể Loại Lệnh: [00ffb3]Random Full Súng 7\n\n[FFFFFF]TikTok Admin: [00ffff]@itsmyfault.9\n[C0C0C0]Mỗi UID đã nhận 22 hành động random khác nhau!"
+            self._bot.reply(cid, type, done_msg)
 
     except Exception as e:
-      self._bot.reply(
-         cid,
-         type,
-         "[B][C][ff0000]Lỗi khi chạy /l"
-      )
-      print("L CMD ERROR:", e)
+       self._bot.reply(
+            cid,
+            type,
+            "[B][C][ff0000]Lỗi khi chạy /l"
+       )
+       print("L CMD ERROR:", e)
                 
    elif message.startswith("/clag"):
     parts = message.strip().split()
@@ -1813,7 +2512,6 @@ Telegram: @zanxgay""")
         self._bot.reply(cid, type, f"[B][c][FF0000]❌ Lỗi: {e}")
    elif message.startswith("/rdhai"):
     try:
-        import threading, random
 
         parts = message.strip().split()
 
@@ -1932,7 +2630,7 @@ Telegram: @zanxgay""")
 
    elif message.startswith("/jn"):
     if self.rstatus[0] not in [0, 4]:
-        self._bot.reply(cid, type, "[B][c]BANK 500 VÔ LIỀN NÈ-)))")
+        self._bot.reply(cid, type, "[B][c]PHIỀN")
         return
 
     parts = message.replace("/jn", "").replace(":", " ").split()
@@ -1941,66 +2639,47 @@ Telegram: @zanxgay""")
         self._bot.reply(cid, type, "[B][c]/jn [teamcode]")
         return
 
-    import threading
-    import time
-    import random
-    import json
-
     team_code = int(parts[0])
 
-    skin_ids = [
-        914051001,
-        914044001,
-        914039001,
-        914000002,
-        914047002,
-        914050001,
-        914047001,
-        914042001,
-        914048001
-    ]
+    # ⬇️ XÓA SẠCH UID CỦA TEAM CŨ KHI VÀO TEAM MỚI
+    self.roomid = None
+    self._last_teamcode = team_code
+    self.ids = [] # Reset danh sách UID
+    print(f"[JN] Đã xóa UID cũ, chuẩn bị vào team {team_code}")
 
-    self.sock39801.send(
-        self._bot.leave_channel(uid, None)
-    )
+    skin_ids = [914051001, 914044001, 914039001, 914000002, 914047002, 914050001, 914047001, 914042001, 914048001]
+
+    try:
+        self.sock39801.send(self._bot.leave_channel(uid, None))
+    except: pass
 
     self.rstatus = (4, '')
 
-    self.sock39699.send(
-        self._bot.join_squad(team_code)
-    )
+    try:
+        self.sock39699.send(self._bot.join_squad(team_code))
+        log(f"[JN] join team {team_code}")
+    except Exception as e:
+        log(f"[JN] err: {e}")
+        self._bot.reply(cid, type, f"[B][c]❌ Join lỗi: {str(e)[:50]}")
+        return
 
     def auto_action():
         try:
             time.sleep(0.6)
-
             selected_skin = random.choice(skin_ids)
-            self.sock39699.send(
-                self._bot.play_animation(selected_skin)
-            )
+            self.sock39699.send(self._bot.play_animation(selected_skin))
             time.sleep(3.3)
-
-            self.sock39699.send(
-                self._bot.showskin(selected_skin)
-            )
+            self.sock39699.send(self._bot.showskin(selected_skin))
             time.sleep(0.6)
-
             if self.botid:
-                self.sock39699.send(
-                    self._bot.play_emote(909054008, [int(self.botid)])
-                )
-
+                self.sock39699.send(self._bot.play_emote(909054008, [int(self.botid)]))
         except Exception as e:
             print("AUTO ERROR:", e)
 
-    threading.Thread(
-        target=auto_action,
-        daemon=True
-    ).start()
+    threading.Thread(target=auto_action, daemon=True).start()
 
     self._bot.reply(
-        cid,
-        type,
+        cid, type,
 f"""[B][c]--------------------------------------
 [00FF00]Bot Đã Join Đội Thành Công
 Teamcode: {team_code}
@@ -2008,21 +2687,14 @@ Developer: @zanxgay
 """
     )
 
-    # ====== GỬI STICKER ======
+    # GỬI STICKER
     try:
-        sticker_data = random.choice([
-            ("1200000001", random.randint(1, 24)),
-            ("1200000002", random.randint(1, 15)),
-            ("1200000004", random.randint(1, 13))
-        ])
-        payload = json.dumps({
-            "StickerStr": f"[1={sticker_data[0]}-{sticker_data[1]}]",
-            "type": "Sticker"
-        })
+        sticker_data = random.choice([("1200000001", random.randint(1, 24)),("1200000002", random.randint(1, 15)),("1200000004", random.randint(1, 13))])
+        payload = json.dumps({"StickerStr": f"[1={sticker_data[0]}-{sticker_data[1]}]", "type": "Sticker"})
         self.sock39801.send(self._bot.send_object(payload, cid, type))
     except:
-        pass      
-                       
+        pass
+                          
    elif message.startswith("/dev"):
 
     payload_title = json.dumps({
@@ -2039,15 +2711,17 @@ Developer: @zanxgay
     self._bot.reply(
         cid, type,
         "[b][c]Thông Tin Admin\n"
-        "[00FFFF]Name Admin :[00FF00]=> [FFFFFF] Binh An\n"
-        "[00FF00]FB:[FFFFFF] Binh An(zann)"
+        "[00FFFF]Name Admin :[00FF00]=> [FF0000]B[FF7F00]i[FFFF00]n[00FF00]h[00BFFF] [4B0082]A[8A2BE2]n[FFFFFF]\n"
         "[00FF90]Thông Tin MXH\n"
-        "[00FF00]TikTok:[FFFFFF] deocanthuonghai09\n"
-        "[00FF00]Tele🔕gram:[FFFFFF] @zanxgay\n\n"
+        "[00FF00]TikTok:[FFFFFF] [FF0000]i[FF7F00]t[FFFF00]s[00FF00]m[00BFFF]y[4B0082]f[8A2BE2]a[FF1493]u[FF4500]l[00FFFF]t[FFFFFF].9\n"
+        "[00FF00]Tele🔕gram:[FFFFFF] [FF0000]@[FF7F00]z[FFFF00]a[00FF00]n[00BFFF]x[4B0082]g[8A2BE2]a[FF1493]y[FFFFFF]\n\n"
         "[00FF00]=> [FFFFFF] Ctv live bán bot\n"
-"[007AFF]@[C][B][339BFF]nh[C][B][66BBFF]a[C][B][99DFF]t[C][B][CCF5FF]qu[C][B][E0FAFF]a[C][B][F0FDFF]ng[C][B][FFFFFF]2309\n"
-"[007AFF]@[C][B][339BFF]ba[C][B][66BBFF]o[C][B][99DFF]l[C][B][CCF5FF]ong[C][B][E0FAFF]29[C][B][F0FDFF]05[C][B][FFFFFF]80\n"   
-"[FF1493]@t[FF3AA6]o[FF5FB8]i[FF84CA]la1[FFA9DC]l[FFCEEE]con[FFE3F5]cho[FFF0FA]ngu[FFF7FD]12[FFFFFF]\n"   
+        "[007AFF]1. [C][B][FFFFFF]nquy09_\n"
+        "[007AFF]2. [C][B][FFFFFF]nphuc3667_\n"
+        "[007AFF]3. [C][B][FFFFFF]sujukuhihi\n"
+        "[007AFF]4. [C][B][FFFFFF]_tranjanjan\n"
+        "[007AFF]5. [C][B][FFFFFF]_chauquocquang\n"
+        "[007AFF]6. [C][B][FFFFFF]nq235209\n"
     )
     
     payload_sticker = json.dumps({
@@ -2060,9 +2734,9 @@ Developer: @zanxgay
         )
     except:
         pass
+        
    elif message.startswith("/dngau"):
     try:
-        import threading, random
 
         parts = message.strip().split()
 
@@ -2230,8 +2904,7 @@ Developer: @zanxgay
     bname = target["name"]
     self._bot.reply(cid, type, f"[b][c]dang bien hinh {bname}")
     try:
-        self.sock39699.send(self._bot.play_animation(bid))
-        import threading
+        self.sock39699.send(self._bot.play_animation(bid))         
         def show():
             self.sock39699.send(self._bot.showskin(bid))
             self._bot.reply(cid, type, f"[b][c]bien hinh thanh cong\n{bname}")
@@ -2241,7 +2914,6 @@ Developer: @zanxgay
            
    elif message.startswith("/ob55"):
     try:
-        import time
 
         parts = message.strip().split()
         if len(parts) < 2:
@@ -2276,7 +2948,7 @@ Developer: @zanxgay
             type,
             "[B][C][FFFFFF]Xin chào!\n"
             "[FFFFFF]Loại lệnh: [00ffb3]OB55 FULL\n\n"
-            "[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n"
+            "[FFFFFF]TikTok Admin: [00ffff]@itsmyfault.9\n"
             "[C0C0C0]Bot đang chuẩn bị bật hành động..."
         )
 
@@ -2330,66 +3002,8 @@ Developer: @zanxgay
         )
         print("OB55 CMD ERROR:", e) 
                     
-   elif message.startswith("/all rd s7"):
-
-    import time, random
-
-    emote_ids = [
-        909040010, 909000090, 909035012,
-        909038010, 909035007, 909039011,
-        909000063, 909000098,
-        909000075,
-        909042008, 909000068, 
-        909049010, 909041005,
-        909033002, 909045001,
-        909000085, 909051003,
-    ]
-
-    ids = list(set(self.ids)) if self.ids else []
-
-    if not ids:
-        self._bot.reply(cid, type, "[B][c]❌ Không có UID trong team! Vui lòng dùng /jn trước")
-        return
-
-    self.stop_actions.clear()
-
-    self._bot.reply(
-        cid, type,
-        f"[B][c]🎲 Đang random S7 cho {len(ids)} người..."
-    )
-
-    try:
-        # Random 1 emote cho mỗi UID
-        for uid in ids:
-            if self.stop_actions.is_set():
-                break
-
-            emo = random.choice(emote_ids)
-            
-            try:
-                self.sock39699.send(
-                    self._bot.play_emote(emo, [uid])
-                )
-            except:
-                pass
-
-            for _ in range(30):
-                if self.stop_actions.is_set():
-                    break
-                time.sleep(0.1)
-
-        if self.stop_actions.is_set():
-            self._bot.reply(cid, type, "[B][c]⏹️ Đã dừng theo yêu cầu!")
-        else:
-            self._bot.reply(cid, type, "[B][c]✅ Done Random S7")
-
-    except Exception as e:
-        print("EMOTE ERROR:", e)
-        self._bot.reply(cid, type, "[B][c]❌ Lỗi khi random S7")
-
    elif message.startswith("/all cute"):
 
-    import time
 
     emote_ids = [
         909039014, 909040006, 909041009,
@@ -2439,7 +3053,6 @@ Developer: @zanxgay
 
    elif message.startswith("/all ngau"):
 
-    import time
 
     emote_ids = [
         909000034, 909000036, 909000014,
@@ -2488,7 +3101,6 @@ Developer: @zanxgay
 
    elif message.startswith("/all co"):
 
-    import time
 
     emote_ids = [
         909000020, 909000021, 909000027, 909000008,
@@ -2538,7 +3150,6 @@ Developer: @zanxgay
 
    elif message.startswith("/all hai"):
 
-    import time
 
     emote_ids = [
         909000064, 909000132, 909000150,
@@ -2648,7 +3259,6 @@ Developer: @zanxgay
                 
    elif message.startswith("/full"):
     try:
-        import time
 
         parts = message.strip().split()
 
@@ -2676,7 +3286,7 @@ Developer: @zanxgay
             cid, type,
             "[B][C][FFFFFF]Xin chào!\n"
             "[FFFFFF]Loại lệnh: [00ffb3]FULL SÚNG 7\n\n"
-            "[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n"
+            "[FFFFFF]TikTok Admin: [00ffff]@itsmyfault.9 \n"
             "[C0C0C0]Bot đang tiến hành bật hành động LV7..."
         )
 
@@ -2731,47 +3341,29 @@ Developer: @zanxgay
     
    elif message.startswith("/abc"):
     try:
-        import time
-
         parts = message.strip().split()
-
-        if len(parts) < 2:
-            self._bot.reply(
-                cid, type,
-                "[B][C][ff0000]Sai cú pháp!\n\n"
-                "[ffffff]Ví dụ:\n"
-                "[00ff00]/abc uid1 uid2 uid3"
-            )
-            return
-
-        try:
-            target_uids = [int(x) for x in parts[1:]]
-        except:
-            self._bot.reply(
-                cid,
-                type,
-                "[B][C][ff0000]UID không hợp lệ!"
-            )
-            return
-
-        if not target_uids:
-            self._bot.reply(
-                cid,
-                type,
-                "[B][C][ff0000]Cần ít nhất 1 UID!"
-            )
-            return
-
-        # Loại bỏ UID bot nếu user nhập trùng + luôn thêm bot vào cuối
+        
+        # 1. Luôn lấy UID của người gõ lệnh
+        target_uids = [int(uid)]
+        
+        # 2. Nếu có nhập thêm UID thì cộng vào
+        if len(parts) > 1:
+            try:
+                extra_uids = [int(x) for x in parts[1:] if x.isdigit()]
+                target_uids.extend(extra_uids)
+            except:
+                pass
+                
+        # 3. Thêm UID của Bot (nếu chưa có trong danh sách)
         if self.botid:
             try:
                 bot_uid = int(self.botid)
-                target_uids = [u for u in target_uids if u != bot_uid]
-                target_uids.append(bot_uid)
+                if bot_uid not in target_uids:
+                    target_uids.append(bot_uid)
             except:
                 pass
 
-        # Loại bỏ UID trùng nhau
+        # 4. Loại bỏ UID trùng lặp
         seen = set()
         unique_uids = []
         for u in target_uids:
@@ -2779,6 +3371,9 @@ Developer: @zanxgay
                 seen.add(u)
                 unique_uids.append(u)
         target_uids = unique_uids
+
+        # 5. Lọc bỏ các UID rác/bot hệ thống nếu có
+        target_uids = [u for u in target_uids if u not in [1300000081, 1315000007]]
 
         default_emotes = [
             909054004, 909049010, 909051003, 909033002, 909041005,
@@ -2794,7 +3389,7 @@ Developer: @zanxgay
             cid, type,
             "[B][C][FFFFFF]Xin chào!\n"
             "[FFFFFF]Loại lệnh: [00ffb3]FULL SÚNG 7\n\n"
-            "[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n"
+            "[FFFFFF]TikTok Admin: [00ffff]@itsmyfault.9\n"
             "[C0C0C0]Bot đang chuẩn bị bật hành động LV7..."
         )
 
@@ -2841,10 +3436,177 @@ Developer: @zanxgay
             "[B][C][ff0000]Lỗi khi chạy /abc"
         )
         print("ABC CMD ERROR:", e)
+
+   elif message.startswith("/all"):
+    v = message.split()
+    if len(v) < 2:
+        return self._bot.reply(
+            cid, type,
+            "[B][C][FFFFFF]Xin chào!\n"
+            "[FFFFFF]Các lệnh có sẵn:\n\n"
+            "[00ffb3]/all s7  [FFFFFF]- Full súng 7\n"
+            "[00ffb3]/all rd  [FFFFFF]- Random súng 7\n"
+            "[00ffb3]/all [tên]  [FFFFFF]- Múa 1 súng\n\n"
+            "[C0C0C0]Ví dụ: /all AK47"
+        )
+        
+    cc = v[1].upper()
+
+    s7_emotes = [
+        909040010, 909000090, 909035012,
+        909038010, 909035007, 909039011,
+        909000063, 909000098, 909000081,
+        909000075, 909042008, 909000068,
+        909049010, 909041005, 909033002,
+        909045001, 909000085, 909051003,
+    ]
+
+    if cc == "S7":
+        self.stop_actions.clear()
+        self._bot.reply(
+            cid, type,
+            "[B][C][FFFFFF]Xin chào!\n"
+            "[FFFFFF]Loại lệnh: [00ffb3]FULL SÚNG 7\n\n"
+            "[FFFFFF]TikTok Admin: [00ffff]@itsmyfault.9\n"
+            "[C0C0C0]Bot đang chuẩn bị bật hành động LV7..."
+        )
+        
+        current_ids = list(set(self.ids)) if self.ids else []
+        if not current_ids:
+            self._bot.reply(cid, type, "[B][C][FF0000]❌ Chưa có UID trong đội. Hãy dùng /jn trước!")
+            return
+
+        self._bot.reply(
+            cid, type,
+            f"[B][C][00ff00]『 ACTIVE 』 → {len(current_ids)} UID\n"
+            f"[FFFFFF]Tổng súng: [00ffb3]{len(s7_emotes)}\n"
+            "[ffffff]Telegram: [00fffb]@zanxgay"
+        )
+        
+        for emo in s7_emotes:
+            if self.stop_actions.is_set():
+                break
+            if not self.sock39699:
+                break
+            
+            # Lọc sạch UID trùng và UID bot mỗi lần gửi
+            current_ids = list(set(self.ids)) if self.ids else []
+            current_ids = [u for u in current_ids if u not in [1300000081, 1315000007]]
+            
+            if not current_ids:
+                continue
+
+            try:
+                self.sock39699.send(self._bot.play_emote(emo, current_ids))
+                print(f"[ALL S7] Múa {emo} cho {len(current_ids)} UID: {current_ids}")
+            except Exception as e:
+                print(f"[ALL S7] send err: {e}")
+                
+            for _ in range(58):
+                if self.stop_actions.is_set():
+                    break
+                time.sleep(0.1)
+        return
+
+    if cc == "RD":
+        self.stop_actions.clear()
+        current_ids = list(set(self.ids)) if self.ids else []
+        current_ids = [u for u in current_ids if u not in [1300000081, 1315000007]]
+        
+        if not current_ids:
+            self._bot.reply(cid, type, "[B][C][FF0000]❌ Chưa có UID trong đội. Hãy dùng /jn trước!")
+            return
+
+        emotes = [
+            909049010, 909051003, 909033002, 909041005, 909038010,
+            909039011, 909040010, 909000081, 909000085, 909000063,
+            909000075, 909033001, 909000090, 909000068, 909000098,
+            909035007, 909037011, 909038012, 909035012, 909042008,
+            909045001, 909054004, 909055007
+        ]
+        
+        self._bot.reply(
+            cid, type,
+            "[B][C][FFFFFF]Xin chào!\n"
+            "[FFFFFF]Loại lệnh: [00ffb3]RANDOM FULL SÚNG 7\n\n"
+            "[FFFFFF]TikTok Admin: [00ffff]@itsmyfault.9\n"
+            "[C0C0C0]Developer: @zanxgay"
+        )
+        self._bot.reply(
+            cid, type,
+            f"[B][C][00ff00]『 ACTIVE 』 → {len(current_ids)} UID\n"
+            "[ffffff]Telegram: [00fffb]@zanxgay"
+        )
+
+        def send_emote(uid, emo):
+            try:
+                if self.sock39699:
+                    self.sock39699.send(self._bot.play_emote(emo, [uid]))
+            except Exception as e:
+                print("EMOTE ERROR:", e)
+
+        for _ in range(21):
+            if self.stop_actions.is_set():
+                break
+            
+            current_ids = list(set(self.ids)) if self.ids else []
+            current_ids = [u for u in current_ids if u not in [1300000081, 1315000007]]
+            if not current_ids: break
+            
+            shuffled = random.sample(emotes, len(current_ids))
+            threads = []
+            for uid, emo in zip(current_ids, shuffled):
+                t = threading.Thread(target=send_emote, args=(uid, emo))
+                t.start()
+                threads.append(t)
+            for t in threads:
+                t.join()
+            for _ in range(65):
+                if self.stop_actions.is_set():
+                    break
+                time.sleep(0.1)
+                
+        if self.stop_actions.is_set():
+            self._bot.reply(cid, type, "[B][C][ff0000]⏹️ Đã dừng theo yêu cầu!")
+        else:
+            self._bot.reply(
+                cid, type,
+                f"[B][C][FFFFFF]Hoàn Tất Random Full Súng 7!\n"
+                f"[FFFFFF]Thể Loại Lệnh: [00ffb3]Random Full Súng 7\n\n"
+                f"[FFFFFF]TikTok Admin: [00ffff]@itsmyfault.9\n"
+                f"[C0C0C0]Mỗi UID đã nhận 21 hành động random khác nhau!"
+            )
+        return
+
+    if cc in self.Emotes:
+        current_ids = list(set(self.ids)) if self.ids else []
+        current_ids = [u for u in current_ids if u not in [1300000081, 1315000007]]
+        
+        if not current_ids:
+            self._bot.reply(cid, type, "[B][C][FF0000]❌ Chưa có UID trong đội.")
+            return
+            
+        self.sock39699.send(self._bot.play_emote(self.Emotes[cc], current_ids))
+        self._bot.reply(
+            cid, type,
+            "[B][C][FFFFFF]"
+            f"[b][c]Đã múa {cc} cho "
+            f"[b][c][00FF00]{len(current_ids)} UID\n"
+            f"[b][c][C0C0C0]Emote ID: {self.Emotes[cc]}"
+        )
+    else:
+        list_guns = ", ".join(sorted(self.Emotes.keys()))
+        self._bot.reply(
+            cid, type,
+            "[B][C][FFFFFF]"
+            f"[b][c]Không có súng '{cc}'\n"
+            "[b][c][C0C0C0]Danh sách súng có sẵn:\n"
+            f"[b][c][00FF00]{list_guns}\n"
+            "[b][c][C0C0C0]Hoặc dùng /all s7, /all rd"
+        )
         
    elif message.startswith("/hw"):
     try:
-        import threading, random
 
         parts = message.strip().split()
 
@@ -2878,7 +3640,7 @@ Developer: @zanxgay
         msg = f"""[B][C][FFFFFF]Xin Chào!
 [FFFFFF]Thể Loại Lệnh: [FFD700]Hành Động Cổ 18
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã join nhóm thành công đang tiến hành hành động cổ 18 để phong bạt!"""
 
         self._bot.reply(cid, type, msg)
@@ -2930,7 +3692,7 @@ Developer: @zanxgay
                 done_msg = f"""[B][C][FFFFFF]Thành Công!
 [FFFFFF]Thể Loại Lệnh: [FFD700]Hành Động Cổ 18
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã hành động cổ 18 thành công và sẽ rời đội ngay!"""
 
                 self._bot.reply(cid, type, done_msg)
@@ -2945,7 +3707,6 @@ Developer: @zanxgay
 
    elif message.startswith("/rw"):
     try:
-        import threading, random
 
         parts = message.strip().split()
 
@@ -2983,7 +3744,7 @@ Developer: @zanxgay
         msg = f"""[B][C][FFFFFF]Xin Chào!
 [FFFFFF]Thể Loại Lệnh: [FF4500]Hành Động Hài 18
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã join nhóm thành công đang tiến hành hành động hài 18 để phong bạt!"""
 
         self._bot.reply(cid, type, msg)
@@ -3035,7 +3796,7 @@ Developer: @zanxgay
                 done_msg = f"""[B][C][FFFFFF]Thành Công!
 [FFFFFF]Thể Loại Lệnh: [FF4500]Hành Động Hài 18
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã hành động hài 18 thành công và sẽ rời đội ngay!"""
 
                 self._bot.reply(cid, type, done_msg)
@@ -3049,7 +3810,6 @@ Developer: @zanxgay
         self._bot.reply(cid, type, "[B]Lỗi /rw")
    elif message.startswith("/spvip"):
     try:
-        import time, random, threading
 
         parts = message.strip().split()
 
@@ -3142,7 +3902,6 @@ Developer: @zanxgay
     
     target = parts[2].strip()
     
-    import random
     war_msgs = [
      f"{target} b[c]ắ[c]n ng[c]u vcl =)))=)))",
      f"{target} tu[c]ất 11 vs anh nè  =)))=)))",
@@ -3160,7 +3919,6 @@ Developer: @zanxgay
    
    elif message.startswith("/zlv"):
     try:
-        import threading, random
 
         parts = message.strip().split()
 
@@ -3198,7 +3956,7 @@ Developer: @zanxgay
         msg = f"""[B][C][FFFFFF]Xin Chào!
 [FFFFFF]Thể Loại Lệnh: [FF00FF]Zlv
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã join nhóm thành công đang tiến hành zlv để phong bạt!"""
 
         self._bot.reply(cid, type, msg)
@@ -3250,7 +4008,7 @@ Developer: @zanxgay
                 done_msg = f"""[B][C][FFFFFF]Thành Công!
 [FFFFFF]Thể Loại Lệnh: [FF00FF]Zlv
 
-[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]deocanthuonghai09
+[FFFFFF]TikTok Admin: [FF1493]@[FF69B4]itsmyfault.9
 [C0C0C0]Bot đã zalo ver 18 thành công và sẽ rời đội ngay!"""
 
                 self._bot.reply(cid, type, done_msg)
@@ -3265,7 +4023,6 @@ Developer: @zanxgay
         
    elif message.startswith("/cte"):
     try: 
-        import time
 
         parts = message.strip().split()
 
@@ -3309,7 +4066,7 @@ Developer: @zanxgay
             cid, type,
             "[B][C][FFFFFF]Xin chào!\n"
             "[FFFFFF]Loại lệnh: [00ffb3]HÀNH ĐỘNG CTE\n\n"
-            "[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n"
+            "[FFFFFF]TikTok Admin: [00ffff]@itsmyfault.9\n"
             "[C0C0C0]Bot đang tiến hành bật hành động CTE..."
         )
 
@@ -3363,7 +4120,6 @@ Developer: @zanxgay
 
    elif message.startswith("/hdc"):
     try:
-        import time
 
         parts = message.strip().split()
 
@@ -3401,7 +4157,7 @@ Developer: @zanxgay
             cid, type,
             "[B][C][FFFFFF]Xin chào!\n"
             "[FFFFFF]Loại lệnh: [00ffb3]HÀNH ĐỘNG CỔ\n\n"
-            "[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n"
+            "[FFFFFF]TikTok Admin: [00ffff]@itsmyfault.9\n"
             "[C0C0C0]Bot đang tiến hành bật hành động cổ..."
         )
 
@@ -3454,7 +4210,6 @@ Developer: @zanxgay
         print("N CMD ERROR:", e)
    elif message.startswith("/ngau"):
     try:
-        import time
 
         parts = message.strip().split()
 
@@ -3492,7 +4247,7 @@ Developer: @zanxgay
             cid, type,
             "[B][C][FFFFFF]Xin chào!\n"
             "[FFFFFF]Loại lệnh: [00ffb3]Hành Động ngầu\n\n"
-            "[FFFFFF]TikTok Admin: [00ffff]@deocanthuonghai09\n"
+            "[FFFFFF]TikTok Admin: [00ffff]@itsmyfault.9\n"
             "[C0C0C0]Bot đang tiến hành bật hành động Ngầu..."
         )
 
@@ -3545,15 +4300,19 @@ Developer: @zanxgay
         print("N CMD ERROR:", e)
                             
    elif message.startswith("/5"):
-                if len(message) > 3:
-                    self.GenSquads(5, cid, message.split()[1], type, name)
-                    return
-                self.GenSquads(5, cid, uid, type, name)
+    if len(message) > 3:
+        self.GenSquads(5, cid, message.split()[1], type, name)
+        return
+    self.GenSquads(5, cid, uid, type, name)
+    return
 
    elif message.startswith("/6"):
-    if len(message) > 3: self.GenSquads(6, cid, message.split()[1], type); return
-    self.GenSquads(6, cid, uid, type)
-
+    if len(message) > 3:
+        self.GenSquads(6, cid, message.split()[1], type, name)
+        return
+    self.GenSquads(6, cid, uid, type, name)
+    return
+ 
    elif message.startswith("/status"):
     text = get_user_input(str(message))
     if ":" in text: self._bot.reply(cid, type, text); return
@@ -3628,7 +4387,6 @@ Developer: @zanxgay
    elif message.startswith("@share"):
 
     try:
-        import threading
 
         parts = message.strip().split()
 
@@ -3854,7 +4612,7 @@ Developer: @zanxgay
 
             if self.sock39699:
                try:
-                  g01 = "[B][c]\n[%s]Dịch vụ: [U]LIKE - BOT - API.[/U][%s]\n\nTelegram: [00FFFF]@zanxgay& [00FF00]TikTok: [00FFFF]deocanthuonghai09\n[000000]"%(grcolor(), grcolor())
+                  g01 = "[B][c]\n[%s]Dịch vụ: [U]LIKE - BOT - API.[/U][%s]\n\nTelegram: [00FFFF]@zanxgay& [00FF00]TikTok: [00FFFF]itsmyfault.9\n[000000]"%(grcolor(), grcolor())
                   g02 = "\n".join([f"[{grcolor()}]BinhAn  " * 8 for _ in range(55)])
                   self.sock39699.send(self._bot.reject_invite(random.choice([g01, g02]), uid, uid))
                except Exception as e:
@@ -3965,7 +4723,7 @@ Developer: @zanxgay
             if self.sock39801:
                self.sock39801.send(self._bot.join_channel(uid, recruit_code, None))
             time.sleep(1.2)
-            self._bot.reply(uid, None, "[B][C][00FF00]đị[c]t m[c]ẹ gar[b]ena\n[00FF00]TikTok: [FF69B4]@deocanthuonghai09\n[00FF00]Tele[c]gr[c]am: [87CEEB]@zanxgay\n[00FF00]Group: [FFD700]ht[c]tps://t.[b]me/zancommunity")
+            self._bot.reply(uid, None, "[B][C][00FF00]đị[c]t m[c]ẹ gar[b]ena\n[00FF00]TikTok: [FF69B4]@itsmyfault.9\n[00FF00]Tele[c]gr[c]am: [87CEEB]@zanxgay\n[00FF00]Group: [FFD700]ht[c]tps://t.[b]me/zancommunity")
             self.rstatus = (10, '')
             self.ids.extend(extract_uid_fields(data))
          except Exception as e:
@@ -4071,8 +4829,6 @@ Developer: @zanxgay
 [C0C0C0]Đã Tạo Thành Công Team {} Free Fire. Vui Lòng Chấp Nhận Lời Mời Bot Gửi Tới!""".format(name, team, team))
 
     try:
-        import random
-        import json
         sticker_data = random.choice([
             ("1200000001", random.randint(1, 24)),
             ("1200000002", random.randint(1, 15)),
@@ -4497,7 +5253,7 @@ try:
     init_panel(app, TCPbot)
 except Exception as _e:
     print(f"[PANEL] ❌ Không bật được web panel: {_e}")
-
+    
 # ====== LỆNH /START - MENU QUẢN LÝ BOT ======
 @telegram_bot.message_handler(commands=['start', 'help', 'menu'])
 def start_cmd(message):
@@ -4910,23 +5666,24 @@ def request_join_clan(jwt_token, clan_id, region="VN"):
     KEY = bytes([89,103,38,116,99,37,68,69,117,104,54,37,90,99,94,56])
     IV = bytes([54,111,121,90,68,114,50,50,69,51,121,99,104,106,77,37])
     
+    # Dùng endpoint cũ ppmainecoonghj cho đồng bộ với bot
     REGION_SERVER_MAP = {
         "VN": "https://clientbp.ppmainecoonghj.com",
         "TH": "https://clientbp.ppmainecoonghj.com",
         "ID": "https://clientbp.ppmainecoonghj.com",
-        "SG": "https://clientbp.ggpolarbear.com",
-        "MY": "https://clientbp.ggpolarbear.com",
-        "IN": "https://client.ind.freefiremobile.com",
-        "PK": "https://clientbp.ggblueshark.com",
-        "BD": "https://clientbp.ggwhitehawk.com",
-        "BR": "https://client.us.freefiremobile.com",
-        "NA": "https://client.us.freefiremobile.com",
-        "ME": "https://clientbp.ggblueshark.com",
-        "EU": "https://clientbp.ggpolarbear.com",
-        "RU": "https://clientbp.ggpolarbear.com",
+        "SG": "https://clientbp.ppmainecoonghj.com",
+        "MY": "https://clientbp.ppmainecoonghj.com",
+        "IN": "https://clientbp.ppmainecoonghj.com",
+        "PK": "https://clientbp.ppmainecoonghj.com",
+        "BD": "https://clientbp.ppmainecoonghj.com",
+        "BR": "https://clientbp.ppmainecoonghj.com",
+        "NA": "https://clientbp.ppmainecoonghj.com",
+        "ME": "https://clientbp.ppmainecoonghj.com",
+        "EU": "https://clientbp.ppmainecoonghj.com",
+        "RU": "https://clientbp.ppmainecoonghj.com",
     }
     
-    server_url = REGION_SERVER_MAP.get(region.upper(), "https://clientbp.ggpolarbear.com")
+    server_url = REGION_SERVER_MAP.get(region.upper(), "https://clientbp.ppmainecoonghj.com")
     
     msg = ReqCLan_pb2.MyMessage()
     msg.field_1 = int(clan_id)
@@ -4942,7 +5699,8 @@ def request_join_clan(jwt_token, clan_id, region="VN"):
         "ReleaseVersion": "OB55",
         "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 9)",
         "Connection": "Keep-Alive",
-        "Accept-Encoding": "gzip"
+        "Accept-Encoding": "gzip",
+        "Host": "clientbp.ppmainecoonghj.com"
     }
     
     try:
@@ -4958,6 +5716,7 @@ def request_join_clan(jwt_token, clan_id, region="VN"):
     except Exception as e:
         return False, f"❌ Lỗi: {str(e)}"
 
+
 def quit_clan(jwt_token, clan_id, region="VN"):
     """Rời clan"""
     import requests
@@ -4967,23 +5726,24 @@ def quit_clan(jwt_token, clan_id, region="VN"):
     KEY = bytes([89,103,38,116,99,37,68,69,117,104,54,37,90,99,94,56])
     IV = bytes([54,111,121,90,68,114,50,50,69,51,121,99,104,106,77,37])
     
+    # Dùng endpoint cũ ppmainecoonghj cho đồng bộ với bot
     REGION_SERVER_MAP = {
-        "VN": "https://clientbp.ggpolarbear.com",
-        "TH": "https://clientbp.ggpolarbear.com",
-        "ID": "https://clientbp.ggpolarbear.com",
-        "SG": "https://clientbp.ggpolarbear.com",
-        "MY": "https://clientbp.ggpolarbear.com",
-        "IN": "https://client.ind.freefiremobile.com",
-        "PK": "https://clientbp.ggblueshark.com",
-        "BD": "https://clientbp.ggwhitehawk.com",
-        "BR": "https://client.us.freefiremobile.com",
-        "NA": "https://client.us.freefiremobile.com",
-        "ME": "https://clientbp.ggblueshark.com",
-        "EU": "https://clientbp.ggpolarbear.com",
-        "RU": "https://clientbp.ggpolarbear.com",
+        "VN": "https://clientbp.ppmainecoonghj.com",
+        "TH": "https://clientbp.ppmainecoonghj.com",
+        "ID": "https://clientbp.ppmainecoonghj.com",
+        "SG": "https://clientbp.ppmainecoonghj.com",
+        "MY": "https://clientbp.ppmainecoonghj.com",
+        "IN": "https://clientbp.ppmainecoonghj.com",
+        "PK": "https://clientbp.ppmainecoonghj.com",
+        "BD": "https://clientbp.ppmainecoonghj.com",
+        "BR": "https://clientbp.ppmainecoonghj.com",
+        "NA": "https://clientbp.ppmainecoonghj.com",
+        "ME": "https://clientbp.ppmainecoonghj.com",
+        "EU": "https://clientbp.ppmainecoonghj.com",
+        "RU": "https://clientbp.ppmainecoonghj.com",
     }
     
-    server_url = REGION_SERVER_MAP.get(region.upper(), "https://clientbp.ggpolarbear.com")
+    server_url = REGION_SERVER_MAP.get(region.upper(), "https://clientbp.ppmainecoonghj.com")
     
     msg = QuitClanReq_pb2.QuitClanReq()
     msg.field_1 = int(clan_id)
@@ -4999,7 +5759,8 @@ def quit_clan(jwt_token, clan_id, region="VN"):
         "ReleaseVersion": "OB55",
         "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 9)",
         "Connection": "Keep-Alive",
-        "Accept-Encoding": "gzip"
+        "Accept-Encoding": "gzip",
+        "Host": "clientbp.ppmainecoonghj.com"
     }
     
     try:
@@ -5012,7 +5773,6 @@ def quit_clan(jwt_token, clan_id, region="VN"):
             return False, f"❌ Thất bại! Status: {r.status_code}"
     except Exception as e:
         return False, f"❌ Lỗi: {str(e)}"
-
 
 # ===== LỆNH TELEGRAM: /voqd =====
 @telegram_bot.message_handler(commands=['voqd'])
@@ -7478,6 +8238,10 @@ def add_admin():
 @app.route("/kb", methods=["GET"])
 def api_kb_get():
     try:
+        import requests
+        from Crypto.Cipher import AES
+        from Crypto.Util.Padding import pad
+        
         uid = request.args.get('uid')
         bot_id = request.args.get('botid')
         
@@ -7500,11 +8264,12 @@ def api_kb_get():
             
         token = getattr(bot, 'token', None)
         if not token:
+            token = bot.bot_config.get('auth_bot_login', {}).get('access_token')
+        if not token:
             return jsonify({'status': 'error', 'message': 'No token'}), 400
             
         bot_uid = getattr(bot, 'botid', '')
         
-        # Gửi kết bạn trực tiếp 
         try:
             def encrypt_uid(x):
                 dec = ['80','81','82','83','84','85','86','87','88','89','8a','8b','8c','8d','8e','8f','90','91','92','93','94','95','96','97','98','99','9a','9b','9c','9d','9e','9f','a0','a1','a2','a3','a4','a5','a6','a7','a8','a9','aa','ab','ac','ad','ae','af','b0','b1','b2','b3','b4','b5','b6','b7','b8','b9','ba','bb','bc','bd','be','bf','c0','c1','c2','c3','c4','c5','c6','c7','c8','c9','ca','cb','cc','cd','ce','cf','d0','d1','d2','d3','d4','d5','d6','d7','d8','d9','da','db','dc','dd','de','df','e0','e1','e2','e3','e4','e5','e6','e7','e8','e9','ea','eb','ec','ed','ee','ef','f0','f1','f2','f3','f4','f5','f6','f7','f8','f9','fa','fb','fc','fd','fe','ff']
@@ -7536,8 +8301,6 @@ def api_kb_get():
             
             Key = bytes([89, 103, 38, 116, 99, 37, 68, 69, 117, 104, 54, 37, 90, 99, 94, 56])
             Iv = bytes([54, 111, 121, 90, 68, 114, 50, 50, 69, 51, 121, 99, 104, 106, 77, 37])
-            from Crypto.Cipher import AES
-            from Crypto.Util.Padding import pad
             
             encrypted_id = encrypt_uid(uid)
             if not encrypted_id:
@@ -7547,11 +8310,11 @@ def api_kb_get():
             cipher = AES.new(Key, AES.MODE_CBC, Iv)
             data = cipher.encrypt(pad(bytes.fromhex(plain_text_payload), AES.block_size))
             
-            import requests
+            # Đã sửa lại domain chuẩn (tránh lỗi không kết nối)
             domains = [
-                ' https://clientbp.ppmainecoonghj.com/RequestAddingFriend',
-                ' https://clientbp.ppmainecoonghj.com/RequestAddingFriend',
-                'https://clientbp.ggpolarbear.com/RequestAddingFriend ',
+                'https://clientbp.ppmainecoonghj.com/RequestAddingFriend',
+                'https://clientbp.ppmainecoonghj.com/RequestAddingFriend',
+                'https://clientbp.ppmainecoonghj.com/RequestAddingFriend',
             ]
             
             headers = {
@@ -7570,7 +8333,7 @@ def api_kb_get():
             
             for url in domains:
                 try:
-                    response = requests.post(url, headers=headers, data=data, verify=False, timeout=10)
+                    response = requests.post(url, headers=headers, data=data, verify=False, timeout=15)
                     text = response.text
                     
                     if response.status_code == 200:
@@ -7586,7 +8349,11 @@ def api_kb_get():
                     elif 'BR_FRIEND_ALREADY_SENT_REQUEST' in text:
                         msg = "Đã gửi yêu cầu trước đó!"
                         break
-                except:
+                    elif 'BR_ACCOUNT_NOT_FOUND' in text or 'BR_USER_NOT_FOUND' in text:
+                        msg = "Không tìm thấy UID này!"
+                        break
+                except Exception as e:
+                    print(f"[KB API] Domain {url} lỗi: {e}")
                     continue
             
             if success:
@@ -7607,8 +8374,8 @@ def api_kb_get():
             return jsonify({'status': 'error', 'message': str(e)}), 500
             
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
-        
+        return jsonify({'status': 'error', 'message': str(e)}), 500     
+                   
 @app.route("/kb/all", methods=["GET"])
 def api_kb_all_get():
     try:
@@ -8615,7 +9382,6 @@ def api_clear_friends():
             response = requests.post('https://clientbp.ggpolarbear.com/GetFriend', headers=headers, data=payload, verify=False, timeout=10)
             if response.status_code == 200:
                 from lib import protobuf_dec
-                import json
                 decoded = protobuf_dec(response.content.hex())
                 parsed = json.loads(decoded)
                 
@@ -8972,7 +9738,7 @@ def restart_bot():
     os.execv(sys.executable, ['python'] + sys.argv)
 
 def ping_api_keep_alive():
-    url = "https://zantreobotsv.onrender.com/"
+    url = "https://zanlivebotcrv.onrender.com/"
     
     while True:
         try:
@@ -8981,7 +9747,7 @@ def ping_api_keep_alive():
         except Exception as e:
             print(f"[PING] ❌ Lỗi: {e}")
         
-        time.sleep(300) 
+        time.sleep(600) 
 
 def start_ping_thread():
     thread = threading.Thread(target=ping_api_keep_alive, daemon=True)
@@ -8996,4 +9762,4 @@ if __name__ == "__main__":
     start_ping_thread() 
     threading.Thread(target=run_telegram, daemon=True).start()
     threading.Thread(target=sbot, daemon=True).start()
-    app.run(host="0.0.0.0", port=2008)
+    app.run(host="0.0.0.0", port=2009)
