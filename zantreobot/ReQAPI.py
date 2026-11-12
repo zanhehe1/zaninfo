@@ -567,31 +567,34 @@ class APIClient:
             print("[GetLoginData]", e)
             return False
 
+    # SỬA DUY NHẤT HÀM NÀY: Dùng Header của bản ReQAPI1 để không bị kick
     def _auth_packet(self, fox=True):
+        regions = self.logindata.get("19") or []
+        if isinstance(regions, dict):
+            regions = [regions]
+        esid = lambda rec: (
+            lambda s: s[str(rec).upper()] if str(rec).upper() in s else None)(
+            {str(x["2"]).upper(): x["1"] for x in regions if isinstance(x, dict) and "1" in x and "2" in x}
+        )
+        tok = self._data.login_token
+        if isinstance(tok, bytes):
+            tok = tok.decode("utf-8", "replace")
+        encrypts = AES_CBC128(str(tok).encode(), self._data.key, self._data.iv)
+        region = int(_scalar(esid(self._data.server)) or 1)
+        aid = int(_scalar(self._data.account_id) or 0)
+        kts = int(_scalar(self._data.login_time) or 0)
+        print(f"[_auth_packet] fox={fox} server={self._data.server} region={region} aid={aid} kts={kts}")
+        
+        cmd = 1 if fox else (101 + (aid % 50))
+        hdr = (
+            bytes([cmd & 0xFF, region & 0xFF])
+            + struct.pack(">Q", aid)
+            + struct.pack(">I", kts & 0xFFFFFFFF)
+        )
+        
         if fox:
-            jwt_bytes = self._data.login_token.encode("utf-8")
-            encrypted_packet = AES.new(self._data.key, AES.MODE_CBC, self._data.iv).encrypt(pad(jwt_bytes, AES.block_size))
-            
-            header = (
-                bytes.fromhex("7319")
-                + int(self._data.account_id).to_bytes(8, "big")
-                + int(self._data.login_time).to_bytes(4, "big")
-                + b"\x00\x00\x00\x00"
-                + len(encrypted_packet).to_bytes(4, "big")
-            )
-            return (header + encrypted_packet).hex()
-        else:
-            regions = self.logindata.get("19") or []
-            if isinstance(regions, dict): regions = [regions]
-            esid = lambda rec: (lambda s: s[str(rec).upper()] if str(rec).upper() in s else None)({str(x["2"]).upper(): x["1"] for x in regions if isinstance(x, dict) and "1" in x and "2" in x})
-            tok = self._data.login_token
-            encrypts = AES_CBC128(str(tok).encode(), self._data.key, self._data.iv)
-            region = int(_scalar(esid(self._data.server)) or 1)
-            aid = int(_scalar(self._data.account_id) or 0)
-            kts = int(_scalar(self._data.login_time) or 0)
-            cmd = 101 + (aid % 50)
-            hdr = (bytes([cmd & 0xFF, region & 0xFF]) + struct.pack(">Q", aid) + struct.pack(">I", kts & 0xFFFFFFFF))
-            return hdr + struct.pack(">Q", len(encrypts)) + encrypts
+            return hdr + struct.pack(">I", len(encrypts)) + encrypts
+        return hdr + struct.pack(">Q", len(encrypts)) + encrypts
 
     def TAO_PACKET_XT(self) -> str:
         try:
