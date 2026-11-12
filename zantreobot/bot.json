@@ -3,59 +3,81 @@
     {
       "bot_id": 1,
       "auth_bot_login": {
-        "access_token": "8428417387:1B2103F84EEA074108BE30D0E36DF8138B8CC6D95CDA98DB2E0F42BFFB0ADE52"
+        "access_token": "e659ed5a8349ea53af532302cf099982ef2557887176ef63a518c34f36e46f86"
       },
       "access_bot": [
         {
           "uid": 18457983435,
-          "expire": "2054-03-28 12:32:14"
-        },
-        {
-          "uid": 353602463,
-          "expire": "2026-11-22 12:34:36"
+          "expire": "2054-03-29 06:09:08"
         }
       ],
       "active-clan": true,
-      "botid": 19079748653,
-      "nickname": "yeu truc my"
+      "botid": 19103885748,
+      "nickname": "Van trunw.47"
     },
     {
       "bot_id": 2,
       "auth_bot_login": {
-        "access_token": "ea3c00417295ff60e2c6aa5dfd10d53551d8680e1aedc34809adda7408ef8399"
+        "access_token": "0fda192240e51ec0d6efe65f2aff05c36183fdfd2de746260bd814afd3485f01"
       },
       "access_bot": [
         {
           "uid": 18457983435,
-          "expire": "2054-03-28 12:34:27"
-        },
-        {
-          "uid": 301149005,
-          "expire": "2026-11-18 12:35:58"
+          "expire": "2054-03-29 06:09:11"
         }
       ],
       "active-clan": true,
-      "botid": 19063434998,
-      "nickname": "zanxdev.8022"
+      "botid": 19103921105,
+      "nickname": "chedocux؝؝؝؝"
     },
     {
       "bot_id": 3,
       "auth_bot_login": {
-        "access_token": "c2999aabe65bc352f7a1f7c868ba6210bdaf6db4c7e2dc4507cf81758009c0f4"
+        "access_token": "7543ea643cbd54f99bf2285d54ed52e283124d824cd05af95028d171381f6a9c"
       },
       "access_bot": [
         {
           "uid": 18457983435,
-          "expire": "2054-03-28 12:36:56"
-        },
-        {
-          "uid": 8215567976,
-          "expire": "2026-11-13 12:37:08"
+          "expire": "2054-03-29 06:08:57"
         }
       ],
       "active-clan": true,
-      "botid": 19063444779,
-      "nickname": "zanxdev.6977"
+      "botid": 19103964539,
+      "nickname": "mnguyen؝؝؝؝؝"
+    },
+    {
+      "bot_id": 4,
+      "auth_bot_login": {
+        "access_token": "0c24956ea6aecc8f9c6d733364abee1cd540b4d25fa0e21e82ab266fbef0ecd3"
+      },
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-29 06:09:11"
+        },
+        {
+          "uid": 1614835136,
+          "expire": "2026-11-19 06:00:24"
+        }
+      ],
+      "active-clan": true,
+      "botid": 19103984630,
+      "nickname": "maiphgxgon؝؝"
+    },
+    {
+      "bot_id": 5,
+      "auth_bot_login": {
+        "access_token": "af84e546e3b85d53313373a4afd69f034b007d3eb18cc2a287a8e8ae3d7352e7"
+      },
+      "access_bot": [
+        {
+          "uid": 18457983435,
+          "expire": "2054-03-29 06:09:13"
+        }
+      ],
+      "active-clan": true,
+      "botid": 19104049441,
+      "nickname": "bo meomewv2%"
     }
   ]
 }
