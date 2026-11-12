@@ -4911,9 +4911,9 @@ def request_join_clan(jwt_token, clan_id, region="VN"):
     IV = bytes([54,111,121,90,68,114,50,50,69,51,121,99,104,106,77,37])
     
     REGION_SERVER_MAP = {
-        "VN": "https://clientbp.ggpolarbear.com",
-        "TH": "https://clientbp.ggpolarbear.com",
-        "ID": "https://clientbp.ggpolarbear.com",
+        "VN": "https://clientbp.ppmainecoonghj.com",
+        "TH": "https://clientbp.ppmainecoonghj.com",
+        "ID": "https://clientbp.ppmainecoonghj.com",
         "SG": "https://clientbp.ggpolarbear.com",
         "MY": "https://clientbp.ggpolarbear.com",
         "IN": "https://client.ind.freefiremobile.com",
