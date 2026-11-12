@@ -1,4 +1,4 @@
-import requests, json, base64, time, struct, datetime, re, hmac, hashlib, random
+import requests, json, base64, time, struct, datetime, re, hmac, hashlib, random, uuid
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 from protobuf_decoder.protobuf_decoder import Parser
@@ -229,6 +229,7 @@ class account_data:
     login_time = None
     key = None
     iv = None
+    device_id = None
 
 
 class gringay:
@@ -567,7 +568,7 @@ class APIClient:
             print("[GetLoginData]", e)
             return False
 
-    # SỬA DUY NHẤT HÀM NÀY: Dùng Header của bản ReQAPI1 để không bị kick
+    # ===== LẤY Y HỆT TỪ ReQAPI1 =====
     def _auth_packet(self, fox=True):
         regions = self.logindata.get("19") or []
         if isinstance(regions, dict):
