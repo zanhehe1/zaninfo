@@ -7549,8 +7549,8 @@ def api_kb_get():
             
             import requests
             domains = [
-                'https://clientbp.ggpolarbear.com/RequestAddingFriend',
-                'https://clientbp.ggpolarbear.com/RequestAddingFriend',
+                ' https://clientbp.ppmainecoonghj.com/RequestAddingFriend',
+                ' https://clientbp.ppmainecoonghj.com/RequestAddingFriend',
                 'https://clientbp.ggpolarbear.com/RequestAddingFriend ',
             ]
             
