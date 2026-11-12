@@ -40,7 +40,7 @@ if os.path.exists(ADMIN_FILE):
     except Exception as e:
         print(f"[ADMIN] Lỗi load: {e}")
 
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8789398777:AAFQkk0ZsFkw3z8vqaYHOAuxcZkB1tPZBss")
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "8976269080:AAEGP4kFOqKhTuUv41v1gfTdVQhT1ahdgw0")
 lib.init_bot(TELEGRAM_TOKEN)
 bot_tg = lib.bot_tg
 telegram_bot = bot_tg
@@ -9738,7 +9738,7 @@ def restart_bot():
     os.execv(sys.executable, ['python'] + sys.argv)
 
 def ping_api_keep_alive():
-    url = "https://zanlivebotcrv.onrender.com/"
+    url = "https://zantreobotsv.onrender.com/"
     
     while True:
         try:
