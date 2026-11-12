@@ -57,7 +57,7 @@
         },
         {
           "uid": 1614835136,
-          "expire": "2026-11-19 06:00:24"
+          "expire": "2026-11-19 12:41:00"
         }
       ],
       "active-clan": true,
@@ -78,6 +78,31 @@
       "active-clan": true,
       "botid": 19104049441,
       "nickname": "bo meomewv2%"
+    },
+    {
+      "bot_id": 6,
+      "auth_bot_login": {
+        "access_token": "7dbaa6299ce6af95a12fdddb876a3966e38fb5fb16906846d19e31a98f6dcfb5"
+      },
+      "access_bot": [
+        {
+          "uid": 2151488763,
+          "expire": "2026-12-12 12:55:52"
+        }
+      ],
+      "active-clan": true,
+      "botid": 19108050215,
+      "nickname": "thanh loc؝؝؝"
+    },
+    {
+      "bot_id": 7,
+      "auth_bot_login": {
+        "access_token": "77b0476a71b84c0dc340682ab17769de1e2fd3526bb6a55bebd2fed4a6cb6d75"
+      },
+      "access_bot": [],
+      "active-clan": true,
+      "botid": 19108081756,
+      "nickname": "bequynh123@."
     }
   ]
 }
