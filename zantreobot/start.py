@@ -8447,8 +8447,8 @@ def api_kb_all_get():
                 data = cipher.encrypt(pad(bytes.fromhex(plain_text_payload), AES.block_size))
                 
                 domains = [
-                    'https://clientbp.ggpolarbear.com/RequestAddingFriend',
-                    'https://clientbp.ggpolarbear.com/RequestAddingFriend',
+                    'https://clientbp.ppmainecoonghj.com/RequestAddingFriend',
+                    'https://clientbp.ppmainecoonghj.com/RequestAddingFriend',
                     'https://clientbp.ggpolarbear.com/RequestAddingFriend',
                 ]
                 
@@ -9762,4 +9762,4 @@ if __name__ == "__main__":
     start_ping_thread() 
     threading.Thread(target=run_telegram, daemon=True).start()
     threading.Thread(target=sbot, daemon=True).start()
-    app.run(host="0.0.0.0", port=2009)
+    app.run(host="0.0.0.0", port=2008)
