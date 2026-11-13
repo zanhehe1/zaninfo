@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Zan Bot Manager</title>
+<style>
+:root{
+  --bg:#07060d;--bg2:#0d0b18;--panel:#120f22;--panel2:#18142d;--line:#251f45;--line2:#322a5c;
+  --tx:#ece9ff;--mut:#8f88b8;--pri:#8b5cf6;--neon:#b388ff;--pri2:#6d4aff;--cy:#5eead4;
+  --ok:#34d399;--bad:#fb7185;--warn:#fbbf24;--r:18px;--side:248px;--pr:139,92,246;
+  --glow:0 0 0 1px rgba(var(--pr),.35),0 10px 40px -10px rgba(var(--pr),.45);
+}
+*{box-sizing:border-box;margin:0}
+html{color-scheme:dark}
+body{background:var(--bg);color:var(--tx);font:14.5px/1.5 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh;
+  background-image:radial-gradient(700px 420px at 85% -5%,rgba(var(--pr),.16),transparent 60%),radial-gradient(600px 400px at 0 100%,rgba(79,70,229,.12),transparent 60%);background-attachment:fixed}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:inherit;text-decoration:none}
+svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:var(--line2);border-radius:9px}
+
+/* shell */
+.shell{display:grid;grid-template-columns:var(--side) 1fr;min-height:100vh}
+aside{background:linear-gradient(180deg,var(--bg2),#090714);border-right:1px solid var(--line);padding:20px 14px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:6px;z-index:40}
+.brand{display:flex;align-items:center;gap:11px;padding:4px 8px 18px}
+.brand .lg{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--pri),#4f46e5);display:grid;place-items:center;box-shadow:var(--glow)}
+.brand b{font-size:16px;letter-spacing:-.2px}.brand small{display:block;color:var(--mut);font-size:11.5px;margin-top:-2px}
+.nav a{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;color:var(--mut);cursor:pointer;transition:.15s;margin-bottom:3px;font-weight:500}
+.nav a:hover{background:var(--panel);color:var(--tx)}
+.nav a.on{background:linear-gradient(90deg,rgba(var(--pr),.28),rgba(var(--pr),.06));color:#fff;box-shadow:inset 2px 0 0 var(--neon)}
+.nav a .ct{margin-left:auto;font-size:11.5px;background:var(--panel2);border:1px solid var(--line);padding:1px 8px;border-radius:99px;color:var(--mut)}
+.side-foot{margin-top:auto;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--panel);font-size:12.5px;color:var(--mut)}
+.side-foot .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:6px;box-shadow:0 0 10px var(--ok)}
+.side-foot.bad .dot{background:var(--bad);box-shadow:0 0 10px var(--bad)}
+main{min-width:0}
+.top{display:flex;align-items:center;gap:12px;padding:14px 26px;border-bottom:1px solid var(--line);background:rgba(7,6,13,.75);backdrop-filter:blur(12px);position:sticky;top:0;z-index:30}
+.top h2{font-size:19px;letter-spacing:-.3px}
+.ibtn.burger{display:none}
+.sp{flex:1}
+.sbox{position:relative;width:min(340px,38vw)}
+.sbox input{width:100%;padding:9px 14px 9px 38px;border-radius:12px;border:1px solid var(--line);background:var(--panel);outline:none}
+.sbox input:focus,.fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--pri);box-shadow:0 0 0 3px rgba(var(--pr),.22)}
+.sbox .i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--mut)}
+.ibtn{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--panel);display:grid;place-items:center;cursor:pointer;position:relative;transition:.15s}
+.ibtn:hover{border-color:var(--pri)}
+.ibtn .badge{position:absolute;top:7px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--neon);box-shadow:0 0 8px var(--neon)}
+.prof{display:flex;align-items:center;gap:10px;padding:4px 12px 4px 4px;border:1px solid var(--line);background:var(--panel);border-radius:14px;cursor:pointer}
+.prof .av{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--pri),#4f46e5);display:grid;place-items:center;font-weight:700}
+.prof small{display:block;color:var(--mut);font-size:11.5px;line-height:1.1}
+.page{padding:26px;max-width:1280px;margin:0 auto;animation:pg .28s both}
+@keyframes pg{from{opacity:0;transform:translateY(8px)}}
+
+/* components */
+.btn{border:1px solid var(--line2);background:var(--panel2);padding:9px 15px;border-radius:12px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:.15s;white-space:nowrap;font-weight:500}
+.btn:hover{border-color:var(--pri);transform:translateY(-1px)}
+.btn.pri{background:linear-gradient(135deg,var(--pri),var(--pri2));border-color:transparent;color:#fff;box-shadow:0 8px 24px -8px rgba(var(--pr),.8)}
+.btn.dng{color:var(--bad)}.btn.dng:hover{border-color:var(--bad)}
+.btn.dngf{background:var(--bad);color:#190509;border-color:transparent}
+.btn.sm{padding:6px 11px;font-size:13px;border-radius:10px}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.card{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.card h3{font-size:14.5px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card h3 small{color:var(--mut);font-weight:400;margin-left:auto}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:16px}
+.kpi{display:flex;gap:14px;align-items:center;transition:.2s}
+.kpi:hover{border-color:var(--line2);transform:translateY(-2px);box-shadow:var(--glow)}
+.kpi .ic{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:rgba(var(--pr),.16);color:var(--neon)}
+.kpi.g .ic{background:rgba(52,211,153,.14);color:var(--ok)}.kpi.r .ic{background:rgba(251,113,133,.14);color:var(--bad)}.kpi.c .ic{background:rgba(94,234,212,.14);color:var(--cy)}
+.kpi b{font-size:28px;letter-spacing:-.8px;display:block;line-height:1.1}.kpi span{color:var(--mut);font-size:13px}
+.cols{display:grid;grid-template-columns:1.6fr 1fr;gap:14px;margin-bottom:14px}
+.cols3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.pill{font-size:12px;padding:3px 10px;border-radius:99px;display:inline-flex;align-items:center;gap:6px;border:1px solid transparent;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.on{color:var(--ok);background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.25)}.pill.on::before{animation:pu 1.6s infinite}
+.pill.off{color:var(--bad);background:rgba(251,113,133,.1);border-color:rgba(251,113,133,.25)}
+.pill.wn{color:var(--warn);background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.25)}
+.pill.pp{color:var(--neon);background:rgba(var(--pr),.14);border-color:rgba(var(--pr),.3)}
+@keyframes pu{50%{opacity:.3}}
+.tag{font-size:11.5px;padding:2px 9px;border-radius:99px;background:rgba(var(--pr),.16);color:var(--neon)}
+.tag.f{background:rgba(52,211,153,.14);color:var(--ok)}.tag.x{background:rgba(251,113,133,.14);color:var(--bad)}.tag.w{background:rgba(251,191,36,.14);color:var(--warn)}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace}.mut{color:var(--mut)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.head{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.head h1{font-size:22px;letter-spacing:-.4px}
+.seg{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:3px}
+.seg button{border:0;background:none;padding:6px 13px;border-radius:9px;cursor:pointer;color:var(--mut);font-weight:500}
+.seg button.on{background:var(--panel2);color:#fff;box-shadow:0 0 0 1px var(--line2)}
+.empty{color:var(--mut);text-align:center;padding:36px 12px}
+.empty svg{width:34px;height:34px;opacity:.5;margin-bottom:8px}
+
+/* bảng */
+.tw{overflow:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--panel)}
+table{width:100%;border-collapse:collapse;min-width:640px}
+th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--line);font-size:14px;vertical-align:middle}
+th{font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--mut);background:var(--bg2);font-weight:600;position:sticky;top:0}
+tbody tr{transition:.12s;cursor:pointer}tbody tr:hover{background:rgba(var(--pr),.07)}
+tr:last-child td{border-bottom:0}
+.cell{display:flex;align-items:center;gap:11px}
+.av2{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;font-weight:700;color:#fff;flex:none}
+.cell b{display:block;font-weight:600}.cell small{color:var(--mut);font-size:12px}
+.acts{display:flex;gap:6px;justify-content:flex-end}
+
+/* card grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.bc{cursor:pointer;transition:.2s;display:flex;flex-direction:column;gap:12px}
+.bc:hover{border-color:var(--pri);transform:translateY(-2px);box-shadow:var(--glow)}
+
+/* log */
+.lg-row{display:grid;grid-template-columns:148px 86px 1fr 70px;gap:12px;padding:11px 14px;border-bottom:1px solid var(--line);align-items:center;font-size:13.5px}
+.lg-row:last-child{border:0}
+.ev{display:flex;gap:11px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line)}.ev:last-child{border:0}
+.ev .d{width:9px;height:9px;border-radius:50%;margin-top:6px;background:var(--neon);flex:none}
+.ev.fail .d{background:var(--bad)}.ev.warn .d{background:var(--warn)}.ev.ok .d{background:var(--ok)}
+.ev b{font-weight:600}.ev small{display:block;color:var(--mut);font-size:12px}
+
+/* modal + drawer */
+.ov{position:fixed;inset:0;background:rgba(3,2,8,.66);backdrop-filter:blur(6px);display:none;z-index:80;place-items:center;padding:16px}
+.ov.show{display:grid}
+.box{background:var(--panel);border:1px solid var(--line2);border-radius:22px;padding:24px;width:100%;max-width:460px;box-shadow:0 40px 100px rgba(0,0,0,.6),var(--glow);animation:pg .2s both;max-height:92vh;overflow:auto}
+.box h3{font-size:18px;margin-bottom:4px}.box>p{color:var(--mut);margin-bottom:16px;font-size:13.5px}
+.fld{margin-bottom:13px}.fld label{display:block;font-size:12.5px;color:var(--mut);margin-bottom:6px;font-weight:500}
+.fld input,.fld select,.fld textarea{width:100%;padding:11px 13px;border-radius:12px;border:1px solid var(--line2);background:var(--bg2);outline:none}
+.fld .hint{font-size:12px;color:var(--mut);margin-top:5px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.chips button{border:1px solid var(--line2);background:var(--bg2);border-radius:99px;padding:3px 12px;font-size:12.5px;cursor:pointer;color:var(--mut)}
+.chips button:hover,.chips button.on{border-color:var(--pri);color:#fff;background:rgba(var(--pr),.18)}
+.mb{display:flex;gap:9px;justify-content:flex-end;margin-top:18px}
+.chk{display:flex;flex-wrap:wrap;gap:6px;max-height:150px;overflow:auto}
+.chk label{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);background:var(--bg2);border-radius:10px;padding:5px 10px;cursor:pointer;margin:0;font-size:13px;color:var(--tx)}
+.chk input{width:auto;accent-color:var(--pri)}
+.dw{position:fixed;top:0;right:0;bottom:0;width:min(480px,100%);background:var(--panel);border-left:1px solid var(--line2);z-index:70;transform:translateX(105%);transition:.28s cubic-bezier(.3,.8,.3,1);padding:22px;overflow:auto;box-shadow:-30px 0 80px rgba(0,0,0,.5)}
+.dw.show{transform:none}
+.dwbg{position:fixed;inset:0;background:rgba(3,2,8,.5);z-index:65;display:none}.dwbg.show{display:block}
+.kv{display:grid;grid-template-columns:120px 1fr;gap:9px 12px;font-size:13.5px;margin:14px 0}.kv dt{color:var(--mut)}.kv dd{margin:0;word-break:break-all}
+.ulist{display:flex;flex-direction:column;gap:6px}
+.u{display:flex;align-items:center;gap:9px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:8px 10px 8px 12px}
+.u .mono{flex:1}
+.ib{border:0;background:none;cursor:pointer;color:var(--mut);padding:4px;border-radius:8px;display:grid;place-items:center}.ib:hover{background:var(--line);color:var(--bad)}
+
+/* dropdown */
+.dd{position:absolute;right:0;top:calc(100% + 8px);background:var(--panel);border:1px solid var(--line2);border-radius:16px;width:340px;max-width:92vw;padding:10px 14px;box-shadow:0 30px 80px rgba(0,0,0,.6);display:none;z-index:60}
+.dd.show{display:block}
+.rel{position:relative}
+.menu a{display:flex;gap:10px;padding:9px 8px;border-radius:10px;cursor:pointer;align-items:center}.menu a:hover{background:var(--panel2)}
+
+/* toast */
+#toasts{position:fixed;right:18px;bottom:18px;display:flex;flex-direction:column;gap:9px;z-index:200}
+.toast{background:var(--panel2);border:1px solid var(--line2);border-left:4px solid var(--ok);padding:12px 16px;border-radius:13px;box-shadow:0 14px 40px rgba(0,0,0,.5);animation:pg .2s both;max-width:360px;display:flex;gap:10px}
+.toast.err{border-left-color:var(--bad)}
+.skel{border-radius:var(--r);height:90px;background:linear-gradient(90deg,var(--panel) 25%,var(--panel2) 50%,var(--panel) 75%);background-size:200% 100%;animation:sh 1.2s infinite}
+@keyframes sh{to{background-position:-200% 0}}
+.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:rot .7s linear infinite}@keyframes rot{to{transform:rotate(360deg)}}
+
+/* login */
+.lgn{min-height:100vh;display:grid;place-items:center;padding:16px}
+.lgn .box{max-width:400px}
+.lgn .brand{justify-content:center;padding-bottom:6px;flex-direction:column;text-align:center}
+.lgn .brand .lg{width:56px;height:56px;border-radius:18px}
+.err-t{color:var(--bad);font-size:13px;min-height:20px;margin-top:6px}
+
+svg text{fill:var(--mut);font-size:11px}
+.chart{width:100%;height:190px}
+
+@media(max-width:1000px){.cols,.cols3{grid-template-columns:1fr}}
+@media(max-width:860px){
+  .shell{grid-template-columns:1fr}
+  aside{position:fixed;left:0;top:0;width:260px;transform:translateX(-105%);transition:.25s}
+  aside.show{transform:none;box-shadow:30px 0 80px rgba(0,0,0,.6)}
+  .ibtn.burger{display:grid}
+  .top{padding:12px 14px}.page{padding:16px 14px}
+  .sbox{display:none}.sbox.open{display:block;position:absolute;left:14px;right:14px;top:62px;width:auto}
+  .prof div{display:none}.prof{padding:4px}
+  .lg-row{grid-template-columns:1fr auto;}.lg-row .c1,.lg-row .c2{grid-column:1/-1}
+  .hide-m{display:none}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* console */
+.term{background:#05040a;border:1px solid var(--line2);border-radius:16px;font:12.5px/1.55 ui-monospace,Menlo,Consolas,monospace;height:calc(100vh - 270px);min-height:320px;overflow:auto;padding:12px 4px;box-shadow:inset 0 0 40px rgba(var(--pr),.07)}
+.tl{display:flex;gap:10px;padding:1px 14px;white-space:pre-wrap;word-break:break-word}
+.tl:hover{background:rgba(var(--pr),.08)}
+.tl .tm{color:#5d5690;flex:none}.tl .tx{flex:1}
+.tl.er .tx{color:#fb7185}.tl.wn .tx{color:#fbbf24}.tl.ok .tx{color:#6ee7b7}.tl.in .tx{color:#a5b4fc}
+.live{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--mut)}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 10px var(--ok);animation:pu 1.6s infinite}
+.live.off i{background:var(--bad);box-shadow:0 0 10px var(--bad);animation:none}.live.pz i{background:var(--warn);box-shadow:none;animation:none}
+@media(max-width:860px){.term{height:calc(100vh - 330px);font-size:11.5px}.tl{padding:1px 8px;gap:6px}}
+
+/* ===== UPGRADE: aurora, avatar, hero, themes ===== */
+html[data-ac=blue]{--pr:56,189,248;--pri:#38bdf8;--neon:#7dd3fc;--pri2:#0ea5e9}
+html[data-ac=rose]{--pr:244,63,94;--pri:#f43f5e;--neon:#fb7185;--pri2:#e11d48}
+html[data-ac=green]{--pr:16,185,129;--pri:#10b981;--neon:#6ee7b7;--pri2:#059669}
+html[data-theme=light]{color-scheme:light;--bg:#f3f5ff;--bg2:#ffffff;--panel:#ffffff;--panel2:#eef1ff;--line:#e3e7f8;--line2:#cdd5f0;--tx:#1d2147;--mut:#6a7299;--ok:#059669;--bad:#e11d48;--warn:#d97706;--cy:#0d9488;--neon:var(--pri);--glow:0 0 0 1px rgba(var(--pr),.3),0 10px 30px -12px rgba(var(--pr),.35)}
+html[data-theme=light] body{background-image:radial-gradient(700px 420px at 85% -5%,rgba(var(--pr),.12),transparent 60%),radial-gradient(600px 400px at 0 100%,rgba(56,189,248,.12),transparent 60%)}
+html[data-theme=light] aside{background:linear-gradient(180deg,#fff,#f4f6ff)}
+html[data-theme=light] .top{background:rgba(255,255,255,.82)}
+html[data-theme=light] .nav a.on,html[data-theme=light] .seg button.on,html[data-theme=light] .chips button:hover,html[data-theme=light] .chips button.on{color:var(--tx)}
+html[data-theme=light] .ov{background:rgba(30,35,80,.35)}
+html[data-theme=light] .dwbg{background:rgba(30,35,80,.25)}
+html[data-theme=light] .box,html[data-theme=light] .dw,html[data-theme=light] .dd,html[data-theme=light] .toast{box-shadow:0 30px 80px rgba(40,50,120,.22)}
+html[data-theme=light] .btn.dngf{color:#fff}
+html[data-theme=light] .tag,html[data-theme=light] .pill.pp{color:var(--pri2)}
+html[data-theme=light] .aurora b{opacity:.2}
+html[data-theme=light] .hero{background:linear-gradient(120deg,rgba(var(--pr),.16),rgba(var(--pr),.03) 55%),#fff}
+
+#root{position:relative;z-index:1}
+.aurora{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.aurora b{position:absolute;width:46vmax;height:46vmax;border-radius:50%;filter:blur(90px);opacity:.34;animation:aur 22s ease-in-out infinite alternate}
+.aurora b:nth-child(1){background:rgb(var(--pr));left:-12vmax;top:-14vmax}
+.aurora b:nth-child(2){background:#22d3ee;right:-16vmax;top:18vh;animation-duration:28s;animation-delay:-8s;opacity:.18}
+.aurora b:nth-child(3){background:#ec4899;left:30vw;bottom:-24vmax;animation-duration:32s;animation-delay:-14s;opacity:.16}
+@keyframes aur{to{transform:translate(7vmax,5vmax) scale(1.18)}}
+
+.avt{position:relative;isolation:isolate;flex:none;width:42px;height:42px;border-radius:50%;display:grid;place-items:center}
+.avt::before{content:"";position:absolute;inset:-3px;border-radius:50%;background:conic-gradient(var(--pri),var(--cy),var(--neon),var(--pri));animation:rot 4s linear infinite;z-index:-2}
+.avt::after{content:attr(data-l);position:absolute;inset:0;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--pri),var(--pri2));z-index:-1}
+.avt img{width:100%;height:100%;border-radius:50%;object-fit:cover;border:3px solid var(--bg2);display:block;background:var(--bg2)}
+.avt.sm{width:32px;height:32px}.avt.sm img{border-width:2px}
+.avt.md{width:68px;height:68px}
+.avt.lg{width:112px;height:112px;font-size:36px;margin-bottom:6px}.avt.lg::before{inset:-5px;filter:blur(.3px)}.avt.lg img{border-width:5px}
+.avt .st{position:absolute;right:1px;bottom:1px;width:26%;height:26%;border-radius:50%;background:var(--ok);border:2px solid var(--bg2);box-shadow:0 0 10px var(--ok);z-index:2}
+.brand .avt{width:44px;height:44px}
+
+.card{backdrop-filter:blur(6px)}
+.hero{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:16px;padding:20px 22px;position:relative;overflow:hidden;
+  background:linear-gradient(120deg,rgba(var(--pr),.24),rgba(var(--pr),.05) 55%),linear-gradient(180deg,var(--panel),var(--bg2));border-color:rgba(var(--pr),.38)}
+.hero::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(var(--pr),.35),transparent 70%);pointer-events:none}
+.hero h1{font-size:22px;letter-spacing:-.4px}
+.hero p{color:var(--mut);margin-top:3px}
+.hero .hb{flex:1;min-width:240px}
+.hero .clk{margin-left:auto;text-align:right;position:relative;z-index:1}
+.hero .clk b{display:block;font:700 30px/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px}
+.hero .clk small{color:var(--mut)}
+.qa{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px;position:relative;z-index:1}
+.kpi.w .ic{background:rgba(251,191,36,.14);color:var(--warn)}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(168px,1fr))}
+.kpi{padding:16px}
+.card h3 .ct2{margin-left:auto;font-weight:500;color:var(--mut);font-size:12.5px}
+.xrow{display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:8px 10px 8px 12px;margin-bottom:6px}
+.xrow .mono{font-weight:600}
+.xrow .gr{flex:1;min-width:0;color:var(--mut);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sw{width:32px;height:32px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:.15s}
+.sw:hover{transform:scale(1.1)}.sw.on{border-color:var(--tx);box-shadow:0 0 0 3px rgba(var(--pr),.35)}
+.kbd{font:11px ui-monospace,Menlo,Consolas,monospace;border:1px solid var(--line2);border-radius:6px;padding:1px 6px;color:var(--mut)}
+.pi{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:12px;cursor:pointer;color:var(--tx)}
+.pi.on,.pi:hover{background:rgba(var(--pr),.18)}
+.pi .i{color:var(--neon)}
+.pin{width:100%;padding:13px 14px;border-radius:12px;border:1px solid var(--line2);background:var(--bg2);outline:none;font-size:15px}
+.pin:focus{border-color:var(--pri);box-shadow:0 0 0 3px rgba(var(--pr),.22)}
+.hide-d{display:none}
+@media(max-width:860px){.hero .clk{display:none}.hero h1{font-size:19px}.avt.md{width:56px;height:56px}}
+</style>
+</head>
+<body>
+<div class="aurora"><b></b><b></b><b></b></div>
+<div id="root"></div>
+<div id="toasts"></div>
+
+<script>
+/* ============ tiện ích ============ */
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ICON={
+ grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+ bot:'<rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 8V4M9 13v1M15 13v1M2 14h2M20 14h2"/><circle cx="12" cy="3.5" r="1"/>',
+ users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M16 4.5a3.5 3.5 0 010 7M18 14.3c2.2.7 3.5 2.7 3.5 5.7"/>',
+ log:'<path d="M8 6h12M8 12h12M8 18h12M3.5 6h.01M3.5 12h.01M3.5 18h.01"/>',
+ cog:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/>',
+ search:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
+ bell:'<path d="M6 8a6 6 0 1112 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 003.4 0"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ refresh:'<path d="M21 12a9 9 0 11-3-6.7L21 8M21 3v5h-5"/>',
+ trash:'<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v5M14 11v5"/>',
+ edit:'<path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/>',
+ key:'<circle cx="8" cy="15" r="4"/><path d="M10.8 12.2L20 3M16 7l3 3"/>',
+ out:'<path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>',
+ menu:'<path d="M3 6h18M3 12h18M3 18h18"/>',
+ x:'<path d="M18 6L6 18M6 6l12 12"/>',
+ pulse:'<path d="M3 12h4l3-8 4 16 3-8h4"/>',
+ shield:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
+ power:'<path d="M12 2v10M18.4 6.6a9 9 0 11-12.8 0"/>',
+ term:'<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 9l3 3-3 3M13 15h4"/>',
+ inbox:'<path d="M22 12h-6l-2 3h-4l-2-3H2M5.5 5h13l3.5 7v6a2 2 0 01-2 2H4a2 2 0 01-2-2v-6z"/>',
+ sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+ moon:'<path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/>',
+ download:'<path d="M12 3v12M7 10l5 5 5-5M4 21h16"/>',
+ copy:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 012-2h9"/>',
+ zap:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'
+};
+const ic=n=>`<svg class="i" viewBox="0 0 24 24">${ICON[n]||''}</svg>`;
+const store={get(k,d){try{return localStorage.getItem(k)??d}catch{return d}},set(k,v){try{localStorage.setItem(k,v)}catch{}}};
+const AVATAR='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUEBAQEAwUEBAQGBQUGCA0ICAcHCBALDAkNExAUExIQEhIUFx0ZFBYcFhISGiMaHB4fISEhFBkkJyQgJh0gISD/2wBDAQUGBggHCA8ICA8gFRIVICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICD/wAARCADcANwDASIAAhEBAxEB/8QAHQAAAgIDAQEBAAAAAAAAAAAABQYEBwIDCAEACf/EAD8QAAIBAwMDAgQDBgQFAwUAAAECAwAEEQUSIQYxQRNRByJhcRQygRUjQpGh0TNSscEIFmJy4SQ0Q1NUdIKS/8QAGgEAAwEBAQEAAAAAAAAAAAAAAgMEBQEABv/EACkRAAICAgICAgEDBQEAAAAAAAABAhEDEgQhMUEFEyIGFEIjMlFhsfD/2gAMAwEAAhEDEQA/ALSEZ9JQwAGMgDxWXpgvlh+U5xW8qvyqM4Bxz3r7Zy/ftkH3+ldsVRF2DewDHvXpUrGozy3JHtW8INjFh8oPb615MBCFVwFcAcGglKgkrNUm0OGkUNj280pdU9WQ6TE1pZqHvXGARzsrLqbqWHSLOWVpB6oX93H5J9zVVWtzJdXcl7dNuydxLVBkyNssx467YyaddS2bNf3WLjVLnhGbn018BR7/AFqRq95JYQlJphLeSfmYc7c/w/p5oRZ3HpXX43JLgYjz/CfeheozyTSPIzsdnY9yzHzSfI0G6vdzXd3HYeoSn5pCPAo3bH8LYsIU2h1CgY8e1DdJ01pZzJKhLOec0avIorWEBM/M3HPbFGujzRjNfJa6W6N80szYUHxjuaV55d988gIHy4qXqbk3SxE5CJyc+TzQoHL/ADHsOTTbAoKG4KbYyxzGncDzWO92gsLY9lcOx/Xmh8UjemXJ+Zjmt8rSGdXEi7FUAAHnP2o1I44ljHqWaTRIXXaJLd9pB8gf+Ky1DVINd6ZkhT/GtwZIOeVx3U/T2pAF8yZhycEZx71qs9Wey1RUJHpyrtOfavOfoHUc+k+qpdMuWin5gkIYgGrkuIBdW8d7akESJ6gx7Y4Brl9p/Rv2HqZyTtx2qzNF63v7TRFj3ArtCHIzxmiUgaGS8/GafcLKpZEk/ebD2A84qRJdNdxmWF8OR7d/pUTVtfj1OE7IlP7pSrL/AAtVf/8AON5bTSBLZQqkiRDnK/X7UuQxD56p4k5EqndlCQVP+xo3pvxPi0+dLS/mD3XCiU/KMZ7P7H61Ul9rmpX8ZltrgRsRuKLwH+n3peNyl2pMg/efxbu/60tTaZ1xTO0tM12z1OESK6hm5498UVDKuGiYEHuoP9a5M6G+IE+jXi6bqEhls2YAOT80ftz7V0ZYalFeWqPHIJAVBDIc5H0q7G9l2SZINMbwQRkHxX2KAw3s0DYLFl8g9xRSO9jZQWBXPYjmjcRVkzxWFfLNEyja4NfZHvXKDRWIl3Tsdu4jJz4NfIVKM2Dj/N7GmyTTtPl72sefdeP9KjPoFoQdjSRg/XIobPai2+CoAx7fekXrbqy30iFmEnqkH00Ud5Gpu6wkg6c0CW9a8Gf8ONGXk+54rnS6u5dZ1e41a6bNpaE+kp8tUuWduh+KJo1C+ub/AFJY7mXdKfnm9gT/AA/pUiSVDCkYfZG/k+QKC27u1vNcv/i3TkL9qIRpvvIomQsvCAD2FIfZUg4GdERQMcZ5qDKWuLtISQq5yfrXsl3tmJVdy52g58VLsBCZpJ5ZhGAM8jvQMJId4odP0vSElVVaUjuecUiXV2bi5eT+ENtHPHepWoamkkfpW77k91/tQJmYoVVSST4rifYWroxmf1biWTvntQxnIkZeck4zRdIZFjIxyfcUJnglWQsV80xSOa0ZRKV3fNkVnCpkuScflHes44iYjnIJrD1PwzHfwSKKzyibJiUmTySMUDv52W9Ud9pyDRWeZZLiPB4AzmgeohzfMyH6Uce2DONLoIi4gf8AeGdUdRkKfP0pj0u4Vowsrfusiq/bdt+bkimrSrgPbgeaY+hND9a6t6YlgQbozjK+4pV6gP4OSK6QfMX+cY7qfepFtIVmXaec1E1Z/wAQlx6hz83yiguztEWC59C7NusnqW7YMbece36Vr1qOeE/tG2IyuPVX3HvUFYv3bkErJGcqCaJRXAntgxX5D8kme1A1/gIErcCZfxEZ71bfwy+IU1nKmkalMDApxE787fp9qpGUSaZfSQE/uzyo+lSLe72SrPFwM8/T606La8CZKzuGG5WVVkheFgV/gbbj24PmpkcsmCHDBcZ5HH8xVPfC7rJtU006Fdem1zbLviMn8ae33FWVBKU9MmCVOCB6cmQfrirsbtEclTDYmO7BY4+nf/xW4XMmP8T9d+M0KWdAoLuQxHJmXkn7ipKXUYXBeJuf/uMf0NNoB2Lym+UgxykHPkGpDahqNtbvIzM4UE4zxRcxDPYUsdeaiNF6Pu7reA7YRB9TWY+ixK2Uv8Uer5dVvYrBH3LDheOMuTzxSJqDNb6IsCt88r544qGJm1DXTeO26OImQlvLHtXupO8uoWsbMcAliB9KnrspRuiVUZY85ESAfr5qbYShZpZCclO2fBNDYWxNMzZ2quSc1EbVI4rNIYuZ3Jdz9zxRUdsJSSu2oBQ/yjxReP54djR9/J/tX2g9OS3YTUb6RkR+VjA5NENYRLVR6KFQB9zU8pL0PhBvsHR20vqD0gG287R7UasLSJmLBRyc4Pg+1LlrPKZw27hh780Zg1D0kJJ884pMmUxiGbjSw8YkQA/ageoaTJLC7xjDpzj3FH9K1OKRmgd1G/sCfPjFb7mSBDy2FY47dqWm4uwnFCfbae5uhv4UJ2qBrlkGWMKcORyO1MMlxFBM+/uDgfahN/KtxqBUAHAA5p6k2K1Altbfu8HLHOKwuLNROqyLxRmO3aGQlRkZqLekNPgnkUakzjjYEktE3EDtRCwj/DjBOM9qiysVkI81tWb93vJIxTFNi/rQTS4VGY5yP61HaZpAQRUAyM7AIMeSTUtMSDANGmA4G+2skumffKE2gnJqFE34e9lti++N+Qe1TEhweZMAj3oZdFBIux8sp70VimjRr0DPbx3Cc7ODQWCYK2CeDTHcsjxmJjneKU5AY52Vhjnge1MiLl0OPT+tTaPqlteQPh4XDpz3/wCn9a6t0a/t9Y0mz1O0LBJl3fKex81xZBPjCk9jkVf/AMFuqmaRtAupflkzJBntvH5l/XvVGKWrpiJxtF1K8gxi4Zce4zW8znA3T2p48xZNeemSSQe9fbT7J/Kq7I2Mn4dAMnn71QHx31xWmg0K2lBESb5AD2Y9v6V0DqE8VlYy3DkhUUsf0FcWdX6v+1uq7m5ZjIZJieT3FZc30X4l3YFs09P5SO53H6moNxcrLqRKjsCM0STI3yHgjJxS6Jf3srqOQcUuI9kqS8T8I6Z5c4JqNpggl1uJ5eYkO6o0zKYkiA/KCSfrWzTyscu9jjAplHkWOdflkPp2/wAqgYH2rQy3N3+dyQfelGXqFLDBS39U5wDng1JGta+ulQ6pJbQx21xKY4snBY/2qRYG3ZUs8YLsYxamBgxx7VqfmM475qMuszJiK/tDHuH5wcgn71ujkWRsDPNDLFKPbHwzRn4NWXjYOpIYdiKzu9cupR6Ugw3gg96nLAsi9uKmw6CbtYpQoIzg0ltDbFY3U0soZyeTRyztBIwmYgZOCTRC96YwCqHscjAqRZaJN6eMtxxXtl6AoHXCmJ84yvY0Lv4g22VFOc+1P82jxC1AfG4gZzQ+40M3SoVAVWYZ+grm6PUVhPG0l8VUHk+KnXMEUVnFFGcsxo7q2iw2Nw8qMMZ4x5pZuroRybyNwjHA8k1Tjd0Jm9ScqpHFk4yBio7Nt5Dc+1R5dK1mez9d7mO1Vxnb3OKR21a/t53CXJl2MRk9jVf0sl+5DjPfOFIPymhjXTiXf3+9DjqJu7VZXGxuxrOCXeh3c4969rRxy2QXN2srbRyQARQy/AaUMPIz+taA7RsCTxn+lb53DqnHijjGhMvBpjbHNMOhatdaXqNrfW0pSSGQSDHgj/xS2SF5qfaOPUXPZqNoCjuPQdZt9a0O01K3ZdsyA/Y45FEt0X0/nVP/AAG12yutGu9B1B41a3PqRF2wceeau4aZpTDd6xX6CSqIStdk0odiz8WuoF0fou4hSUx3F3+6THcjzXHj3In1dCDyWKj6Yq6fjnrXr9RxQBiUghL7T4z2qjNAglu9XLhd20Zwaz5FsFSCt/L6Fq7g44xS9GClv6j92+c/7Cjeuq/7uNskswzjzQS8LFgkQ3F/y48gVxBGkncM+cVp9cohUDk1uSGRiVZSpHGCMGpdvpE87jELY75Pajs6kQHR5NJZ8Bwr5JHiptvK1zBEJJSI4R8ieAaYrDS1twyXaEQSjDgD+tY3HQlyZQdLuVkt5OcMeVr0ciRycHJdAS96hjltXgAYueMEgqKaOkYH1TZEEd1TguASB+tDbP4b3/4sG7nXYecRirt6Z0qHSLCOCCBYogOwHf6mlcnLGqQzj45J2LcmkFGWGFPm78+aZtNsBaWqxupzy3PjNMsdtbTSIXh3D/Mvit11ZpCoEYyo8GsSWb0aqQq3MDSH5UIrFWMa7CuPejUiEeOKHPD6rnb4oVOzupElf1CF27gBWi6ef8K6xkIcYHFTBG6tjAr2VRuYcEU1M80IGqQSC3Y3cp54z2IpK1S7sNOt5ZTCjMeFVW3nPufarg1LT4r9DAsYZTxlqVNX6NtxbAmBJPBJHerMM0miTLFtOirZeqxcWLwem6SspXeJCf5ClJlIbAyefNNurdJXMV866dGHi74yAV+lR7Xp54iLjUCEUdkHJNayyKjL0aYPlhWOzhjzg4yQKxtyfSdC35eRRqe0R1MjEY7qooNJA6ucLj7UKkmNqkfb88MTivTOx2oD2GKjkkNtPesVYCTJo0xTJhPHPNb4XPpHbnK8jHmou7jitltJsmXPYnBrrPWWV8Lbjf1/aWROUvgYwM8EkZH9a6SbpO9VsYI//Y1yT0zfnRuq9IvxjFpdo/fxu/8ANfoGrCSKOWPlJFDqceCM0eNCsjo4u+KGrftLqzWJl4UMIk5zgDilzQxHbwbYwTNOwGR4ArVrkzz3V3PJzmQuR7+a26eVgjYyDPpRDkHkE1HLwVGwD1NZdHulQDnldwH0p80XSrC6iRGiMqvzukjCkfYjtQPpHR9Nn1A3k85nLt8qGMbR981bNrd21vKYLGMjHDMwBH6eKmnk0HQhsJeudD21xi5tAI5gO+M7vof70vjTdRsnWF4i4zgELlQPerlmuN0YQKSSORjg1K0zRYdQZfVtVDZyMCpXnY9Y0hR6W6XS9hW41OIPDn5fTHen2HoLR5bZhBayJjnL4GKY7WxhtVAKRwqo4K8VJYwSJsEpJPbHNRS5LsYoUVxcdLmyuNsWB4yOaL6bpEYYCYM+OCfFNX7MZmKO+5e4NfCFbdwjkbQMCkSz2h6a9Ax9OsoE9SPEbL/Wo06Q3EJCyoG71I1RpkQMFJj96AkncB71J9hRCCas2x6f6xeMYP61rg0OQRu+fO0D61MiZoCkqoQc96JJqUTCSGWJQx+dQBjNMjkOuLFOfSmWQ4POcADzW+LQzcRZYCFfqMk0VWYqxZVBc9ifFSY1lYAtcIn/AEinRy0C4sSriya1Zl2jaDwcYofNDHOu2TG01ZT6Rp2oELcyM+BnA4yaGXOg2VjeGUQEjwCeBTVlFNFU6h0nNeQvLZqsag8yPn+QoEOg7lyz3B/dj+Jhwa6Fk1G1XSPw6WsaseCFHLUlanK94TbrE6LnAQDGB75qyHIvpE7xFDarpdva3XpWyMwU4OfJ+goPc2rGPdsUEfwirT1nTo4LvMcCluxc880pahZsCQqD9athPsmljKsvf3dy2RjxUHd8/HmnPU9DlaMuwUHueKT54fQuPTLA4ar8cr6IpRaJKHC4zWQJyM1rGcd693c03yAwsrsI45B+Y4P8q/QPovUl1XoTRNQDf41pGT9CBg/1FfnxC4NqhIyQSK7N+DerzSfCnSlJB9PcnP0NFF0DNdHJ98wa5eJhnc/P+lF7KDfC4MGEdwC+7nAoLcAjWzGAWKsuKaOkrG4vwI3SWREkLkHIGPvUM5JeSxK2OnSenxyPZKmjgqu4liWGM+KsZ4LSBFjtbaUHGfkXjNeaRZx/g40DmIYAZFGT/OnCy0lWVQucEdyaysuZS8FcI6q2LNjZ3moTCFYH+jMuMU7JbQaLaohffKB5olGLTTLTJUBsd6VNRv4p52keXioss2lSHY4uciPqepsP4iBmsdOv5WlDgkrmgF/I0ynD5H0rXaX8mn8yN8vjIqRqzS1jVUPtzqnpruV8nHatMGoQ3iEuSrD/AD8UvR6zFfxEMgwP4hXomgiTcJCBngHvSnYP1IPXV4vomOWRAgoVaxWsswMT5+hYUv32q2e8iT5nJ7E4ry0vFdxJFaqFHcox7V5RbDS1VDNeyrEmPI7UMkuY3ZGZwGXkV5qAYwD05N64yAe60HCO6sV5IqiGK10cboY4JklXg5IqPLNPuMaZBPkDmounidIvVClseM4rRqXVcdgjRRwes2PmKDO39aBwadHPIxaW1yufmLA+/ip1zpLXG15LkjjtSHpvVKvGZIwYnHLRv5HuKITdWCZMxFt3bFEoSBcSfqcVraJtFwd475NLUl0HkPpTj2yTnNLmr6vJPdFZWHftntWentN6g3J8p854q3FCl2JkifcacbvcxkDH6e9Ab/pyeNWk2ZHln5z9hTdbwSsdw9Db5G/JozFpslxB8rZPt3qpSonlGyhdV0maSM/mA84bFV/qmkSI5yCxB4Zjya6N1/pWedWeIlSg5UfLmqO6r0K7sNQD7JNh888VfgydkOWHsTcFRg15kg1tmJC/n3H61pY4IyMGtFMjonxE/hVPbD1038LtYNh0JBbhsD1GYA/UCuZIF328aZxuPNdB9GxRr0bpxJOWQn83/UR/tXGzlFO3LtFr6TiQxhiBx3zirW6HsLpwRcXMixFsxox+ZvvVU6rmC9ikkRsxygMvYjmr4+G1tC8J1G5lD8BUXOdg9z9azeQ6iWY1ciytM05UiAUMG8kimRJ0t7ZgjhnA8ClmbVWZfThm2xjjC0XtZ4zp5BdTj2rDt9mjr0Yy3T3jCNzk+1C7vRrhiZM/L7DtipDXCpKY4FCs/wDEe9Dtd1eaOzNrDIQCdpZeDSmUY14SIDiFJCD6SlOA24c0Ju539UqrogHlsGh1zcRKxOdzeMntUCWVmy7Yf6V5Rspugx+Jmh/JNuB9u1QbrUmiR5XkLyfwru4X60OW4aRSGygz28VAngE5IYtyfFHHHb7O7dG60M99eFnf1B3Jp50iwlKiITBFbuBJ3HvikKO6WzKW0ABkbk/QUzabcynDF8HNVR4zn0iPJnUSxItGtDH6ks+EVcfL3Ne2nTljMzSpLlM9wa32Olx3GhQv+PS3vAPUADZVkPbINR73UNQsWjs4dRsJZUyDFHxx35q/Hw/rjUn5M+XK2fRK1TTdOt7PKZxjkJ5FVvr6wG2cRJBbxkH/ALqe9auN+kSKhhknSHcylseeQPfFUvq11KQzA5Oc4pMuIkx2PkOuwVFqQhvQs8bIp4Vx2NG7eVgfmfK9wVNAZJE1SNiyCORDghe1SbctEFU9h5zSZY9XRXGakgneRWaxGQsrP7FsE1u069s5IvSuEARfY420H1CJZ1GxNx848UKg320xX5kz58V5I6x5gmiS6T8NJlCe+aeLQXggDxxlwo52+1VJbXkkEg3fOPBHmrE6e1OQBAsrAkggE/0rr8C2hhF0ZTh/zDjay4z/AHpf6m0G11fTJlhiC3O38vv9qPTXSmYSejgE/Nipym1nhBB7+TxXoSakInG1RxT1HY/s/U54Ms21yDvXBH6UAbl6vL4xaNbRaobyKzfc6/NtXKt+viqRKYlxs248VuYp3EyZR1dE+3HEQ+tdC9H2XqdI2DSPtJTgE44rn2EEyRqBziuyegdCtrnoPS5JGZP3IUZA5AGM07yLbooP4o6T+zuutYhSMKskvrx8cANzj+eanfDbqC4fUHsZsiFovlxwFwcVY3x96VcWlp1Jaxn90xgnx4U8qfsDxVH9NXv7K1dZZiBblslvIHkVDmhcSrHKpWdEI5KxIrbdw7+9McMiwWiRlvmbmlrS5obuKG6AzFsBUY78UdRZZnEh+VQOeKwpRp0aqdoyd9haZz3OFFJ2q3rys+DgAmmK9m2vgjO1TtxSRq3q59NPzt5oNSiLojxI08gQbmJP8qkm0kRypPqEdwPFa7ctAojiITAzJIO/6VNjuUKhUXYuO3difc0VBpkOWMohG3k+K0i0IK+oCD3ouJkC7igLZ4+lYSzCV8lcOe58UUfJyTExbhYdTuXk5+fA+gFTbfqGJJSiNtIqJe2nqatcR5wxO7FKPUd5c6PF61pEjFeTvHitjEukY2X+4s9epJ5IyouG7YwDjArWush5T6jfMeQarvpvqWDXLN3SP0riL86A5H3H0okL4rISUz7GnO/AtJMbb/XU2kySt/Ok6/6ghDlF5JPmlrqPqaK14Jw7HCjxUCzWW+skupAFeTkY8ivatntknSGjTbxTrse3cUcEFQe5plAmeRhHExxSj05Gn7WBdstECadorho7ncpAB4NRZvJbx/BqW6FqQt1GUB/ixnFEbazsNWQiG8hWQcjccVuMsEy+nOEB8MBSpqcX4W79S3YqM914xU5WGLyyi06URTM7Sn/6anZ/M96MaDcnBhZifOfaglhfS6jZCC4lLleFB5x9aK6ejW05dVxgbTjzQs6huhuZVbbIxIBwCec0wQEGMhBuiYdx3BpMt7sGX0iePY0djnNsq4l2ow7+DQoRNUV38W7a8k0gm3yzAEgDnjzxXPAMhkAk4YcYPeuqOu7WO+6UuWV0MyLuU5wc+1cwXIP4l2bg581r8Z3Ey80fyJ2iwvfarbwRAszMEAHuTXdVnpkOl6Rp+mrx+GtkjPB74yf9a5L+C2hrqfxD0wzRlooZDPIcZChR/eu2reASRmRl5ck8+BWjBL2RzfojdQaRb69ol5pdym9J4yhH3FcS67oV3051Lc6Rehkkt5CucfmXwf5V2/fC4ezcWshSUDK48/SqF+I/S8muQHVI4yL+3UhlI+aRR4+9RzTcbQUZ1LVg7ovX9Oj0uCymnUSflUM+WarMa8EVupUA5HY1y1DJ+ztVt7h1J2MAR2II8VenTvUUGs6bHE0iCYLyuefvWVmxfyNbFPwg1czLMdo/Me9Ll9ARe5Iz8pwTTBGhjAVgM+9Dr1VeQNIuAhPIqJIusGQWp9NyVyT3rUEEGR5JqZLMyWoEK5JOahXcoE65OeBz2yaOjux8JcsAOR2qVAgbc5OAvFD1ZmmJwAPGP9aIWzokYbdnAJriVBPtC51XpF3PCNRsyVmTuF4O2qq1k6jqatZyXLIoyD8vJ/Wr8mcyKAy96Reo+nBHO99Anyt+ZK0+Nl9MzeTi/kiuul9M/Zmpo6SEoUYOSKYfxivI6qucE1r/ABCRwvEsQQkYJxzQuCVY55XZ8DbgCrmk2Qp0Kes2zXeov6hwoPAojZRT26Q2MF3JIz8Ko8Z8CiU9ib119CFnbPenfozpVLa/XVLxA7qMIuMhfrRSkoxOJXI39OdPPpVkZbtGNzNyS3OB7UTkiMTZxxTWzRujDHPjHag16oEMhZeUrIyStmvjVIF3ys0YdCPpg0NZJXJEi8481MNwrxDaPlrUkrO5D++M0A03abCsVxHgYJ70xpMkBLOCydmA74+lAbXcZsoMlSRRdFaYZ7AigaO2ToYz6gnjO8A8ZHcfWmGULLAVXGAARQnT1Cxoo8d6JRD94wD9xyDQpAT7Qp9aXAi6UvkLhWZMAHzXObgvOI/UDf7fSr4+J7QQdPtDNKdznPyd6qLpjQJtc6htrCyhLPO4X3wPJNbHEj+Jk532dDf8O3SrJa3nUM0TDdiBCR+Ydya6JVkUYyKC9LaJbdO9LWWk2v8AhQRgcD8x8mibMzHMe0L9s1qRVIzMkm5Gov8ALzUC90+xvrd0uLdGYjh+xB962GUY4rU0rHIBwKgVlDSZSXXfwseZ5b7RBvlcbjCeC/2+tVJY3F3oOpvNskiuYiVZWyDx4Irr+VQ0IH8SNkGkPrXoDS+oYzdp/wCmvMcyqPzfceaXKKfRRCdCj0x1VDrkDeoQk8GN4PY5o9cMjx7hhgRjAqmdT0TW+ktUb1Q1uzAgOv5JR962WXVupW49Dc0sTkHnup/tUM8PZbHMWS7bZCjHEZ7HyKDX8pjlLIBIFGDziolr1Fb3bCOS4QMTjC+DRVokmtVKJhTyTj81JcK8lEZ2CzeOswfJAKdq3WN8WmEZG0Ac1rubAzqELei6HcpHcfes47RlGEO7ccZoGh1jDbXKXMwYA7UOPvWnUkE1wVwdpTOKwt4pbRSxUsGIAPtWDSujTXMg3MeFFMxumLmrQrahpEZVyIhk+1JJ0e4fUGtzGcGrAv8AUmWOZvQCgD83k0tDU5PWE5ib1doUEDsfc1oQl0Z2RUw5pOl/s2S1dolMYH5SOD7j/em+BYLWVJIlH4ebtnxS1Ya2L6FY9haRO+RjJ+lF/RuPwbBvkRuVBPY0vLIZjj12idPNbp6ksDbQudyn/WlbVdUJuHjjO7I/Spd/G7qGWRgQMHA70v3VuxKShTuGRUj7ZbFdE6xjLQOzghMZ/XNTbW0RoZGIDHsMe9Dbb8V+H9J8hW4OPHsalW11Naboyu4/Xwa8dsN2VoiwO+zDDz/mNE4okRUhI+YjLGlWG+1D91HG+4sc/McYpkhu9kf7xhknG7yaGrB2oIW8YSRgDxUw4hjaYngCgVrrllPcyQxvkxttLfWlTrHq5JLJLTTrwwyJId5Hc47D65pmPE3ITLMqE3r3VpNZ11bRVZhGSgAPds+avT4JdBLommnVtRgK3cqgKrDJBPt7cUs/Cb4anVrmPqfXoCzN80avzt+48mulLK1jgiSNECLGOAPf3P1rdxY9YmRlyJsl7TIMAbE7Y962KoVcKABXnivN496fRLa9i4ZF+o+4rW0ihvzD+dfnnN1f1VKMSdR6k4Hvcv8A3qK3UWuyMGk1q/Zh2JuH/vUigVn6ISTxqfmkVfucVE/F2qhke5h47Zcc1+ekmsavKcyapeN/3Tsf96wW+v2YD8XOxPGDIxz/AFrqxJnmz9Coum9L6sv4FvViurWxb1WTIZSSMBTjx/aqg+LHRmjdM6xANNHoi5DOYAfyKD3/AFNWb8AOlb3pb4TWsmpwSQahqsrXTrIfmCH8gPtxzj61TfxS6ibWevdRmjlDwQP+Ghx22r3/AK5py4ql5AWXViG9mOWifa5OdynFOfS2pXdhIqakWa3I4LDt9aSFmYMcnjOK6k0vpuxn6dsN9tHM3ork4Ab8oyCD3qDNxtVbK8XItiSLay1GNbmzdSWHip0Wlwo6QlRuPGQfNM//ACYq2r/syf0pgMqjL3+mKhR6BqQZnFxEkgOWjlyjCoHgflFqzJ+Qdc6YiRszqVTsOfagjwqzYUZUc0V1pOo4LV1a2V0AIWSI7k/mKVJda/Z+lGe+gmjMYxI2wnP1GPFLeKQ1ZIk2W1gfO+IEH6VHg0ixlu97QLwPalY/EjSY7s2sr7QxwHI4H60y2Ws2K2Zv7m8ihhzhct+aj0yRRxyg/IWg0yztfmhhUEecVqvj6duxAyv+lR06t0OdRBaTCeY8EqOK13d1Ebfadyk/MT3AoXGXsJTiQHBMTlckdz9KixW7TZGO1e3HUOnWsXzOvzEZXcM4r5eo9KiIKyqqMMhzwK9oz32IkiKOIc8ZANeJaevdvtTIZc/ag0nVGjmbH40Sfw/L2qZq/WWk6Hp0S27C4uZF3Mq+BXVFgOaN8qxxs+GC+iuSc4pL6l6yDQvY6cSjqMSTD29hQHUOpdQ1REeOQxhySx7kDxS3OiLOJJW4Xx7n3NV4cXdyJp5uiTpuu6pDeM0MziMtnDE8/erW+F/Teg9R6ot7r+rWjGNwwgaYK2c+Qap25lWXTZmiTYQO/alb1GEnqb23fQ1dGCTsgk9vB+mcN1odjBHBBe2UESD5VEyAY/nUj9vaHH+bWrAD63Kf3r8x2up3ILyu2O2WNY/iJTwWP86qTQn62fpq/VXTMX+J1Fpi/e6T+9aj1n0cpweptKz/APlp/evzQ9RiOSTXhZickmvbI5oebTivCuDWwAg18cZqa7K6MMH2ro7/AId/gtP1Dqlv1r1NZY0S1bfawSj/AN1IDwcf5R/U1T/w76Ou+uevNN6dtUOLiQGZ8f4cQ5dv5V+jGoRN070HdRaBbLv0+yK2sIGB8i/KKoX4xAUd5qC9ir8QviPpnS0f7Lt1NzqciNiOMjEIK4DN7fauTr6G4kleUsJHLbif1zXkvUF3eX813qAMs88haV2OSTXr6vZOpjLlH/6u1RLkZk3qrR9+vgPjoYYwzzqT9gspKh+eMjJJ967H02JLjprSJ4ZMPJYwvkeSFHeuSVeOQBkdWB9jmnfRviR1Do9tb2hlS5ggG1FlXlV9gRXMnL+xVJEeX9Kzh+fFnsjpKyuZEuI1nVj4yByKp740dZ6hBqUegaZM9rCYt80icM2ewB8DiivTvxW0u+u4I78/g3JGTIflH61j8RujLbrf0tR0PUrYahGuw7pPkkXwMjsaCDT8HzXJ4efBLWcWjn+06i6k0S+S50rWLjepy0MkhZJF9mB4NXnrvW9tF8HbjXZooY7i4ttkIMYyJGGPbxzVUQ/Cnqw6lt1a7stPtF/PKtwshx9MVL+Iuoabeafa9MWSPLbWe0CWPtkDAH1NNk4ryFxeHn5EtYREb4aaVod71tHL1Rdxfsq1QyuHXKzk9l/nz+ldEWGnfDHUGjTT9OtJSDlVYkr+gNc6aXpF3bxSRrEQjHO5xjj2onYX93o2qCOXItn8jjb9qW80W6RvP4HJj4/2y8nWMHTvT0Gnr+F0e1jCjcFVAOfalbqfRA1k0NjZBsnCKwxsz7EePoaStG1PqGaCOSz1SWwVxlWnO4//AM1s1XrD4iaKis97Z6jbq2d/4cAj7ivMx8fDnklrFqxb1bp2+ijkE+jptUZLxgEkfy5qq9WLS30zOgWLdhEP8I9qtvUfi/qEtq0eq6LbTBhtzC5Q5/rVL6ndm41CWb5VVmJCA5C/SihDd0hHLw5OK0si7Z4hZAVTt4HtXoy8ymc53EDGe9QzcOONmK3WKtdarZxZ5aZAP5iqv23sznlY8S9A6uYSbOXYjDP5PNBJPh7r8EbTySrIq5JLAiulbK1WCBUZQcDmt13BaS2M0TRHDrgil0kdtvycjXNvPZBra/Uokina2OKT8EEgnOPPvXSvxN0axtvhnfzLYlpFliKyD/4+e/0HiucTHkk+KO7OGjH1rJVLZI7DvWzYPIr44VfYV47Rg3sK2beKxC/xcYHnNbMe9cPGTDjPmsVXJyBW1u1GukrC31PrPRtOu1LW9xdxRyAHBKlhmhh2xr8HWn/DB0C2g9J3HWeoQFb3Vhstt4wUgHkf9x5/Sr7e8jht7iS5fEcYyc+3tW2G1gsrKGztYxFBCgjRFGAqgYApZ6rQSaYISzKssqo204ODT5yrokUm3Zyx8SLDpm06rnuNC1CDbduXayDZaFjyf0NB+m30q1vXn1Xp6DVYcdpmIK/bFFPiNotlofW99p1oGkjgKhXmIZz8o7nApQjvbiFisb4HtScnHlBbRkfZcL5fFyorjcvHtXsfL3rTTprCWxs+jNLtInGAyphh9cilhFefLYCj2HYUFfWLoOFKRHkDJTnvViaXpVnP1bHpUiMbZpFUjOCQfrWZPHL2z6/icvi8WP8ASi6/9/sUnUxdxxWy11HWIz/6a5a1Tt8rHkfarC+IvTmkaFc2UOm23piRCzEsSSaRFUcAceKV3F1ZuJ4uXj+yUegbqN3eyyEXt9NMp+YJuO0fpXqMJ7YRLyD/AErqPozpfQYNEtojpkE/qRh3aZA7MT9TRq86I6R5nHTtiH9xEBVbxOS8ny0PmuPx8korH/w5StoL2fZb29vLPKeAkS7iasHpz4T6gzrq3UcZEg/wbTO7b9X+v0q5rOysdPl9Owsbe1XH/wAUYUn9ans7YrsMersxfk/1Dk5EfrxrVFaSdMXCHKrwPFZ/8vTMu10BBp1vLyWBcoF745Gar7rPq3V9E/BvZtETPJtYSJkY+nNO1s+X/cSXfsrX4n9K2mj6dHqCBoppHwFXs1Us5BbJ5INXV8W9UvL630pJ3G1kZyqjAzVLNyST74rRwY9IWTcrkTzNbvwYHmjvR0K3HW2kRMPlNyhP2BzQI01/DhVk+IenI4BA3MPvtNUV0RHU8kBwXwMe9eHHoPkZGK3WpL6YNxyUYoM+1anGYwvhnUH+dZjRQBeqdC/HfDTX4Z8D17fjjOMEEVzYnw4upUzE0pPLYxwR7iuwupkC9F3irwBAcYqoory4t7JVifCN8pXAwM+1Eo2ctlMN8OLtF3yidV4wxjwDntR7pHoix0zqqw1DXdMnvtOibMkRjyDwcZHnBwceas97ia5jeOaVmXjIPnHap1pNNFs9OVlDjJHtR/W17ObMxvrHoKeyni/YdtMkkbqsMelCEtkYGHz8uDzmqej+HlkEAeKTP3q6RcSykmQhtjbRkDtWDrHC3prEjADuwyaFqj2zP//Z';
+const avt=(c='',st)=>`<span class="avt ${c}" data-l="Z"><img src="${AVATAR}" alt="">${st?'<i class="st"></i>':''}</span>`;
+(()=>{const l=document.createElement('link');l.rel='icon';l.href=AVATAR;document.head.append(l)})();
+const curTheme=()=>document.documentElement.dataset.theme==='light'?'light':'dark';
+document.documentElement.dataset.theme=store.get('theme','dark');
+document.documentElement.dataset.ac=store.get('ac','violet');
+function setTheme(t){store.set('theme',t);document.documentElement.dataset.theme=t;const b=document.getElementById('thm');if(b)b.innerHTML=ic(t==='light'?'moon':'sun')}
+const toggleTheme=()=>setTheme(curTheme()==='light'?'dark':'light');
+
+let CSRF='',ROLE='',DATA={},ROUTE='dash',SEARCH='',FILTER='all',VIEW=store.get('bview','table'),REFRESH=+store.get('refresh','15')||15,TIMER=null,seenEv=+store.get('seenEv','0');
+
+async function api(path,opt={}){
+  const o={credentials:'same-origin',...opt,headers:{'Content-Type':'application/json',...(opt.headers||{})}};
+  if(opt.method&&opt.method!=='GET')o.headers['X-CSRF-Token']=CSRF;
+  let r;try{r=await fetch('/panel/api'+path,o)}catch{throw new Error('Không kết nối được backend (đã bật start.py chưa?)')}
+  let j={};try{j=await r.json()}catch{}
+  if(r.status===401&&path!=='/login'){showLogin();throw new Error('Phiên đăng nhập đã hết hạn')}
+  if(!r.ok||j.ok===false)throw new Error(j.msg||('Lỗi '+r.status));
+  return j;
+}
+function toast(m,err){const t=document.createElement('div');t.className='toast'+(err?' err':'');t.textContent=m;$('#toasts').append(t);setTimeout(()=>{t.style.opacity=0;setTimeout(()=>t.remove(),250)},3800)}
+const hue=id=>(Number(String(id).slice(-4))*47)%360;
+const grad=id=>`linear-gradient(135deg,hsl(${hue(id)+240} 70% 58%),hsl(${(hue(id)+290)%360} 70% 46%))`;
+const initial=n=>([...String(n||'').replace(/[^\p{L}\p{N}]/gu,'')][0]||'B').toUpperCase();
+const bname=b=>b.label||b.nickname||'(chưa có tên)';
+function leftTag(u){
+  if(u.forever)return['Vĩnh viễn','f'];
+  if(u.left_sec==null)return['Không rõ','w'];
+  if(u.expired)return['Hết hạn','x'];
+  const s=u.left_sec,d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);
+  return[d>0?`${d} ngày ${h}h`:h>0?`${h}h ${m}p`:`${m} phút`,d<3?'w':''];
+}
+const fmtUp=s=>{const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);return d?`${d}n ${h}h`:h?`${h}h ${m}p`:`${m} phút`};
+const isAdmin=()=>ROLE==='admin';
+
+/* ============ modal / drawer / confirm ============ */
+function modal(html,onMount){
+  const o=document.createElement('div');o.className='ov show';o.innerHTML=`<div class="box">${html}</div>`;
+  const close=()=>o.remove();
+  o.addEventListener('mousedown',e=>{if(e.target===o)close()});
+  o.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
+  $$('[data-x]',o).forEach(b=>b.onclick=close);
+  document.body.append(o);onMount&&onMount(o,close);
+  const f=$('input,select',o);f&&setTimeout(()=>f.focus(),40);return close;
+}
+function confirmBox(title,text,okLabel,fn,danger=true){
+  modal(`<h3>${esc(title)}</h3><p>${esc(text)}</p><div class="mb"><button class="btn" data-x>Huỷ</button><button class="btn ${danger?'dngf':'pri'}" id="ok">${esc(okLabel)}</button></div>`,(o,close)=>{
+    $('#ok',o).onclick=async()=>{const b=$('#ok',o);b.disabled=true;b.innerHTML='<span class="spin"></span>';try{await fn();close()}catch(e){toast(e.message,1);close()}};
+  });
+}
+let drawerClose=null;
+function drawer(html,onMount){
+  closeDrawer();
+  const bg=document.createElement('div');bg.className='dwbg';const d=document.createElement('div');d.className='dw';d.innerHTML=html;
+  document.body.append(bg,d);requestAnimationFrame(()=>{bg.classList.add('show');d.classList.add('show')});
+  drawerClose=()=>{bg.classList.remove('show');d.classList.remove('show');setTimeout(()=>{bg.remove();d.remove()},280);drawerClose=null};
+  bg.onclick=drawerClose;$$('[data-dx]',d).forEach(b=>b.onclick=drawerClose);onMount&&onMount(d);
+}
+const closeDrawer=()=>drawerClose&&drawerClose();
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer()});
+
+/* ============ đăng nhập ============ */
+function showLogin(msg){
+  clearInterval(TIMER);closeDrawer();
+  $('#root').innerHTML=`<div class="lgn"><form class="box" id="lf" autocomplete="on">
+   <div class="brand">${avt('lg',1)}<div><b style="font-size:22px">Zan Bot Manager</b><small>Đăng nhập để quản lý bot</small></div></div>
+   <div class="fld"><label>Tài khoản</label><select id="lu" name="username"><option value="admin">admin — toàn quyền</option><option value="viewer">viewer — chỉ xem</option></select></div>
+   <div class="fld"><label>Mật khẩu</label><input id="lp" name="password" type="password" autocomplete="current-password" required></div>
+   <div class="err-t" id="le">${esc(msg||'')}</div>
+   <div class="mb" style="margin-top:8px"><button class="btn pri" style="width:100%;justify-content:center" id="lb">Đăng nhập</button></div></form></div>`;
+  $('#lf').onsubmit=async e=>{e.preventDefault();const b=$('#lb');b.disabled=true;b.innerHTML='<span class="spin"></span>';
+    try{const j=await api('/login',{method:'POST',body:JSON.stringify({username:$('#lu').value,password:$('#lp').value})});CSRF=j.csrf;ROLE=j.role;boot()}
+    catch(er){$('#le').textContent=er.message;b.disabled=false;b.textContent='Đăng nhập'}};
+  $('#lp').focus();
+}
+
+/* ============ khung ứng dụng ============ */
+const PAGES={dash:['Tổng quan','grid'],bots:['Quản lý bot','bot'],users:['Người dùng & quyền','users'],sales:['Bán hàng & nhắc hạn','bell'],console:['Log bot (live)','term'],logs:['Nhật ký hoạt động','log'],settings:['Cài đặt','cog']};
+function shell(){
+  $('#root').innerHTML=`<div class="shell">
+  <aside id="side"><div class="brand">${avt('',1)}<div><b>Zan Bot Manager</b><small>Dashboard</small></div></div>
+   <nav class="nav">${Object.entries(PAGES).map(([k,[t,i]])=>`<a data-r="${k}">${ic(i)}<span>${t}</span><span class="ct" id="ct-${k}" style="display:none"></span></a>`).join('')}</nav>
+   <div class="side-foot" id="sf"><span class="dot"></span><b style="color:var(--tx)">Backend</b><div id="sfx">Đang kiểm tra…</div></div></aside>
+  <main><div class="top">
+    <button class="ibtn burger" id="bg">${ic('menu')}</button><h2 id="ttl"></h2><div class="sp"></div>
+    <div class="sbox" id="sbx"><span class="i">${ic('search')}</span><input id="gs" placeholder="Tìm kiếm trong trang…  ( / )" autocomplete="off"></div>
+    <button class="ibtn" id="sbt" style="display:none">${ic('search')}</button>
+    <button class="ibtn" id="cmdk" title="Lệnh nhanh (Ctrl+K)">${ic('zap')}</button><button class="ibtn" id="thm" title="Đổi sáng / tối">${ic(curTheme()==='light'?'moon':'sun')}</button>
+    <div class="rel"><button class="ibtn" id="bell">${ic('bell')}<i class="badge" id="bd" style="display:none"></i></button><div class="dd" id="bdd"></div></div>
+    <div class="rel"><div class="prof" id="prof">${avt('sm')}<div><b>${esc(ROLE)}</b><small>${isAdmin()?'Quản trị viên':'Chỉ xem'}</small></div></div>
+      <div class="dd menu" id="pdd" style="width:220px"><a data-r="settings">${ic('cog')} Cài đặt</a><a id="lo" style="color:var(--bad)">${ic('out')} Đăng xuất</a></div></div>
+  </div><div id="view"></div></main></div>`;
+  $$('[data-r]').forEach(a=>a.onclick=()=>{go(a.dataset.r);$('#side').classList.remove('show');$$('.dd').forEach(x=>x.classList.remove('show'))});
+  $('#bg').onclick=()=>$('#side').classList.toggle('show');
+  $('#sbt').onclick=()=>$('#sbx').classList.toggle('open');
+  matchMedia('(max-width:860px)').matches&&($('#sbt').style.display='grid');
+  $('#gs').oninput=e=>{SEARCH=e.target.value;ROUTE==='console'?conPaint():renderPage(true)};
+  $('#bell').onclick=e=>{e.stopPropagation();$('#pdd').classList.remove('show');$('#bdd').classList.toggle('show');if(DATA.overview?.events?.length){seenEv=DATA.overview.events.length?Date.parse((DATA.overview.events[0].t||'').replace(' ','T'))||0:0;store.set('seenEv',seenEv);$('#bd').style.display='none'}};
+  $('#prof').onclick=e=>{e.stopPropagation();$('#bdd').classList.remove('show');$('#pdd').classList.toggle('show')};
+  document.addEventListener('click',()=>$$('.dd').forEach(x=>x.classList.remove('show')));
+  $('#lo').onclick=async()=>{try{await api('/logout',{method:'POST'})}catch{}ROLE='';showLogin()};
+  $('#thm').onclick=toggleTheme;$('#cmdk').onclick=openPalette;
+}
+function go(r){ROUTE=r;SEARCH='';FILTER='all';const g=$('#gs');if(g)g.value='';location.hash=r;renderPage()}
+window.addEventListener('hashchange',()=>{const r=location.hash.slice(1);if(PAGES[r]&&r!==ROUTE&&ROLE){ROUTE=r;renderPage()}});
+
+/* ============ tải dữ liệu ============ */
+async function loadAll(quiet){
+  try{
+    const [ov,bots,users]=await Promise.all([api('/overview'),api('/bots'),api('/users')]);
+    DATA.overview=ov;DATA.bots=bots.bots;DATA.users=users.users;DATA.err=null;
+    const sf=$('#sf');sf.classList.remove('bad');$('#sfx').innerHTML=`API hoạt động • uptime ${fmtUp(ov.backend.uptime_sec)}`;
+  }catch(e){
+    DATA.err=e.message;const sf=$('#sf');if(sf){sf.classList.add('bad');$('#sfx').textContent='Mất kết nối backend'}
+    if(!quiet)toast(e.message,1);
+  }
+  if(!$('#view'))return;
+  $('#ct-bots').style.display='';$('#ct-bots').textContent=(DATA.bots||[]).length;
+  $('#ct-users').style.display='';$('#ct-users').textContent=(DATA.users||[]).length;
+  const evs=DATA.overview?.events||[];const last=evs.length?Date.parse(evs[0].t.replace(' ','T')):0;
+  $('#bd').style.display=last>seenEv?'':'none';
+  $('#bdd').innerHTML=`<h3 style="font-size:14px;margin:4px 0 8px">Thông báo gần đây</h3>`+(evs.length?evs.map(evHtml).join(''):'<div class="empty">Chưa có hoạt động</div>');
+  renderPage(true);
+}
+function evHtml(e){return`<div class="ev ${esc(e.status)}"><span class="d"></span><div><b>${esc(e.action)}</b> <span class="mut">• ${esc(e.actor)}</span><small>${esc(e.detail||'')} • ${esc(e.t)}</small></div></div>`}
+const loadingHtml=`<div class="page"><div class="kpis"><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div><div class="skel" style="height:260px"></div></div>`;
+function renderPage(keepScroll){
+  $$('[data-r]').forEach(a=>a.classList.toggle('on',a.dataset.r===ROUTE));
+  $('#ttl').textContent=PAGES[ROUTE][0];
+  const v=$('#view');
+  if(!DATA.bots){v.innerHTML=DATA.err?`<div class="page"><div class="card empty">${ic('pulse')}<br><b>Không tải được dữ liệu</b><p class="mut">${esc(DATA.err)}</p><br><button class="btn pri" onclick="loadAll()">Thử lại</button></div></div>`:loadingHtml;return}
+  const y=window.scrollY;const open=document.activeElement&&document.activeElement.id==='gs';
+  ({dash:pDash,bots:pBots,users:pUsers,sales:pSales,console:pConsole,logs:pLogs,settings:pSettings})[ROUTE](v);
+  if(keepScroll)window.scrollTo(0,y);
+}
+
+/* ============ biểu đồ SVG ============ */
+function lineChart(points,w=560,h=190){
+  if(points.length<2)return`<div class="empty" style="padding:50px 10px">Đang thu thập dữ liệu… (cứ 5 phút ghi 1 điểm, cần tối thiểu 2 điểm)</div>`;
+  const mx=Math.max(1,...points.map(p=>Math.max(p.online,p.total))),pad=28;
+  const X=i=>pad+i*(w-pad-8)/(points.length-1),Y=v=>h-24-(v/mx)*(h-44);
+  const line=k=>points.map((p,i)=>`${i?'L':'M'}${X(i).toFixed(1)},${Y(p[k]).toFixed(1)}`).join(' ');
+  const area=`${line('online')} L${X(points.length-1)},${h-24} L${X(0)},${h-24}Z`;
+  const t0=points[0].t.slice(11,16),t1=points.at(-1).t.slice(11,16);
+  return`<svg class="chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><defs><linearGradient id="gA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--pri)" stop-opacity=".5"/><stop offset="1" stop-color="var(--pri)" stop-opacity="0"/></linearGradient></defs>
+  ${[0,.5,1].map(f=>`<line x1="${pad}" x2="${w-8}" y1="${Y(mx*f)}" y2="${Y(mx*f)}" stroke="var(--line)"/><text x="2" y="${Y(mx*f)+4}">${Math.round(mx*f)}</text>`).join('')}
+  <path d="${area}" fill="url(#gA)"/><path d="${line('total')}" fill="none" stroke="var(--mut)" stroke-opacity=".6" stroke-dasharray="4 4"/>
+  <path d="${line('online')}" fill="none" stroke="var(--neon)" stroke-width="2.4" stroke-linejoin="round"/>
+  <text x="${pad}" y="${h-6}">${t0}</text><text x="${w-8}" y="${h-6}" text-anchor="end">${t1}</text></svg>`;
+}
+function barChart(map,w=560,h=170){
+  const keys=[];const now=new Date();for(let i=23;i>=0;i--){const d=new Date(now-i*3600e3);const p=n=>String(n).padStart(2,'0');keys.push(`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:00`)}
+  const vals=keys.map(k=>map[k]||0),mx=Math.max(1,...vals),bw=(w-30)/24;
+  if(!vals.some(v=>v))return`<div class="empty" style="padding:40px 10px">Chưa có thao tác quản trị nào trong 24 giờ qua</div>`;
+  return`<svg class="chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="height:150px">${vals.map((v,i)=>`<rect x="${26+i*bw}" y="${h-22-(v/mx)*(h-40)}" width="${bw-4}" height="${(v/mx)*(h-40)}" rx="3" fill="var(--pri)" opacity="${.45+.55*v/mx}"><title>${keys[i].slice(11)} — ${v} thao tác</title></rect>`).join('')}
+  <text x="2" y="${h-18-(h-40)}">${mx}</text><text x="26" y="${h-6}">-24h</text><text x="${w-4}" y="${h-6}" text-anchor="end">nay</text></svg>`;
+}
+
+/* ============ Trang: Tổng quan ============ */
+function pDash(v){
+  const o=DATA.overview,b=o.backend;
+  const exp=expiring(3),hr=new Date().getHours(),hi=hr<11?'Chào buổi sáng':hr<14?'Chào buổi trưa':hr<18?'Chào buổi chiều':'Chào buổi tối';
+  v.innerHTML=`<div class="page">
+  <div class="card hero">${avt('md',1)}<div class="hb"><h1>${hi}, ${isAdmin()?'Admin':'Viewer'}</h1>
+    <p>Đang có <b style="color:var(--tx)">${o.online}/${o.total}</b> bot online${exp.length?` • <b style="color:var(--warn)">${exp.length}</b> quyền sắp hết hạn trong 3 ngày`:' • chưa có quyền nào sắp hết hạn'}.</p>
+    <div class="qa">${isAdmin()?`<button class="btn pri sm" id="qa-bot">${ic('plus')} Thêm bot</button><button class="btn sm" id="qa-gr">${ic('key')} Cấp quyền</button><button class="btn sm" id="qa-rs">${ic('power')} Restart bot offline</button>`:''}<button class="btn sm" id="qa-lg">${ic('term')} Xem log</button></div></div>
+    <div class="clk"><b id="clk">--:--:--</b><small id="clkd"></small></div></div>
+  <div class="kpis">
+   ${[['Tổng số bot',o.total,'bot',''],['Đang online',o.online,'power','g'],['Offline',o.offline,'pulse','r'],['User đang có quyền',o.users,'users','c'],['Sắp hết hạn',exp.length,'bell','w']].map(k=>`<div class="card kpi ${k[3]}"><div class="ic">${ic(k[2])}</div><div><b data-n="${k[1]}">${DASH_ANIM?k[1]:0}</b><span>${k[0]}</span></div></div>`).join('')}
+  </div>
+  <div class="cols">
+    <div class="card"><h3>${ic('pulse')} Số bot online theo thời gian<small>nét đứt: tổng bot</small></h3>${lineChart(o.history)}</div>
+    <div class="card"><h3>${ic('shield')} Trạng thái backend</h3>
+      <div class="ulist">${[['API Flask',b.api,'Hoạt động'],['File bot.json',b.bot_json,'Đọc được'],['Thư mục dữ liệu panel',b.data_dir_ok,'Ghi được']].map(r=>`<div class="u"><span style="flex:1">${r[0]}</span><span class="pill ${r[1]?'on':'off'}">${r[1]?r[2]:'Lỗi'}</span></div>`).join('')}
+      <div class="u"><span style="flex:1">Uptime</span><b>${fmtUp(b.uptime_sec)}</b></div><div class="u"><span style="flex:1">Python • luồng</span><span class="mono">${esc(b.python)} • ${b.threads}</span></div></div></div>
+  </div>
+  <div class="card" style="margin-bottom:14px"><h3>${ic('bell')} Quyền sắp hết hạn<small class="ct2">trong 3 ngày tới</small></h3>
+    ${exp.length?exp.slice(0,6).map(x=>{const[t,c]=leftTag(x.g);return`<div class="xrow"><span class="mono">${x.uid}</span><span class="gr">#${x.bot_id} ${esc(x.bot_name||'')}</span><span class="tag ${c||'w'}">${t}</span>${isAdmin()?`<button class="btn sm" data-rn="7d" data-u="${x.uid}" data-b="${x.bot_id}">+7 ngày</button><button class="btn sm pri" data-rn="30d" data-u="${x.uid}" data-b="${x.bot_id}">+30 ngày</button>`:''}</div>`}).join('')+(exp.length>6?`<div class="mut" style="font-size:12.5px;margin-top:6px">…và ${exp.length-6} quyền khác. <a data-go="users" style="color:var(--neon);cursor:pointer">Xem ở trang Người dùng →</a></div>`:''):`<div class="empty" style="padding:18px">${ic('shield')}<br>Không có quyền nào sắp hết hạn</div>`}
+  </div>
+  <div class="cols">
+    <div class="card"><h3>${ic('bot')} Bot gần đây<small><a data-go="bots" style="color:var(--neon);cursor:pointer">Xem tất cả →</a></small></h3>
+      ${o.recent.length?`<div class="ulist">${o.recent.map(b=>`<div class="u" style="cursor:pointer" data-bot="${b.id}"><div class="av2" style="background:${grad(b.botid||b.id)};width:34px;height:34px">${esc(initial(bname(b)))}</div><div style="flex:1;min-width:0"><b>${esc(bname(b))}</b><div class="mut" style="font-size:12px">#${b.id} • ${b.users.length} user</div></div><span class="pill ${b.online?'on':'off'}">${b.online?'Online':'Offline'}</span></div>`).join('')}</div>`:`<div class="empty">${ic('inbox')}<br>Chưa có bot nào</div>`}</div>
+    <div class="card"><h3>${ic('log')} Nhật ký gần đây<small><a data-go="logs" style="color:var(--neon);cursor:pointer">Xem tất cả →</a></small></h3>${o.events.length?o.events.map(evHtml).join(''):'<div class="empty">Chưa có hoạt động nào</div>'}</div>
+  </div>
+  <div class="card"><h3>${ic('refresh')} Thao tác quản trị trong 24 giờ qua<small>thêm/sửa/xoá bot & user</small></h3>${barChart(o.actions24h)}</div></div>`;
+  $$('[data-go]',v).forEach(a=>a.onclick=()=>go(a.dataset.go));
+  $$('[data-bot]',v).forEach(a=>a.onclick=()=>botDrawer(+a.dataset.bot));
+  $$('[data-rn]',v).forEach(b=>b.onclick=()=>quickRenew(+b.dataset.u,[+b.dataset.b],b.dataset.rn));
+  const q=(i,f)=>{const e=$('#'+i,v);e&&(e.onclick=f)};q('qa-bot',()=>botForm());q('qa-gr',()=>grantForm());q('qa-rs',restartOffline);q('qa-lg',()=>go('console'));
+  if(!DASH_ANIM){DASH_ANIM=true;$$('.kpi b[data-n]',v).forEach(countUp)}
+  tickClock();
+}
+
+/* ============ Trang: Bot ============ */
+function filterBots0(){
+  const q=SEARCH.trim().toLowerCase();
+  return DATA.bots.filter(b=>{
+    if(FILTER==='on'&&!b.online)return false;if(FILTER==='off'&&b.online)return false;
+    if(!q)return true;return [b.id,b.botid,b.nickname,b.label].some(x=>String(x??'').toLowerCase().includes(q))||b.users.some(u=>String(u.uid).includes(q));
+  });
+}
+function pBots(v){
+  if(!$('#bhead')){
+    v.innerHTML=`<div class="page"><div class="head" id="bhead"><h1>Danh sách bot</h1><span class="sp"></span>
+      <div class="seg" id="bf"><button data-f="all">Tất cả</button><button data-f="on">Online</button><button data-f="off">Offline</button></div>
+      <div class="seg" id="bv"><button data-v="table">Bảng</button><button data-v="grid">Thẻ</button></div>
+      <select class="btn" id="bsort"><option value="def">Sắp xếp: mặc định</option><option value="on">Online trước</option><option value="users">Nhiều user nhất</option><option value="name">Tên A → Z</option></select>
+      <button class="btn" id="bcsv">${ic('download')} CSV</button>${isAdmin()?`<button class="btn" id="broff">${ic('power')} Restart bot offline</button><button class="btn" id="bstartall">Bật tất cả</button><button class="btn" id="bstopall">Tắt tất cả</button><button class="btn" id="brstall">Reset tất cả</button>`:''}
+      <button class="btn" id="brf">${ic('refresh')} Làm mới</button>
+      ${isAdmin()?`<button class="btn pri" id="bad">${ic('plus')} Thêm bot</button>`:''}</div><div id="bbody"></div></div>`;
+    $('#bf').onclick=e=>{if(e.target.dataset.f){FILTER=e.target.dataset.f;pBots(v)}};
+    $('#bv').onclick=e=>{if(e.target.dataset.v){VIEW=e.target.dataset.v;store.set('bview',VIEW);pBots(v)}};
+    $('#brf').onclick=async()=>{const b=$('#brf');b.disabled=true;await loadAll();b.disabled=false;toast('Đã cập nhật từ backend')};
+    $('#bad')&&($('#bad').onclick=botForm);
+    $('#bsort').value=BSORT;$('#bsort').onchange=e=>{BSORT=e.target.value;store.set('bsort',BSORT);pBots(v)};
+    $('#bcsv').onclick=exportBots;$('#broff')&&($('#broff').onclick=restartOffline);
+    const bulk=(id,action)=>{const el=$('#'+id);if(el)el.onclick=()=>confirmBox('Xác nhận thao tác?',`Thực hiện ${action} với tất cả bot?`,'Xác nhận',async()=>{try{const j=await api('/bots/bulk',{method:'POST',body:JSON.stringify({action,ids:'all'})});toast(j.msg);setTimeout(()=>loadAll(true),3500)}catch(e){toast(e.message,1)}},action!=='start')};bulk('bstartall','start');bulk('bstopall','stop');bulk('brstall','restart');
+  }
+  $$('#bf button').forEach(b=>b.classList.toggle('on',b.dataset.f===FILTER));$$('#bv button').forEach(b=>b.classList.toggle('on',b.dataset.v===VIEW));
+  const rows=filterBots(),body=$('#bbody');
+  if(!rows.length){body.innerHTML=`<div class="card empty">${ic('inbox')}<br>${DATA.bots.length?'Không có bot nào khớp bộ lọc':'Chưa có bot nào. '+(isAdmin()?'Bấm “Thêm bot” để bắt đầu.':'')}</div>`;return}
+  const act=b=>isAdmin()?`<div class="acts"><button class="btn sm" data-ra="${b.id}" title="Restart">${ic('refresh')}</button><button class="btn sm" data-ed="${b.id}" title="Sửa">${ic('edit')}</button><button class="btn sm dng" data-del="${b.id}" title="Xoá">${ic('trash')}</button></div>`:'';
+  if(VIEW==='table'){
+    body.innerHTML=`<div class="tw"><table><thead><tr><th>Bot</th><th class="hide-m">Bot UID</th><th>Trạng thái</th><th class="hide-m">Guild</th><th>User</th><th></th></tr></thead><tbody>${rows.map(b=>`<tr data-bot="${b.id}">
+      <td><div class="cell"><div class="av2" style="background:${grad(b.botid||b.id)}">${esc(initial(bname(b)))}</div><div style="min-width:0"><b>${esc(bname(b))}</b><small>#${b.id}${b.label&&b.nickname?' • '+esc(b.nickname):''}</small></div></div></td>
+      <td class="hide-m mono mut">${esc(b.botid??'–')}</td><td><span class="pill ${b.online?'on':'off'}">${b.online?'Online':'Offline'}</span></td>
+      <td class="hide-m"><span class="pill ${b.guild?'pp':'wn'}">${b.guild?'Bật':'Tắt'}</span></td><td>${b.users.filter(u=>!u.expired).length}<span class="mut">/${b.users.length}</span></td><td>${act(b)}</td></tr>`).join('')}</tbody></table></div>`;
+  }else{
+    body.innerHTML=`<div class="grid">${rows.map(b=>`<div class="card bc" data-bot="${b.id}"><div class="cell"><div class="av2" style="background:${grad(b.botid||b.id)};width:44px;height:44px;border-radius:14px">${esc(initial(bname(b)))}</div><div style="flex:1;min-width:0"><b style="font-size:15px">${esc(bname(b))}</b><small>#${b.id} • ${esc(b.botid??'chưa đăng nhập')}</small></div><span class="pill ${b.online?'on':'off'}">${b.online?'Online':'Offline'}</span></div>
+      <div class="row"><span class="tag">${b.users.filter(u=>!u.expired).length} user có quyền</span><span class="pill ${b.guild?'pp':'wn'}">Guild ${b.guild?'bật':'tắt'}</span></div>${act(b)}</div>`).join('')}</div>`;
+  }
+  $$('[data-bot]',body).forEach(el=>el.onclick=e=>{if(e.target.closest('button'))return;botDrawer(+el.dataset.bot)});
+  $$('[data-ra]',body).forEach(el=>el.onclick=()=>botRestart(+el.dataset.ra));
+  $$('[data-ed]',body).forEach(el=>el.onclick=()=>botForm(+el.dataset.ed));
+  $$('[data-del]',body).forEach(el=>el.onclick=()=>botDelete(+el.dataset.del));
+}
+async function botRestart(id){try{const j=await api(`/bots/${id}/restart`,{method:'POST'});toast(j.msg);setTimeout(()=>loadAll(true),3500)}catch(e){toast(e.message,1)}}
+function botDelete(id){const b=DATA.bots.find(x=>x.id===id);confirmBox('Xoá bot?',`Bot #${id} “${bname(b)}” sẽ bị ngắt kết nối và xoá khỏi bot.json cùng ${b.users.length} quyền truy cập. Không thể hoàn tác.`,'Xoá bot',async()=>{const j=await api(`/bots/${id}`,{method:'DELETE'});closeDrawer();toast(j.msg);loadAll(true)})}
+function botForm(id){
+  const b=typeof id==='number'?DATA.bots.find(x=>x.id===id):null;
+  modal(`<h3>${b?'Sửa bot #'+b.id:'Thêm bot mới'}</h3><p>${b?'Cập nhật thông tin bot. Đổi token sẽ tự khởi động lại bot.':'Dán access token của bot — bot sẽ tự chạy sau khi thêm.'}</p>
+   <div class="fld"><label>Ghi chú / tên gợi nhớ (tuỳ chọn)</label><input id="f-l" maxlength="60" value="${esc(b?.label||'')}" placeholder="vd: Bot clan chính"></div>
+   <div class="fld"><label>Access token ${b?'(bỏ trống nếu không đổi)':''}</label><input id="f-t" type="password" autocomplete="off" placeholder="${b?esc(b.token_masked):'8005647156:B60CAACB…'}"><div class="hint">Token chỉ gửi lên server, không bao giờ hiển thị lại đầy đủ.</div></div>
+   ${b?`<div class="fld"><label>Chế độ guild</label><select id="f-g"><option value="1" ${b.guild?'selected':''}>Bật</option><option value="0" ${!b.guild?'selected':''}>Tắt</option></select><div class="hint">Cần bot đã vào guild mới đổi được.</div></div>`:''}
+   <div class="mb"><button class="btn" data-x>Huỷ</button><button class="btn pri" id="sv">${b?'Lưu thay đổi':'Thêm bot'}</button></div>`,(o,close)=>{
+    $('#sv',o).onclick=async()=>{
+      const body={label:$('#f-l',o).value},tk=$('#f-t',o).value.trim();
+      if(!b&&!tk)return toast('Nhập access token',1);
+      if(tk)body.token=tk;if(b&&$('#f-g',o)&&(($('#f-g',o).value==='1')!==b.guild))body.guild=$('#f-g',o).value==='1';
+      const bt=$('#sv',o);bt.disabled=true;bt.innerHTML='<span class="spin"></span>';
+      try{const j=b?await api(`/bots/${b.id}`,{method:'PATCH',body:JSON.stringify(body)}):await api('/bots',{method:'POST',body:JSON.stringify(body)});
+        close();toast(j.msg);await loadAll(true);setTimeout(()=>loadAll(true),4000)}catch(e){toast(e.message,1);bt.disabled=false;bt.textContent='Thử lại'}};
+  });
+}
+function botDrawer(id){
+  const b=DATA.bots.find(x=>x.id===id);if(!b)return;
+  drawer(`<div class="row" style="justify-content:space-between"><h3 style="font-size:18px">Chi tiết bot</h3><button class="ib" data-dx>${ic('x')}</button></div>
+  <div class="cell" style="margin-top:14px"><div class="av2" style="background:${grad(b.botid||b.id)};width:52px;height:52px;border-radius:16px;font-size:20px">${esc(initial(bname(b)))}</div><div><b style="font-size:17px">${esc(bname(b))}</b><small>#${b.id}</small></div><span class="sp"></span><span class="pill ${b.online?'on':'off'}">${b.online?'Online':'Offline'}</span></div>
+  <dl class="kv"><dt>Bot UID</dt><dd class="mono">${esc(b.botid??'–')}${b.botid?` <button class="ib" style="display:inline-grid;vertical-align:middle" data-cp="${esc(b.botid)}" title="Sao chép UID">${ic('copy')}</button>`:''}</dd><dt>Nickname</dt><dd>${esc(b.nickname||'–')}</dd><dt>Ghi chú</dt><dd>${esc(b.label||'–')}</dd><dt>Access token</dt><dd class="mono">${esc(b.token_masked)}</dd><dt>Guild</dt><dd>${b.guild?'Bật':'Tắt'}${b.in_guild?' • đã vào guild':''}</dd></dl>
+  ${isAdmin()?`<div class="row" style="margin-bottom:18px"><button class="btn sm pri" id="d-add">${ic('plus')} Cấp quyền</button><button class="btn sm" id="d-ed">${ic('edit')} Sửa</button><button class="btn sm" id="d-rs">${ic('refresh')} Restart</button><button class="btn sm dng" id="d-dl">${ic('trash')} Xoá</button></div>`:''}
+  <h3 style="font-size:14px;margin-bottom:10px">Quyền truy cập (${b.users.length})</h3>
+  <div class="ulist">${b.users.length?b.users.map(u=>{const[t,c]=leftTag(u);return`<div class="u"><span class="mono">${u.uid}</span><span class="tag ${c}">${t}</span>${isAdmin()?`<button class="ib" data-ru="${u.uid}" title="Thu hồi">${ic('x')}</button>`:''}</div>`}).join(''):'<div class="empty" style="padding:20px">Chưa cấp quyền cho ai</div>'}</div>`,d=>{
+    $('#d-add',d)&&($('#d-add',d).onclick=()=>grantForm(null,id));$('#d-ed',d)&&($('#d-ed',d).onclick=()=>botForm(id));
+    $('#d-rs',d)&&($('#d-rs',d).onclick=()=>botRestart(id));$('#d-dl',d)&&($('#d-dl',d).onclick=()=>botDelete(id));
+    $$('[data-ru]',d).forEach(x=>x.onclick=()=>confirmBox('Thu hồi quyền?',`Xoá quyền của UID ${x.dataset.ru} trên bot #${id}.`,'Thu hồi',async()=>{const j=await api(`/bots/${id}/access/${x.dataset.ru}`,{method:'DELETE'});toast(j.msg);await loadAll(true);botDrawer(id)}));
+  });
+}
+
+/* ============ Cấp quyền (dùng chung) ============ */
+const CHIPS=[['1 ngày','1d'],['7 ngày','7d'],['30 ngày','30d'],['3 tháng','3m'],['1 năm','1y'],['Vĩnh viễn','vv']];
+function grantForm(uid,botId){
+  const bots=DATA.bots;
+  modal(`<h3>${uid?'Cấp / gia hạn quyền':'Cấp quyền user'}</h3><p>${uid?'UID '+uid:'Nhập UID và chọn bot muốn cấp quyền.'}</p>
+   ${uid?'':`<div class="fld"><label>UID người dùng</label><input id="g-u" inputmode="numeric" placeholder="vd: 15154234185"></div>`}
+   <div class="fld"><label>Bot được cấp quyền</label><div class="chk" id="g-b">${bots.map(b=>`<label><input type="checkbox" value="${b.id}" ${botId===b.id?'checked':''}> #${b.id} ${esc(bname(b))}</label>`).join('')||'<span class="mut">Chưa có bot</span>'}</div>
+   <div class="chips"><button type="button" id="g-all">Chọn tất cả</button><button type="button" id="g-none">Bỏ chọn</button></div></div>
+   <div class="fld"><label>Thời hạn (nếu đã có quyền: cộng thêm vào hạn hiện tại)</label><input id="g-t" value="30d"><div class="chips" id="g-c">${CHIPS.map(c=>`<button type="button" data-t="${c[1]}">${c[0]}</button>`).join('')}</div><div class="hint">Định dạng: 12h, 7d, 4w, 3m, 1y hoặc vv (vĩnh viễn)</div></div>
+   <div class="mb"><button class="btn" data-x>Huỷ</button><button class="btn pri" id="g-ok">Cấp quyền</button></div>`,(o,close)=>{
+    $('#g-c',o).onclick=e=>{if(e.target.dataset.t)$('#g-t',o).value=e.target.dataset.t};
+    $('#g-all',o).onclick=()=>$$('#g-b input',o).forEach(i=>i.checked=true);$('#g-none',o).onclick=()=>$$('#g-b input',o).forEach(i=>i.checked=false);
+    $('#g-ok',o).onclick=async()=>{
+      const ids=$$('#g-b input:checked',o).map(i=>+i.value),u=uid||$('#g-u',o).value.trim();
+      if(!/^\d+$/.test(String(u)))return toast('UID phải là số',1);if(!ids.length)return toast('Chọn ít nhất 1 bot',1);
+      const bt=$('#g-ok',o);bt.disabled=true;bt.innerHTML='<span class="spin"></span>';
+      try{const j=await api('/users',{method:'POST',body:JSON.stringify({uid:u,bots:ids,time:$('#g-t',o).value})});close();toast(j.msg);await loadAll(true);if(drawerClose&&botId)botDrawer(botId)}
+      catch(e){toast(e.message,1);bt.disabled=false;bt.textContent='Cấp quyền'}};
+  });
+}
+
+/* ============ Trang: Người dùng ============ */
+function pUsers(v){
+  if(!$('#uhead')){
+    v.innerHTML=`<div class="page"><div class="head" id="uhead"><h1>Người dùng & quyền</h1><span class="sp"></span>
+      <div class="seg" id="uf"><button data-f="all">Tất cả</button><button data-f="on">Còn hạn</button><button data-f="off">Hết hạn</button></div>
+      <select class="btn" id="usort"><option value="def">Sắp xếp: mặc định</option><option value="exp">Sắp hết hạn trước</option><option value="bots">Nhiều bot nhất</option><option value="uid">UID tăng dần</option></select>
+      <button class="btn" id="ucsv">${ic('download')} CSV</button>
+      ${isAdmin()?`<button class="btn pri" id="uad">${ic('plus')} Thêm user</button>`:''}</div><div id="ubody"></div></div>`;
+    $('#uf').onclick=e=>{if(e.target.dataset.f){FILTER=e.target.dataset.f;pUsers(v)}};$('#uad')&&($('#uad').onclick=()=>grantForm());
+    $('#usort').value=USORT;$('#usort').onchange=e=>{USORT=e.target.value;store.set('usort',USORT);pUsers(v)};$('#ucsv').onclick=exportUsers;
+  }
+  $$('#uf button').forEach(b=>b.classList.toggle('on',b.dataset.f===FILTER));
+  const q=SEARCH.trim().toLowerCase();
+  const rows=DATA.users.filter(u=>{if(FILTER==='on'&&!u.active)return false;if(FILTER==='off'&&u.active)return false;return !q||String(u.uid).includes(q)||u.grants.some(g=>String(g.bot_id)===q||String(g.bot_name).toLowerCase().includes(q))});
+  rows.sort(usersCmp);
+  const body=$('#ubody');
+  if(!rows.length){body.innerHTML=`<div class="card empty">${ic('users')}<br>${DATA.users.length?'Không có user nào khớp':'Chưa có user nào được cấp quyền'}</div>`;return}
+  body.innerHTML=`<div class="tw"><table><thead><tr><th>UID</th><th>Bot được cấp</th><th class="hide-m">Hạn gần nhất</th><th>Trạng thái</th><th></th></tr></thead><tbody>${rows.map(u=>{
+    const act=u.grants.filter(g=>!g.expired).sort((a,b)=>{const x=a.forever||a.left_sec==null?Infinity:a.left_sec,y=b.forever||b.left_sec==null?Infinity:b.left_sec;return x===y?0:x<y?-1:1})[0];const[t,c]=act?leftTag(act):['Hết hạn','x'];
+    return`<tr data-u="${u.uid}"><td><div class="cell"><div class="av2" style="background:${grad(u.uid)}">${esc(String(u.uid).slice(-2))}</div><b class="mono">${u.uid}</b></div></td>
+    <td>${u.grants.length} bot <span class="mut">(${u.active} còn hạn)</span></td><td class="hide-m"><span class="tag ${c}">${t}</span></td>
+    <td><span class="pill ${u.active?'on':'off'}">${u.active?'Có quyền':'Hết hạn'}</span></td>
+    <td>${isAdmin()?`<div class="acts"><button class="btn sm" data-gr="${u.uid}">${ic('plus')}</button><button class="btn sm dng" data-dl="${u.uid}">${ic('trash')}</button></div>`:''}</td></tr>`}).join('')}</tbody></table></div>`;
+  $$('[data-u]',body).forEach(el=>el.onclick=e=>{if(e.target.closest('button'))return;userDrawer(+el.dataset.u)});
+  $$('[data-gr]',body).forEach(el=>el.onclick=()=>grantForm(+el.dataset.gr));
+  $$('[data-dl]',body).forEach(el=>el.onclick=()=>userDelete(+el.dataset.dl));
+}
+function userDelete(uid){const u=DATA.users.find(x=>x.uid===uid);confirmBox('Xoá user?',`UID ${uid} sẽ bị thu hồi quyền trên ${u?u.grants.length:'tất cả'} bot.`,'Xoá user',async()=>{const j=await api(`/users/${uid}`,{method:'DELETE'});closeDrawer();toast(j.msg);loadAll(true)})}
+function userDrawer(uid){
+  const u=DATA.users.find(x=>x.uid===uid);if(!u)return;
+  drawer(`<div class="row" style="justify-content:space-between"><h3 style="font-size:18px">Chi tiết user</h3><button class="ib" data-dx>${ic('x')}</button></div>
+  <div class="cell" style="margin-top:14px"><div class="av2" style="background:${grad(u.uid)};width:52px;height:52px;border-radius:16px">${esc(String(u.uid).slice(-2))}</div><div><b class="mono" style="font-size:17px">${u.uid}</b> <button class="ib" style="display:inline-grid;vertical-align:middle" data-cp="${u.uid}" title="Sao chép UID">${ic('copy')}</button><small>${u.active} bot còn hạn / ${u.grants.length} bot</small></div></div>
+  ${isAdmin()?`<div class="row" style="margin:16px 0"><button class="btn sm pri" id="u-g">${ic('plus')} Cấp / gia hạn</button><button class="btn sm dng" id="u-d">${ic('trash')} Xoá user</button></div>
+  <div class="row" style="margin-bottom:14px"><span class="mut" style="font-size:12.5px">Gia hạn nhanh mọi bot:</span><button class="btn sm" data-qr="7d">+7 ngày</button><button class="btn sm" data-qr="30d">+30 ngày</button></div>`:''}
+  <h3 style="font-size:14px;margin:12px 0 10px">Bot được cấp quyền</h3><div class="ulist">${u.grants.map(g=>{const[t,c]=leftTag(g);return`<div class="u"><div style="flex:1;min-width:0"><b>#${g.bot_id} ${esc(g.bot_name||'')}</b><div class="mut" style="font-size:12px">Hết hạn: ${g.forever?'không bao giờ':esc(g.expire)}</div></div><span class="tag ${c}">${t}</span>${isAdmin()?`<button class="ib" data-rv="${g.bot_id}" title="Thu hồi">${ic('x')}</button>`:''}</div>`}).join('')}</div>`,d=>{
+    $('#u-g',d)&&($('#u-g',d).onclick=()=>grantForm(uid));
+    $$('[data-qr]',d).forEach(b=>b.onclick=()=>quickRenew(uid,u.grants.map(g=>g.bot_id),b.dataset.qr,()=>DATA.users.find(z=>z.uid===uid)&&userDrawer(uid)));$('#u-d',d)&&($('#u-d',d).onclick=()=>userDelete(uid));
+    $$('[data-rv]',d).forEach(x=>x.onclick=()=>confirmBox('Thu hồi quyền?',`Thu hồi quyền của UID ${uid} trên bot #${x.dataset.rv}.`,'Thu hồi',async()=>{const j=await api(`/users/${uid}`,{method:'PATCH',body:JSON.stringify({revoke:[+x.dataset.rv]})});toast(j.msg);await loadAll(true);DATA.users.find(z=>z.uid===uid)?userDrawer(uid):closeDrawer()}));
+  });
+}
+
+/* ============ Trang: Bán hàng & nhắc hạn ============ */
+const SALES_KEY='zan_sales_v1', NOTES_KEY='zan_user_notes_v1', PRICE_KEY='zan_prices_v1';
+const readLocal=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};
+const writeLocal=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+function pSales(v){
+ const prices=readLocal(PRICE_KEY,[{name:'1 ngày',time:'1d',price:0},{name:'1 tuần',time:'7d',price:0},{name:'1 tháng',time:'30d',price:0}]);
+ const notes=readLocal(NOTES_KEY,{}), sales=readLocal(SALES_KEY,[]), due=expiring(3);
+ const revenue=sales.filter(z=>z.month===new Date().toISOString().slice(0,7)).reduce((a,z)=>a+(+z.price||0),0);
+ v.innerHTML=`<div class="page"><div class="head"><h1>Bán hàng & nhắc hạn</h1><span class="sp"></span><button class="btn" id="sales-csv">Xuất doanh thu</button></div>
+ <div class="kpis"><div class="card kpi g"><div class="ic">${ic('zap')}</div><div><b>${revenue.toLocaleString('vi-VN')}đ</b><span>Doanh thu ước tính tháng này</span></div></div><div class="card kpi w"><div class="ic">${ic('bell')}</div><div><b>${due.length}</b><span>Quyền sắp hết hạn (3 ngày)</span></div></div><div class="card kpi"><div class="ic">${ic('users')}</div><div><b>${sales.length}</b><span>Lượt cấp/gia hạn đã ghi nhận</span></div></div></div>
+ <div class="card" style="margin-bottom:14px"><h3>${ic('users')} Kết bạn và cấp quyền như Telegram</h3><div class="row"><div class="fld" style="flex:1;min-width:180px"><label>UID người chơi</label><input id="friend-uid" inputmode="numeric" placeholder="Nhập UID"></div><div class="fld" style="flex:1;min-width:180px"><label>Bot gửi kết bạn</label><select id="friend-bot">${(DATA.bots||[]).map(b=>`<option value="${b.id}">#${b.id} ${esc(bname(b))}</option>`).join('')}</select></div><div class="fld" style="flex:1;min-width:140px"><label>Thời hạn quyền</label><input id="friend-time" value="7d" placeholder="7d / 30d / vv"></div></div><button class="btn pri" id="friend-grant">${ic('users')} Gửi kết bạn + cấp quyền</button><p class="hint">Cấp quyền sau khi API kết bạn báo thành công. Dùng 1d, 7d, 30d, 3m hoặc vv.</p></div>
+ <div class="cols"><div class="card"><h3>${ic('key')} Cấp quyền nhanh + ghi nhận doanh thu</h3>
+ <div class="fld"><label>UID khách</label><input id="sale-uid" inputmode="numeric" placeholder="Nhập UID Free Fire"></div>
+ <div class="fld"><label>Bot áp dụng</label><div class="chk" id="sale-bots">${(DATA.bots||[]).map(b=>`<label><input type="checkbox" value="${b.id}"> #${b.id} ${esc(bname(b))}</label>`).join('')||'<span class="mut">Chưa có bot</span>'}</div></div>
+ <div class="fld"><label>Gói</label><select id="sale-package">${prices.map((p,i)=>`<option value="${i}">${esc(p.name)} • ${Number(p.price||0).toLocaleString('vi-VN')}đ</option>`).join('')}</select></div>
+ <div class="fld"><label>Ghi chú đơn (tuỳ chọn)</label><input id="sale-desc" placeholder="Tên khách / đã thanh toán..."></div>
+ <button class="btn pri" id="sale-grant">Cấp quyền và ghi doanh thu</button><p class="hint">Ghi nhận doanh thu lưu trên trình duyệt này, không đồng bộ sang thiết bị khác.</p></div>
+ <div class="card"><h3>${ic('bell')} Nhắc khách sắp hết hạn</h3>${due.length?due.slice(0,12).map(z=>`<div class="xrow"><span class="mono">${z.uid}</span><span class="gr">#${z.bot_id} ${esc(z.bot_name||'')}</span><span class="tag w">${leftTag(z.g)[0]}</span><button class="btn sm" data-remind="${z.uid}" data-left="${Math.max(0,Math.ceil(z.left/86400))}">Copy tin nhắn</button></div>`).join(''):'<div class="empty">Chưa có user sắp hết hạn.</div>'}<p class="hint">Tin nhắn được copy để bạn tự gửi qua Telegram.</p></div></div>
+ <div class="card" style="margin-bottom:14px"><h3>${ic('refresh')} Gia hạn hàng loạt</h3><div class="fld"><label>Chọn khách cần gia hạn</label><div class="chk" id="bulk-users">${(DATA.users||[]).map(u=>`<label><input type="checkbox" value="${u.uid}"> ${u.uid} (${u.grants.length} bot)</label>`).join('')||'<span class="mut">Chưa có user</span>'}</div><div class="chips"><button type="button" id="bulk-select">Chọn tất cả</button><button type="button" id="bulk-clear">Bỏ chọn</button></div></div><div class="row"><select id="bulk-package" class="btn">${prices.map((p,i)=>`<option value="${i}">${esc(p.name)} • ${esc(p.time)}</option>`).join('')}</select><button class="btn pri" id="bulk-renew">Gia hạn các user đã chọn</button></div></div>
+ <div class="card" style="margin-bottom:14px"><h3>${ic('users')} Ghi chú khách hàng</h3><div class="tw"><table><thead><tr><th>UID</th><th>Bot</th><th>Ghi chú</th><th></th></tr></thead><tbody>${(DATA.users||[]).map(u=>`<tr><td class="mono">${u.uid}</td><td>${u.grants.length}</td><td><input data-note="${u.uid}" value="${esc(notes[u.uid]||'')}" placeholder="Tên khách / thanh toán..." style="width:100%;min-width:140px;padding:8px;border-radius:9px;background:var(--bg2);border:1px solid var(--line2)"></td><td><button class="btn sm" data-note-save="${u.uid}">Lưu</button></td></tr>`).join('')||'<tr><td colspan="4">Chưa có user</td></tr>'}</tbody></table></div></div>
+ <div class="card"><h3>${ic('cog')} Bảng giá gói (chỉ dùng trong dashboard)</h3><div id="price-list">${prices.map((p,i)=>`<div class="row" style="margin-bottom:8px"><input data-pname="${i}" value="${esc(p.name)}" placeholder="Tên gói" style="flex:1;min-width:90px;padding:9px;border-radius:9px;background:var(--bg2);border:1px solid var(--line2)"><input data-ptime="${i}" value="${esc(p.time)}" placeholder="7d" style="width:70px;padding:9px;border-radius:9px;background:var(--bg2);border:1px solid var(--line2)"><input data-pprice="${i}" type="number" min="0" value="${+p.price||0}" placeholder="Giá VNĐ" style="width:110px;padding:9px;border-radius:9px;background:var(--bg2);border:1px solid var(--line2)"><button class="btn sm dng" data-pdel="${i}">Xoá</button></div>`).join('')}</div><div class="row"><button class="btn" id="price-add">Thêm gói</button><button class="btn pri" id="price-save">Lưu bảng giá</button></div></div>
+ <div class="card" style="margin-top:14px"><h3>${ic('log')} Lịch sử doanh thu đã ghi nhận</h3>${sales.length?sales.slice().reverse().slice(0,30).map(z=>`<div class="xrow"><span class="mono">${esc(z.uid)}</span><span class="gr">${esc(z.package)} • ${esc(z.time)}</span><b>${(+z.price||0).toLocaleString('vi-VN')}đ</b></div>`).join(''):'<div class="empty">Chưa có giao dịch.</div>'}</div></div>`;
+ $('#bulk-select').onclick=()=>$$('#bulk-users input',v).forEach(i=>i.checked=true);$('#bulk-clear').onclick=()=>$$('#bulk-users input',v).forEach(i=>i.checked=false);$('#bulk-renew').onclick=async()=>{const uids=$$('#bulk-users input:checked',v).map(i=>i.value),pkg=prices[+$('#bulk-package').value];if(!uids.length||!pkg)return toast('Chọn ít nhất một user và một gói',1);let ok=0;for(const uid of uids){const u=(DATA.users||[]).find(z=>String(z.uid)===String(uid));if(!u)continue;try{await api(`/users/${uid}`,{method:'PATCH',body:JSON.stringify({grant:u.grants.map(g=>g.bot_id),time:pkg.time,mode:'extend'})});ok++}catch(e){toast(`UID ${uid}: ${e.message}`,1)}}toast(`Đã gia hạn ${ok}/${uids.length} user`);await loadAll(true);pSales($('#view'))};
+ $('#friend-grant').onclick=async()=>{const uid=$('#friend-uid').value.trim(),bot_id=+$('#friend-bot').value,time=$('#friend-time').value.trim(),bt=$('#friend-grant');if(!/^\d+$/.test(uid)||!bot_id||!time)return toast('Nhập UID, chọn bot và thời hạn',1);bt.disabled=true;try{const j=await api('/friend-grant',{method:'POST',body:JSON.stringify({uid,bot_id,time})});toast(j.msg);await loadAll(true);pSales($('#view'))}catch(e){toast(e.message,1)}finally{bt.disabled=false}};
+ $('#sale-grant').onclick=async()=>{const uid=$('#sale-uid').value.trim(),ids=$$('#sale-bots input:checked').map(i=>+i.value),pkg=prices[+$('#sale-package').value];if(!/^\d+$/.test(uid)||!ids.length||!pkg)return toast('Kiểm tra UID, bot và gói',1);try{const j=await api('/users',{method:'POST',body:JSON.stringify({uid,bots:ids,time:pkg.time})});sales.push({uid,package:pkg.name,time:pkg.time,price:+pkg.price||0,month:new Date().toISOString().slice(0,7),at:new Date().toISOString(),desc:$('#sale-desc').value});writeLocal(SALES_KEY,sales);toast(j.msg+' • đã ghi doanh thu');await loadAll(true);pSales($('#view'))}catch(e){toast(e.message,1)}};
+ $$('[data-remind]',v).forEach(b=>b.onclick=()=>{const uid=b.dataset.remind,days=b.dataset.left;copyText(`Chào bạn, quyền sử dụng bot của UID ${uid} còn khoảng ${days} ngày nữa sẽ hết hạn. Bạn muốn gia hạn tiếp để không bị gián đoạn không?`) });
+ $$('[data-note-save]',v).forEach(b=>b.onclick=()=>{const uid=b.dataset.noteSave;notes[uid]=$(`[data-note="${uid}"]`,v).value;writeLocal(NOTES_KEY,notes);toast('Đã lưu ghi chú trên trình duyệt')});
+ $('#price-add').onclick=()=>{prices.push({name:'Gói mới',time:'7d',price:0});writeLocal(PRICE_KEY,prices);pSales(v)};
+ $$('[data-pdel]',v).forEach(b=>b.onclick=()=>{prices.splice(+b.dataset.pdel,1);writeLocal(PRICE_KEY,prices);pSales(v)});
+ $('#price-save').onclick=()=>{const next=prices.map((p,i)=>({name:$(`[data-pname="${i}"]`,v).value.trim()||'Gói',time:$(`[data-ptime="${i}"]`,v).value.trim(),price:Math.max(0,+$(`[data-pprice="${i}"]`,v).value||0)}));if(next.some(p=>!/^\d{1,4}[hdwmy]$|^vv$/i.test(p.time)))return toast('Thời hạn phải dạng 1d, 7d, 30d, 3m hoặc vv',1);writeLocal(PRICE_KEY,next);toast('Đã lưu bảng giá');pSales(v)};
+ $('#sales-csv').onclick=()=>downloadCSV('doanh-thu.csv',[['UID','Gói','Thời hạn','Giá','Thời gian','Ghi chú'],...sales.map(z=>[z.uid,z.package,z.time,z.price,z.at,z.desc||''])]);
+}
+
+/* ============ Trang: Log bot (console live) ============ */
+let CON={since:0,lines:[],paused:false,auto:true,timer:null,lvl:'',ok:true,err:'',src:'local'};
+const lvlOf=t=>/traceback|exception|error|❌|lỗi|failed|thất bại|fatal/i.test(t)?'er':/⚠|warn|timeout|disconnect|mất kết nối|reconnect/i.test(t)?'wn':/✅|success|thành công|online ok|started|đã (thêm|gửi|kết)/i.test(t)?'ok':/\[(bot|botmng|panel|admin|ping)\]/i.test(t)?'in':'';
+function conLine(l){const c=lvlOf(l.s);return`<div class="tl ${c}"><span class="tm">${esc(l.t)}</span><span class="tx">${esc(l.s)}</span></div>`}
+function conVisible(){const q=SEARCH.trim().toLowerCase();return CON.lines.filter(l=>(!CON.lvl||lvlOf(l.s)===CON.lvl)&&(!q||l.s.toLowerCase().includes(q)))}
+function conPaint(){
+  const t=$('#term');if(!t)return;const rows=conVisible();
+  t.innerHTML=rows.length?rows.map(conLine).join(''):`<div class="empty">${CON.lines.length?'Không có dòng nào khớp bộ lọc':'Chưa có log. Khi bot in ra màn hình, log sẽ hiện ở đây.'}</div>`;
+  if(CON.auto)t.scrollTop=t.scrollHeight;
+  const c=$('#con-n');if(c)c.textContent=`${rows.length}/${CON.lines.length} dòng`;
+}
+function conStatus(){
+  const e=$('#live');if(!e)return;
+  e.className='live'+(CON.paused?' pz':!CON.ok?' off':'');
+  e.innerHTML=`<i></i>${CON.paused?'Đã tạm dừng':!CON.ok?'Mất kết nối':'Trực tiếp • cập nhật mỗi 3 giây'}${CON.src==='remote'?' • từ máy bot':''}`;
+  const er=$('#con-err');if(er){er.style.display=CON.err?'':'none';er.textContent=CON.err||''}
+}
+async function conTick(){
+  if(ROUTE!=='console'||!$('#term')){clearInterval(CON.timer);CON.timer=null;return}
+  if(CON.paused)return;
+  try{
+    const j=await api('/console?since='+CON.since);
+    CON.ok=true;CON.err=j.error||'';CON.src=j.source||'local';
+    if(j.reset){CON.lines=[]}
+    if(j.lines.length){CON.lines.push(...j.lines);if(CON.lines.length>1500)CON.lines=CON.lines.slice(-1500);conPaint()}
+    else if(j.reset)conPaint();
+    CON.since=j.last;
+  }catch(e){CON.ok=false;CON.err=e.message}
+  conStatus();
+}
+function pConsole(v){
+  if($('#chead')){conStatus();return}
+  CON.since=0;CON.lines=[];
+  v.innerHTML=`<div class="page"><div class="head" id="chead"><h1>Log bot trực tiếp</h1><span class="live" id="live"></span><span class="sp"></span>
+    <div class="seg" id="c-l"><button data-l="" class="on">Tất cả</button><button data-l="er">Lỗi</button><button data-l="wn">Cảnh báo</button><button data-l="ok">OK</button></div>
+    <button class="btn" id="c-p">Tạm dừng</button><button class="btn" id="c-a">Tự cuộn: bật</button><button class="btn" id="c-d">Tải .txt</button><button class="btn" id="c-c">Xoá màn hình</button></div>
+    <div class="card" id="con-err" style="display:none;border-color:var(--bad);color:var(--bad);margin-bottom:12px"></div>
+    <div class="term" id="term"></div><div class="mut" style="font-size:12px;margin-top:8px"><span id="con-n"></span> • Token đã được che tự động • Ô tìm kiếm ở trên cùng sẽ lọc log</div></div>`;
+  $('#c-l').onclick=e=>{if(e.target.dataset.l===undefined)return;CON.lvl=e.target.dataset.l;$$('#c-l button').forEach(b=>b.classList.toggle('on',b===e.target));conPaint()};
+  $('#c-p').onclick=()=>{CON.paused=!CON.paused;$('#c-p').textContent=CON.paused?'Tiếp tục':'Tạm dừng';conStatus();if(!CON.paused)conTick()};
+  $('#c-a').onclick=()=>{CON.auto=!CON.auto;$('#c-a').textContent='Tự cuộn: '+(CON.auto?'bật':'tắt');if(CON.auto)conPaint()};
+  $('#c-c').onclick=()=>{CON.lines=[];conPaint()};
+  $('#c-d').onclick=()=>{const b=new Blob([conVisible().map(l=>l.t+' '+l.s).join('\n')],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='bot-log.txt';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
+  $('#term').addEventListener('wheel',()=>{const t=$('#term');setTimeout(()=>{const atEnd=t.scrollHeight-t.scrollTop-t.clientHeight<30;if(!atEnd&&CON.auto){CON.auto=false;$('#c-a').textContent='Tự cuộn: tắt'}},50)},{passive:true});
+  conStatus();conPaint();conTick();clearInterval(CON.timer);CON.timer=setInterval(conTick,3000);
+}
+
+/* ============ Trang: Nhật ký ============ */
+let LOGF={type:'',status:'',hours:''};
+async function pLogs(v){
+  if(!$('#lhead')){
+    v.innerHTML=`<div class="page"><div class="head" id="lhead"><h1>Nhật ký hoạt động</h1><span class="sp"></span>
+     <select class="btn" id="l-t"><option value="">Mọi loại</option><option value="auth">Đăng nhập</option><option value="bot">Bot</option><option value="user">User</option><option value="settings">Cài đặt</option></select>
+     <select class="btn" id="l-s"><option value="">Mọi trạng thái</option><option value="ok">Thành công</option><option value="fail">Thất bại</option><option value="warn">Cảnh báo</option></select>
+     <select class="btn" id="l-h"><option value="">Mọi thời gian</option><option value="1">1 giờ qua</option><option value="24">24 giờ qua</option><option value="168">7 ngày qua</option></select>
+     ${isAdmin()?`<button class="btn dng" id="l-c">${ic('trash')} Xoá log</button>`:''}</div><div class="card" style="padding:0" id="lbody"><div class="skel"></div></div></div>`;
+    [['l-t','type'],['l-s','status'],['l-h','hours']].forEach(([i,k])=>$('#'+i).onchange=e=>{LOGF[k]=e.target.value;pLogs(v)});
+    $('#l-c')&&($('#l-c').onclick=()=>confirmBox('Xoá toàn bộ nhật ký?','Hành động này không thể hoàn tác.','Xoá log',async()=>{await api('/logs',{method:'DELETE'});toast('Đã xoá nhật ký');pLogs(v)}));
+  }
+  const qs=new URLSearchParams({...LOGF,q:SEARCH});
+  try{const j=await api('/logs?'+qs);
+    $('#lbody').innerHTML=j.logs.length?`<div class="lg-row mut" style="font-size:11.5px;text-transform:uppercase;letter-spacing:.6px"><span>Thời gian</span><span class="c2">Loại</span><span>Hành động</span><span>Kết quả</span></div>`+j.logs.map(r=>`<div class="lg-row"><span class="mono mut c1">${esc(r.t)}</span><span class="c2"><span class="pill pp">${esc(r.type)}</span></span><span><b>${esc(r.action)}</b> <span class="mut">• ${esc(r.actor)}</span><br><small class="mut">${esc(r.detail||'')}</small></span><span class="pill ${r.status==='ok'?'on':r.status==='fail'?'off':'wn'}">${r.status==='ok'?'OK':r.status==='fail'?'Lỗi':'Cảnh báo'}</span></div>`).join('')+`<div class="mut" style="padding:10px 16px;font-size:12px">Hiển thị ${j.logs.length}/${j.total} dòng • token đã bị che tự động</div>`:`<div class="empty">${ic('inbox')}<br>Không có dòng log nào khớp</div>`;
+  }catch(e){$('#lbody').innerHTML=`<div class="empty">${esc(e.message)}</div>`}
+}
+
+/* ============ Trang: Cài đặt ============ */
+async function pSettings(v){
+  let s={};try{s=(await api('/settings')).info}catch(e){toast(e.message,1)}
+  v.innerHTML=`<div class="page"><div class="head"><h1>Cài đặt</h1></div><div class="cols3">
+  <div class="card"><h3>${ic('pulse')} Giao diện & làm mới</h3>
+    <div class="fld"><label>Chế độ</label><div class="seg" id="s-th"><button data-th="dark" class="${curTheme()==='dark'?'on':''}">Tối</button><button data-th="light" class="${curTheme()==='light'?'on':''}">Sáng</button></div></div>
+    <div class="fld"><label>Màu chủ đạo</label><div class="row" id="s-ac">${AC.map(a=>`<button class="sw ${document.documentElement.dataset.ac===a[0]?'on':''}" data-ac="${a[0]}" title="${a[1]}" style="background:${a[2]}"></button>`).join('')}</div></div>
+    <div class="fld"><label>Tự cập nhật dữ liệu mỗi</label><select id="s-r">${[5,15,30,60,0].map(x=>`<option value="${x}" ${REFRESH===x?'selected':''}>${x?x+' giây':'Tắt tự cập nhật'}</option>`).join('')}</select><div class="hint">Lưu trên trình duyệt này.</div></div></div>
+  <div class="card"><h3>${ic('key')} Tài khoản & mật khẩu</h3>
+    ${isAdmin()?`<div class="fld"><label>Mật khẩu admin hiện tại</label><input id="p-c" type="password" ${s.admin_pw_env?'disabled placeholder="Đặt bằng biến môi trường"':''}></div>
+    <div class="fld"><label>Mật khẩu admin mới (≥ 8 ký tự)</label><input id="p-n" type="password" ${s.admin_pw_env?'disabled':''}></div><button class="btn pri" id="p-s" ${s.admin_pw_env?'disabled':''}>Đổi mật khẩu admin</button>
+    <hr style="border:0;border-top:1px solid var(--line);margin:18px 0"><div class="fld"><label>Tài khoản viewer (chỉ xem) — ${s.viewer_enabled?'đang bật':'đang tắt'}</label><input id="v-n" type="password" placeholder="Mật khẩu viewer mới (để trống = tắt)" ${s.viewer_pw_env?'disabled':''}></div><button class="btn" id="v-s" ${s.viewer_pw_env?'disabled':''}>Lưu viewer</button>`
+    :'<div class="mut">Chỉ admin mới đổi được mật khẩu.</div>'}</div>
+  <div class="card"><h3>${ic('shield')} Bảo mật & hệ thống</h3><dl class="kv" style="grid-template-columns:130px 1fr">
+    <dt>Phiên đăng nhập</dt><dd>${s.session_hours||'–'} giờ</dd><dt>API key (script cũ)</dt><dd>${s.api_key_set?'<span class="tag f">Đã đặt</span>':'<span class="tag w">Chưa đặt • chỉ localhost</span>'}</dd><dt>Python</dt><dd>${esc(s.python||'–')}</dd><dt>Dữ liệu panel</dt><dd class="mono" style="font-size:12px">${esc(s.data_dir||'–')}</dd></dl>
+    <button class="btn dng" id="s-lo">${ic('out')} Đăng xuất</button></div></div><div class="card"><h3>${ic('refresh')} Tự động & sao lưu</h3><div class="fld"><label><input type="checkbox" id="auto-revoke" checked> Tự thu hồi quyền đã hết hạn (mỗi phút)</label></div><div class="fld"><label><input type="checkbox" id="auto-restart"> Tự restart bot offline (tối đa 1 lần/10 phút mỗi bot)</label></div><button class="btn pri" id="auto-save">Lưu tự động hoá</button><hr style="border:0;border-top:1px solid var(--line);margin:16px 0"><button class="btn" id="backup-down">Tải backup bot.json</button> <label class="btn" for="backup-file">Chọn file khôi phục</label><input id="backup-file" type="file" accept="application/json,.json" hidden><p class="hint">Khôi phục yêu cầu tất cả bot đã dừng; sau đó cần khởi động lại start.py.</p></div></div></div>`;
+  let au={};try{au=(await api('/automation')).info}catch{};$('#auto-revoke').checked=au.auto_revoke!==false;$('#auto-restart').checked=!!au.auto_restart;$('#auto-save').onclick=async()=>{try{const j=await api('/automation',{method:'POST',body:JSON.stringify({auto_revoke:$('#auto-revoke').checked,auto_restart:$('#auto-restart').checked})});toast(j.msg)}catch(e){toast(e.message,1)}};$('#backup-down').onclick=()=>{const a=document.createElement('a');a.href='/panel/api/backup';a.download='bot-backup.json';a.click()};$('#backup-file').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const data=JSON.parse(await f.text());const j=await api('/backup',{method:'POST',body:JSON.stringify({data})});toast(j.msg)}catch(err){toast(err.message,1)}e.target.value=''};
+  $('#s-r').onchange=e=>{REFRESH=+e.target.value;store.set('refresh',REFRESH);startTimer();toast('Đã lưu')};
+  $('#s-lo').onclick=()=>$('#lo').click();
+  $('#s-th').onclick=e=>{const t=e.target.dataset.th;if(!t)return;setTheme(t);$$('#s-th button').forEach(b=>b.classList.toggle('on',b.dataset.th===t))};
+  $('#s-ac').onclick=e=>{const a=e.target.dataset.ac;if(!a)return;document.documentElement.dataset.ac=a;store.set('ac',a);$$('#s-ac .sw').forEach(b=>b.classList.toggle('on',b.dataset.ac===a))};
+  $('#p-s')&&($('#p-s').onclick=async()=>{try{const j=await api('/password',{method:'POST',body:JSON.stringify({account:'admin',current:$('#p-c').value,new:$('#p-n').value})});toast(j.msg);$('#p-c').value=$('#p-n').value=''}catch(e){toast(e.message,1)}});
+  $('#v-s')&&($('#v-s').onclick=async()=>{try{const j=await api('/password',{method:'POST',body:JSON.stringify({account:'viewer',new:$('#v-n').value})});toast(j.msg);pSettings(v)}catch(e){toast(e.message,1)}});
+}
+
+/* ============ tiện ích mới ============ */
+const AC=[['violet','Tím','linear-gradient(135deg,#8b5cf6,#6d4aff)'],['blue','Xanh dương','linear-gradient(135deg,#38bdf8,#0ea5e9)'],['rose','Hồng','linear-gradient(135deg,#fb7185,#e11d48)'],['green','Xanh lá','linear-gradient(135deg,#34d399,#059669)']];
+let DASH_ANIM=false,BSORT=store.get('bsort','def'),USORT=store.get('usort','def');
+function countUp(el){const t=+el.dataset.n||0;if(!t){el.textContent=0;return}const t0=performance.now(),d=700;(function f(n){const k=Math.min(1,(n-t0)/d);el.textContent=Math.round(t*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(f)})(t0)}
+function tickClock(){const e=document.getElementById('clk');if(!e)return;const n=new Date();e.textContent=n.toLocaleTimeString('vi-VN',{hour12:false});const d=document.getElementById('clkd');if(d)d.textContent=n.toLocaleDateString('vi-VN',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'})}
+setInterval(tickClock,1000);
+function expiring(days=3){const r=[];for(const u of DATA.users||[])for(const g of u.grants||[]){if(g.forever||g.expired||g.left_sec==null)continue;if(g.left_sec<=days*86400)r.push({uid:u.uid,bot_id:g.bot_id,bot_name:g.bot_name,left:g.left_sec,g})}return r.sort((a,b)=>a.left-b.left)}
+async function quickRenew(uid,bots,time,after){try{const j=await api('/users',{method:'POST',body:JSON.stringify({uid:String(uid),bots,time})});toast(j.msg||'Đã gia hạn');await loadAll(true);after&&after()}catch(e){toast(e.message,1)}}
+function filterBots(){const r=filterBots0().slice();
+  if(BSORT==='on')r.sort((a,b)=>(b.online-a.online)||(a.id-b.id));else if(BSORT==='users')r.sort((a,b)=>b.users.length-a.users.length);else if(BSORT==='name')r.sort((a,b)=>bname(a).localeCompare(bname(b),'vi'));return r}
+const uMin=u=>{let m=Infinity;for(const g of u.grants){if(g.expired||g.forever||g.left_sec==null)continue;m=Math.min(m,g.left_sec)}return m};
+function usersCmp(a,b){if(USORT==='exp'){const x=uMin(a),y=uMin(b);return x===y?0:x<y?-1:1}if(USORT==='bots')return b.grants.length-a.grants.length;if(USORT==='uid')return a.uid-b.uid;return 0}
+function downloadCSV(name,rows){const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';const b=new Blob(['﻿'+rows.map(r=>r.map(q).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('Đã xuất '+name)}
+function exportBots(){downloadCSV('bots.csv',[['ID','Bot UID','Nickname','Ghi chú','Trạng thái','Guild','Số user']].concat((DATA.bots||[]).map(b=>[b.id,b.botid,b.nickname,b.label,b.online?'Online':'Offline',b.guild?'Bật':'Tắt',b.users.length])))}
+function exportUsers(){downloadCSV('users.csv',[['UID','Số bot','Còn hạn','Hạn gần nhất','Danh sách bot']].concat((DATA.users||[]).map(u=>{const[t]=uMin(u)===Infinity?['–']:leftTag({left_sec:uMin(u)});return[u.uid,u.grants.length,u.active,t,u.grants.map(g=>'#'+g.bot_id).join(' ')]})))}
+async function copyText(t){try{await navigator.clipboard.writeText(t)}catch{const i=document.createElement('input');i.value=t;document.body.append(i);i.select();document.execCommand('copy');i.remove()}toast('Đã sao chép '+t)}
+document.addEventListener('click',e=>{const c=e.target.closest('[data-cp]');if(c){e.stopPropagation();copyText(c.dataset.cp)}},true);
+function restartOffline(){const off=(DATA.bots||[]).filter(b=>!b.online);if(!off.length)return toast('Không có bot nào đang offline');
+  confirmBox('Restart bot offline?',`${off.length} bot đang offline sẽ được khởi động lại lần lượt.`,'Restart',async()=>{let ok=0;for(const b of off){try{await api(`/bots/${b.id}/restart`,{method:'POST'});ok++}catch{}await new Promise(r=>setTimeout(r,600))}toast(`Đã gửi lệnh restart ${ok}/${off.length} bot`);setTimeout(()=>loadAll(true),4000)},false)}
+function openPalette(){
+  if(!ROLE||$('.ov.show'))return;
+  const acts=[...Object.entries(PAGES).map(([k,[t,i]])=>({t:'Đi tới: '+t,i,f:()=>go(k)})),
+    ...(isAdmin()?[{t:'Thêm bot mới',i:'plus',f:()=>botForm()},{t:'Cấp quyền cho user',i:'key',f:()=>grantForm()},{t:'Bán hàng & nhắc hạn',i:'bell',f:()=>go('sales')},{t:'Restart tất cả bot offline',i:'power',f:restartOffline}]:[]),
+    {t:'Xuất danh sách bot (CSV)',i:'download',f:exportBots},{t:'Xuất danh sách user (CSV)',i:'download',f:exportUsers},
+    {t:'Đổi giao diện sáng / tối',i:'sun',f:toggleTheme},{t:'Làm mới dữ liệu',i:'refresh',f:()=>loadAll()},{t:'Đăng xuất',i:'out',f:()=>$('#lo').click()}];
+  modal(`<input class="pin" id="pq" placeholder="Gõ lệnh… vd: thêm bot, log, xuất, sáng" autocomplete="off"><div id="pl" style="margin-top:10px;max-height:340px;overflow:auto"></div><div class="mut" style="font-size:12px;margin-top:8px"><span class="kbd">↑</span> <span class="kbd">↓</span> chọn • <span class="kbd">Enter</span> chạy • <span class="kbd">Esc</span> đóng</div>`,(o,close)=>{
+    let sel=0,list=acts;const draw=()=>{$('#pl',o).innerHTML=list.length?list.map((a,i)=>`<div class="pi ${i===sel?'on':''}" data-i="${i}">${ic(a.i)}<span>${esc(a.t)}</span></div>`).join(''):'<div class="empty" style="padding:18px">Không có lệnh nào khớp</div>';const e=$('.pi.on',o);e&&e.scrollIntoView({block:'nearest'})};
+    const run=i=>{const a=list[i];if(a){close();setTimeout(a.f,30)}};
+    $('#pq',o).oninput=e=>{const q=e.target.value.trim().toLowerCase();list=acts.filter(a=>a.t.toLowerCase().includes(q));sel=0;draw()};
+    $('#pq',o).onkeydown=e=>{if(e.key==='ArrowDown'){e.preventDefault();sel=Math.min(list.length-1,sel+1);draw()}else if(e.key==='ArrowUp'){e.preventDefault();sel=Math.max(0,sel-1);draw()}else if(e.key==='Enter'){e.preventDefault();run(sel)}else if(e.key==='Escape')close()};
+    $('#pl',o).onclick=e=>{const p=e.target.closest('.pi');p&&run(+p.dataset.i)};draw();
+  });
+}
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openPalette()}
+  else if(e.key==='/'&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)&&$('#gs')&&!$('.ov.show')){e.preventDefault();$('#gs').focus()}
+});
+
+/* ============ khởi động ============ */
+function startTimer(){clearInterval(TIMER);if(REFRESH>0)TIMER=setInterval(()=>{if(!document.hidden&&!$('.ov.show'))loadAll(true)},REFRESH*1000)}
+async function boot(){
+  ROUTE=PAGES[location.hash.slice(1)]?location.hash.slice(1):'dash';
+  shell();DATA={};renderPage();await loadAll();startTimer();
+}
+(async()=>{
+  try{const j=await api('/me');CSRF=j.csrf;ROLE=j.role;boot()}catch{showLogin()}
+})();
+</script>
+</body>
+</html>
