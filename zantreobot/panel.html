@@ -367,7 +367,7 @@ function showLogin(msg){
 }
 
 /* ============ khung ứng dụng ============ */
-const PAGES={dash:['Tổng quan','grid'],bots:['Quản lý bot','bot'],users:['Người dùng & quyền','users'],console:['Log bot (live)','term'],logs:['Nhật ký hoạt động','log'],settings:['Cài đặt','cog']};
+const PAGES={dash:['Tổng quan','grid'],bots:['Quản lý bot','bot'],users:['Người dùng & quyền','users'],sales:['Bán hàng & nhắc hạn','bell'],console:['Log bot (live)','term'],logs:['Nhật ký hoạt động','log'],settings:['Cài đặt','cog']};
 function shell(){
   $('#root').innerHTML=`<div class="shell">
   <aside id="side"><div class="brand">${avt('',1)}<div><b>Zan Bot Manager</b><small>Dashboard</small></div></div>
@@ -422,7 +422,7 @@ function renderPage(keepScroll){
   const v=$('#view');
   if(!DATA.bots){v.innerHTML=DATA.err?`<div class="page"><div class="card empty">${ic('pulse')}<br><b>Không tải được dữ liệu</b><p class="mut">${esc(DATA.err)}</p><br><button class="btn pri" onclick="loadAll()">Thử lại</button></div></div>`:loadingHtml;return}
   const y=window.scrollY;const open=document.activeElement&&document.activeElement.id==='gs';
-  ({dash:pDash,bots:pBots,users:pUsers,console:pConsole,logs:pLogs,settings:pSettings})[ROUTE](v);
+  ({dash:pDash,bots:pBots,users:pUsers,sales:pSales,console:pConsole,logs:pLogs,settings:pSettings})[ROUTE](v);
   if(keepScroll)window.scrollTo(0,y);
 }
 
@@ -497,7 +497,7 @@ function pBots(v){
       <div class="seg" id="bf"><button data-f="all">Tất cả</button><button data-f="on">Online</button><button data-f="off">Offline</button></div>
       <div class="seg" id="bv"><button data-v="table">Bảng</button><button data-v="grid">Thẻ</button></div>
       <select class="btn" id="bsort"><option value="def">Sắp xếp: mặc định</option><option value="on">Online trước</option><option value="users">Nhiều user nhất</option><option value="name">Tên A → Z</option></select>
-      <button class="btn" id="bcsv">${ic('download')} CSV</button>${isAdmin()?`<button class="btn" id="broff">${ic('power')} Restart bot offline</button>`:''}
+      <button class="btn" id="bcsv">${ic('download')} CSV</button>${isAdmin()?`<button class="btn" id="broff">${ic('power')} Restart bot offline</button><button class="btn" id="bstartall">Bật tất cả</button><button class="btn" id="bstopall">Tắt tất cả</button><button class="btn" id="brstall">Reset tất cả</button>`:''}
       <button class="btn" id="brf">${ic('refresh')} Làm mới</button>
       ${isAdmin()?`<button class="btn pri" id="bad">${ic('plus')} Thêm bot</button>`:''}</div><div id="bbody"></div></div>`;
     $('#bf').onclick=e=>{if(e.target.dataset.f){FILTER=e.target.dataset.f;pBots(v)}};
@@ -506,6 +506,7 @@ function pBots(v){
     $('#bad')&&($('#bad').onclick=botForm);
     $('#bsort').value=BSORT;$('#bsort').onchange=e=>{BSORT=e.target.value;store.set('bsort',BSORT);pBots(v)};
     $('#bcsv').onclick=exportBots;$('#broff')&&($('#broff').onclick=restartOffline);
+    const bulk=(id,action)=>{const el=$('#'+id);if(el)el.onclick=()=>confirmBox('Xác nhận thao tác?',`Thực hiện ${action} với tất cả bot?`,'Xác nhận',async()=>{try{const j=await api('/bots/bulk',{method:'POST',body:JSON.stringify({action,ids:'all'})});toast(j.msg);setTimeout(()=>loadAll(true),3500)}catch(e){toast(e.message,1)}},action!=='start')};bulk('bstartall','start');bulk('bstopall','stop');bulk('brstall','restart');
   }
   $$('#bf button').forEach(b=>b.classList.toggle('on',b.dataset.f===FILTER));$$('#bv button').forEach(b=>b.classList.toggle('on',b.dataset.v===VIEW));
   const rows=filterBots(),body=$('#bbody');
@@ -619,6 +620,39 @@ function userDrawer(uid){
   });
 }
 
+/* ============ Trang: Bán hàng & nhắc hạn ============ */
+const SALES_KEY='zan_sales_v1', NOTES_KEY='zan_user_notes_v1', PRICE_KEY='zan_prices_v1';
+const readLocal=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};
+const writeLocal=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+function pSales(v){
+ const prices=readLocal(PRICE_KEY,[{name:'1 ngày',time:'1d',price:0},{name:'1 tuần',time:'7d',price:0},{name:'1 tháng',time:'30d',price:0}]);
+ const notes=readLocal(NOTES_KEY,{}), sales=readLocal(SALES_KEY,[]), due=expiring(3);
+ const revenue=sales.filter(z=>z.month===new Date().toISOString().slice(0,7)).reduce((a,z)=>a+(+z.price||0),0);
+ v.innerHTML=`<div class="page"><div class="head"><h1>Bán hàng & nhắc hạn</h1><span class="sp"></span><button class="btn" id="sales-csv">Xuất doanh thu</button></div>
+ <div class="kpis"><div class="card kpi g"><div class="ic">${ic('zap')}</div><div><b>${revenue.toLocaleString('vi-VN')}đ</b><span>Doanh thu ước tính tháng này</span></div></div><div class="card kpi w"><div class="ic">${ic('bell')}</div><div><b>${due.length}</b><span>Quyền sắp hết hạn (3 ngày)</span></div></div><div class="card kpi"><div class="ic">${ic('users')}</div><div><b>${sales.length}</b><span>Lượt cấp/gia hạn đã ghi nhận</span></div></div></div>
+ <div class="card" style="margin-bottom:14px"><h3>${ic('users')} Kết bạn và cấp quyền như Telegram</h3><div class="row"><div class="fld" style="flex:1;min-width:180px"><label>UID người chơi</label><input id="friend-uid" inputmode="numeric" placeholder="Nhập UID"></div><div class="fld" style="flex:1;min-width:180px"><label>Bot gửi kết bạn</label><select id="friend-bot">${(DATA.bots||[]).map(b=>`<option value="${b.id}">#${b.id} ${esc(bname(b))}</option>`).join('')}</select></div><div class="fld" style="flex:1;min-width:140px"><label>Thời hạn quyền</label><input id="friend-time" value="7d" placeholder="7d / 30d / vv"></div></div><button class="btn pri" id="friend-grant">${ic('users')} Gửi kết bạn + cấp quyền</button><p class="hint">Cấp quyền sau khi API kết bạn báo thành công. Dùng 1d, 7d, 30d, 3m hoặc vv.</p></div>
+ <div class="cols"><div class="card"><h3>${ic('key')} Cấp quyền nhanh + ghi nhận doanh thu</h3>
+ <div class="fld"><label>UID khách</label><input id="sale-uid" inputmode="numeric" placeholder="Nhập UID Free Fire"></div>
+ <div class="fld"><label>Bot áp dụng</label><div class="chk" id="sale-bots">${(DATA.bots||[]).map(b=>`<label><input type="checkbox" value="${b.id}"> #${b.id} ${esc(bname(b))}</label>`).join('')||'<span class="mut">Chưa có bot</span>'}</div></div>
+ <div class="fld"><label>Gói</label><select id="sale-package">${prices.map((p,i)=>`<option value="${i}">${esc(p.name)} • ${Number(p.price||0).toLocaleString('vi-VN')}đ</option>`).join('')}</select></div>
+ <div class="fld"><label>Ghi chú đơn (tuỳ chọn)</label><input id="sale-desc" placeholder="Tên khách / đã thanh toán..."></div>
+ <button class="btn pri" id="sale-grant">Cấp quyền và ghi doanh thu</button><p class="hint">Ghi nhận doanh thu lưu trên trình duyệt này, không đồng bộ sang thiết bị khác.</p></div>
+ <div class="card"><h3>${ic('bell')} Nhắc khách sắp hết hạn</h3>${due.length?due.slice(0,12).map(z=>`<div class="xrow"><span class="mono">${z.uid}</span><span class="gr">#${z.bot_id} ${esc(z.bot_name||'')}</span><span class="tag w">${leftTag(z.g)[0]}</span><button class="btn sm" data-remind="${z.uid}" data-left="${Math.max(0,Math.ceil(z.left/86400))}">Copy tin nhắn</button></div>`).join(''):'<div class="empty">Chưa có user sắp hết hạn.</div>'}<p class="hint">Tin nhắn được copy để bạn tự gửi qua Telegram.</p></div></div>
+ <div class="card" style="margin-bottom:14px"><h3>${ic('refresh')} Gia hạn hàng loạt</h3><div class="fld"><label>Chọn khách cần gia hạn</label><div class="chk" id="bulk-users">${(DATA.users||[]).map(u=>`<label><input type="checkbox" value="${u.uid}"> ${u.uid} (${u.grants.length} bot)</label>`).join('')||'<span class="mut">Chưa có user</span>'}</div><div class="chips"><button type="button" id="bulk-select">Chọn tất cả</button><button type="button" id="bulk-clear">Bỏ chọn</button></div></div><div class="row"><select id="bulk-package" class="btn">${prices.map((p,i)=>`<option value="${i}">${esc(p.name)} • ${esc(p.time)}</option>`).join('')}</select><button class="btn pri" id="bulk-renew">Gia hạn các user đã chọn</button></div></div>
+ <div class="card" style="margin-bottom:14px"><h3>${ic('users')} Ghi chú khách hàng</h3><div class="tw"><table><thead><tr><th>UID</th><th>Bot</th><th>Ghi chú</th><th></th></tr></thead><tbody>${(DATA.users||[]).map(u=>`<tr><td class="mono">${u.uid}</td><td>${u.grants.length}</td><td><input data-note="${u.uid}" value="${esc(notes[u.uid]||'')}" placeholder="Tên khách / thanh toán..." style="width:100%;min-width:140px;padding:8px;border-radius:9px;background:var(--bg2);border:1px solid var(--line2)"></td><td><button class="btn sm" data-note-save="${u.uid}">Lưu</button></td></tr>`).join('')||'<tr><td colspan="4">Chưa có user</td></tr>'}</tbody></table></div></div>
+ <div class="card"><h3>${ic('cog')} Bảng giá gói (chỉ dùng trong dashboard)</h3><div id="price-list">${prices.map((p,i)=>`<div class="row" style="margin-bottom:8px"><input data-pname="${i}" value="${esc(p.name)}" placeholder="Tên gói" style="flex:1;min-width:90px;padding:9px;border-radius:9px;background:var(--bg2);border:1px solid var(--line2)"><input data-ptime="${i}" value="${esc(p.time)}" placeholder="7d" style="width:70px;padding:9px;border-radius:9px;background:var(--bg2);border:1px solid var(--line2)"><input data-pprice="${i}" type="number" min="0" value="${+p.price||0}" placeholder="Giá VNĐ" style="width:110px;padding:9px;border-radius:9px;background:var(--bg2);border:1px solid var(--line2)"><button class="btn sm dng" data-pdel="${i}">Xoá</button></div>`).join('')}</div><div class="row"><button class="btn" id="price-add">Thêm gói</button><button class="btn pri" id="price-save">Lưu bảng giá</button></div></div>
+ <div class="card" style="margin-top:14px"><h3>${ic('log')} Lịch sử doanh thu đã ghi nhận</h3>${sales.length?sales.slice().reverse().slice(0,30).map(z=>`<div class="xrow"><span class="mono">${esc(z.uid)}</span><span class="gr">${esc(z.package)} • ${esc(z.time)}</span><b>${(+z.price||0).toLocaleString('vi-VN')}đ</b></div>`).join(''):'<div class="empty">Chưa có giao dịch.</div>'}</div></div>`;
+ $('#bulk-select').onclick=()=>$$('#bulk-users input',v).forEach(i=>i.checked=true);$('#bulk-clear').onclick=()=>$$('#bulk-users input',v).forEach(i=>i.checked=false);$('#bulk-renew').onclick=async()=>{const uids=$$('#bulk-users input:checked',v).map(i=>i.value),pkg=prices[+$('#bulk-package').value];if(!uids.length||!pkg)return toast('Chọn ít nhất một user và một gói',1);let ok=0;for(const uid of uids){const u=(DATA.users||[]).find(z=>String(z.uid)===String(uid));if(!u)continue;try{await api(`/users/${uid}`,{method:'PATCH',body:JSON.stringify({grant:u.grants.map(g=>g.bot_id),time:pkg.time,mode:'extend'})});ok++}catch(e){toast(`UID ${uid}: ${e.message}`,1)}}toast(`Đã gia hạn ${ok}/${uids.length} user`);await loadAll(true);pSales($('#view'))};
+ $('#friend-grant').onclick=async()=>{const uid=$('#friend-uid').value.trim(),bot_id=+$('#friend-bot').value,time=$('#friend-time').value.trim(),bt=$('#friend-grant');if(!/^\d+$/.test(uid)||!bot_id||!time)return toast('Nhập UID, chọn bot và thời hạn',1);bt.disabled=true;try{const j=await api('/friend-grant',{method:'POST',body:JSON.stringify({uid,bot_id,time})});toast(j.msg);await loadAll(true);pSales($('#view'))}catch(e){toast(e.message,1)}finally{bt.disabled=false}};
+ $('#sale-grant').onclick=async()=>{const uid=$('#sale-uid').value.trim(),ids=$$('#sale-bots input:checked').map(i=>+i.value),pkg=prices[+$('#sale-package').value];if(!/^\d+$/.test(uid)||!ids.length||!pkg)return toast('Kiểm tra UID, bot và gói',1);try{const j=await api('/users',{method:'POST',body:JSON.stringify({uid,bots:ids,time:pkg.time})});sales.push({uid,package:pkg.name,time:pkg.time,price:+pkg.price||0,month:new Date().toISOString().slice(0,7),at:new Date().toISOString(),desc:$('#sale-desc').value});writeLocal(SALES_KEY,sales);toast(j.msg+' • đã ghi doanh thu');await loadAll(true);pSales($('#view'))}catch(e){toast(e.message,1)}};
+ $$('[data-remind]',v).forEach(b=>b.onclick=()=>{const uid=b.dataset.remind,days=b.dataset.left;copyText(`Chào bạn, quyền sử dụng bot của UID ${uid} còn khoảng ${days} ngày nữa sẽ hết hạn. Bạn muốn gia hạn tiếp để không bị gián đoạn không?`) });
+ $$('[data-note-save]',v).forEach(b=>b.onclick=()=>{const uid=b.dataset.noteSave;notes[uid]=$(`[data-note="${uid}"]`,v).value;writeLocal(NOTES_KEY,notes);toast('Đã lưu ghi chú trên trình duyệt')});
+ $('#price-add').onclick=()=>{prices.push({name:'Gói mới',time:'7d',price:0});writeLocal(PRICE_KEY,prices);pSales(v)};
+ $$('[data-pdel]',v).forEach(b=>b.onclick=()=>{prices.splice(+b.dataset.pdel,1);writeLocal(PRICE_KEY,prices);pSales(v)});
+ $('#price-save').onclick=()=>{const next=prices.map((p,i)=>({name:$(`[data-pname="${i}"]`,v).value.trim()||'Gói',time:$(`[data-ptime="${i}"]`,v).value.trim(),price:Math.max(0,+$(`[data-pprice="${i}"]`,v).value||0)}));if(next.some(p=>!/^\d{1,4}[hdwmy]$|^vv$/i.test(p.time)))return toast('Thời hạn phải dạng 1d, 7d, 30d, 3m hoặc vv',1);writeLocal(PRICE_KEY,next);toast('Đã lưu bảng giá');pSales(v)};
+ $('#sales-csv').onclick=()=>downloadCSV('doanh-thu.csv',[['UID','Gói','Thời hạn','Giá','Thời gian','Ghi chú'],...sales.map(z=>[z.uid,z.package,z.time,z.price,z.at,z.desc||''])]);
+}
+
 /* ============ Trang: Log bot (console live) ============ */
 let CON={since:0,lines:[],paused:false,auto:true,timer:null,lvl:'',ok:true,err:'',src:'local'};
 const lvlOf=t=>/traceback|exception|error|❌|lỗi|failed|thất bại|fatal/i.test(t)?'er':/⚠|warn|timeout|disconnect|mất kết nối|reconnect/i.test(t)?'wn':/✅|success|thành công|online ok|started|đã (thêm|gửi|kết)/i.test(t)?'ok':/\[(bot|botmng|panel|admin|ping)\]/i.test(t)?'in':'';
@@ -699,7 +733,8 @@ async function pSettings(v){
     :'<div class="mut">Chỉ admin mới đổi được mật khẩu.</div>'}</div>
   <div class="card"><h3>${ic('shield')} Bảo mật & hệ thống</h3><dl class="kv" style="grid-template-columns:130px 1fr">
     <dt>Phiên đăng nhập</dt><dd>${s.session_hours||'–'} giờ</dd><dt>API key (script cũ)</dt><dd>${s.api_key_set?'<span class="tag f">Đã đặt</span>':'<span class="tag w">Chưa đặt • chỉ localhost</span>'}</dd><dt>Python</dt><dd>${esc(s.python||'–')}</dd><dt>Dữ liệu panel</dt><dd class="mono" style="font-size:12px">${esc(s.data_dir||'–')}</dd></dl>
-    <button class="btn dng" id="s-lo">${ic('out')} Đăng xuất</button></div></div></div>`;
+    <button class="btn dng" id="s-lo">${ic('out')} Đăng xuất</button></div></div><div class="card"><h3>${ic('refresh')} Tự động & sao lưu</h3><div class="fld"><label><input type="checkbox" id="auto-revoke" checked> Tự thu hồi quyền đã hết hạn (mỗi phút)</label></div><div class="fld"><label><input type="checkbox" id="auto-restart"> Tự restart bot offline (tối đa 1 lần/10 phút mỗi bot)</label></div><button class="btn pri" id="auto-save">Lưu tự động hoá</button><hr style="border:0;border-top:1px solid var(--line);margin:16px 0"><button class="btn" id="backup-down">Tải backup bot.json</button> <label class="btn" for="backup-file">Chọn file khôi phục</label><input id="backup-file" type="file" accept="application/json,.json" hidden><p class="hint">Khôi phục yêu cầu tất cả bot đã dừng; sau đó cần khởi động lại start.py.</p></div></div></div>`;
+  let au={};try{au=(await api('/automation')).info}catch{};$('#auto-revoke').checked=au.auto_revoke!==false;$('#auto-restart').checked=!!au.auto_restart;$('#auto-save').onclick=async()=>{try{const j=await api('/automation',{method:'POST',body:JSON.stringify({auto_revoke:$('#auto-revoke').checked,auto_restart:$('#auto-restart').checked})});toast(j.msg)}catch(e){toast(e.message,1)}};$('#backup-down').onclick=()=>{const a=document.createElement('a');a.href='/panel/api/backup';a.download='bot-backup.json';a.click()};$('#backup-file').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const data=JSON.parse(await f.text());const j=await api('/backup',{method:'POST',body:JSON.stringify({data})});toast(j.msg)}catch(err){toast(err.message,1)}e.target.value=''};
   $('#s-r').onchange=e=>{REFRESH=+e.target.value;store.set('refresh',REFRESH);startTimer();toast('Đã lưu')};
   $('#s-lo').onclick=()=>$('#lo').click();
   $('#s-th').onclick=e=>{const t=e.target.dataset.th;if(!t)return;setTheme(t);$$('#s-th button').forEach(b=>b.classList.toggle('on',b.dataset.th===t))};
@@ -730,7 +765,7 @@ function restartOffline(){const off=(DATA.bots||[]).filter(b=>!b.online);if(!off
 function openPalette(){
   if(!ROLE||$('.ov.show'))return;
   const acts=[...Object.entries(PAGES).map(([k,[t,i]])=>({t:'Đi tới: '+t,i,f:()=>go(k)})),
-    ...(isAdmin()?[{t:'Thêm bot mới',i:'plus',f:()=>botForm()},{t:'Cấp quyền cho user',i:'key',f:()=>grantForm()},{t:'Restart tất cả bot offline',i:'power',f:restartOffline}]:[]),
+    ...(isAdmin()?[{t:'Thêm bot mới',i:'plus',f:()=>botForm()},{t:'Cấp quyền cho user',i:'key',f:()=>grantForm()},{t:'Bán hàng & nhắc hạn',i:'bell',f:()=>go('sales')},{t:'Restart tất cả bot offline',i:'power',f:restartOffline}]:[]),
     {t:'Xuất danh sách bot (CSV)',i:'download',f:exportBots},{t:'Xuất danh sách user (CSV)',i:'download',f:exportUsers},
     {t:'Đổi giao diện sáng / tối',i:'sun',f:toggleTheme},{t:'Làm mới dữ liệu',i:'refresh',f:()=>loadAll()},{t:'Đăng xuất',i:'out',f:()=>$('#lo').click()}];
   modal(`<input class="pin" id="pq" placeholder="Gõ lệnh… vd: thêm bot, log, xuất, sáng" autocomplete="off"><div id="pl" style="margin-top:10px;max-height:340px;overflow:auto"></div><div class="mut" style="font-size:12px;margin-top:8px"><span class="kbd">↑</span> <span class="kbd">↓</span> chọn • <span class="kbd">Enter</span> chạy • <span class="kbd">Esc</span> đóng</div>`,(o,close)=>{

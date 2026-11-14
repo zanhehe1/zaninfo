@@ -736,6 +736,43 @@ def create_user():
     return jsonify({"ok": True, "msg": f"Đã cấp quyền UID {uid} trên {done} bot"})
 
 
+@bp.route("/panel/api/friend-grant", methods=["POST"])
+def friend_and_grant():
+    """Gửi lời mời kết bạn bằng route /kb của start.py, sau đó cấp quyền."""
+    b = _body()
+    try:
+        uid = _int(b.get("uid"), "UID")
+        bid = _int(b.get("bot_id"), "ID bot")
+        time_value = str(b.get("time", "")).strip()
+        with _mng.config_lock:
+            if not _bot_cfg(bid):
+                return _err("Không tìm thấy bot", 404)
+        import requests
+        resp = requests.get("http://127.0.0.1:2009/kb",
+                            params={"uid": uid, "botid": bid}, timeout=35)
+        try:
+            result = resp.json()
+        except Exception:
+            result = {"status": "error", "message": resp.text[:200]}
+        if resp.status_code != 200 or result.get("status") != "success":
+            msg = result.get("message") or "Không gửi được lời mời kết bạn"
+            log("user", "kết bạn + cấp quyền", "fail", f"UID {uid} • bot #{bid} • {msg}")
+            return _err(f"Kết bạn thất bại: {msg}", 400)
+        with _mng.config_lock:
+            cfg = _bot_cfg(bid)
+            if not cfg:
+                return _err("Bot không còn tồn tại", 404)
+            act, exp = _apply_time(cfg, uid, time_value, "extend")
+            _save()
+        log("user", "kết bạn + cấp quyền", "ok", f"UID {uid} • bot #{bid} • hạn {exp}")
+        return jsonify({"ok": True, "msg": f"Đã gửi kết bạn và {act} UID {uid} • hạn {exp}"})
+    except ValueError as e:
+        return _err(str(e))
+    except Exception as e:
+        log("user", "kết bạn + cấp quyền", "fail", str(e))
+        return _err(f"Lỗi xử lý: {e}", 500)
+
+
 @bp.route("/panel/api/users/<int:uid>", methods=["PATCH"])
 def edit_user(uid):
     """Sửa quyền của 1 user: grant (cấp/đặt lại hạn trên các bot) và/hoặc revoke."""
