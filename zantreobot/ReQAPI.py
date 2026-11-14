@@ -262,7 +262,7 @@ def bdversion(ver: str = None):
                 result = play_store_app('com.dts.freefireth', lang="fr", country='fr')
                 ver = result['version']
             except Exception:
-                ver = "2.132.1"
+                ver = "1.132.9"
         r = requests.get(f'https://version.ggwhitehawk.com/live/ver.php?version={ver}&lang=en&device=android&channel=android&appsttore=googleplay&region=ME&whitelist_version=1.3.0&whitelist_sp_version=1.0.0&device_name=google%20G011A&device_CPU=ARMv7%20VFPv3%20NEON%20VMH&device_GPU=Adreno%20(TM)%20640&device_mem=1993', verify=False, timeout=10).json()
         data = {
             "server_url": r['server_url'],
@@ -274,22 +274,30 @@ def bdversion(ver: str = None):
         return {
             "server_url": "https://loginbp.ppmainecoonghj.com/",
             "latest_release_version": "OB55",
-            "remote_version": "2.132.1"
+            "remote_version": "1.132.9"
         }
 
 
 class APIClient:
-    def __init__(self):
+    def __init__(self, device_id=None):
         self._data = account_data()
         self.logindata = {}
         detail_vers = bdversion()
         self.is_emulator = False
         self.language = "en"
         self.base_url = detail_vers["server_url"]
-        self.client_version = detail_vers.get("remote_version", "2.132.1")
+        self.client_version = "1.132.9"
         self.release_version = detail_vers.get("latest_release_version") or "OB55"
         self.key = bytes([89, 103, 38, 116, 99, 37, 68, 69, 117, 104, 54, 37, 90, 99, 94, 56])
         self.iv = bytes([54, 111, 121, 90, 68, 114, 50, 50, 69, 51, 121, 99, 104, 106, 77, 37])
+
+        # FIX: device_id random mỗi acc (hoặc dùng từ ngoài nếu có)
+        if device_id:
+            self._data.device_id = device_id
+        else:
+            self._data.device_id = f"Google|{uuid.uuid4()}"
+        print(f"[DEVICE] device_id={self._data.device_id}")
+
         from urllib.parse import urlparse
         host_name = "loginbp.ppmainecoonghj.com"
         self.session = requests.Session()
@@ -362,73 +370,76 @@ class APIClient:
             fields = {}
             fields[3] = str(datetime.datetime.now())[:-7]
             fields[4] = "free fire"
-            fields[5] = 4
-            fields[7] = self.client_version
-            fields[8] = "Android OS 13 / API-33"
+            fields[5] = 1
+            fields[7] = "1.132.9"
+            fields[8] = "Android OS 10 / API-29 (NHG47O/eng.build.20231013.013027)"
             fields[9] = "Handheld"
-            fields[10] = "Viettel"
+            fields[10] = "TelKila"
             fields[11] = "WIFI"
-            fields[12] = 1080
-            fields[13] = 2400
-            fields[14] = "400"
-            fields[15] = "ARM64 FP ASIMD AES | 2800 | 8"
-            fields[16] = 6000
-            fields[17] = "Adreno (TM) 730"
-            fields[18] = "OpenGL ES 3.2 build 25.1@6715691"
+            fields[12] = 1708
+            fields[13] = 750
+            fields[14] = "440"
+            fields[15] = "ARM64 FP ASIMD AES | 2850 | 8"
+            fields[16] = 3968
+            fields[17] = "Mali-G610 MC6"
+            fields[18] = "OpenGL ES 3.2 v1.r32p1-01eac0.54329dee8f160f288c574caaf67bbe3f"
             fields[19] = self._data.device_id
-            fields[20] = "197.0.137.129"
-            fields[21] = "vn"
+            fields[20] = "116.97.105.60"
+            fields[21] = "vi"
             fields[22] = str(self._data.open_id)
             fields[23] = "4"
             fields[24] = "Handheld"
-            fields[25] = "Xiaomi 2201122G"
+            fields[25] = "Google Pixel"
             fields[26] = "VN"
             fields[29] = str(self._data.access_token)
             fields[30] = 1
-            fields[41] = "Viettel"
+            fields[41] = "TelKila"
             fields[42] = "WIFI"
             fields[57] = "7428b253defc164018c604a1ebbfebdf"
-            fields[60] = 233141
-            fields[61] = 172590
-            fields[62] = 902
-            fields[64] = 173114
-            fields[65] = 233141
-            fields[66] = 173114
-            fields[67] = 233141
+            fields[60] = 109029
+            fields[61] = 37616
+            fields[62] = 2048
+            fields[63] = 804
+            fields[64] = 37616
+            fields[65] = 109029
+            fields[66] = 37616
+            fields[67] = 109029
+            fields[70] = 2
             fields[73] = 3
-            fields[74] = "/data/app/~~OOxSMPtiZSaEIgYJjPoHOg==/com.dts.freefireth-KkAAAdjU2FG5Ts4HwgDgCw==/lib/arm64"
+            fields[74] = "/data/app/com.dts.freefireth-oiglMJkEoNJlsRci10280Q==/lib/arm64"
             fields[76] = 1
-            fields[77] = "b8e0cd5e295eee42f5860d3c86e483dd|/data/app/~~OOxSMPtiZSaEIgYJjPoHOg==/com.dts.freefireth-KkAAAdjU2FG5Ts4HwgDgCw==/base.apk"
+            fields[77] = "b8e0cd5e295eee42f5860d3c86e483dd|/data/app/com.dts.freefireth-oiglMJkEoNJlsRci10280Q==/base.apk"
             fields[78] = 3
             fields[79] = 2
             fields[81] = "64"
             fields[83] = "2019121229"
             fields[85] = 3
             fields[86] = "OpenGLES2"
-            fields[87] = 8191
+            fields[87] = 511
             fields[88] = 4
-            fields[90] = "Quận Một"
-            fields[91] = "SG"
-            fields[92] = 10968
+            fields[90] = "Hà Nội"
+            fields[91] = "01"
+            fields[92] = 4231
             fields[93] = "android"
-            fields[94] = "KqsHT0Q7h333TG5PRgHHMPeY52YAbiB2/CUjX28YaEK6kGm0ieehpzRhEeZ1N/GP2hWAoRRtOvXk8DqwEQgsJ2n+ohtc18X5bJZ6IS8WNFZf7sZI"
-            fields[95] = 111107
-            fields[96] = '{"cur_rate":[60,90,120],"support_etc2":false}'
+            fields[94] = "KqsHT8at0g7Na/G7iOeF1IpesHMf+HoePFMFFE8Tq/dSk4fIbJ1j8TdV8OAyWIVnSmD2rM6vfFMtCD8Ig7iROgDJmIMrdtcB6orwuNRpMr4MVu3D7FoTcuQdq/8EyOkRQiUrbg=="
+            fields[95] = 111207
+            fields[96] = '{"cur_rate":null,"support_etc2":false}'
             fields[97] = 1
+            fields[98] = 1
             fields[99] = "4"
             fields[100] = "4"
-            fields[102] = bytes.fromhex("4a501646550a090965")
+            fields[102] = bytes.fromhex('4000434f07555f0637')
             fields[103] = 1
-            fields[104] = 1070
+            fields[104] = 1797
             fields[105] = 1
-            fields[106] = "https://dl.ak.freefiremobile.com/live/ABHotUpdates/|https://core-ak.freefiremobile.com/live/ABHotUpdates/|9a9a493d643462570dc50320b28533d0"
-            fields[107] = "1.af7c82fd80a978e6"
+            fields[106] = "https://dl.cdn.freefiremobile.com/live/ABHotUpdates/|https://dl-core.cdn.freefiremobile.com/live/ABHotUpdates/|4a0070ac356973792f002e0b25b96c3b"
+            fields[107] = "c8e41b7a93f02d56e1a94c7b8203f5d1"
 
             payload = AES_CBC128(pb_encode(fields), self.key, self.iv)
             url = "https://loginbp.ppmainecoonghj.com/MajorLogin"
             headers = {
                 "X-Unity-Version": "2018.4.12f1",
-                "ReleaseVersion": self.release_version,
+                "ReleaseVersion": "OB55",
                 "Content-Type": "application/x-www-form-urlencoded",
                 "Authorization": "Bearer",
                 "Accept": "*/*",
@@ -458,29 +469,14 @@ class APIClient:
                 decrypted = raw
 
             pb = ProtoBuf(decrypted)
-            
-            # ====== FIX: LẤY KEY/IV AN TOÀN ======
-            key_extracted = None
-            iv_extracted = None
-            
-            try:
-                body = raw[64:] if len(raw) > 64 else decrypted
-                f = ProtoBuf(body).protobuf()
-                if "21" in f and "22" in f and "23" in f:
-                    self._data.login_time = int(_scalar(f["21"]))
-                    key_extracted = _as_bytes(f["22"])
-                    iv_extracted = _as_bytes(f["23"])
-                    print(f"[MajorLogin] ✅ Lấy chuẩn timestamp, key, iv từ server")
-            except:
-                pass
-            
-            if not key_extracted or not iv_extracted:
-                try:
-                    key_extracted = _as_bytes(pb.EXTRACT_FIELDS([22], mode="bytes"))
-                    iv_extracted = _as_bytes(pb.EXTRACT_FIELDS([23], mode="bytes"))
-                except:
-                    pass
-            
+            key_extracted = _as_bytes(pb.EXTRACT_FIELDS([22], mode="bytes"))
+            iv_extracted = _as_bytes(pb.EXTRACT_FIELDS([23], mode="bytes"))
+
+            if (not key_extracted or not iv_extracted) and len(decrypted) > 64:
+                pb2 = ProtoBuf(decrypted[64:])
+                key_extracted = _as_bytes(pb2.EXTRACT_FIELDS([22], mode="bytes"))
+                iv_extracted = _as_bytes(pb2.EXTRACT_FIELDS([23], mode="bytes"))
+
             if key_extracted and iv_extracted:
                 self._data.key = key_extracted
                 self._data.iv = iv_extracted
@@ -489,11 +485,28 @@ class APIClient:
             else:
                 self._data.key = self.key
                 self._data.iv = self.iv
-                print(f"[MajorLogin] ⚠️ key/iv hardcode (server không trả về)")
+                print(f"[MajorLogin] ⚠️ key/iv hardcode")
+
+            # ===== FIX: LẤY TIMESTAMP SERVER (field 21) TỪ MajorLogin =====
+            ts_found = None
+            for src_name, src_bytes in [("decrypted", decrypted), ("raw[64:]", raw[64:] if len(raw) > 64 else b"")]:
+                if not src_bytes:
+                    continue
+                try:
+                    pb_ts = ProtoBuf(src_bytes)
+                    ts_raw = pb_ts.EXTRACT_FIELDS([21], mode="repeated")
+                    if ts_raw:
+                        ts_found = int(_scalar(ts_raw))
+                        print(f"[MajorLogin] ✅ timestamp từ {src_name} = {ts_found}")
+                        break
+                except:
+                    pass
             
-            if not self._data.login_time:
+            if ts_found:
+                self._data.login_time = ts_found
+            else:
                 self._data.login_time = int(time.time())
-            # ====== HẾT FIX ======
+                print(f"[MajorLogin] ⚠️ timestamp = time.time() = {self._data.login_time}")
 
             jwt_bytes = None
             o = 0
@@ -538,10 +551,8 @@ class APIClient:
             self._data.base_url = "https://clientbp.ppmainecoonghj.com"
 
             print(f"[MajorLogin] ✅ OK account_id={account_id}")
-            return payload
         except Exception as e:
             print("[MajorLogin]", e)
-            return None
 
     def GetLoginData(self):
         try:
@@ -552,67 +563,70 @@ class APIClient:
             fields = {}
             fields[3] = str(datetime.datetime.now())[:-7]
             fields[4] = "free fire"
-            fields[5] = 4
-            fields[7] = self.client_version
-            fields[8] = "Android OS 13 / API-33"
+            fields[5] = 1
+            fields[7] = "1.132.9"
+            fields[8] = "Android OS 10 / API-29 (NHG47O/eng.build.20231013.013027)"
             fields[9] = "Handheld"
-            fields[10] = "Viettel"
+            fields[10] = "TelKila"
             fields[11] = "WIFI"
-            fields[12] = 1080
-            fields[13] = 2400
-            fields[14] = "400"
-            fields[15] = "ARM64 FP ASIMD AES | 2800 | 8"
-            fields[16] = 6000
-            fields[17] = "Adreno (TM) 730"
-            fields[18] = "OpenGL ES 3.2 build 25.1@6715691"
+            fields[12] = 1708
+            fields[13] = 750
+            fields[14] = "440"
+            fields[15] = "ARM64 FP ASIMD AES | 2850 | 8"
+            fields[16] = 3968
+            fields[17] = "Mali-G610 MC6"
+            fields[18] = "OpenGL ES 3.2 v1.r32p1-01eac0.54329dee8f160f288c574caaf67bbe3f"
             fields[19] = self._data.device_id
-            fields[20] = "197.0.137.129"
-            fields[21] = "vn"
+            fields[20] = "116.97.105.60"
+            fields[21] = "vi"
             fields[22] = str(self._data.open_id)
             fields[23] = "4"
             fields[24] = "Handheld"
-            fields[25] = "Xiaomi 2201122G"
+            fields[25] = "Google Pixel"
             fields[26] = "VN"
             fields[29] = str(self._data.access_token)
             fields[30] = 1
-            fields[41] = "Viettel"
+            fields[41] = "TelKila"
             fields[42] = "WIFI"
             fields[57] = "7428b253defc164018c604a1ebbfebdf"
-            fields[60] = 233141
-            fields[61] = 172590
-            fields[62] = 902
-            fields[64] = 173114
-            fields[65] = 233141
-            fields[66] = 173114
-            fields[67] = 233141
+            fields[60] = 109029
+            fields[61] = 37616
+            fields[62] = 2048
+            fields[63] = 804
+            fields[64] = 37616
+            fields[65] = 109029
+            fields[66] = 37616
+            fields[67] = 109029
+            fields[70] = 2
             fields[73] = 3
-            fields[74] = "/data/app/~~OOxSMPtiZSaEIgYJjPoHOg==/com.dts.freefireth-KkAAAdjU2FG5Ts4HwgDgCw==/lib/arm64"
+            fields[74] = "/data/app/com.dts.freefireth-oiglMJkEoNJlsRci10280Q==/lib/arm64"
             fields[76] = 1
-            fields[77] = "b8e0cd5e295eee42f5860d3c86e483dd|/data/app/~~OOxSMPtiZSaEIgYJjPoHOg==/com.dts.freefireth-KkAAAdjU2FG5Ts4HwgDgCw==/base.apk"
+            fields[77] = "b8e0cd5e295eee42f5860d3c86e483dd|/data/app/com.dts.freefireth-oiglMJkEoNJlsRci10280Q==/base.apk"
             fields[78] = 3
             fields[79] = 2
             fields[81] = "64"
             fields[83] = "2019121229"
             fields[85] = 3
             fields[86] = "OpenGLES2"
-            fields[87] = 8191
+            fields[87] = 511
             fields[88] = 4
-            fields[90] = "Quận Một"
-            fields[91] = "SG"
-            fields[92] = 10968
+            fields[90] = "Hà Nội"
+            fields[91] = "01"
+            fields[92] = 4231
             fields[93] = "android"
-            fields[94] = "KqsHT0Q7h333TG5PRgHHMPeY52YAbiB2/CUjX28YaEK6kGm0ieehpzRhEeZ1N/GP2hWAoRRtOvXk8DqwEQgsJ2n+ohtc18X5bJZ6IS8WNFZf7sZI"
-            fields[95] = 111107
-            fields[96] = '{"cur_rate":[60,90,120],"support_etc2":false}'
+            fields[94] = "KqsHT8at0g7Na/G7iOeF1IpesHMf+HoePFMFFE8Tq/dSk4fIbJ1j8TdV8OAyWIVnSmD2rM6vfFMtCD8Ig7iROgDJmIMrdtcB6orwuNRpMr4MVu3D7FoTcuQdq/8EyOkRQiUrbg=="
+            fields[95] = 111207
+            fields[96] = '{"cur_rate":null,"support_etc2":false}'
             fields[97] = 1
+            fields[98] = 1
             fields[99] = "4"
             fields[100] = "4"
-            fields[102] = bytes.fromhex("4a501646550a090965")
+            fields[102] = bytes.fromhex('4000434f07555f0637')
             fields[103] = 1
-            fields[104] = 1070
+            fields[104] = 1797
             fields[105] = 1
-            fields[106] = "https://dl.ak.freefiremobile.com/live/ABHotUpdates/|https://core-ak.freefiremobile.com/live/ABHotUpdates/|9a9a493d643462570dc50320b28533d0"
-            fields[107] = "1.af7c82fd80a978e6"
+            fields[106] = "https://dl.cdn.freefiremobile.com/live/ABHotUpdates/|https://dl-core.cdn.freefiremobile.com/live/ABHotUpdates/|4a0070ac356973792f002e0b25b96c3b"
+            fields[107] = "c8e41b7a93f02d56e1a94c7b8203f5d1"
 
             key = self.key
             iv = self.iv
@@ -622,7 +636,7 @@ class APIClient:
             url = f"{self._data.base_url}/GetLoginData"
             headers = {
                 "X-Unity-Version": "2018.4.12f1",
-                "ReleaseVersion": self.release_version,
+                "ReleaseVersion": "OB55",
                 "Content-Type": "application/x-www-form-urlencoded",
                 "X-GA": "v1 1",
                 "X-GA-SV": str(int(time.time())),
@@ -644,12 +658,15 @@ class APIClient:
             except:
                 data = json.loads(protobuf_dec(raw.hex()))
             self.logindata = data
-            _ts_new = _scalar(data.get("21"))
-            if _ts_new:
-                self._data.login_time = int(_ts_new)
-                print(f"[GetLoginData] ✅ login_time update = {_ts_new}")
+
+            # FIX: Chỉ update login_time nếu field 21 có
+            _ts_server = _scalar(data.get("21"))
+            if _ts_server:
+                self._data.login_time = int(_ts_server)
+                print(f"[GetLoginData] ✅ login_time từ server = {self._data.login_time}")
             else:
-                print(f"[GetLoginData] ⚠️ login_time giữ nguyên = {self._data.login_time}")
+                print(f"[GetLoginData] ⚠️ giữ login_time = {self._data.login_time}")
+
             self._data.guild_id = data.get("20")
             self._data.guild_code = data.get("55")
             sv = _scalar(data.get("14"))
@@ -665,7 +682,6 @@ class APIClient:
             print("[GetLoginData]", e)
 
     def _auth_packet(self, fox=True):
-        # ====== FIX: KIỂM TRA DỮ LIỆU TRƯỚC KHI DÙNG ======
         if not self._data.login_token:
             print("[_auth_packet] ❌ login_token rỗng")
             return None
@@ -675,32 +691,38 @@ class APIClient:
         if not self._data.account_id:
             print("[_auth_packet] ❌ account_id rỗng")
             return None
-        # ====== HẾT FIX ======
 
-        regions = self.logindata.get("19") or []
-        if isinstance(regions, dict):
-            regions = [regions]
-        esid = lambda rec: (
-            lambda s: s[str(rec).upper()] if str(rec).upper() in s else None)(
-            {str(x["2"]).upper(): x["1"] for x in regions if isinstance(x, dict) and "1" in x and "2" in x}
-        )
-        tok = self._data.login_token
-        if isinstance(tok, bytes):
-            tok = tok.decode("utf-8", "replace")
-        encrypts = AES_CBC128(str(tok).encode(), self._data.key, self._data.iv)
-        region = int(_scalar(esid(self._data.server)) or 1)
-        aid = int(_scalar(self._data.account_id) or 0)
-        kts = int(_scalar(self._data.login_time) or 0)
-        print(f"[_auth_packet] fox={fox} server={self._data.server} region={region} aid={aid} kts={kts}")
-        cmd = 1 if fox else (101 + (aid % 50))
-        hdr = (
-            bytes([cmd & 0xFF, region & 0xFF])
-            + struct.pack(">Q", aid)
-            + struct.pack(">I", kts & 0xFFFFFFFF)
-        )
-        if fox:
-            return hdr + struct.pack(">I", len(encrypts)) + encrypts
-        return hdr + struct.pack(">Q", len(encrypts)) + encrypts
+        try:
+            regions = self.logindata.get("19") or []
+            if isinstance(regions, dict):
+                regions = [regions]
+            esid = lambda rec: (
+                lambda s: s[str(rec).upper()] if str(rec).upper() in s else None)(
+                {str(x["2"]).upper(): x["1"] for x in regions if isinstance(x, dict) and "1" in x and "2" in x}
+            )
+            tok = self._data.login_token
+            if isinstance(tok, bytes):
+                tok = tok.decode("utf-8", "replace")
+            encrypts = AES_CBC128(str(tok).encode(), self._data.key, self._data.iv)
+            region = int(_scalar(esid(self._data.server)) or 1)
+            aid = int(_scalar(self._data.account_id) or 0)
+            
+            # ===== FIX: dùng login_time từ MajorLogin (đã lấy field 21) =====
+            kts = int(_scalar(self._data.login_time) or int(time.time()))
+            
+            print(f"[_auth_packet] fox={fox} server={self._data.server} region={region} aid={aid} kts={kts}")
+            cmd = 1 if fox else (101 + (aid % 50))
+            hdr = (
+                bytes([cmd & 0xFF, region & 0xFF])
+                + struct.pack(">Q", aid)
+                + struct.pack(">I", kts & 0xFFFFFFFF)
+            )
+            if fox:
+                return hdr + struct.pack(">I", len(encrypts)) + encrypts
+            return hdr + struct.pack(">Q", len(encrypts)) + encrypts
+        except Exception as e:
+            print("[_auth_packet]", e)
+            return None
 
     def TAO_PACKET_XT(self) -> str:
         try:
@@ -786,8 +808,8 @@ class APIClient:
 
 
 class FreeFireAPI:
-    def __init__(self):
-        self.client = APIClient()
+    def __init__(self, device_id=None):
+        self.client = APIClient(device_id=device_id)
 
     def get(self, target: str, is_emulator: bool = False):
         return self.client.auth(target, is_emulator)
