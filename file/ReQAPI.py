@@ -6,7 +6,6 @@ from typing import Dict, Any, Optional, Tuple, Union, TypedDict, List
 from dataclasses import dataclass
 from enum import IntEnum
 
-
 class ProtoBuf:
     def __init__(self, data):
         self.data = data
@@ -33,10 +32,8 @@ class ProtoBuf:
         length, pos = self.varint(buffer, pos)
         newpos = min(pos + length, len(buffer))
         value = buffer[pos:newpos]
-        try:
-            value = value.decode("utf-8")
-        except:
-            pass
+        try: value = value.decode("utf-8")
+        except: pass
         return value, newpos
 
     def fixed32(self, buffer: bytes, pos: int) -> Tuple[int, int]:
@@ -46,21 +43,15 @@ class ProtoBuf:
         return (struct.unpack("<Q", buffer[pos:pos + 8])[0], pos + 8) if pos + 8 <= len(buffer) else (0, pos)
 
     def parse_field(self, buffer: bytes, pos: int) -> Tuple[int, Any, int]:
-        if pos >= len(buffer):
-            return 0, None, pos
+        if pos >= len(buffer): return 0, None, pos
         key, pos = self.varint(buffer, pos)
         field_number, wire_type = key >> 3, key & 0x7
         try:
-            if wire_type == 0:
-                value, pos = self.varint(buffer, pos)
-            elif wire_type == 1:
-                value, pos = self.fixed64(buffer, pos)
-            elif wire_type == 2:
-                value, pos = self.string(buffer, pos)
-            elif wire_type == 5:
-                value, pos = self.fixed32(buffer, pos)
-            else:
-                return field_number, None, pos
+            if wire_type == 0: value, pos = self.varint(buffer, pos)
+            elif wire_type == 1: value, pos = self.fixed64(buffer, pos)
+            elif wire_type == 2: value, pos = self.string(buffer, pos)
+            elif wire_type == 5: value, pos = self.fixed32(buffer, pos)
+            else: return field_number, None, pos
         except (struct.error, IndexError):
             return field_number, None, pos
         return field_number, value, pos
@@ -74,10 +65,8 @@ class ProtoBuf:
             if isinstance(value, bytes) and value:
                 try:
                     nested = self.protobuf(value)
-                    if nested:
-                        value = nested
-                except:
-                    pass
+                    if nested: value = nested
+                except: pass
             key = str(field_number)
             result.setdefault(key, []).append(value)
         return {k: v[0] if len(v) == 1 else v for k, v in result.items()}
@@ -86,24 +75,19 @@ class ProtoBuf:
         start = pos
         key, pos = self.varint(buf, pos)
         num, wt = key >> 3, key & 0x7
-        if wt == 0:
-            _, end = self.varint(buf, pos)
-        elif wt == 1:
-            end = pos + 8
+        if wt == 0: _, end = self.varint(buf, pos)
+        elif wt == 1: end = pos + 8
         elif wt == 2:
             length, lp = self.varint(buf, pos)
             end = lp + length
-        elif wt == 5:
-            end = pos + 4
-        else:
-            return num, wt, b'', pos, pos
+        elif wt == 5: end = pos + 4
+        else: return num, wt, b'', pos, pos
         return num, wt, buf[start:end], pos, end
 
     def EXTRACT_FIELDS(self, fields: List[int], mode: str = "repeated") -> List:
         cur = self.data
         for depth, target in enumerate(fields):
-            pos = 0
-            found = False
+            pos = 0; found = False
             if depth == len(fields) - 1:
                 results = []
                 while pos < len(cur):
@@ -124,10 +108,8 @@ class ProtoBuf:
                             else:
                                 results.append(cur[val_start:val_end])
                     pos = val_end
-                if len(results) == 0:
-                    return []
-                if len(results) == 1:
-                    return results[0]
+                if len(results) == 0: return []
+                if len(results) == 1: return results[0]
                 return results
             else:
                 while pos < len(cur):
@@ -135,11 +117,9 @@ class ProtoBuf:
                     if num == target and wt == 2:
                         _, lp = self.varint(cur, val_start)
                         cur = cur[lp:val_end]
-                        found = True
-                        break
+                        found = True; break
                     pos = val_end
-                if not found:
-                    return []
+                if not found: return []
         return []
 
 
@@ -152,7 +132,6 @@ def Encrypt(value):
     result.append(value)
     return bytes(result)
 
-
 def Decrypt(value):
     result, shift = 0, 0
     for byte in bytes.fromhex(value):
@@ -161,7 +140,6 @@ def Decrypt(value):
             break
         shift += 7
     return result
-
 
 def parse_results(parsed_results):
     result_dict = {}
@@ -175,52 +153,42 @@ def parse_results(parsed_results):
             field_data = parse_results(result.data.results)
         result_dict[result.field].append(field_data)
     return {
-        key: value[0] if len(value) == 1 else value for key, value in result_dict.items()
+        key: value[0] if len(value) == 1
+        else value for key, value in result_dict.items()
     }
 
-
-protobuf_dec = lambda data: json.dumps(parse_results(Parser().parse(data)), ensure_ascii=False)
-
+protobuf_dec = lambda data: json.dumps(parse_results(
+    Parser().parse(data)
+), ensure_ascii=False)
 
 def AES_CBC128(data, key, iv):
     cipher = AES.new(key, AES.MODE_CBC, iv)
     return cipher.encrypt(pad(data, 0x10))
-
 
 def _scalar(v):
     while isinstance(v, (list, tuple)) and v:
         v = v[0]
     return v
 
-
 def _as_bytes(v):
     v = _scalar(v)
-    if v is None:
-        return None
-    if isinstance(v, bytes):
-        return v
-    if isinstance(v, bytearray):
-        return bytes(v)
-    if isinstance(v, str):
-        return v.encode("latin-1")
+    if v is None: return None
+    if isinstance(v, bytes): return v
+    if isinstance(v, bytearray): return bytes(v)
+    if isinstance(v, str): return v.encode("latin-1")
     if isinstance(v, (list, tuple)):
-        try:
-            return bytes(v)
-        except Exception:
-            return None
+        try: return bytes(v)
+        except Exception: return None
     return None
-
 
 def create_varint_field(field_number, value):
     field_header = (field_number << 3) | 0
     return Encrypt(field_header) + Encrypt(value)
 
-
 def create_length_delimited_field(field_number, value):
     field_header = (field_number << 3) | 2
     encoded_value = value.encode() if isinstance(value, str) else value
     return Encrypt(field_header) + Encrypt(len(encoded_value)) + encoded_value
-
 
 def pb_encode(fields):
     packet = bytearray()
@@ -240,9 +208,7 @@ def pb_encode(fields):
     return bytes(packet)
 
 
-class gayerr(Exception):
-    pass
-
+class gayerr(Exception): pass
 
 @dataclass
 class account_data:
@@ -271,28 +237,22 @@ class gringay:
     def tokendecode(token):
         try:
             parts = token.split(".")
-            if len(parts) != 3:
-                raise gayerr("Invalid token format")
+            if len(parts) != 3: raise gayerr("Invalid token format")
             payload = parts[1]
             payload += "=" * (0x4 - len(payload) % 0x4)
             return json.loads(base64.urlsafe_b64decode(payload).decode('utf-8'))
-        except (ValueError, json.JSONDecodeError) as e:
-            pass
+        except (ValueError, json.JSONDecodeError) as e: pass
 
     @staticmethod
     def format_timestamp(timestamp):
-        if timestamp is None:
-            return ""
+        if timestamp is None: return ""
         return time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(timestamp))
-
 
 def storeApps(package):
     I = requests.get(f"https://play.google.com/store/apps/%s" % package)
     I = re.search(r'\[\[\["(\d+\.\d+\.\d+)"\]\]', I.text)
-    if I:
-        return I.group(1)
+    if I: return I.group(1)
     return None
-
 
 def bdversion(ver: str = None):
     try:
@@ -303,9 +263,7 @@ def bdversion(ver: str = None):
                 ver = result['version']
             except Exception:
                 ver = "1.132.9"
-        r = requests.get(
-            f'https://version.ggwhitehawk.com/live/ver.php?version={ver}&lang=en&device=android&channel=android&appsttore=googleplay&region=ME&whitelist_version=1.3.0&whitelist_sp_version=1.0.0&device_name=google%20G011A&device_CPU=ARMv7%20VFPv3%20NEON%20VMH&device_GPU=Adreno%20(TM)%20640&device_mem=1993',
-            verify=False, timeout=10).json()
+        r = requests.get(f'https://version.ggwhitehawk.com/live/ver.php?version={ver}&lang=en&device=android&channel=android&appsttore=googleplay&region=ME&whitelist_version=1.3.0&whitelist_sp_version=1.0.0&device_name=google%20G011A&device_CPU=ARMv7%20VFPv3%20NEON%20VMH&device_GPU=Adreno%20(TM)%20640&device_mem=1993', verify=False, timeout=10).json()
         data = {
             "server_url": r['server_url'],
             "latest_release_version": r.get('latest_release_version') or "OB55",
@@ -333,11 +291,11 @@ class APIClient:
         self.key = bytes([89, 103, 38, 116, 99, 37, 68, 69, 117, 104, 54, 37, 90, 99, 94, 56])
         self.iv = bytes([54, 111, 121, 90, 68, 114, 50, 50, 69, 51, 121, 99, 104, 106, 77, 37])
 
-        # ===== FIX: Dùng device_id cố định nếu có (tránh kick do đổi máy) =====
+        # FIX: device_id random mỗi acc (hoặc dùng từ ngoài nếu có)
         if device_id:
             self._data.device_id = device_id
         else:
-            self._data.device_id = "Google|0ecc7b3b-6c41-462e-9050-26d835e84c53"
+            self._data.device_id = f"Google|{uuid.uuid4()}"
         print(f"[DEVICE] device_id={self._data.device_id}")
 
         from urllib.parse import urlparse
@@ -406,6 +364,9 @@ class APIClient:
 
     def MajorLogin(self):
         try:
+            if not self._data.device_id:
+                self._data.device_id = f"Google|{uuid.uuid4()}"
+
             fields = {}
             fields[3] = str(datetime.datetime.now())[:-7]
             fields[4] = "free fire"
@@ -508,42 +469,13 @@ class APIClient:
                 decrypted = raw
 
             pb = ProtoBuf(decrypted)
+            key_extracted = _as_bytes(pb.EXTRACT_FIELDS([22], mode="bytes"))
+            iv_extracted = _as_bytes(pb.EXTRACT_FIELDS([23], mode="bytes"))
 
-            # ===== FIX: LẤY KEY/IV AN TOÀN =====
-            key_extracted = None
-            iv_extracted = None
-
-            try:
-                body = raw[64:] if len(raw) > 64 else decrypted
-                f = ProtoBuf(body).protobuf()
-                if "22" in f and "23" in f:
-                    key_extracted = _as_bytes(f["22"])
-                    iv_extracted = _as_bytes(f["23"])
-                    if "21" in f:
-                        self._data.login_time = int(_scalar(f["21"]))
-                    print(f"[MajorLogin] ✅ Lấy key/iv từ raw[64:]")
-            except Exception as e:
-                print(f"[MajorLogin] raw[64:] parse fail: {e}")
-
-            if not key_extracted or not iv_extracted:
-                try:
-                    f = ProtoBuf(decrypted).protobuf()
-                    if "22" in f and "23" in f:
-                        key_extracted = _as_bytes(f["22"])
-                        iv_extracted = _as_bytes(f["23"])
-                        if "21" in f:
-                            self._data.login_time = int(_scalar(f["21"]))
-                        print(f"[MajorLogin] ✅ Lấy key/iv từ decrypted")
-                except:
-                    pass
-
-            if not key_extracted or not iv_extracted:
-                try:
-                    key_extracted = _as_bytes(pb.EXTRACT_FIELDS([22], mode="bytes"))
-                    iv_extracted = _as_bytes(pb.EXTRACT_FIELDS([23], mode="bytes"))
-                    print(f"[MajorLogin] ✅ Lấy key/iv từ EXTRACT_FIELDS")
-                except:
-                    pass
+            if (not key_extracted or not iv_extracted) and len(decrypted) > 64:
+                pb2 = ProtoBuf(decrypted[64:])
+                key_extracted = _as_bytes(pb2.EXTRACT_FIELDS([22], mode="bytes"))
+                iv_extracted = _as_bytes(pb2.EXTRACT_FIELDS([23], mode="bytes"))
 
             if key_extracted and iv_extracted:
                 self._data.key = key_extracted
@@ -553,13 +485,28 @@ class APIClient:
             else:
                 self._data.key = self.key
                 self._data.iv = self.iv
-                print(f"[MajorLogin] ⚠️ key/iv hardcode (server không trả)")
+                print(f"[MajorLogin] ⚠️ key/iv hardcode")
 
-            # ===== FIX: Validate login_time =====
-            now = int(time.time())
-            if not self._data.login_time or abs(self._data.login_time - now) > 300:
-                print(f"[MajorLogin] ⚠️ login_time lệch {abs((self._data.login_time or 0) - now)}s → fix = now")
-                self._data.login_time = now
+            # ===== FIX: LẤY TIMESTAMP SERVER (field 21) TỪ MajorLogin =====
+            ts_found = None
+            for src_name, src_bytes in [("decrypted", decrypted), ("raw[64:]", raw[64:] if len(raw) > 64 else b"")]:
+                if not src_bytes:
+                    continue
+                try:
+                    pb_ts = ProtoBuf(src_bytes)
+                    ts_raw = pb_ts.EXTRACT_FIELDS([21], mode="repeated")
+                    if ts_raw:
+                        ts_found = int(_scalar(ts_raw))
+                        print(f"[MajorLogin] ✅ timestamp từ {src_name} = {ts_found}")
+                        break
+                except:
+                    pass
+            
+            if ts_found:
+                self._data.login_time = ts_found
+            else:
+                self._data.login_time = int(time.time())
+                print(f"[MajorLogin] ⚠️ timestamp = time.time() = {self._data.login_time}")
 
             jwt_bytes = None
             o = 0
@@ -574,11 +521,9 @@ class APIClient:
                 length, after = 0, idx + 1
                 shift = 0
                 while after < len(decrypted):
-                    b = decrypted[after]
-                    after += 1
+                    b = decrypted[after]; after += 1
                     length |= (b & 0x7F) << shift
-                    if not (b & 0x80):
-                        break
+                    if not (b & 0x80): break
                     shift += 7
                 end = after + length
                 if end <= len(decrypted) and decrypted[after:after + 3] == b"eyJ":
@@ -598,8 +543,7 @@ class APIClient:
                     p = parts[1] + '=' * ((4 - len(parts[1]) % 4) % 4)
                     jd = json.loads(base64.urlsafe_b64decode(p))
                     account_id = str(jd.get('account_id', ''))
-            except:
-                pass
+            except: pass
 
             self._data.login_token = login_token
             self._data.account_id = account_id
@@ -607,10 +551,8 @@ class APIClient:
             self._data.base_url = "https://clientbp.ppmainecoonghj.com"
 
             print(f"[MajorLogin] ✅ OK account_id={account_id}")
-            return payload
         except Exception as e:
             print("[MajorLogin]", e)
-            return None
 
     def GetLoginData(self):
         try:
@@ -686,10 +628,9 @@ class APIClient:
             fields[106] = "https://dl.cdn.freefiremobile.com/live/ABHotUpdates/|https://dl-core.cdn.freefiremobile.com/live/ABHotUpdates/|4a0070ac356973792f002e0b25b96c3b"
             fields[107] = "c8e41b7a93f02d56e1a94c7b8203f5d1"
 
-            # ===== FIX: Dùng key/iv từ MajorLogin =====
-            key = self._data.key or self.key
-            iv = self._data.iv or self.iv
-            print(f"[GetLoginData] dùng key/iv: key_len={len(key)} iv_len={len(iv)}")
+            key = self.key
+            iv = self.iv
+            print(f"[GetLoginData] key/iv hardcode")
 
             payload = AES_CBC128(pb_encode(fields), key, iv)
             url = f"{self._data.base_url}/GetLoginData"
@@ -718,17 +659,11 @@ class APIClient:
                 data = json.loads(protobuf_dec(raw.hex()))
             self.logindata = data
 
-            # ===== FIX: Validate login_time =====
-            _ts_new = _scalar(data.get("21"))
-            now = int(time.time())
-            if _ts_new:
-                _ts_new = int(_ts_new)
-                if abs(_ts_new - now) > 300:
-                    print(f"[GetLoginData] ⚠️ timestamp vô lý {_ts_new} → fix = {now}")
-                    self._data.login_time = now
-                else:
-                    self._data.login_time = _ts_new
-                    print(f"[GetLoginData] ✅ login_time = {_ts_new}")
+            # FIX: Chỉ update login_time nếu field 21 có
+            _ts_server = _scalar(data.get("21"))
+            if _ts_server:
+                self._data.login_time = int(_ts_server)
+                print(f"[GetLoginData] ✅ login_time từ server = {self._data.login_time}")
             else:
                 print(f"[GetLoginData] ⚠️ giữ login_time = {self._data.login_time}")
 
@@ -757,12 +692,6 @@ class APIClient:
             print("[_auth_packet] ❌ account_id rỗng")
             return None
 
-        # ===== FIX: Validate login_time =====
-        now = int(time.time())
-        if not self._data.login_time or abs(self._data.login_time - now) > 300:
-            print(f"[_auth_packet] ⚠️ login_time lệch {abs((self._data.login_time or 0) - now)}s → fix = now")
-            self._data.login_time = now
-
         try:
             regions = self.logindata.get("19") or []
             if isinstance(regions, dict):
@@ -777,7 +706,10 @@ class APIClient:
             encrypts = AES_CBC128(str(tok).encode(), self._data.key, self._data.iv)
             region = int(_scalar(esid(self._data.server)) or 1)
             aid = int(_scalar(self._data.account_id) or 0)
-            kts = int(_scalar(self._data.login_time) or 0)
+            
+            # ===== FIX: dùng login_time từ MajorLogin (đã lấy field 21) =====
+            kts = int(_scalar(self._data.login_time) or int(time.time()))
+            
             print(f"[_auth_packet] fox={fox} server={self._data.server} region={region} aid={aid} kts={kts}")
             cmd = 1 if fox else (101 + (aid % 50))
             hdr = (
@@ -794,101 +726,84 @@ class APIClient:
 
     def TAO_PACKET_XT(self) -> str:
         try:
-            pkt = self._auth_packet(True)
-            return pkt.hex() if pkt else None
+            return self._auth_packet(True)
         except Exception as e:
-            print("[TAO_PACKET_XT]", e)
-            return None
+            print(e)
 
-    def TAO_PACKET_LOBBY(self) -> str:
+    def TAO_PACKET_LOBBY(self):
         try:
-            pkt = self._auth_packet(False)
-            return pkt.hex() if pkt else None
+            return self._auth_packet(False)
         except Exception as e:
-            print("[TAO_PACKET_LOBBY]", e)
-            return None
+            print(e)
 
     def auth(self, access_token, is_emulator=False):
         try:
             self.is_emulator = is_emulator
             print(f"[auth] Bắt đầu — token={'guest' if ':' in access_token else 'access_token'}")
-
             if ":" in access_token:
                 uid, password = access_token.split(":")
                 self.auth_guest_token(int(uid), password)
             else:
                 self.auth_token_inspect(access_token)
-
             if not self._data.access_token:
                 print("[auth] ❌ Không có access_token")
                 return "account not found"
-
             print(f"[auth] ✅ open_id={self._data.open_id}")
-
-            payload = self.MajorLogin()
-            if not self._data.login_token or not payload:
+            self.MajorLogin()
+            if not self._data.login_token:
                 print("[auth] ❌ MajorLogin thất bại")
                 return "account not found"
-
             self.GetLoginData()
             if not self.logindata:
                 print("[auth] ❌ GetLoginData thất bại")
                 return "account not found"
-
-            return self._build_api_response(payload)
-
+            pkt = self.TAO_PACKET_XT()
+            if not pkt:
+                print("[auth] ❌ TAO_PACKET_XT rỗng")
+                return "account not found"
+            return self._build_api_response(pkt)
         except Exception as e:
-            print(f"[auth] Exception: {e}")
-            return "account not found"
+            print("[auth]", e)
 
-    def _build_api_response(self, encrypted_payload):
-        if not self._data.login_token:
+    def _build_api_response(self, authpacket):
+        if not self._data.login_token or not authpacket:
             return "account not found"
         if not self._data.key or not self._data.iv:
             return "account not found"
-
-        pkt_hex = self.TAO_PACKET_XT()
-        lobby_hex = self.TAO_PACKET_LOBBY()
-        if not pkt_hex or not lobby_hex:
-            print("[_build_api_response] ❌ Không tạo được Auth Packet")
-            return "account not found"
-
         tok = self._data.login_token
         if isinstance(tok, bytes):
             tok = tok.decode("utf-8", "replace")
-
         data = gringay.tokendecode(tok)
         if self._data.guild_id:
-            guild = {"id": self._data.guild_id, "secret_code": self._data.guild_code}
+            guild = {}
+            guild["id"] = self._data.guild_id
+            guild["secret_code"] = self._data.guild_code
         else:
             guild = False
-
-        saddress = {
-            "chatip": self._data.chat_ip,
-            "chatport": self._data.chat_port,
-            "onlineip": self._data.online_ip,
-            "onlineport": self._data.online_port,
-        }
-
-        response = {
-            "CreateTime": gringay.format_timestamp(self._data.create_time),
-            "ExpiryTime": gringay.format_timestamp(self._data.expiry_time),
-            "UserAuthPacket": list(bytes.fromhex(pkt_hex)),
-            "UserAuthPacketLobby": list(bytes.fromhex(lobby_hex)),
-            "UserAuthToken": tok,
-            "UserNickName": data.get("nickname") if data else None,
-            "UserAccountUID": self._data.account_id,
-            "LockRegion": data.get("lock_region") if data else "VN",
-            "ClientVersion": data.get("client_version") if data else "1.132.9",
-            "IsEmulator": data.get("is_emulator") if data else None,
-            "GuildData": guild,
-            "BaseUrl": self._data.base_url or "",
-            "key": list(self._data.key),
-            "iv": list(self._data.iv),
-            "logindata": self.logindata,
-            "GameServerAddress": saddress,
-            "device_id": self._data.device_id,
-        }
+        saddress = {}
+        saddress["chatip"] = self._data.chat_ip
+        saddress["chatport"] = self._data.chat_port
+        saddress["onlineip"] = self._data.online_ip
+        saddress["onlineport"] = self._data.online_port
+        response = {}
+        response["CreateTime"] = gringay.format_timestamp(self._data.create_time)
+        response["ExpiryTime"] = gringay.format_timestamp(self._data.expiry_time)
+        response["UserAuthPacket"] = list(authpacket)
+        lobby_pkt = self.TAO_PACKET_LOBBY()
+        response["UserAuthPacketLobby"] = list(lobby_pkt) if lobby_pkt else list(authpacket)
+        response["UserAuthToken"] = tok
+        response["UserNickName"] = data.get("nickname") if data else None
+        response["UserAccountUID"] = data.get("account_id") if data else None
+        response["LockRegion"] = data.get("lock_region") if data else None
+        response["ClientVersion"] = data.get("client_version") if data else None
+        response["IsEmulator"] = data.get("is_emulator") if data else None
+        response["GuildData"] = guild
+        response["BaseUrl"] = self._data.base_url or ""
+        response["key"] = list(self._data.key)
+        response["iv"] = list(self._data.iv)
+        response["logindata"] = self.logindata
+        response["GameServerAddress"] = saddress
+        response["device_id"] = self._data.device_id
         return response
 
 
