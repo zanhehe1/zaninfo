@@ -64,12 +64,113 @@ def login_required(fn):
     return wrapper
 
 
+# Mã màu ANSI (ví dụ ESC[38;5;245m ... ESC[0m) mà bot in ra; khung log trên web không hiểu nên phải lọc bỏ
+ANSI_RE = re.compile(r'\x1b\[[0-?]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)|\x1b[@-Z\\-_]')
+
+
+def strip_ansi(text):
+    return ANSI_RE.sub('', text).replace('\x1b', '')
+
+
 def read_logs():
     try:
         text = LOG_PATH.read_text(encoding='utf-8', errors='replace')
-        return text[-30000:]
+        if len(text) > 60000:
+            text = text[-60000:]
+            nl = text.find('\n')  # bỏ dòng đầu bị cắt dở để không sót mảnh mã màu
+            if nl != -1:
+                text = text[nl + 1:]
+        return strip_ansi(text)[-30000:]
     except FileNotFoundError:
         return 'Chưa có nhật ký. Hãy tải tệp .py lên rồi nhấn Start.'
+
+
+# ===== Console trực tiếp: đọc đuôi bot.log, gắn giờ + số thứ tự cho từng dòng =====
+from collections import deque
+import codecs
+
+_CON = deque(maxlen=3000)          # (seq, 'HH:MM:SS', nội dung dòng)
+_con_seq = 0
+_con_gen = 1                       # tăng mỗi khi file log bị xoá/cắt -> web nạp lại từ đầu
+_con_off = 0
+_con_rest = ''                     # phần dòng chưa có ký tự xuống dòng
+_con_rest_ts = 0.0
+_con_primed = False
+_con_dec = codecs.getincrementaldecoder('utf-8')(errors='replace')
+_con_lock = threading.Lock()
+_con_started = False
+LINE_SPLIT_RE = re.compile(r'\r\n|\n|\r')
+CON_BACKLOG = 200 * 1024
+
+
+def _con_emit(text, stamp):
+    global _con_seq, _con_rest
+    parts = LINE_SPLIT_RE.split(_con_rest + text)
+    _con_rest = parts.pop()
+    for p in parts:
+        line = strip_ansi(p).rstrip()
+        if not line.strip():
+            continue
+        _con_seq += 1
+        _CON.append((_con_seq, stamp, line[:1500]))
+
+
+def _con_reset_locked():
+    global _con_seq, _con_gen, _con_off, _con_rest, _con_dec
+    _CON.clear()
+    _con_seq = 0
+    _con_gen += 1
+    _con_off = 0
+    _con_rest = ''
+    _con_dec = codecs.getincrementaldecoder('utf-8')(errors='replace')
+
+
+def _con_tick():
+    global _con_off, _con_rest, _con_rest_ts, _con_primed
+    try:
+        size = LOG_PATH.stat().st_size
+    except FileNotFoundError:
+        size = 0
+    with _con_lock:
+        if size < _con_off:                       # file bị xoá hoặc cắt ngắn
+            _con_reset_locked()
+        if not _con_primed and size == 0:
+            _con_primed = True                    # file trống: mọi dòng sau này đều là dòng mới
+        stamp = time.strftime('%H:%M:%S')
+        if size > _con_off:
+            first = not _con_primed
+            if first and size > CON_BACKLOG:      # lần đầu: chỉ nạp phần đuôi của file
+                _con_off = size - CON_BACKLOG
+            with LOG_PATH.open('rb') as f:
+                f.seek(_con_off)
+                data = f.read(min(size - _con_off, 1_000_000))
+            _con_off += len(data)
+            text = _con_dec.decode(data)
+            if first and _con_off - len(data) > 0:
+                nl = text.find('\n')              # bỏ dòng đầu bị cắt dở
+                text = text[nl + 1:] if nl != -1 else ''
+            _con_primed = True
+            _con_emit(text, '' if first else stamp)
+            _con_rest_ts = time.time()
+        elif _con_rest and time.time() - _con_rest_ts > 1.5:
+            _con_emit('\n', stamp)                # dòng không có xuống dòng (vd. prompt) vẫn hiện
+
+
+def _con_loop():
+    while True:
+        try:
+            _con_tick()
+        except Exception:
+            pass
+        time.sleep(0.8)
+
+
+def start_console_tail():
+    global _con_started
+    if _con_started:
+        return
+    _con_started = True
+    threading.Thread(target=_con_loop, daemon=True, name='console-tail').start()
 
 
 def pump_output(pipe):
@@ -461,6 +562,29 @@ def api_logs():
     return jsonify({'ok': True, 'logs': read_logs(), **get_status()})
 
 
+@app.get('/api/console')
+@login_required
+def api_console():
+    """Log trực tiếp theo từng dòng: web gửi since (số thứ tự dòng cuối đã có) + gen, nhận về các dòng mới."""
+    def _num(key, default):
+        try:
+            return int(request.args.get(key, default))
+        except (TypeError, ValueError):
+            return default
+    since, gen = _num('since', 0), _num('gen', 0)
+    limit = min(max(_num('limit', 600), 1), 2000)
+    with _con_lock:
+        data = list(_CON)
+        last, cur_gen = _con_seq, _con_gen
+    reset = gen != cur_gen or since > last        # log bị xoá / server khởi động lại
+    if reset:
+        since = 0
+    lines = [{'n': n, 't': t, 's': s} for n, t, s in data if n > since]
+    lines = lines[-limit:] if not since else lines[:limit]
+    new_last = lines[-1]['n'] if lines else last
+    return jsonify({'ok': True, 'lines': lines, 'last': new_last, 'gen': cur_gen, 'reset': reset})
+
+
 @app.errorhandler(413)
 def too_large(_):
     if request.path.startswith('/api/'):
@@ -501,6 +625,7 @@ def start_keep_alive():
 
 
 start_keep_alive()
+start_console_tail()
 
 
 if __name__ == '__main__':
