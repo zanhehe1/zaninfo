@@ -1,6 +1,6 @@
 import os
 import requests
-from flask import Flask, send_file, request, jsonify
+from flask import Flask, send_file, request, jsonify, redirect
 
 app = Flask(__name__)
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
@@ -16,7 +16,15 @@ def index():
         return "Lỗi: Không tìm thấy file index.html", 404
     return send_file(INDEX_FILE, mimetype='text/html')
 
-# Hỗ trợ cả 2 kiểu gửi form (URL-encoded) và JSON
+# THÊM DÒNG NÀY ĐỂ CHỐNG LỖI 404 TRÊN SAFARI
+@app.route('/<path:path>')
+def catch_all(path):
+    # Nếu là API thì bỏ qua (để các hàm bên dưới xử lý)
+    if path.startswith('api/') or path == 'login':
+        return "Not Found", 404
+    # Mọi đường dẫn lạ (như favicon.ico, apple-touch-icon...) đều trả về trang chủ
+    return redirect('/')
+
 @app.route('/login', methods=['POST'])
 def login():
     if request.is_json:
@@ -35,7 +43,6 @@ def stats():
     try:
         r = requests.get(f"{BOT_API_URL}/api/stats", timeout=2)
         data = r.json()
-        # Bổ sung các trường còn thiếu để giao diện không bị lỗi "--"
         data["cpu"] = None
         data["memory"] = None
         data["api_last_ok"] = True
