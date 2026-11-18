@@ -1,21 +1,15 @@
 import os
 import time
 import requests
-from flask import Flask, render_template_string, request, jsonify, redirect, url_for, make_response
+from flask import Flask, render_template_string, request, jsonify
 
 app = Flask(__name__)
 app.secret_key = "zanspm_secret_key_cyberpunk"
 
-# Mật khẩu mặc định
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
-
-# Cấu hình cổng (Render tự cấp)
 PORT = int(os.environ.get("PORT", 10000))
-
-# Địa chỉ API nội bộ của bot 1.py (chạy cùng máy)
 BOT_API_URL = "http://127.0.0.1:2026"
 
-# HTML giao diện (Bản Cyberpunk cũ, đã fix lỗi)
 HTML = """
 <!DOCTYPE html>
 <html lang="vi">
@@ -194,9 +188,6 @@ HTML = """
 
 @app.route('/')
 def index():
-    # Nếu đã login thì trả giao diện, chưa thì trả trang login
-    if request.cookies.get("auth") == "1":
-        return render_template_string(HTML)
     return render_template_string(HTML)
 
 @app.route('/api/login', methods=['POST'])
@@ -204,7 +195,6 @@ def login():
     data = request.json
     if data.get("password") == ADMIN_PASSWORD:
         resp = jsonify({"success": True})
-        # Set cookie chuẩn Flask, không bao giờ bị chặn
         resp.set_cookie("auth", "1", httponly=True, samesite='Lax', max_age=86400)
         return resp
     return jsonify({"success": False, "error": "Mật khẩu không chính xác!"})
@@ -212,7 +202,6 @@ def login():
 @app.route('/api/stats')
 def stats():
     try:
-        # Gọi sang bot 1.py để lấy dữ liệu
         r = requests.get(f"{BOT_API_URL}/api/stats", timeout=2)
         return jsonify(r.json())
     except:
@@ -234,8 +223,3 @@ def bots():
         return jsonify(r.json())
     except:
         return jsonify({"bots": []})
-
-if __name__ == '__main__':
-    print(f"[WEB] Flask đang chạy trên port {PORT}")
-    # Chạy Flask server
-    app.run(host='0.0.0.0', port=PORT)
