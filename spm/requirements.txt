@@ -3,3 +3,9 @@ psutil
 flask
 requests
 pycryptodome
+aiohttp
+psutil
+requests
+flask
+pycryptodome
+protobuf-decoder
