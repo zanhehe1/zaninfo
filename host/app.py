@@ -474,6 +474,35 @@ def healthz():
     return jsonify({'ok': True, 'service': 'zan-python-host'})
 
 
+# ===== Tự ping giữ Render không ngủ (mỗi 5 phút) =====
+KEEP_ALIVE_URL = os.environ.get('KEEP_ALIVE_URL', 'https://zancutehs.onrender.com/healthz')
+KEEP_ALIVE_INTERVAL = int(os.environ.get('KEEP_ALIVE_INTERVAL', '300'))
+_keep_alive_started = False
+
+
+def _keep_alive_loop():
+    time.sleep(30)  # đợi server khởi động xong
+    while True:
+        try:
+            req = urllib.request.Request(KEEP_ALIVE_URL, headers={'User-Agent': 'zan-keep-alive'})
+            with urllib.request.urlopen(req, timeout=30) as r:
+                print(f'[keep-alive] {KEEP_ALIVE_URL} -> HTTP {r.status}', flush=True)
+        except Exception as e:
+            print(f'[keep-alive] lỗi: {e}', flush=True)
+        time.sleep(KEEP_ALIVE_INTERVAL)
+
+
+def start_keep_alive():
+    global _keep_alive_started
+    if _keep_alive_started or not KEEP_ALIVE_URL or KEEP_ALIVE_INTERVAL <= 0:
+        return
+    _keep_alive_started = True
+    threading.Thread(target=_keep_alive_loop, daemon=True, name='keep-alive').start()
+
+
+start_keep_alive()
+
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', '10000'))
     app.run(host='0.0.0.0', port=port)
