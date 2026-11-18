@@ -5,21 +5,14 @@ import os
 import random
 import sys
 import time
-import threading
-from collections import deque
-from datetime import datetime
 
 try:
+    import aiohttp
     from aiohttp import web
 except ImportError:
     os.system("pip install aiohttp -q")
+    import aiohttp
     from aiohttp import web
-
-try:
-    import requests
-except ImportError:
-    os.system("pip install requests -q")
-    import requests
 
 if sys.platform == "win32":
     try:
@@ -34,7 +27,6 @@ sys.path.insert(0, BASE_DIR)
 import ttoan
 from ReQAPI import FreeFireAPI
 
-# ================== CONFIG ==================
 MAX_ACCOUNTS = 10000
 MAX_CONCURRENT_LOGIN = 50
 LOGIN_RETRY = 3
@@ -58,26 +50,28 @@ T_EXIT = 0.05
 T_QUIT = 0.03
 
 HTTP_HOST = "0.0.0.0"
-HTTP_PORT = int(os.environ.get("PORT", 2026))
+HTTP_PORT = int(os.environ.get("PORT", "2026"))
+
+API_PING_URL = os.environ.get("API_PING_URL", "https://zanspm.onrender.com")
+API_PING_INTERVAL = 300
 
 INSTANCE_ID = os.environ.get("INSTANCE_ID", "")
 AC_FILENAME = os.environ.get("AC_FILE", "ac.json")
 AC_FILE = os.path.join(BASE_DIR, AC_FILENAME)
 CFG_FILE = os.path.join(BASE_DIR, "ttoan.txt")
-INDEX_FILE = os.path.join(BASE_DIR, "index.html")
 
-API_URL = "https://zanspm.onrender.com"
-API_INTERVAL = 300
-ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
-
-# ================== COLORS ==================
 class C:
-    RESET = "\033[0m"; BOLD = "\033[1m"; DIM = "\033[2m"
-    GREEN = "\033[38;5;46m"; RED = "\033[38;5;196m"; CYAN = "\033[38;5;51m"
-    MAGENTA = "\033[38;5;201m"; YELLOW = "\033[38;5;226m"; GRAY = "\033[38;5;245m"
+    RESET = "\033[0m"
+    BOLD = "\033[1m"
+    DIM = "\033[2m"
+    GREEN = "\033[38;5;46m"
+    RED = "\033[38;5;196m"
+    CYAN = "\033[38;5;51m"
+    MAGENTA = "\033[38;5;201m"
+    YELLOW = "\033[38;5;226m"
+    GRAY = "\033[38;5;245m"
     WHITE = "\033[38;5;255m"
 
-# ================== STATE ==================
 class STATE:
     codes = {}
     codes_lock = asyncio.Lock()
@@ -94,48 +88,49 @@ class STATE:
 stop_flag = None
 file_lock = asyncio.Lock()
 accounts_ref_global = []
+
 CHAT_LOCK = asyncio.Lock()
 
-# ================== DASHBOARD STATE ==================
-LOG_BUFFER = deque(maxlen=3000)
-LOG_LOCK = threading.Lock()
 API_STATE = {
-    "api_last_ok": None, "api_last_ms": None, "api_last_error": None,
-    "started_at": datetime.now().isoformat(timespec="seconds"),
+    "api_last_ok": None,
+    "api_last_ms": None,
+    "api_last_error": None,
 }
 
-_orig_print = print
-def _log(level, msg):
-    line = f"[{time.strftime('%H:%M:%S')}] [{level.upper()}] {msg}"
-    with LOG_LOCK:
-        LOG_BUFFER.append(line)
+from collections import deque
+LOG_BUFFER = deque(maxlen=2000)
+LOG_SEQ = 0
 
-def log_hook(*args, **kwargs):
-    try:
-        s = " ".join(str(a) for a in args)
-        low = s.lower()
-        if "✗" in s or "err:" in low or "error" in low:
-            lvl = "error"
-        elif "✓" in s:
-            lvl = "ok"
-        elif "[http]" in low:
-            lvl = "info"
-        elif "[watch]" in low or "[sys]" in low:
-            lvl = "info"
-        elif "[login]" in low:
-            lvl = "ok" if "✓" in s else "error"
-        elif "[stop]" in low or "ctrl+c" in low:
-            lvl = "warn"
-        else:
-            lvl = "info"
-        _log(lvl, s)
-    except Exception:
-        pass
-    return _orig_print(*args, **kwargs)
+class LogTee:
+    def __init__(self, stream):
+        self.stream = stream
+        self.pending = ""
 
-print = log_hook
+    def write(self, value):
+        global LOG_SEQ
+        if not isinstance(value, str):
+            value = str(value)
+        result = self.stream.write(value)
+        self.stream.flush()
+        self.pending += value
+        while "\n" in self.pending:
+            line, self.pending = self.pending.split("\n", 1)
+            if line.strip():
+                LOG_SEQ += 1
+                LOG_BUFFER.append({"id": LOG_SEQ, "line": line.rstrip("\r")})
+        return result
 
-# ================== HELPERS ==================
+    def flush(self):
+        self.stream.flush()
+
+    def isatty(self):
+        return getattr(self.stream, "isatty", lambda: False)()
+
+    @property
+    def encoding(self):
+        return getattr(self.stream, "encoding", "utf-8")
+
+
 def compute_leader_count(n_acc):
     if n_acc <= 0:
         return 0
@@ -601,6 +596,30 @@ async def stats_loop(stop_evt):
         except asyncio.TimeoutError:
             print_stats()
 
+async def api_pinger_loop(stop_evt):
+    while not stop_evt.is_set():
+        t0 = time.time()
+        try:
+            timeout = aiohttp.ClientTimeout(total=15)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.get(API_PING_URL) as resp:
+                    await resp.read()
+                    ms = int((time.time() - t0) * 1000)
+                    API_STATE["api_last_ok"] = time.strftime("%H:%M:%S")
+                    API_STATE["api_last_ms"] = ms
+                    API_STATE["api_last_error"] = None
+                    print(f"{C.GRAY}{ts()}{C.RESET} {C.CYAN}[API]{C.RESET} "
+                          f"ping {API_PING_URL} → {resp.status} ({ms}ms)", flush=True)
+        except Exception as e:
+            API_STATE["api_last_error"] = str(e)
+            print(f"{C.GRAY}{ts()}{C.RESET} {C.RED}[API]{C.RESET} "
+                  f"ping lỗi: {e}", flush=True)
+        try:
+            await asyncio.wait_for(stop_evt.wait(), timeout=API_PING_INTERVAL)
+            return
+        except asyncio.TimeoutError:
+            pass
+
 async def file_watcher(accounts_ref, spawn_worker, login_sem, stop_evt):
     known_uids = set()
     last_mtime = 0
@@ -667,7 +686,6 @@ async def file_watcher(accounts_ref, spawn_worker, login_sem, stop_evt):
 
         await asyncio.sleep(WATCH_INTERVAL)
 
-# ================== CORE HTTP ROUTES ==================
 async def handle_stats(request):
     return web.json_response({
         "ok": True,
@@ -783,136 +801,127 @@ async def handle_chat(request):
         finally:
             acc["busy"] = False
 
-# ================== DASHBOARD ROUTES ==================
-LOGIN_HTML = """<!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><title>Login</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
-    background:radial-gradient(1200px 600px at 20% 0%,#1b2a4a,#0b1020 60%);
-    font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#e6edf3}
-  .card{width:min(420px,92vw);padding:32px 28px;border-radius:18px;
-    background:rgba(20,28,46,.85);border:1px solid rgba(120,170,255,.15);
-    box-shadow:0 20px 60px rgba(0,0,0,.5);backdrop-filter:blur(10px)}
-  h1{margin:0 0 6px;font-size:22px}p.sub{margin:0 0 22px;color:#8fa3c0;font-size:14px}
-  label{display:block;font-size:13px;color:#9fb2cc;margin-bottom:6px}
-  input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid rgba(120,170,255,.2);
-    background:#0d1527;color:#e6edf3;font-size:15px;outline:none;box-sizing:border-box}
-  button{width:100%;margin-top:18px;padding:12px;border:none;border-radius:10px;
-    background:linear-gradient(135deg,#4f8cff,#2f6bff);color:#fff;font-weight:600;font-size:15px;cursor:pointer}
-  .err{margin-top:14px;color:#ff8080;font-size:13px}
-</style></head><body>
-<form class="card" method="POST" action="/login">
-  <h1>ZansPM Dashboard</h1>
-  <p class="sub">Vui lòng đăng nhập để sử dụng</p>
-  <label for="pw">Mật khẩu</label>
-  <input id="pw" name="password" type="password" autofocus required>
-  <button type="submit">Đăng nhập</button>
-  <div class="err">{error}</div>
-</form></body></html>"""
 
-def _cookie_auth(request):
-    return request.cookies.get("auth") == "1"
+async def handle_dashboard(request):
+    index_path = os.path.join(BASE_DIR, "index.html")
+    if not os.path.isfile(index_path):
+        return web.Response(
+            text="Dashboard file index.html not found. Upload index.html in the same folder as this Python file.",
+            status=404,
+            content_type="text/plain",
+        )
+    return web.FileResponse(index_path)
 
-async def handle_login(request):
-    if request.method == "POST":
-        form = await request.post()
-        if form.get("password") == ADMIN_PASSWORD:
-            resp = web.HTTPFound("/")
-            resp.set_cookie("auth", "1", httponly=True, max_age=86400)
-            return resp
-        return web.Response(text=LOGIN_HTML.replace("{error}", "Sai mật khẩu"), content_type="text/html")
-    return web.Response(text=LOGIN_HTML.replace("{error}", ""), content_type="text/html")
 
-async def handle_logout(request):
-    resp = web.HTTPFound("/login")
-    resp.del_cookie("auth")
-    return resp
+def dashboard_authorized(request):
+    expected = os.environ.get("ADMIN_PASSWORD", "admin123")
+    return bool(expected) and request.cookies.get("zanspm_auth") == "1"
 
-async def handle_index(request):
-    if not _cookie_auth(request):
-        raise web.HTTPFound("/login")
-    if not os.path.exists(INDEX_FILE):
-        return web.Response(text="index.html not found", status=404)
-    return web.FileResponse(INDEX_FILE)
 
-async def handle_api_stats(request):
-    if not _cookie_auth(request):
+async def handle_dashboard_login(request):
+    expected = os.environ.get("ADMIN_PASSWORD", "admin123")
+    if not expected:
+        return web.json_response({"success": False, "error": "ADMIN_PASSWORD chưa được cấu hình trên Render."}, status=503)
+    form = await request.post()
+    supplied = str(form.get("password", ""))
+    if supplied != expected:
+        return web.json_response({"success": False, "error": "Mật khẩu không chính xác."}, status=401)
+    response = web.json_response({"success": True})
+    response.set_cookie("zanspm_auth", "1", httponly=True, secure=True, samesite="Lax", max_age=86400)
+    return response
+
+
+async def handle_dashboard_stats(request):
+    if not dashboard_authorized(request):
         return web.json_response({"error": "unauthorized"}, status=401)
+    elapsed = max(0, int(time.time() - STATE.start_time))
+    cpu = memory = None
+    try:
+        import psutil
+        cpu = psutil.cpu_percent(interval=None)
+        memory = psutil.virtual_memory().percent
+    except Exception:
+        pass
     return web.json_response({
-        "total_bots": len(accounts_ref_global),
+        "ok": True,
         "running": len(accounts_ref_global),
+        "total_bots": len(accounts_ref_global),
         "joined": STATE.total_join_success,
         "failed": STATE.total_join_fail,
+        "uptime": elapsed,
+        "cpu": cpu,
+        "memory": memory,
         "api_last_ok": API_STATE["api_last_ok"],
-        "api_last_ms": API_STATE["api_last_ms"],
         "api_last_error": API_STATE["api_last_error"],
-        "started_at": API_STATE["started_at"],
+        "api_last_ms": API_STATE["api_last_ms"],
+        "started_at": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(STATE.start_time)),
     })
 
-async def handle_api_logs(request):
-    if not _cookie_auth(request):
+
+async def handle_dashboard_logs(request):
+    if not dashboard_authorized(request):
         return web.json_response({"error": "unauthorized"}, status=401)
-    after = int(request.query.get("after", 0))
-    with LOG_LOCK:
-        logs = list(LOG_BUFFER)
-    return web.json_response({"total": len(logs), "lines": logs[after:]})
+    try:
+        after = max(0, int(request.query.get("after", "0")))
+    except (TypeError, ValueError):
+        after = 0
+    entries = [item for item in LOG_BUFFER if item["id"] > after]
+    return web.json_response({
+        "total": LOG_SEQ,
+        "latest_id": LOG_SEQ,
+        "lines": [item["line"] for item in entries],
+    })
 
-# ================== API PING ==================
-def api_pinger():
-    while True:
-        try:
-            t0 = time.time()
-            r = requests.get(API_URL, timeout=15)
-            ms = int((time.time() - t0) * 1000)
-            API_STATE["api_last_ok"] = datetime.now().isoformat(timespec="seconds")
-            API_STATE["api_last_ms"] = ms
-            API_STATE["api_last_error"] = None
-            _log("api", f"Ping {API_URL} → {r.status_code} ({ms}ms)")
-        except Exception as e:
-            API_STATE["api_last_error"] = str(e)
-            _log("api", f"Ping {API_URL} lỗi: {e}")
-        time.sleep(API_INTERVAL)
 
-# ================== HTTP SERVER ==================
+async def handle_dashboard_bots(request):
+    if not dashboard_authorized(request):
+        return web.json_response({"error": "unauthorized"}, status=401)
+    bots = []
+    for acc in accounts_ref_global:
+        bots.append({
+            "uid": str(acc.get("uid", "")),
+            "nickname": str(acc.get("nickname", "Unknown")),
+            "status": "running",
+            "joined": 0,
+            "failed": 0,
+        })
+    return web.json_response({"bots": bots})
+
+
+async def handle_dashboard_unsupported(request):
+    if not dashboard_authorized(request):
+        return web.json_response({"error": "unauthorized"}, status=401)
+    return web.json_response({
+        "error": "Chức năng điều khiển start/stop chưa được triển khai trong bot hiện tại."
+    }, status=501)
+
+
 async def start_http_server():
-    global HTTP_PORT
+    port = int(os.environ.get("PORT", str(HTTP_PORT)))
     app = web.Application()
-    # core
+    app.router.add_get("/", handle_dashboard)
+    app.router.add_post("/login", handle_dashboard_login)
+    app.router.add_get("/api/stats", handle_dashboard_stats)
+    app.router.add_get("/api/logs", handle_dashboard_logs)
+    app.router.add_get("/api/bots", handle_dashboard_bots)
+    app.router.add_post("/api/start_all", handle_dashboard_unsupported)
+    app.router.add_post("/api/stop_all", handle_dashboard_unsupported)
+    app.router.add_post("/api/bot/{uid}/{action}", handle_dashboard_unsupported)
     app.router.add_get("/stats", handle_stats)
     app.router.add_get("/status", handle_status)
     app.router.add_get("/chat", handle_chat)
-    # dashboard
-    app.router.add_get("/login", handle_login)
-    app.router.add_post("/login", handle_login)
-    app.router.add_get("/logout", handle_logout)
-    app.router.add_get("/", handle_index)
-    app.router.add_get("/api/stats", handle_api_stats)
-    app.router.add_get("/api/logs", handle_api_logs)
-
     runner = web.AppRunner(app)
     await runner.setup()
-    for port in range(HTTP_PORT, HTTP_PORT + 20):
-        try:
-            site = web.TCPSite(runner, HTTP_HOST, port)
-            await site.start()
-            HTTP_PORT = port
-            _log("info", f"Dashboard http://{HTTP_HOST}:{port}")
-            _log("info", f"Chat API: http://127.0.0.1:{port}/chat?tc=TEAMCODE")
-            print(f"{C.GREEN}[HTTP]{C.RESET} Dashboard → http://{HTTP_HOST}:{port}", flush=True)
-            print(f"{C.GREEN}[HTTP]{C.RESET} Chat: http://127.0.0.1:{port}/chat?tc=TEAMCODE", flush=True)
-            return
-        except OSError as e:
-            if "address already in use" in str(e).lower():
-                _log("warn", f"port {port} bận, thử port khác...")
-                continue
-            raise
-    _log("error", "Không tìm được port trống")
-    print(f"{C.RED}[HTTP] Không tìm được port trống{C.RESET}", flush=True)
+    site = web.TCPSite(runner, HTTP_HOST, port)
+    await site.start()
+    print(f"{C.GREEN}[HTTP]{C.RESET} Dashboard listening on {HTTP_HOST}:{port}", flush=True)
+    print(f"{C.GREEN}[HTTP]{C.RESET} Chat endpoint: /chat?tc=TEAMCODE", flush=True)
 
-# ================== MAIN ==================
 async def main():
     global stop_flag, accounts_ref_global
+
+    if not isinstance(sys.stdout, LogTee):
+        sys.stdout = LogTee(sys.stdout)
 
     cfg = load_config()
 
@@ -949,9 +958,7 @@ async def main():
     supervisor_task = asyncio.create_task(leader_supervisor(accounts_ref, stop_evt))
     hb_task = asyncio.create_task(heartbeat_loop(accounts_ref, stop_evt))
     stats_task = asyncio.create_task(stats_loop(stop_evt))
-
-    # ping API 5 phút (thread riêng)
-    threading.Thread(target=api_pinger, daemon=True).start()
+    api_task = asyncio.create_task(api_pinger_loop(stop_evt))
 
     try:
         await start_http_server()
@@ -960,14 +967,14 @@ async def main():
 
     try:
         await asyncio.gather(
-            watcher_task, supervisor_task, hb_task, stats_task,
+            watcher_task, supervisor_task, hb_task, stats_task, api_task,
             return_exceptions=True
         )
     except asyncio.CancelledError:
         pass
     finally:
         stop_evt.set()
-        for t in [watcher_task, supervisor_task, hb_task, stats_task] + worker_tasks:
+        for t in [watcher_task, supervisor_task, hb_task, stats_task, api_task] + worker_tasks:
             if not t.done():
                 t.cancel()
         for acc in accounts_ref:
@@ -983,8 +990,6 @@ def close_acc_sync(acc):
             except: pass
 
 if __name__ == "__main__":
-    print(f"{C.MAGENTA}[SYS]{C.RESET} Chạy: python 1.py")
-    print(f"{C.MAGENTA}[SYS]{C.RESET} Dashboard: mở http://localhost:{HTTP_PORT} — mật khẩu admin123")
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
