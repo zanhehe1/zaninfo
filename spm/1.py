@@ -130,7 +130,6 @@ class LogTee:
     def encoding(self):
         return getattr(self.stream, "encoding", "utf-8")
 
-
 def compute_leader_count(n_acc):
     if n_acc <= 0:
         return 0
@@ -802,15 +801,59 @@ async def handle_chat(request):
             acc["busy"] = False
 
 
-async def handle_dashboard(request):
-    index_path = os.path.join(BASE_DIR, "index.html")
-    if not os.path.isfile(index_path):
-        return web.Response(
-            text="Dashboard file index.html not found. Upload index.html in the same folder as this Python file.",
-            status=404,
-            content_type="text/plain",
-        )
-    return web.FileResponse(index_path)
+# ==========================================
+# DASHBOARD & LOGIN ROUTES
+# ==========================================
+
+LOGIN_HTML = """<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login - ZansPM</title>
+<style>
+  body{margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:#080d1b;font-family:sans-serif;color:#fff;}
+  .box{background:#101a30;padding:30px;border-radius:15px;border:1px solid rgba(125,155,255,.2);width:300px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,0.5);}
+  input{width:100%;padding:12px;margin:15px 0;border-radius:8px;border:1px solid #263653;background:#0c1427;color:#fff;box-sizing:border-box;}
+  button{width:100%;padding:12px;border:none;border-radius:8px;background:#648cff;color:#fff;font-weight:bold;cursor:pointer;}
+  button:hover{background:#4f72d9;}
+  .err{color:#ff5478;font-size:13px;margin-top:10px;height:15px;}
+</style>
+</head>
+<body>
+  <div class="box">
+    <h2>ZansPM Admin</h2>
+    <form id="loginForm">
+      <input type="password" id="pw" placeholder="Nhập mật khẩu..." required>
+      <button type="submit">Đăng nhập</button>
+    </form>
+    <div class="err" id="err"></div>
+  </div>
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const pw = document.getElementById('pw').value;
+      const err = document.getElementById('err');
+      err.textContent = '';
+      try {
+        const res = await fetch('/login', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: 'password=' + encodeURIComponent(pw)
+        });
+        const data = await res.json();
+        if (data.success) {
+          window.location.href = '/';
+        } else {
+          err.textContent = data.error || 'Sai mật khẩu';
+        }
+      } catch (e) {
+        err.textContent = 'Lỗi kết nối Server';
+      }
+    });
+  </script>
+</body>
+</html>"""
 
 
 def dashboard_authorized(request):
@@ -819,16 +862,40 @@ def dashboard_authorized(request):
 
 
 async def handle_dashboard_login(request):
+    if request.method == "GET":
+        return web.Response(text=LOGIN_HTML, content_type="text/html")
+        
     expected = os.environ.get("ADMIN_PASSWORD", "admin123")
     if not expected:
-        return web.json_response({"success": False, "error": "ADMIN_PASSWORD chưa được cấu hình trên Render."}, status=503)
+        return web.json_response({"success": False, "error": "Chưa cấu hình ADMIN_PASSWORD"}, status=503)
+    
     form = await request.post()
     supplied = str(form.get("password", ""))
     if supplied != expected:
         return web.json_response({"success": False, "error": "Mật khẩu không chính xác."}, status=401)
+        
     response = web.json_response({"success": True})
-    response.set_cookie("zanspm_auth", "1", httponly=True, secure=True, samesite="Lax", max_age=86400)
+    # secure=True có thể gây lỗi nếu test local http, nhưng trên render https thì ok
+    response.set_cookie("zanspm_auth", "1", httponly=True, samesite="Lax", max_age=86400)
     return response
+
+async def handle_logout(request):
+    resp = web.HTTPFound('/login')
+    resp.del_cookie("zanspm_auth")
+    return resp
+
+async def handle_dashboard(request):
+    if not dashboard_authorized(request):
+        raise web.HTTPFound('/login')
+        
+    index_path = os.path.join(BASE_DIR, "index.html")
+    if not os.path.isfile(index_path):
+        return web.Response(
+            text="Dashboard file index.html not found. Upload index.html in the same folder.",
+            status=404,
+            content_type="text/plain",
+        )
+    return web.FileResponse(index_path)
 
 
 async def handle_dashboard_stats(request):
@@ -892,30 +959,40 @@ async def handle_dashboard_unsupported(request):
     if not dashboard_authorized(request):
         return web.json_response({"error": "unauthorized"}, status=401)
     return web.json_response({
-        "error": "Chức năng điều khiển start/stop chưa được triển khai trong bot hiện tại."
+        "error": "Chức năng điều khiển start/stop chưa được triển khai."
     }, status=501)
 
 
 async def start_http_server():
     port = int(os.environ.get("PORT", str(HTTP_PORT)))
     app = web.Application()
+    
+    # Routes cho Giao diện
     app.router.add_get("/", handle_dashboard)
+    app.router.add_get("/login", handle_dashboard_login)
     app.router.add_post("/login", handle_dashboard_login)
+    app.router.add_get("/logout", handle_logout)
+    
+    # API cho Giao diện
     app.router.add_get("/api/stats", handle_dashboard_stats)
     app.router.add_get("/api/logs", handle_dashboard_logs)
     app.router.add_get("/api/bots", handle_dashboard_bots)
     app.router.add_post("/api/start_all", handle_dashboard_unsupported)
     app.router.add_post("/api/stop_all", handle_dashboard_unsupported)
     app.router.add_post("/api/bot/{uid}/{action}", handle_dashboard_unsupported)
+    
+    # Routes API cho Bot
     app.router.add_get("/stats", handle_stats)
     app.router.add_get("/status", handle_status)
     app.router.add_get("/chat", handle_chat)
+    
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, HTTP_HOST, port)
     await site.start()
     print(f"{C.GREEN}[HTTP]{C.RESET} Dashboard listening on {HTTP_HOST}:{port}", flush=True)
     print(f"{C.GREEN}[HTTP]{C.RESET} Chat endpoint: /chat?tc=TEAMCODE", flush=True)
+
 
 async def main():
     global stop_flag, accounts_ref_global
