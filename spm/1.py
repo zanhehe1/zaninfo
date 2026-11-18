@@ -107,6 +107,7 @@ class LogTee:
     @property
     def encoding(self): return getattr(self.stream, "encoding", "utf-8")
 
+# ================== HELPERS BOT ==================
 def compute_leader_count(n_acc):
     if n_acc <= 0: return 0
     if n_acc < 50: return 1
@@ -574,16 +575,20 @@ def close_acc_sync(acc):
 # ==========================================
 def run_flask_web():
     try:
-        print(f"{C.GREEN}[WEB]{C.RESET} Đang khởi động web.py (Flask)...", flush=True)
+        print(f"\033[92m[WEB] Đang khởi động web.py (Flask)...\033[0m", flush=True)
         import web as web_module
         web_module.app.run(host='0.0.0.0', port=web_module.PORT, debug=False, use_reloader=False)
     except Exception as e:
-        print(f"{C.RED}[WEB] Lỗi khởi động web.py: {e}{C.RESET}", flush=True)
+        print(f"\033[91m[WEB] Lỗi khởi động web.py: {e}\033[0m", flush=True)
 
 if __name__ == "__main__":
+    # 1. Chạy web.py (Flask) trong một luồng riêng (Thread)
     flask_thread = threading.Thread(target=run_flask_web, daemon=True)
     flask_thread.start()
     time.sleep(1)
 
-    try: asyncio.run(main())
-    except KeyboardInterrupt: print(f"\n{C.YELLOW}[CTRL+C]{C.RESET}")
+    # 2. Chạy Bot (Asyncio)
+    try: 
+        asyncio.run(main())
+    except KeyboardInterrupt: 
+        print(f"\n{C.YELLOW}[CTRL+C]{C.RESET}")
