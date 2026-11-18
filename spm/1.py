@@ -60,16 +60,13 @@ AC_FILENAME = os.environ.get("AC_FILE", "ac.json")
 AC_FILE = os.path.join(BASE_DIR, AC_FILENAME)
 CFG_FILE = os.path.join(BASE_DIR, "ttoan.txt")
 
+# Đường dẫn file index
+INDEX_FILE = os.path.join(BASE_DIR, "index.html")
+
 class C:
-    RESET = "\033[0m"
-    BOLD = "\033[1m"
-    DIM = "\033[2m"
-    GREEN = "\033[38;5;46m"
-    RED = "\033[38;5;196m"
-    CYAN = "\033[38;5;51m"
-    MAGENTA = "\033[38;5;201m"
-    YELLOW = "\033[38;5;226m"
-    GRAY = "\033[38;5;245m"
+    RESET = "\033[0m"; BOLD = "\033[1m"; DIM = "\033[2m"
+    GREEN = "\033[38;5;46m"; RED = "\033[38;5;196m"; CYAN = "\033[38;5;51m"
+    MAGENTA = "\033[38;5;201m"; YELLOW = "\033[38;5;226m"; GRAY = "\033[38;5;245m"
     WHITE = "\033[38;5;255m"
 
 class STATE:
@@ -169,13 +166,12 @@ def print_stats():
     rate = (STATE.total_join_success / STATE.total_join_attempts * 100) \
         if STATE.total_join_attempts > 0 else 0
     codes_str = ", ".join(STATE.codes[k] for k in sorted(STATE.codes)) or "-"
-    suffixes_str = ", ".join(STATE.codes[k][-2:] for k in sorted(STATE.codes) if len(STATE.codes[k]) >= 2) or "-"
     code_per_hour = STATE.total_join_success / max(elapsed, 1) * 3600
     print()
     print(f"{C.CYAN}{'='*58}{C.RESET}")
     print(f"{C.CYAN}|{C.RESET} BOT online: {C.GREEN}{len(accounts_ref_global)}{C.RESET}")
     print(f"{C.CYAN}|{C.RESET} Leaders: {len(STATE.codes)}   Gen: {STATE.code_generation}")
-    print(f"{C.CYAN}|{C.RESET} Codes: {codes_str} (2 số cuối: {suffixes_str})")
+    print(f"{C.CYAN}|{C.RESET} Codes: {codes_str}")
     print(f"{C.CYAN}|{C.RESET} Join: {C.GREEN}{STATE.total_join_success}{C.RESET}/"
           f"{STATE.total_join_attempts} ({rate:.0f}%)   "
           f"Fail: {C.RED}{STATE.total_join_fail}{C.RESET}")
@@ -392,14 +388,12 @@ async def rotate_team(acc):
 
 async def leader_rotator(leader_idx, accounts_ref, stop_evt):
     while not stop_evt.is_set():
-        candidates = [a for a in accounts_ref
-                      if not a.get("busy") and not a["lock"].locked()]
+        candidates = [a for a in accounts_ref if not a.get("busy") and not a["lock"].locked()]
         if not candidates:
             await asyncio.sleep(1.0)
             continue
 
         acc = random.choice(candidates)
-
         try:
             acc["busy"] = True
             async with acc["lock"]:
@@ -422,7 +416,6 @@ async def leader_rotator(leader_idx, accounts_ref, stop_evt):
 
 async def leader_supervisor(accounts_ref, stop_evt):
     tasks = {}
-
     while not stop_evt.is_set():
         n_acc = len(accounts_ref)
         n_leader = compute_leader_count(n_acc)
@@ -438,9 +431,7 @@ async def leader_supervisor(accounts_ref, stop_evt):
 
         for idx in range(n_leader):
             if idx not in tasks or tasks[idx].done():
-                tasks[idx] = asyncio.create_task(
-                    leader_rotator(idx, accounts_ref, stop_evt)
-                )
+                tasks[idx] = asyncio.create_task(leader_rotator(idx, accounts_ref, stop_evt))
 
         await asyncio.sleep(LEADER_SUPERVISOR_INTERVAL)
 
@@ -483,7 +474,6 @@ async def do_chat(acc, info, cfg):
     chat_channel = info.get("chat_channel", "")
 
     chat_ok = False
-
     auth_val = str(chat_int) if chat_int else chat_channel
     if ch_w and auth_val and owner:
         try:
@@ -580,8 +570,7 @@ async def worker_loop(acc, worker_id, cfg, stop_evt):
             async with acc["lock"]:
                 await spam_cycle(acc, cfg, worker_id)
         except Exception as e:
-            print(f"{C.GRAY}{ts()}{C.RESET} {C.RED}[W{worker_id:03d}] "
-                  f"err: {type(e).__name__}{C.RESET}", flush=True)
+            print(f"{C.GRAY}{ts()}{C.RESET} {C.RED}[W{worker_id:03d}] err: {type(e).__name__}{C.RESET}", flush=True)
         finally:
             acc["busy"] = False
 
@@ -607,12 +596,8 @@ async def api_pinger_loop(stop_evt):
                     API_STATE["api_last_ok"] = time.strftime("%H:%M:%S")
                     API_STATE["api_last_ms"] = ms
                     API_STATE["api_last_error"] = None
-                    print(f"{C.GRAY}{ts()}{C.RESET} {C.CYAN}[API]{C.RESET} "
-                          f"ping {API_PING_URL} → {resp.status} ({ms}ms)", flush=True)
         except Exception as e:
             API_STATE["api_last_error"] = str(e)
-            print(f"{C.GRAY}{ts()}{C.RESET} {C.RED}[API]{C.RESET} "
-                  f"ping lỗi: {e}", flush=True)
         try:
             await asyncio.wait_for(stop_evt.wait(), timeout=API_PING_INTERVAL)
             return
@@ -663,20 +648,16 @@ async def file_watcher(accounts_ref, spawn_worker, login_sem, stop_evt):
             await asyncio.sleep(WATCH_INTERVAL)
             continue
 
-        new_accs = [(u, p) for u, p in accs.items()
-                    if u not in known_uids and u not in pending_logins][:slots]
-
+        new_accs = [(u, p) for u, p in accs.items() if u not in known_uids and u not in pending_logins][:slots]
         if not new_accs:
             await asyncio.sleep(WATCH_INTERVAL)
             continue
 
         if first_load:
-            print(f"{C.GRAY}{ts()}{C.RESET} {C.CYAN}[WATCH]{C.RESET} "
-                  f"load {len(new_accs)} acc từ {AC_FILENAME} → login song song", flush=True)
+            print(f"{C.GRAY}{ts()}{C.RESET} {C.CYAN}[WATCH]{C.RESET} load {len(new_accs)} acc từ {AC_FILENAME} → login song song", flush=True)
             first_load = False
         else:
-            print(f"{C.GRAY}{ts()}{C.RESET} {C.YELLOW}[WATCH]{C.RESET} "
-                  f"+{len(new_accs)} acc mới từ {AC_FILENAME} → login", flush=True)
+            print(f"{C.GRAY}{ts()}{C.RESET} {C.YELLOW}[WATCH]{C.RESET} +{len(new_accs)} acc mới từ {AC_FILENAME} → login", flush=True)
 
         for uid, pwd in new_accs:
             known_uids.add(uid)
@@ -685,26 +666,16 @@ async def file_watcher(accounts_ref, spawn_worker, login_sem, stop_evt):
 
         await asyncio.sleep(WATCH_INTERVAL)
 
+# ==========================================
+# DASHBOARD & LOGIN ROUTES (GỌN NHẸ)
+# ==========================================
+
 async def handle_stats(request):
     return web.json_response({
-        "ok": True,
-        "bot_online": len(accounts_ref_global),
-        "leaders": len(STATE.codes),
-        "codes": STATE.codes,
-        "gen": STATE.code_generation,
-        "join_success": STATE.total_join_success,
-        "join_fail": STATE.total_join_fail,
-        "join_attempts": STATE.total_join_attempts,
-        "spam_sent": STATE.total_spam_sent,
-    })
-
-async def handle_status(request):
-    return web.json_response({
-        "ok": True,
-        "bot_online": len(accounts_ref_global),
-        "count": len(accounts_ref_global),
-        "codes": STATE.codes,
-        "gen": STATE.code_generation,
+        "ok": True, "bot_online": len(accounts_ref_global), "leaders": len(STATE.codes),
+        "codes": STATE.codes, "gen": STATE.code_generation,
+        "join_success": STATE.total_join_success, "join_fail": STATE.total_join_fail,
+        "join_attempts": STATE.total_join_attempts, "spam_sent": STATE.total_spam_sent,
     })
 
 async def handle_chat(request):
@@ -713,8 +684,7 @@ async def handle_chat(request):
         return web.json_response({"ok": False, "msg": "Format: /chat?tc=1234567"})
 
     async with CHAT_LOCK:
-        candidates = [a for a in accounts_ref_global
-                      if not a.get("busy") and not a["lock"].locked()]
+        candidates = [a for a in accounts_ref_global if not a.get("busy") and not a["lock"].locked()]
         if not candidates:
             return web.json_response({"ok": False, "msg": "no free bot"})
         acc = random.choice(candidates)
@@ -731,8 +701,7 @@ async def handle_chat(request):
                     on_w.write(ttoan.leave_team(acc_id, rc, key, iv))
                     await on_w.drain()
                     await asyncio.sleep(T_LEAVE_OLD)
-                except Exception:
-                    pass
+                except Exception: pass
 
                 try:
                     on_w.write(ttoan.join_code(tc, rc, key, iv))
@@ -745,8 +714,7 @@ async def handle_chat(request):
                     try:
                         on_w.write(ttoan.leave_team(acc_id, rc, key, iv))
                         await on_w.drain()
-                    except Exception:
-                        pass
+                    except Exception: pass
                     return web.json_response({"ok": False, "msg": "không bắt được owner"})
 
                 owner = int(info.get("owner_uid"))
@@ -767,116 +735,51 @@ async def handle_chat(request):
                             await ch_w.drain()
                             chat_ok = True
                             await asyncio.sleep(T_CHAT_SEND)
-                    except Exception:
-                        pass
+                    except Exception: pass
 
                 try:
                     on_w.write(ttoan.leave_team(acc_id, rc, key, iv))
                     await on_w.drain()
                     await asyncio.sleep(T_EXIT)
-                except Exception:
-                    pass
+                except Exception: pass
 
                 if ch_w and owner:
                     try:
                         ch_w.write(ttoan.quit_chat(owner, key, iv))
                         await ch_w.drain()
                         await asyncio.sleep(T_QUIT)
-                    except Exception:
-                        pass
+                    except Exception: pass
 
-                if chat_ok:
-                    STATE.total_spam_sent += 1
+                if chat_ok: STATE.total_spam_sent += 1
 
                 return web.json_response({
-                    "ok": True,
-                    "uid": str(acc_id),
-                    "nickname": acc.get("nickname", ""),
-                    "teamcode": tc,
-                    "owner_uid": owner,
-                    "squad_code": squad_code,
-                    "chat_sent": chat_ok,
+                    "ok": True, "uid": str(acc_id), "nickname": acc.get("nickname", ""),
+                    "teamcode": tc, "owner_uid": owner, "squad_code": squad_code, "chat_sent": chat_ok,
                 })
         finally:
             acc["busy"] = False
 
-
-# ==========================================
-# DASHBOARD & LOGIN ROUTES
-# ==========================================
-
-LOGIN_HTML = """<!DOCTYPE html>
-<html lang="vi">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Login - ZansPM</title>
-<style>
-  body{margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:#080d1b;font-family:sans-serif;color:#fff;}
-  .box{background:#101a30;padding:30px;border-radius:15px;border:1px solid rgba(125,155,255,.2);width:300px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,0.5);}
-  input{width:100%;padding:12px;margin:15px 0;border-radius:8px;border:1px solid #263653;background:#0c1427;color:#fff;box-sizing:border-box;}
-  button{width:100%;padding:12px;border:none;border-radius:8px;background:#648cff;color:#fff;font-weight:bold;cursor:pointer;}
-  button:hover{background:#4f72d9;}
-  .err{color:#ff5478;font-size:13px;margin-top:10px;height:15px;}
-</style>
-</head>
-<body>
-  <div class="box">
-    <h2>ZansPM Admin</h2>
-    <form id="loginForm">
-      <input type="password" id="pw" placeholder="Nhập mật khẩu..." required>
-      <button type="submit">Đăng nhập</button>
-    </form>
-    <div class="err" id="err"></div>
-  </div>
-  <script>
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const pw = document.getElementById('pw').value;
-      const err = document.getElementById('err');
-      err.textContent = '';
-      try {
-        const res = await fetch('/login', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-          body: 'password=' + encodeURIComponent(pw)
-        });
-        const data = await res.json();
-        if (data.success) {
-          window.location.href = '/';
-        } else {
-          err.textContent = data.error || 'Sai mật khẩu';
-        }
-      } catch (e) {
-        err.textContent = 'Lỗi kết nối Server';
-      }
-    });
-  </script>
-</body>
-</html>"""
-
-
+# --- API CHO DASHBOARD ---
 def dashboard_authorized(request):
     expected = os.environ.get("ADMIN_PASSWORD", "admin123")
     return bool(expected) and request.cookies.get("zanspm_auth") == "1"
 
-
 async def handle_dashboard_login(request):
     if request.method == "GET":
-        return web.Response(text=LOGIN_HTML, content_type="text/html")
+        # Trả về file index.html khi truy cập /login
+        if os.path.isfile(INDEX_FILE):
+            return web.FileResponse(INDEX_FILE)
+        return web.Response(text="Lỗi: Không tìm thấy file index.html", status=404)
         
     expected = os.environ.get("ADMIN_PASSWORD", "admin123")
-    if not expected:
-        return web.json_response({"success": False, "error": "Chưa cấu hình ADMIN_PASSWORD"}, status=503)
-    
     form = await request.post()
     supplied = str(form.get("password", ""))
+    
     if supplied != expected:
         return web.json_response({"success": False, "error": "Mật khẩu không chính xác."}, status=401)
         
     response = web.json_response({"success": True})
-    # secure=True có thể gây lỗi nếu test local http, nhưng trên render https thì ok
-    response.set_cookie("zanspm_auth", "1", httponly=True, samesite="Lax", max_age=86400)
+    response.set_cookie("zanspm_auth", "1", httponly=True, samesite="Lax", secure=False, max_age=86400)
     return response
 
 async def handle_logout(request):
@@ -885,45 +788,21 @@ async def handle_logout(request):
     return resp
 
 async def handle_dashboard(request):
-    if not dashboard_authorized(request):
-        raise web.HTTPFound('/login')
-        
-    index_path = os.path.join(BASE_DIR, "index.html")
-    if not os.path.isfile(index_path):
-        return web.Response(
-            text="Dashboard file index.html not found. Upload index.html in the same folder.",
-            status=404,
-            content_type="text/plain",
-        )
-    return web.FileResponse(index_path)
-
+    # Truy cập trang chủ -> trả file index.html
+    if not os.path.isfile(INDEX_FILE):
+        return web.Response(text="Lỗi: Không tìm thấy file index.html", status=404)
+    return web.FileResponse(INDEX_FILE)
 
 async def handle_dashboard_stats(request):
     if not dashboard_authorized(request):
         return web.json_response({"error": "unauthorized"}, status=401)
     elapsed = max(0, int(time.time() - STATE.start_time))
-    cpu = memory = None
-    try:
-        import psutil
-        cpu = psutil.cpu_percent(interval=None)
-        memory = psutil.virtual_memory().percent
-    except Exception:
-        pass
     return web.json_response({
-        "ok": True,
-        "running": len(accounts_ref_global),
-        "total_bots": len(accounts_ref_global),
-        "joined": STATE.total_join_success,
-        "failed": STATE.total_join_fail,
-        "uptime": elapsed,
-        "cpu": cpu,
-        "memory": memory,
-        "api_last_ok": API_STATE["api_last_ok"],
-        "api_last_error": API_STATE["api_last_error"],
-        "api_last_ms": API_STATE["api_last_ms"],
-        "started_at": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(STATE.start_time)),
+        "ok": True, "running": len(accounts_ref_global), "total_bots": len(accounts_ref_global),
+        "joined": STATE.total_join_success, "failed": STATE.total_join_fail, "uptime": elapsed,
+        "api_last_ok": API_STATE["api_last_ok"], "api_last_error": API_STATE["api_last_error"],
+        "api_last_ms": API_STATE["api_last_ms"], "started_at": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(STATE.start_time)),
     })
-
 
 async def handle_dashboard_logs(request):
     if not dashboard_authorized(request):
@@ -934,11 +813,8 @@ async def handle_dashboard_logs(request):
         after = 0
     entries = [item for item in LOG_BUFFER if item["id"] > after]
     return web.json_response({
-        "total": LOG_SEQ,
-        "latest_id": LOG_SEQ,
-        "lines": [item["line"] for item in entries],
+        "total": LOG_SEQ, "latest_id": LOG_SEQ, "lines": [item["line"] for item in entries],
     })
-
 
 async def handle_dashboard_bots(request):
     if not dashboard_authorized(request):
@@ -946,53 +822,37 @@ async def handle_dashboard_bots(request):
     bots = []
     for acc in accounts_ref_global:
         bots.append({
-            "uid": str(acc.get("uid", "")),
-            "nickname": str(acc.get("nickname", "Unknown")),
-            "status": "running",
-            "joined": 0,
-            "failed": 0,
+            "uid": str(acc.get("uid", "")), "nickname": str(acc.get("nickname", "Unknown")),
+            "status": "running", "joined": 0, "failed": 0,
         })
     return web.json_response({"bots": bots})
 
-
-async def handle_dashboard_unsupported(request):
-    if not dashboard_authorized(request):
-        return web.json_response({"error": "unauthorized"}, status=401)
-    return web.json_response({
-        "error": "Chức năng điều khiển start/stop chưa được triển khai."
-    }, status=501)
-
-
 async def start_http_server():
-    port = int(os.environ.get("PORT", str(HTTP_PORT)))
+    port = int(os.environ.get("PORT", "10000"))
     app = web.Application()
     
-    # Routes cho Giao diện
+    # Routes Giao diện
     app.router.add_get("/", handle_dashboard)
     app.router.add_get("/login", handle_dashboard_login)
     app.router.add_post("/login", handle_dashboard_login)
     app.router.add_get("/logout", handle_logout)
     
-    # API cho Giao diện
+    # Routes API Giao diện
     app.router.add_get("/api/stats", handle_dashboard_stats)
     app.router.add_get("/api/logs", handle_dashboard_logs)
     app.router.add_get("/api/bots", handle_dashboard_bots)
-    app.router.add_post("/api/start_all", handle_dashboard_unsupported)
-    app.router.add_post("/api/stop_all", handle_dashboard_unsupported)
-    app.router.add_post("/api/bot/{uid}/{action}", handle_dashboard_unsupported)
     
-    # Routes API cho Bot
+    # Routes API Bot
     app.router.add_get("/stats", handle_stats)
-    app.router.add_get("/status", handle_status)
     app.router.add_get("/chat", handle_chat)
     
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, HTTP_HOST, port)
     await site.start()
-    print(f"{C.GREEN}[HTTP]{C.RESET} Dashboard listening on {HTTP_HOST}:{port}", flush=True)
-    print(f"{C.GREEN}[HTTP]{C.RESET} Chat endpoint: /chat?tc=TEAMCODE", flush=True)
-
+    
+    print(f"\033[92m[HTTP] Dashboard: http://{HTTP_HOST}:{port}/login\033[0m", flush=True)
+    print(f"\033[92m[HTTP] Chat API: /chat?tc=TEAMCODE\033[0m", flush=True)
 
 async def main():
     global stop_flag, accounts_ref_global
@@ -1002,21 +862,18 @@ async def main():
 
     cfg = load_config()
 
+    # Bật Web Server lên TRƯỚC để tránh bị trắng trang khi đang load bot
+    try:
+        await start_http_server()
+    except Exception as e:
+        print(f"{C.RED}[HTTP] Không start được: {e}{C.RESET}", flush=True)
+
     accs = load_accounts()
     n = len(accs)
     if n > 0:
-        print(f"{C.CYAN}[ACC]{C.RESET} {n} acc trong {AC_FILENAME} "
-              f"(max {MAX_ACCOUNTS}, {compute_leader_count(n)} leader)")
+        print(f"{C.CYAN}[ACC]{C.RESET} {n} acc trong {AC_FILENAME}")
     else:
-        print(f"{C.CYAN}[ACC]{C.RESET} 0 acc trong {AC_FILENAME} (đang chờ gen.py tạo...)")
-
-    print(f"{C.CYAN}[CFG]{C.RESET} Chat: {cfg['chat'][:80].replace(chr(10), ' | ')}...")
-    print(f"{C.MAGENTA}[SYS]{C.RESET} Logic dò code: xxxxx[suffix] (1/100000)")
-    print(f"{C.MAGENTA}[SYS]{C.RESET} Đổi code mỗi {ROTATOR_INTERVAL}s")
-    print(f"{C.MAGENTA}[SYS]{C.RESET} Timing: leave={T_LEAVE_OLD}s auth={T_AUTH_CHAT}s "
-          f"chat={T_CHAT_SEND}s exit={T_EXIT}s")
-    print(f"{C.MAGENTA}[SYS]{C.RESET} login={MAX_CONCURRENT_LOGIN} song song, "
-          f"retry={LOGIN_RETRY}, tries={MAX_TRIES_PER_GEN}\n")
+        print(f"{C.CYAN}[ACC]{C.RESET} 0 acc trong {AC_FILENAME}")
 
     stop_evt = asyncio.Event()
     stop_flag = stop_evt
@@ -1029,18 +886,11 @@ async def main():
         t = asyncio.create_task(worker_loop(acc, wid, cfg, stop_evt))
         worker_tasks.append(t)
 
-    watcher_task = asyncio.create_task(
-        file_watcher(accounts_ref, spawn_worker, login_sem, stop_evt)
-    )
+    watcher_task = asyncio.create_task(file_watcher(accounts_ref, spawn_worker, login_sem, stop_evt))
     supervisor_task = asyncio.create_task(leader_supervisor(accounts_ref, stop_evt))
     hb_task = asyncio.create_task(heartbeat_loop(accounts_ref, stop_evt))
     stats_task = asyncio.create_task(stats_loop(stop_evt))
     api_task = asyncio.create_task(api_pinger_loop(stop_evt))
-
-    try:
-        await start_http_server()
-    except Exception as e:
-        print(f"{C.RED}[HTTP] Không start được: {e}{C.RESET}", flush=True)
 
     try:
         await asyncio.gather(
@@ -1056,8 +906,6 @@ async def main():
                 t.cancel()
         for acc in accounts_ref:
             close_acc_sync(acc)
-        print_stats()
-        print(f"\n{C.YELLOW}[STOP]{C.RESET}")
 
 def close_acc_sync(acc):
     for w_key in ("on_w", "ch_w"):
