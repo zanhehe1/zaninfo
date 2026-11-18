@@ -2,738 +2,407 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#080d1b">
-<title>ZansPM | Cyber Dashboard</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#050711">
+<title>ZansPM — Cyberpunk Control Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-
 :root {
-  --bg:#080d1b;
-  --panel:#101a30;
-  --panel2:#0c1427;
-  --border:rgba(125,155,255,.13);
-  --text:#edf3ff;
-  --muted:#8192b2;
-  --blue:#648cff;
-  --cyan:#35d9ff;
-  --green:#20e3a2;
-  --red:#ff5478;
-  --yellow:#ffc857;
+    --bg:#050711; --panel:#0c1426; --panel2:#101d35; --border:rgba(0,245,255,.17);
+    --text:#eafaff; --muted:#8294b5; --cyan:#00f5ff; --blue:#3985ff; --purple:#a855ff;
+    --green:#00ffad; --red:#ff386c; --yellow:#ffe66d; --mono:"JetBrains Mono",monospace; --font:"Inter",sans-serif;
 }
-
-* { margin:0; padding:0; box-sizing:border-box; }
-
+* { box-sizing:border-box; margin:0; padding:0; }
 body {
-  min-height:100vh;
-  color:var(--text);
-  background:
-    radial-gradient(ellipse at 10% 0%,rgba(70,90,210,.18),transparent 40%),
-    radial-gradient(ellipse at 100% 20%,rgba(0,190,255,.10),transparent 35%),
-    var(--bg);
-  font-family:Inter,sans-serif;
+    min-height:100vh; color:var(--text); font-family:var(--font);
+    background: radial-gradient(ellipse at 5% 0%,rgba(0,245,255,.13),transparent 35%), radial-gradient(ellipse at 95% 5%,rgba(168,85,255,.15),transparent 35%), radial-gradient(ellipse at 50% 100%,rgba(0,90,255,.1),transparent 45%), var(--bg);
+    background-attachment:fixed; overflow-x:hidden;
 }
-
-button { font-family:inherit; cursor:pointer; }
-a { text-decoration:none; color:inherit; }
-
-.header {
-  height:72px;
-  padding:0 28px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  border-bottom:1px solid var(--border);
-  background:rgba(8,13,27,.85);
-  backdrop-filter:blur(18px);
-  position:sticky;
-  top:0;
-  z-index:100;
+body::before {
+    content:""; position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:.17;
+    background-image: linear-gradient(rgba(0,245,255,.1) 1px,transparent 1px), linear-gradient(90deg,rgba(0,245,255,.1) 1px,transparent 1px);
+    background-size:38px 38px; mask-image:linear-gradient(to bottom,black,transparent 95%);
 }
-
-.brand { display:flex; align-items:center; gap:12px; }
-
-.logo {
-  width:42px; height:42px;
-  display:grid; place-items:center;
-  border-radius:13px; font-size:21px;
-  background:linear-gradient(135deg,#638cff,#8058ff);
-  box-shadow:0 0 25px rgba(100,140,255,.35);
+body::after {
+    content:""; position:fixed; inset:0; z-index:999; pointer-events:none; opacity:.025;
+    background:repeating-linear-gradient(0deg, transparent 0px, transparent 3px, rgba(0,245,255,.5) 4px);
 }
+button,input {font:inherit} button {cursor:pointer} .hidden {display:none!important}
+::selection {background:rgba(0,245,255,.3); color:white;}
 
-.brand-name { font-size:18px; font-weight:800; letter-spacing:.5px; }
-.brand-name span { color:var(--cyan); }
+@keyframes float { 0%,100% {transform:translateY(0) rotate(-3deg)} 50% {transform:translateY(-5px) rotate(3deg)} }
+@keyframes pulse { 0%,100% {opacity:1;transform:scale(1)} 50% {opacity:.55;transform:scale(.8)} }
+@keyframes pop { 0% {transform:scale(.2);opacity:0} 70% {transform:scale(1.35)} 100% {transform:scale(1);opacity:1} }
+@keyframes shake { 0%,100% {transform:translateX(0)} 20% {transform:translateX(-3px)} 40% {transform:translateX(3px)} 60% {transform:translateX(-2px)} 80% {transform:translateX(2px)} }
+@keyframes scan { 0% {transform:translateX(-100%)} 100% {transform:translateX(100%)} }
+@keyframes logEnter { from {opacity:0;transform:translateY(8px)} to {opacity:1;transform:translateY(0)} }
+@keyframes borderGlow { 0%,100% {box-shadow:0 0 8px rgba(0,245,255,.08)} 50% {box-shadow:0 0 20px rgba(0,245,255,.2)} }
+@keyframes gradientMove { 0% {background-position:0% 50%} 100% {background-position:200% 50%} }
+@keyframes robotWave { 0%,100% {transform:rotate(-8deg)} 50% {transform:rotate(8deg)} }
 
-.header-right {
-  display:flex; align-items:center; gap:20px;
-  color:var(--muted); font-size:13px;
+.emoji { display:inline-block; transform-origin:center; animation:float 3s ease-in-out infinite; }
+.emoji-check { display:inline-block; color:var(--green); animation:pop .45s ease both; text-shadow:0 0 12px var(--green); }
+.emoji-error { display:inline-block; color:var(--red); animation:shake .45s ease; text-shadow:0 0 12px var(--red); }
+.robot-icon { display:inline-block; animation:robotWave 2.5s ease-in-out infinite; filter:drop-shadow(0 0 9px var(--cyan)); }
+
+.login-screen { min-height:100vh; display:flex; justify-content:center; align-items:center; padding:22px; }
+.login-card {
+    width:100%; max-width:420px; position:relative; overflow:hidden; padding:38px;
+    border:1px solid rgba(0,245,255,.25); border-radius:23px; background:rgba(8,14,31,.94);
+    backdrop-filter:blur(25px); box-shadow:0 0 35px rgba(0,245,255,.1), 0 30px 100px rgba(0,0,0,.6); animation:logEnter .5s ease;
 }
+.login-card::before { content:""; position:absolute; top:0; left:0; width:100%; height:2px; background:linear-gradient(90deg,transparent,var(--cyan),var(--purple),transparent); animation:scan 4s linear infinite; }
+.login-logo { width:65px; height:65px; display:grid; place-items:center; margin-bottom:25px; border-radius:19px; font-size:30px; font-weight:900; color:white; background:linear-gradient(135deg,#00eaff,#7555ff 55%,#ff36c7); box-shadow:0 0 30px rgba(0,245,255,.3); animation:float 3s ease-in-out infinite; }
+.login-card h1 { font-size:27px; margin-bottom:9px; }
+.login-card p { color:var(--muted); font-size:13px; line-height:1.7; margin-bottom:28px; }
+.login-card label { display:block; margin-bottom:10px; color:#b9c7da; font-size:11px; font-weight:800; letter-spacing:1px; }
+.login-card input { width:100%; height:49px; padding:0 15px; color:white; outline:none; background:#050b19; border:1px solid var(--border); border-radius:11px; transition:.25s; }
+.login-card input:focus { border-color:var(--cyan); box-shadow:0 0 15px rgba(0,245,255,.15); }
+.login-button { width:100%; height:49px; margin-top:18px; border:0; border-radius:11px; color:white; font-weight:800; background:linear-gradient(100deg,#087dff,#00d5e8,#7655ff); background-size:200% 100%; box-shadow:0 0 20px rgba(0,200,255,.2); transition:.3s; }
+.login-button:hover { background-position:100% 0; box-shadow:0 0 30px rgba(0,245,255,.4); transform:translateY(-2px); }
+.login-button:disabled { opacity:.5; cursor:not-allowed; }
+.login-error { color:var(--red); font-size:12px; margin-top:13px; min-height:17px; }
 
-.online { display:flex; align-items:center; gap:8px; }
+.app { max-width:1550px; margin:auto; padding:25px 30px 40px; }
+.topbar { display:flex; align-items:center; justify-content:space-between; gap:20px; margin-bottom:32px; padding:15px 19px; border:1px solid var(--border); border-radius:17px; background:rgba(9,14,30,.7); backdrop-filter:blur(20px); animation:borderGlow 4s infinite; }
+.brand { display:flex; align-items:center; gap:13px; }
+.brand-icon { width:47px; height:47px; display:grid; place-items:center; border-radius:14px; color:white; font-size:21px; font-weight:900; background:linear-gradient(135deg,#00eaff,#7555ff); box-shadow:0 0 22px rgba(0,245,255,.35); animation:float 3s ease-in-out infinite; }
+.brand-name { font-size:20px; font-weight:900; letter-spacing:-.5px; background:linear-gradient(90deg,#fff,var(--cyan),#b66cff); background-clip:text; -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.brand-sub { color:var(--muted); font-size:9px; margin-top:4px; letter-spacing:2px; }
+.topbar-right { display:flex; align-items:center; gap:15px; }
+.clock { color:var(--cyan); font-family:var(--mono); font-size:13px; text-shadow:0 0 10px rgba(0,245,255,.35); }
+.connection { display:flex; align-items:center; gap:9px; padding:10px 14px; border-radius:30px; border:1px solid var(--border); background:rgba(0,245,255,.05); color:#c4e9ef; font-size:10px; font-weight:800; }
+.dot { width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 12px var(--green); animation:pulse 1.5s infinite; }
+.dot.offline { background:var(--red); box-shadow:0 0 12px var(--red); }
 
-.dot {
-  width:8px; height:8px;
-  background:var(--green); border-radius:50%;
-  box-shadow:0 0 12px var(--green);
-  animation:pulse 1.5s infinite;
-}
+.page-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:25px; }
+.page-heading h1 { font-size:clamp(24px,3vw,34px); font-weight:900; letter-spacing:-1px; background:linear-gradient(90deg,#fff,var(--cyan),#a855ff); background-size:200% auto; background-clip:text; -webkit-background-clip:text; -webkit-text-fill-color:transparent; animation:gradientMove 6s linear infinite; }
+.page-heading p { color:var(--muted); font-size:12px; margin-top:8px; line-height:1.6; }
 
-@keyframes pulse { 50% { opacity:.4; } }
+.stats-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin-bottom:21px; }
+.stat-card { position:relative; overflow:hidden; min-height:145px; padding:20px; border:1px solid rgba(0,245,255,.16); border-radius:16px; background:linear-gradient(145deg,rgba(17,29,55,.97),rgba(7,12,28,.98)); transition:.3s; }
+.stat-card::before { content:""; position:absolute; inset:0; opacity:0; pointer-events:none; background:linear-gradient(120deg,transparent,rgba(0,245,255,.1),transparent); transition:.3s; }
+.stat-card::after { content:""; position:absolute; width:130px; height:130px; right:-45px; bottom:-65px; border-radius:50%; background:var(--glow); filter:blur(30px); }
+.stat-card:hover { transform:translateY(-6px); border-color:rgba(0,245,255,.6); box-shadow:0 0 25px rgba(0,245,255,.12); }
+.stat-card:hover::before {opacity:1}
+.stat-top { display:flex; align-items:center; justify-content:space-between; color:var(--muted); font-size:10px; font-weight:800; letter-spacing:1px; }
+.stat-icon { width:35px; height:35px; display:grid; place-items:center; border-radius:10px; color:var(--accent); background:rgba(0,0,0,.2); border:1px solid rgba(255,255,255,.05); font-size:18px; animation:float 3s ease-in-out infinite; text-shadow:0 0 12px currentColor; }
+.stat-value { position:relative; z-index:1; margin-top:17px; color:white; font-size:32px; line-height:1; font-weight:900; text-shadow:0 0 15px rgba(0,245,255,.3); }
+.stat-note { position:relative; z-index:1; margin-top:10px; color:var(--muted); font-size:10px; }
 
-.logout {
-  padding:9px 13px; border:1px solid var(--border);
-  border-radius:9px; color:#ff8da5;
-  background:rgba(255,84,120,.07);
-}
+.main-grid { display:grid; grid-template-columns:minmax(0,1.65fr) minmax(290px,.85fr); gap:18px; align-items:start; }
+.panel { min-width:0; overflow:hidden; border:1px solid rgba(0,245,255,.16); border-radius:16px; background:rgba(9,15,32,.9); box-shadow:0 12px 35px rgba(0,0,0,.2); backdrop-filter:blur(18px); transition:.3s; }
+.panel:hover { border-color:rgba(0,245,255,.35); box-shadow:0 0 20px rgba(0,245,255,.06); }
+.panel + .panel {margin-top:18px}
+.panel-header { min-height:59px; padding:15px 19px; display:flex; align-items:center; justify-content:space-between; gap:12px; border-bottom:1px solid rgba(0,245,255,.12); background:linear-gradient(90deg,rgba(0,245,255,.07),rgba(168,85,255,.04),transparent); }
+.panel-title { display:flex; align-items:center; gap:10px; font-size:11px; font-weight:900; letter-spacing:1px; text-shadow:0 0 10px rgba(0,245,255,.2); }
+.panel-title-icon { color:var(--cyan); font-size:17px; text-shadow:0 0 12px var(--cyan); }
+.panel-meta { color:var(--cyan); font-family:var(--mono); font-size:10px; }
 
-.container { max-width:1500px; margin:auto; padding:30px; }
+.terminal { height:420px; overflow-y:auto; overflow-x:hidden; padding:16px 18px; background:radial-gradient(ellipse at 50% 0%,rgba(0,80,120,.1),transparent 65%),#030711; font-family:var(--mono); font-size:11px; line-height:1.9; scrollbar-width:thin; scrollbar-color:#087f9c transparent; scroll-behavior:smooth; overflow-anchor:none; }
+.terminal::-webkit-scrollbar {width:5px}
+.terminal::-webkit-scrollbar-thumb { background:#087f9c; border-radius:10px; }
+.terminal-line { min-width:0; overflow-wrap:anywhere; padding:2px 4px; border-radius:4px; color:#c5d7ed; animation:logEnter .25s ease-out both; }
+.terminal-line:hover { background:rgba(0,245,255,.035); }
+.ts {color:#647b9c}
+.lvl {font-weight:800}
+.lvl.OK,.lvl.SUCCESS { color:var(--green); text-shadow:0 0 9px rgba(0,255,173,.35); }
+.lvl.ERROR,.lvl.FAIL,.lvl.CRITICAL { color:var(--red); text-shadow:0 0 9px rgba(255,56,108,.35); }
+.lvl.WARN,.lvl.WARNING {color:var(--yellow)}
+.lvl.INFO,.lvl.LOGIN { color:var(--cyan); text-shadow:0 0 8px rgba(0,245,255,.25); }
+.log-message { color:#d1e2f6; white-space:pre-wrap; overflow-wrap:anywhere; }
+.log-tag {color:var(--green);font-weight:800}
+.bot-tag {color:var(--cyan);font-weight:700}
+.terminal-empty { color:#62748c; text-align:center; padding:65px 10px; font-size:11px; }
 
-.welcome { margin-bottom:28px; }
-.welcome h1 { font-size:27px; font-weight:800; }
-.welcome h1 span { color:var(--cyan); }
-.welcome p { margin-top:8px; font-size:13px; color:var(--muted); }
+.table-wrap { width:100%; overflow-x:auto; }
+table { width:100%; border-collapse:collapse; white-space:nowrap; font-size:11px; }
+thead {background:rgba(0,245,255,.045)}
+th { color:var(--cyan); text-align:left; padding:14px 15px; font-size:9px; font-weight:900; text-transform:uppercase; letter-spacing:1px; }
+td { padding:14px 15px; color:#c3d0e1; border-top:1px solid rgba(0,245,255,.075); }
+tbody tr {transition:.2s}
+tbody tr:hover {background:rgba(0,245,255,.045)}
+.bot-name { color:#eafaff; font-weight:800; text-shadow:0 0 9px rgba(0,245,255,.12); }
+.bot-id { color:#7187a4; font-family:var(--mono); font-size:9px; margin-top:5px; }
+.status-pill { display:inline-flex; align-items:center; gap:7px; padding:6px 10px; border-radius:20px; font-size:9px; font-weight:900; }
+.status-pill::before { content:""; width:5px; height:5px; border-radius:50%; background:currentColor; box-shadow:0 0 8px currentColor; animation:pulse 1.5s infinite; }
+.status-running { color:var(--green); background:rgba(0,255,173,.08); }
+.empty-row { text-align:center; color:var(--muted); padding:30px; }
 
-.stats {
-  display:grid;
-  grid-template-columns:repeat(5,minmax(0,1fr));
-  gap:16px; margin-bottom:25px;
-}
+.info-list {padding:7px 19px 14px}
+.info-item { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 0; border-bottom:1px solid rgba(0,245,255,.08); font-size:11px; }
+.info-item:last-child {border-bottom:0}
+.info-label {color:var(--muted)}
+.info-value { color:var(--cyan); font-family:var(--mono); font-size:10px; text-align:right; overflow-wrap:anywhere; text-shadow:0 0 8px rgba(0,245,255,.2); }
 
-.stat-card {
-  min-width:0; position:relative; overflow:hidden;
-  padding:21px; border:1px solid var(--border);
-  border-radius:17px;
-  background:linear-gradient(145deg,rgba(20,33,59,.95),rgba(11,20,39,.95));
-  transition:.25s;
-}
+.footer { display:flex; justify-content:space-between; gap:12px; padding-top:22px; margin-top:20px; border-top:1px solid rgba(0,245,255,.08); color:#64758f; font-size:10px; }
 
-.stat-card:hover {
-  transform:translateY(-4px);
-  border-color:rgba(100,140,255,.45);
-  box-shadow:0 12px 35px rgba(0,0,0,.2);
-}
-
-.stat-card::after {
-  content:""; position:absolute;
-  width:100px; height:100px; right:-40px; top:-45px;
-  border-radius:50%; background:var(--glow);
-  filter:blur(45px); opacity:.3;
-}
-
-.stat-top {
-  display:flex; align-items:center;
-  justify-content:space-between; gap:8px;
-}
-
-.stat-label {
-  color:var(--muted); font-size:11px; font-weight:700;
-  letter-spacing:1px; text-transform:uppercase;
-}
-
-.stat-icon {
-  width:36px; height:36px;
-  display:grid; place-items:center;
-  border-radius:11px; background:var(--icon-bg); font-size:17px;
-}
-
-.stat-value {
-  margin-top:15px; font-size:31px; font-weight:800;
-  letter-spacing:-1px; font-variant-numeric:tabular-nums;
-}
-
-.stat-sub { margin-top:5px; font-size:11px; color:var(--muted); }
-
-.blue {--glow:#648cff;--icon-bg:rgba(100,140,255,.15);}
-.green {--glow:#20e3a2;--icon-bg:rgba(32,227,162,.13);}
-.red {--glow:#ff5478;--icon-bg:rgba(255,84,120,.13);}
-.cyan {--glow:#35d9ff;--icon-bg:rgba(53,217,255,.13);}
-.purple {--glow:#a477ff;--icon-bg:rgba(164,119,255,.13);}
-
-.green .stat-value {color:var(--green);}
-.red .stat-value {color:var(--red);}
-.cyan .stat-value {color:var(--cyan);}
-
-.toolbar {
-  display:flex; align-items:center; justify-content:space-between;
-  flex-wrap:wrap; gap:12px; margin-bottom:20px;
-}
-
-.toolbar-title { font-size:16px; font-weight:700; }
-.toolbar-actions { display:flex; flex-wrap:wrap; gap:9px; }
-
-.btn {
-  border:1px solid var(--border);
-  padding:11px 16px; border-radius:10px;
-  font-size:12px; font-weight:700; color:white;
-  background:rgba(100,140,255,.12); transition:.2s;
-}
-
-.btn:hover { transform:translateY(-2px); filter:brightness(1.2); }
-
-.btn-start {
-  color:#80ffd0; border-color:rgba(32,227,162,.25);
-  background:rgba(32,227,162,.10);
-}
-
-.btn-stop {
-  color:#ff91a8; border-color:rgba(255,84,120,.25);
-  background:rgba(255,84,120,.10);
-}
-
-.btn-normal { color:#b4c8ed; }
-
-.dashboard-grid {
-  display:grid; grid-template-columns:1.15fr 1fr; gap:18px;
-}
-
-.panel {
-  min-width:0; overflow:hidden;
-  border:1px solid var(--border); border-radius:17px;
-  background:linear-gradient(160deg,rgba(17,27,48,.96),rgba(10,18,34,.96));
-  box-shadow:0 12px 35px rgba(0,0,0,.18);
-}
-
-.panel-header {
-  height:62px; padding:0 19px;
-  display:flex; align-items:center; justify-content:space-between;
-  border-bottom:1px solid var(--border);
-}
-
-.panel-title {
-  display:flex; align-items:center; gap:10px;
-  font-size:13px; font-weight:700;
-}
-
-.panel-title-icon { font-size:17px; }
-
-.panel-count {
-  padding:5px 10px; border-radius:20px;
-  background:rgba(100,140,255,.12); color:#a9c4ff;
-  font-size:11px; font-family:monospace;
-}
-
-.terminal {
-  height:520px; overflow-y:auto; padding:17px;
-  background:#050914;
-  font-family:"JetBrains Mono",monospace;
-  font-size:12px; line-height:1.9;
-  scrollbar-width:thin; scrollbar-color:#263653 transparent;
-}
-
-.terminal::-webkit-scrollbar { width:8px; }
-.terminal::-webkit-scrollbar-thumb {
-  background:#263653; border-radius:8px;
-}
-
-.terminal-line {
-  display:flex;
-  gap:8px;
-  white-space:pre-wrap;
-  word-break:break-word;
-  padding:2px 0;
-  border-radius:4px;
-}
-
-.terminal-line:hover { background:rgba(100,140,255,.05); }
-
-.terminal-line .ts {
-  color:#586c90;
-  flex:0 0 auto;
-  font-variant-numeric:tabular-nums;
-}
-
-.terminal-line .lvl {
-  flex:0 0 auto;
-  font-weight:700;
-  min-width:62px;
-}
-
-.terminal-line .msg { flex:1 1 auto; color:#c9d6ec; }
-
-.lvl.INFO  { color:#80aaff; }
-.lvl.OK    { color:#20e3a2; }
-.lvl.ERROR { color:#ff5478; }
-.lvl.WARN  { color:#ffc857; }
-.lvl.API   { color:#35d9ff; }
-
-.bot-container {
-  height:520px; overflow:auto;
-  scrollbar-width:thin; scrollbar-color:#263653 transparent;
-}
-
-.bot-container::-webkit-scrollbar { width:8px; }
-.bot-container::-webkit-scrollbar-thumb {
-  background:#263653; border-radius:8px;
-}
-
-table { width:100%; border-collapse:collapse; font-size:12px; }
-
-thead {
-  position:sticky; top:0; z-index:2; background:#111d34;
-}
-
-th {
-  padding:15px 12px; color:#8296ba; font-size:10px;
-  text-align:left; text-transform:uppercase;
-  letter-spacing:.6px; white-space:nowrap;
-}
-
-td { padding:14px 12px; border-bottom:1px solid rgba(125,155,255,.07); }
-
-tbody tr:hover { background:rgba(100,140,255,.055); }
-
-.nickname { font-weight:700; white-space:nowrap; }
-.uid { font-family:monospace; color:#8fa9d5; font-size:11px; }
-
-.pill {
-  display:inline-flex; align-items:center; gap:5px;
-  padding:5px 9px; border-radius:20px;
-  font-size:10px; font-weight:800;
-}
-
-.pill.running { color:#42f2ae; background:rgba(32,227,162,.12); }
-.pill.idle    { color:#a0b0c9; background:rgba(143,163,192,.12); }
-.pill.failed  { color:#ff829b; background:rgba(255,84,120,.12); }
-
-.mini {
-  border:0; border-radius:7px; padding:7px 10px;
-  font-size:10px; font-weight:800;
-}
-
-.mini.start { background:rgba(32,227,162,.13); color:#45f0ae; }
-.mini.stop  { background:rgba(255,84,120,.13); color:#ff829b; }
-
-.empty { padding:40px; text-align:center; color:var(--muted); }
-
-.footer {
-  display:flex; justify-content:space-between;
-  flex-wrap:wrap; gap:10px;
-  padding:22px 3px; color:#657795; font-size:11px;
-}
-
-@media(max-width:1150px) {
-  .stats { grid-template-columns:repeat(3,1fr); }
-  .dashboard-grid { grid-template-columns:1fr; }
-}
-
-@media(max-width:650px) {
-  .header { height:62px; padding:0 15px; }
-  .brand-name {font-size:15px;}
-  .logo {width:36px;height:36px;}
-  .header-right {gap:10px;font-size:11px;}
-  .container {padding:20px 13px;}
-  .welcome h1 {font-size:22px;}
-  .stats { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
-  .stat-card {padding:15px;}
-  .stat-value {font-size:25px;}
-  .stat-label {font-size:9px;}
-  .toolbar {align-items:flex-start; flex-direction:column;}
-  .toolbar-actions {width:100%;}
-  .btn {padding:10px 12px;}
-  .panel-header {padding:0 13px;}
-  .terminal {height:430px;font-size:11px;padding:12px;}
-  .bot-container {height:430px;}
-  table {font-size:11px;}
-  th,td {padding:12px 9px;}
-  .footer {font-size:10px;}
-  .terminal-line .lvl {min-width:52px;}
-}
-
-@media(max-width:360px) {
-  .stats {grid-template-columns:1fr;}
-}
+@media(max-width:1000px) { .main-grid {grid-template-columns:1fr} .stats-grid {grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media(max-width:600px) { .app {padding:15px 11px 28px} .topbar {padding:12px;gap:8px} .brand {gap:9px} .brand-icon {width:39px;height:39px} .brand-name {font-size:17px} .brand-sub {font-size:8px;letter-spacing:1px} .topbar-right {gap:8px} .clock {display:none} .connection {padding:8px 10px;font-size:9px} .page-heading { align-items:flex-start; flex-direction:column; } .stats-grid {gap:10px} .stat-card {min-height:120px;padding:14px} .stat-value {font-size:27px} .stat-top {font-size:9px} .stat-icon {width:29px;height:29px} .terminal {height:390px;padding:12px;font-size:10px} .panel-header {padding:13px} .info-list {padding:5px 13px 12px} .login-card {padding:28px 22px} .footer {flex-direction:column} }
 </style>
 </head>
-
 <body>
 
-<header class="header">
-  <div class="brand">
-    <div class="logo">⚡</div>
-    <div class="brand-name">Zans<span>PM</span></div>
-  </div>
-
-  <div class="header-right">
-    <div class="online">
-      <span class="dot"></span>
-      <span>Dashboard Online</span>
+<section class="login-screen" id="login">
+    <div class="login-card">
+        <div class="login-logo">Z</div>
+        <h1>ZansPM Panel</h1>
+        <p>🤖 Hệ thống điều khiển bot Cyberpunk. Đăng nhập để tiếp tục.</p>
+        <form id="login-form">
+            <label for="password">MẬT KHẨU QUẢN TRỊ</label>
+            <input type="password" id="password" placeholder="Nhập mật khẩu..." autocomplete="current-password" required>
+            <button class="login-button" type="submit" id="login-button">Đăng nhập →</button>
+            <div class="login-error" id="login-error"></div>
+        </form>
     </div>
-    <span id="clock">--:--:--</span>
-    <a href="/logout" class="logout">Logout ↗</a>
-  </div>
-</header>
+</section>
 
-<main class="container">
-
-  <section class="welcome">
-    <h1>System <span>Overview</span></h1>
-    <p>Real-time bot monitoring and management system.</p>
-  </section>
-
-  <section class="stats">
-    <div class="stat-card green">
-      <div class="stat-top">
-        <span class="stat-label">Running Bots</span>
-        <span class="stat-icon">🤖</span>
-      </div>
-      <div class="stat-value" id="stat-running">0</div>
-      <div class="stat-sub">Total: <span id="stat-total">0</span> bots</div>
-    </div>
-
-    <div class="stat-card blue">
-      <div class="stat-top">
-        <span class="stat-label">Joined</span>
-        <span class="stat-icon">✓</span>
-      </div>
-      <div class="stat-value" id="stat-joined">0</div>
-      <div class="stat-sub">Successful operations</div>
-    </div>
-
-    <div class="stat-card red">
-      <div class="stat-top">
-        <span class="stat-label">Failed</span>
-        <span class="stat-icon">✕</span>
-      </div>
-      <div class="stat-value" id="stat-failed">0</div>
-      <div class="stat-sub">Failed operations</div>
-    </div>
-
-    <div class="stat-card cyan">
-      <div class="stat-top">
-        <span class="stat-label">API Latency</span>
-        <span class="stat-icon">⌁</span>
-      </div>
-      <div class="stat-value" id="stat-api">-</div>
-      <div class="stat-sub" id="stat-api-sub">Waiting for ping...</div>
-    </div>
-
-    <div class="stat-card purple">
-      <div class="stat-top">
-        <span class="stat-label">System Uptime</span>
-        <span class="stat-icon">◷</span>
-      </div>
-      <div class="stat-value" id="stat-uptime">0s</div>
-      <div class="stat-sub">Since system started</div>
-    </div>
-  </section>
-
-  <section class="toolbar">
-    <div class="toolbar-title">⚙ Bot Management</div>
-    <div class="toolbar-actions">
-      <button class="btn btn-start" onclick="startAll()">▶ Start All</button>
-      <button class="btn btn-stop" onclick="stopAll()">■ Stop All</button>
-      <button class="btn btn-normal" onclick="clearTermView()">⌫ Clear Logs</button>
-      <button class="btn btn-normal" onclick="scrollBottom(true)">↓ Auto Scroll</button>
-    </div>
-  </section>
-
-  <section class="dashboard-grid">
-    <div class="panel">
-      <div class="panel-header">
-        <div class="panel-title">
-          <span class="panel-title-icon">⌨</span>
-          SYSTEM TERMINAL
+<main class="app hidden" id="dashboard">
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-icon">Z</div>
+            <div>
+                <div class="brand-name">ZansPM</div>
+                <div class="brand-sub">CYBERPUNK BOT SYSTEM</div>
+            </div>
         </div>
-        <span class="panel-count" id="log-count">0 dòng</span>
-      </div>
-
-      <div class="terminal" id="term">
-        <div class="terminal-line">
-          <span class="ts">[--:--:--]</span>
-          <span class="lvl INFO">[INFO]</span>
-          <span class="msg">ZansPM Terminal initialized...</span>
+        <div class="topbar-right">
+            <div class="clock" id="clock">--:--:--</div>
+            <div class="connection">
+                <span class="dot" id="connection-dot"></span>
+                <span id="connection-text">Đang kết nối</span>
+            </div>
         </div>
-        <div class="terminal-line">
-          <span class="ts">[--:--:--]</span>
-          <span class="lvl INFO">[INFO]</span>
-          <span class="msg">Waiting for system logs...</span>
+    </header>
+
+    <section class="page-heading">
+        <div>
+            <h1>⚡ Dashboard Overview</h1>
+            <p>Hệ thống quản lý bot thời gian thực · ZansPM Control Center</p>
         </div>
-      </div>
-    </div>
+    </section>
 
-    <div class="panel">
-      <div class="panel-header">
-        <div class="panel-title">
-          <span class="panel-title-icon">◈</span>
-          BOT CONTROL
+    <section class="stats-grid">
+        <article class="stat-card" style="--accent:#00ffad;--glow:rgba(0,255,173,.18)">
+            <div class="stat-top"><span>BOT ĐANG CHẠY</span><span class="stat-icon">🤖</span></div>
+            <div class="stat-value" id="running">0</div>
+            <div class="stat-note">⚡ Tiến trình hoạt động</div>
+        </article>
+        <article class="stat-card" style="--accent:#3985ff;--glow:rgba(57,133,255,.18)">
+            <div class="stat-top"><span>TỔNG BOT</span><span class="stat-icon">◈</span></div>
+            <div class="stat-value" id="total-bots">0</div>
+            <div class="stat-note">🤖 Tổng số tài khoản</div>
+        </article>
+        <article class="stat-card" style="--accent:#00f5ff;--glow:rgba(0,245,255,.18)">
+            <div class="stat-top"><span>ĐÃ THAM GIA</span><span class="stat-icon">✓</span></div>
+            <div class="stat-value" id="joined">0</div>
+            <div class="stat-note">✨ Tổng lượt tham gia</div>
+        </article>
+        <article class="stat-card" style="--accent:#ff386c;--glow:rgba(255,56,108,.18)">
+            <div class="stat-top"><span>LỖI HỆ THỐNG</span><span class="stat-icon">✕</span></div>
+            <div class="stat-value" id="failed">0</div>
+            <div class="stat-note">⚠ Tổng lượt lỗi</div>
+        </article>
+    </section>
+
+    <section class="main-grid">
+        <div>
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><span class="panel-title-icon">⌘</span> LIVE TERMINAL</div>
+                    <div class="panel-meta" id="log-count">0 dòng</div>
+                </div>
+                <div class="terminal" id="term">
+                    <div class="terminal-empty">⚡ Đang chờ log từ máy chủ...</div>
+                </div>
+            </section>
+
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><span class="panel-title-icon robot-icon">🤖</span> BOT ACCOUNTS</div>
+                    <div class="panel-meta" id="bot-count">0 tài khoản</div>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>Tài khoản</th><th>Trạng thái</th><th>UID</th></tr></thead>
+                        <tbody id="bot-list">
+                            <tr><td colspan="3" class="empty-row">Đang tải dữ liệu...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
         </div>
-        <span class="panel-count" id="bot-count">0 bots</span>
-      </div>
 
-      <div class="bot-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Bot</th>
-              <th>UID</th>
-              <th>Status</th>
-              <th>Join</th>
-              <th>Fail</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody id="bots-body">
-            <tr>
-              <td colspan="6" class="empty">Loading bots...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </section>
+        <aside>
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><span class="panel-title-icon">▤</span> SYSTEM INFORMATION</div>
+                </div>
+                <div class="info-list">
+                    <div class="info-item"><span class="info-label">Trạng thái</span><span class="info-value" id="system-status">--</span></div>
+                    <div class="info-item"><span class="info-label">⏱ Uptime</span><span class="info-value" id="uptime">--</span></div>
+                    <div class="info-item"><span class="info-label">Tổng log</span><span class="info-value" id="total-logs">0</span></div>
+                </div>
+            </section>
+        </aside>
+    </section>
 
-  <footer class="footer">
-    <span>⚡ ZansPM Dashboard · Cyber Edition</span>
-    <span>API Monitor: 300s · Auto Refresh: Enabled</span>
-  </footer>
-
+    <footer class="footer">
+        <span>🤖 ZansPM Cyberpunk Control Panel</span>
+        <span>⚡ Auto refresh enabled</span>
+    </footer>
 </main>
 
 <script>
+"use strict";
+
 let lastLogCount = 0;
-let autoScroll = true;
 let serverLogTotal = 0;
-let initialLoad = true;
+let isAuthenticated = false;
+let allBots = [];
 
-const term = document.getElementById('term');
-const ANSI_RE = /\x1b\[[0-9;]*m/g;
+const $ = id => document.getElementById(id);
+const term = $("term");
 
-function stripAnsi(s) {
-  return String(s ?? '').replace(ANSI_RE, '');
+function esc(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    })[char]);
 }
 
-function esc(s) {
-  return String(s ?? '').replace(/[&<>"']/g, function(c) {
-    return {
-      '&':'&amp;',
-      '<':'&lt;',
-      '>':'&gt;',
-      '"':'&quot;',
-      "'":'&#39;'
-    }[c];
-  });
+function stripAnsi(value) {
+    return String(value ?? "").replace(/\u001B\][^\u0007]*(?:\u0007|\u001B\\)/g, "").replace(/\u001B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "").replace(/\u009B[0-?]*[ -/]*[@-~]/g, "");
 }
 
-function renderLine(raw) {
-  const clean = stripAnsi(raw);
-  const m = clean.match(/^\[([^\]]+)\]\s+\[([^\]]+)\]\s*([\s\S]*)$/);
-  const div = document.createElement('div');
-  div.className = 'terminal-line';
+$("login-form").addEventListener("submit", async event => {
+    event.preventDefault();
+    const password = $("password").value.trim();
+    const button = $("login-button");
+    const error = $("login-error");
+    if (!password) { error.textContent = "Vui lòng nhập mật khẩu."; return; }
+    button.disabled = true; button.textContent = "Đang đăng nhập..."; error.textContent = "";
 
-  if (!m) {
-    div.innerHTML =
-      '<span class="ts">[--:--:--]</span>' +
-      '<span class="lvl INFO">[INFO]</span>' +
-      '<span class="msg">' + esc(clean) + '</span>';
-    return div;
-  }
-
-  const ts = m[1];
-  const lvl = m[2].toUpperCase();
-  const rest = m[3];
-
-  div.innerHTML =
-    '<span class="ts">[' + esc(ts) + ']</span>' +
-    '<span class="lvl ' + esc(lvl) + '">[' + esc(lvl) + ']</span>' +
-    '<span class="msg">' + esc(rest) + '</span>';
-
-  return div;
-}
-
-function scrollBottom(force) {
-  if (force) autoScroll = true;
-  if (!autoScroll) return;
-  requestAnimationFrame(function() {
-    term.scrollTop = term.scrollHeight;
-  });
-}
-
-function clearTermView() {
-  term.innerHTML = '';
-  lastLogCount = serverLogTotal;
-}
-
-function fmtUptime(seconds) {
-  if (!Number.isFinite(seconds) || seconds < 0) return '0s';
-  if (seconds < 60) return seconds + 's';
-  if (seconds < 3600) {
-    return Math.floor(seconds/60) + 'm ' + (seconds%60) + 's';
-  }
-  if (seconds < 86400) {
-    return Math.floor(seconds/3600) + 'h ' +
-           Math.floor((seconds%3600)/60) + 'm';
-  }
-  return Math.floor(seconds/86400) + 'd ' +
-         Math.floor((seconds%86400)/3600) + 'h';
-}
-
-async function api(url, options) {
-  const response = await fetch(url, { cache:'no-store', ...(options||{}) });
-  if (response.status === 401) {
-    location.href = '/login';
-    throw new Error('Unauthorized');
-  }
-  if (!response.ok) throw new Error('HTTP ' + response.status);
-  return response.json();
-}
-
-async function pollLogs() {
-  try {
-    const data = await api('/api/logs?after=' + lastLogCount);
-    serverLogTotal = data.total || 0;
-
-    if (data.lines && data.lines.length) {
-      const fragment = document.createDocumentFragment();
-      for (let i = 0; i < data.lines.length; i++) {
-        fragment.appendChild(renderLine(data.lines[i]));
-      }
-      term.appendChild(fragment);
-      lastLogCount = data.total;
-
-      while (term.children.length > 2000) {
-        term.removeChild(term.firstChild);
-      }
-      scrollBottom();
+    try {
+        const form = new URLSearchParams();
+        form.set("password", password);
+        const response = await fetch("/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: form.toString()
+        });
+        let data = {};
+        try { data = await response.json(); } catch (e) {}
+        if (!response.ok || data.success === false || data.error) { throw new Error(data.error || "Sai mật khẩu"); }
+        isAuthenticated = true;
+        $("password").value = "";
+        $("login").classList.add("hidden");
+        $("dashboard").classList.remove("hidden");
+        await initializeDashboard();
+    } catch (err) {
+        error.textContent = err.message || "Đăng nhập thất bại.";
+    } finally {
+        button.disabled = false; button.textContent = "Đăng nhập →";
     }
-
-    document.getElementById('log-count').textContent =
-      serverLogTotal + ' dòng';
-
-    if (lastLogCount > serverLogTotal) {
-      lastLogCount = 0;
-      term.innerHTML = '';
-    }
-
-    if (initialLoad) {
-      initialLoad = false;
-      scrollBottom(true);
-    }
-  } catch(e) {
-    console.error('Log polling:', e);
-  }
-}
-
-async function pollStats() {
-  try {
-    const s = await api('/api/stats');
-    document.getElementById('stat-running').textContent = s.running || 0;
-    document.getElementById('stat-total').textContent = s.total_bots || 0;
-    document.getElementById('stat-joined').textContent = s.joined || 0;
-    document.getElementById('stat-failed').textContent = s.failed || 0;
-
-    document.getElementById('stat-api').textContent =
-      s.api_last_ms != null ? s.api_last_ms + 'ms' : '-';
-
-    let sub = 'Waiting for ping...';
-    if (s.api_last_error) sub = 'Error: ' + s.api_last_error;
-    else if (s.api_last_ok) sub = 'Last OK: ' + s.api_last_ok;
-    document.getElementById('stat-api-sub').textContent = sub;
-
-    const start = new Date(s.started_at).getTime();
-    if (Number.isFinite(start)) {
-      document.getElementById('stat-uptime').textContent =
-        fmtUptime(Math.floor((Date.now()-start)/1000));
-    }
-  } catch(e) {
-    console.error('Stats polling:', e);
-  }
-}
-
-async function pollBots() {
-  try {
-    const bots = await api('/api/bots');
-    const body = document.getElementById('bots-body');
-    document.getElementById('bot-count').textContent = bots.length + ' bots';
-
-    if (!bots.length) {
-      body.innerHTML = '<tr><td colspan="6" class="empty">No bots available</td></tr>';
-      return;
-    }
-
-    const fragment = document.createDocumentFragment();
-    for (let i = 0; i < bots.length; i++) {
-      const b = bots[i];
-      const tr = document.createElement('tr');
-      const running = b.status === 'running';
-      const statusClass = running ? 'running' : (b.last_action === 'failed' ? 'failed' : 'idle');
-      const statusText = running ? '● RUNNING' : '● IDLE';
-
-      tr.innerHTML = 
-        '<td class="nickname">' + esc(b.nickname || '-') + '</td>' +
-        '<td class="uid">' + esc(b.uid) + '</td>' +
-        '<td><span class="pill ' + statusClass + '">' + statusText + '</span></td>' +
-        '<td>' + (Number(b.joined)||0) + '</td>' +
-        '<td style="color:#ff829b">' + (Number(b.failed)||0) + '</td>' +
-        '<td><button class="mini ' + (running?'stop':'start') + '" ' +
-        'data-uid="' + esc(b.uid) + '" ' +
-        'data-action="' + (running?'stop':'start') + '">' +
-        (running?'Stop':'Start') + '</button></td>';
-        
-      fragment.appendChild(tr);
-    }
-    body.replaceChildren(fragment);
-  } catch(e) {
-    console.error('Bot polling:', e);
-  }
-}
-
-async function startBot(uid) {
-  try {
-    await api('/api/bot/' + encodeURIComponent(uid) + '/start', { method:'POST' });
-    pollBots(); pollStats();
-  } catch(e) { console.error(e); }
-}
-
-async function stopBot(uid) {
-  try {
-    await api('/api/bot/' + encodeURIComponent(uid) + '/stop', { method:'POST' });
-    pollBots(); pollStats();
-  } catch(e) { console.error(e); }
-}
-
-async function startAll() {
-  try {
-    await api('/api/start_all', { method:'POST' });
-    pollBots(); pollStats();
-  } catch(e) { console.error(e); }
-}
-
-async function stopAll() {
-  try {
-    await api('/api/stop_all', { method:'POST' });
-    pollBots(); pollStats();
-  } catch(e) { console.error(e); }
-}
-
-document.getElementById('bots-body').addEventListener('click', function(e) {
-  const button = e.target.closest('button[data-action]');
-  if (!button) return;
-  const uid = button.getAttribute('data-uid');
-  if (button.getAttribute('data-action') === 'start') startBot(uid);
-  else stopBot(uid);
-});
-
-term.addEventListener('scroll', function() {
-  const atBottom = term.scrollHeight - term.scrollTop - term.clientHeight < 40;
-  autoScroll = atBottom;
 });
 
 function updateClock() {
-  document.getElementById('clock').textContent =
-    new Date().toLocaleTimeString('vi-VN', { hour12:false });
+    $("clock").textContent = new Date().toLocaleTimeString("vi-VN", { hour12: false });
 }
-updateClock();
-setInterval(updateClock, 1000);
+setInterval(updateClock, 1000); updateClock();
 
-pollStats();
-pollBots();
-pollLogs();
+function renderLine(raw) {
+    const clean = stripAnsi(raw);
+    const div = document.createElement("div");
+    div.className = "terminal-line";
+    const match = clean.match(/^\[([^\]]+)\]\s+\[([^\]]+)\]\s*(.*)$/);
+    if (!match) { div.textContent = clean; return div; }
+    const [, timestamp, level, message] = match;
+    const normalizedLevel = level.toUpperCase();
+    let safeMessage = esc(message);
+    safeMessage = safeMessage.replace(/\|\s*BOT\s*\[(\d+)\]/gi, '<span class="bot-tag">| BOT [$1]</span>');
+    safeMessage = safeMessage.replace(/\[(LOGIN|BOT|JOIN|ERROR|WARN|INFO|OK|SUCCESS|FAIL)\]/gi, '<span class="log-tag">[$1]</span>');
+    div.innerHTML = `<span class="ts">[${esc(timestamp)}]</span> <span class="lvl ${esc(normalizedLevel)}">[${esc(normalizedLevel)}]</span> <span class="log-message">${safeMessage}</span>`;
+    return div;
+}
 
-setInterval(pollStats, 2000);
-setInterval(pollBots, 3000);
-setInterval(pollLogs, 1000);
+async function pollLogs() {
+    try {
+        const res = await fetch(`/api/logs?after=${encodeURIComponent(lastLogCount)}`);
+        if (res.status === 401) return;
+        const data = await res.json();
+        const lines = Array.isArray(data.lines) ? data.lines : [];
+        serverLogTotal = Number(data.total ?? lastLogCount);
+        if (lines.length) {
+            const placeholder = term.querySelector(".terminal-empty");
+            if (placeholder) placeholder.remove();
+            const fragment = document.createDocumentFragment();
+            for (const line of lines) fragment.appendChild(renderLine(line));
+            term.appendChild(fragment);
+            while (term.childNodes.length > 1000) term.removeChild(term.firstChild);
+        }
+        lastLogCount = Math.max(lastLogCount, serverLogTotal);
+        $("log-count").textContent = `${serverLogTotal.toLocaleString("vi-VN")} dòng`;
+        $("total-logs").textContent = serverLogTotal.toLocaleString("vi-VN");
+        term.scrollTop = term.scrollHeight;
+    } catch (err) {}
+}
+
+async function pollStats() {
+    try {
+        const res = await fetch("/api/stats");
+        if (res.status === 401) return;
+        const data = await res.json();
+        $("running").textContent = data.running || 0;
+        $("total-bots").textContent = data.total_bots || 0;
+        $("joined").textContent = data.joined || 0;
+        $("failed").textContent = data.failed || 0;
+        $("uptime").textContent = (data.uptime || 0) + "s";
+        $("system-status").textContent = Number(data.running) > 0 ? "RUNNING" : "IDLE";
+        $("connection-dot").classList.remove("offline");
+        $("connection-text").textContent = "Online";
+    } catch (err) {
+        $("connection-dot").classList.add("offline");
+        $("connection-text").textContent = "Offline";
+    }
+}
+
+async function pollBots() {
+    try {
+        const res = await fetch("/api/bots");
+        if (res.status === 401) return;
+        const data = await res.json();
+        allBots = Array.isArray(data) ? data : (data.bots || []);
+        
+        const tbody = $("bot-list");
+        $("bot-count").textContent = `${allBots.length} tài khoản`;
+        
+        if (!allBots.length) {
+            tbody.innerHTML = '<tr><td colspan="3" class="empty-row">🤖 Chưa có tài khoản bot.</td></tr>';
+            return;
+        }
+        
+        const fragment = document.createDocumentFragment();
+        allBots.slice(0, 50).forEach(bot => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td><div class="bot-name">🤖 ${esc(bot.nickname)}</div></td>
+                <td><span class="status-pill status-running">● RUNNING</span></td>
+                <td><div class="bot-id">${esc(bot.uid)}</div></td>
+            `;
+            fragment.appendChild(row);
+        });
+        tbody.replaceChildren(fragment);
+    } catch (err) {}
+}
+
+async function initializeDashboard() {
+    await Promise.allSettled([ pollStats(), pollLogs(), pollBots() ]);
+    setInterval(pollStats, 3000);
+    setInterval(pollLogs, 1500);
+    setInterval(pollBots, 5000);
+}
 </script>
-
 </body>
 </html>
