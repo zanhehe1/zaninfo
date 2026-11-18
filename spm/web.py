@@ -188,7 +188,8 @@ HTML = """
 
 @app.route('/')
 def index():
-    return render_template_string(HTML)
+    # Trả về đúng định dạng text/html để trình duyệt không tải thành file .txt
+    return render_template_string(HTML), 200, {'Content-Type': 'text/html; charset=utf-8'}
 
 @app.route('/api/login', methods=['POST'])
 def login():
