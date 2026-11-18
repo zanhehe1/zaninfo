@@ -1,1024 +1,1669 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#080d1b">
-<title>ZansPM | Cyber Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#080d18">
+<title>ZansPM — Control Panel</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-
 :root {
-  --bg:#080d1b;
-  --panel:#101a30;
-  --panel2:#0c1427;
-  --border:rgba(125,155,255,.13);
-  --text:#edf3ff;
-  --muted:#8192b2;
-  --blue:#648cff;
-  --cyan:#35d9ff;
-  --green:#20e3a2;
-  --red:#ff5478;
-  --yellow:#ffc857;
+    --bg: #080d18;
+    --panel: #101827;
+    --panel2: #131f31;
+    --border: rgba(148, 163, 184, .13);
+    --text: #e8eef8;
+    --muted: #8291a8;
+    --blue: #4285ff;
+    --cyan: #22d3ee;
+    --green: #20d69a;
+    --red: #fb6577;
+    --yellow: #fbbf55;
+    --mono: "JetBrains Mono", monospace;
+    --font: "Inter", sans-serif;
 }
 
 * {
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
 body {
-  min-height:100vh;
-  color:var(--text);
-  background:
-    radial-gradient(ellipse at 10% 0%,rgba(70,90,210,.18),transparent 40%),
-    radial-gradient(ellipse at 100% 20%,rgba(0,190,255,.10),transparent 35%),
-    var(--bg);
-  font-family:Inter,sans-serif;
+    min-height: 100vh;
+    color: var(--text);
+    font-family: var(--font);
+    background:
+        radial-gradient(ellipse at 15% 0%, rgba(42, 103, 220, .16), transparent 35%),
+        radial-gradient(ellipse at 90% 10%, rgba(34, 211, 238, .08), transparent 30%),
+        var(--bg);
+    background-attachment: fixed;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: .12;
+    background-image:
+        linear-gradient(rgba(120, 150, 190, .12) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(120, 150, 190, .12) 1px, transparent 1px);
+    background-size: 42px 42px;
+    mask-image: linear-gradient(to bottom, black, transparent 85%);
+}
+
+button, input {
+    font: inherit;
 }
 
 button {
-  font-family:inherit;
-  cursor:pointer;
+    cursor: pointer;
 }
 
-a {
-  text-decoration:none;
-  color:inherit;
+.hidden {
+    display: none !important;
+}
+
+/* LOGIN */
+
+.login-screen {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 410px;
+    padding: 36px;
+    background: rgba(16, 24, 39, .9);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    box-shadow: 0 25px 90px rgba(0, 0, 0, .45);
+    backdrop-filter: blur(18px);
+    animation: appear .5s ease;
+}
+
+.login-logo {
+    width: 58px;
+    height: 58px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 25px;
+    border-radius: 17px;
+    color: white;
+    font-size: 25px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #3478ff, #20d3e7);
+    box-shadow: 0 8px 30px rgba(52, 120, 255, .3);
+}
+
+.login-card h1 {
+    font-size: 25px;
+    margin-bottom: 8px;
+}
+
+.login-card p {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 28px;
+}
+
+.login-card label {
+    display: block;
+    margin-bottom: 9px;
+    color: #b9c7da;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.login-card input {
+    width: 100%;
+    height: 48px;
+    padding: 0 15px;
+    color: white;
+    outline: none;
+    background: #0a1220;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    transition: .2s;
+}
+
+.login-card input:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(66, 133, 255, .12);
+}
+
+.login-button {
+    width: 100%;
+    height: 47px;
+    margin-top: 18px;
+    border: 0;
+    border-radius: 10px;
+    color: white;
+    font-weight: 700;
+    background: linear-gradient(110deg, #3478ff, #16b8d4);
+    transition: .2s;
+}
+
+.login-button:hover {
+    filter: brightness(1.12);
+    transform: translateY(-1px);
+}
+
+.login-error {
+    color: var(--red);
+    font-size: 12px;
+    margin-top: 14px;
+    min-height: 16px;
+}
+
+/* APP LAYOUT */
+
+.app {
+    max-width: 1550px;
+    margin: auto;
+    padding: 25px 30px 40px;
+}
+
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+}
+
+.brand-icon {
+    width: 43px;
+    height: 43px;
+    display: grid;
+    place-items: center;
+    border-radius: 13px;
+    color: white;
+    font-size: 19px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #3478ff, #20d3e7);
+    box-shadow: 0 5px 22px rgba(52, 120, 255, .24);
+}
+
+.brand-name {
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: -.5px;
+}
+
+.brand-sub {
+    color: var(--muted);
+    font-size: 11px;
+    margin-top: 3px;
+}
+
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+}
+
+.clock {
+    color: #a9b8cc;
+    font-family: var(--mono);
+    font-size: 12px;
+}
+
+.connection {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 13px;
+    border-radius: 30px;
+    border: 1px solid var(--border);
+    background: rgba(16, 24, 39, .75);
+    color: #b9c7da;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 10px var(--green);
+}
+
+.dot.offline {
+    background: var(--red);
+    box-shadow: 0 0 10px var(--red);
 }
 
 /* HEADER */
 
-.header {
-  height:72px;
-  padding:0 28px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  border-bottom:1px solid var(--border);
-  background:rgba(8,13,27,.85);
-  backdrop-filter:blur(18px);
-  position:sticky;
-  top:0;
-  z-index:100;
+.page-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 23px;
 }
 
-.brand {
-  display:flex;
-  align-items:center;
-  gap:12px;
+.page-heading h1 {
+    font-size: clamp(23px, 3vw, 30px);
+    font-weight: 800;
+    letter-spacing: -.8px;
 }
 
-.logo {
-  width:42px;
-  height:42px;
-  display:grid;
-  place-items:center;
-  border-radius:13px;
-  font-size:21px;
-  background:linear-gradient(135deg,#638cff,#8058ff);
-  box-shadow:0 0 25px rgba(100,140,255,.35);
+.page-heading p {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 7px;
 }
 
-.brand-name {
-  font-size:18px;
-  font-weight:800;
-  letter-spacing:.5px;
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
 }
 
-.brand-name span {
-  color:var(--cyan);
+.btn {
+    border: 1px solid var(--border);
+    color: #dce7f7;
+    background: #152136;
+    border-radius: 9px;
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    transition: .2s;
 }
 
-.header-right {
-  display:flex;
-  align-items:center;
-  gap:20px;
-  color:var(--muted);
-  font-size:13px;
+.btn:hover {
+    border-color: rgba(66, 133, 255, .6);
+    background: #1a2b47;
+    transform: translateY(-1px);
 }
 
-.online {
-  display:flex;
-  align-items:center;
-  gap:8px;
+.btn.primary {
+    border: 0;
+    color: white;
+    background: linear-gradient(110deg, #3478ff, #1badd6);
 }
 
-.dot {
-  width:8px;
-  height:8px;
-  background:var(--green);
-  border-radius:50%;
-  box-shadow:0 0 12px var(--green);
-  animation:pulse 1.5s infinite;
+.btn.danger {
+    color: #ff8794;
+    background: rgba(251, 101, 119, .08);
+    border-color: rgba(251, 101, 119, .2);
 }
 
-@keyframes pulse {
-  50% { opacity:.4; }
-}
-
-.logout {
-  padding:9px 13px;
-  border:1px solid var(--border);
-  border-radius:9px;
-  color:#ff8da5;
-  background:rgba(255,84,120,.07);
-}
-
-/* MAIN */
-
-.container {
-  max-width:1500px;
-  margin:auto;
-  padding:30px;
-}
-
-.welcome {
-  margin-bottom:28px;
-}
-
-.welcome h1 {
-  font-size:27px;
-  font-weight:800;
-}
-
-.welcome h1 span {
-  color:var(--cyan);
-}
-
-.welcome p {
-  margin-top:8px;
-  font-size:13px;
-  color:var(--muted);
+.btn:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+    transform: none;
 }
 
 /* STATS */
 
-.stats {
-  display:grid;
-  grid-template-columns:repeat(5,minmax(0,1fr));
-  gap:16px;
-  margin-bottom:25px;
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
 }
 
 .stat-card {
-  min-width:0;
-  position:relative;
-  overflow:hidden;
-  padding:21px;
-  border:1px solid var(--border);
-  border-radius:17px;
-  background:linear-gradient(145deg,rgba(20,33,59,.95),rgba(11,20,39,.95));
-  transition:.25s;
+    position: relative;
+    overflow: hidden;
+    min-height: 130px;
+    padding: 19px;
+    border: 1px solid var(--border);
+    border-radius: 15px;
+    background: linear-gradient(145deg, rgba(19, 31, 49, .96), rgba(13, 22, 36, .96));
+    transition: transform .25s, border-color .25s, box-shadow .25s;
 }
 
 .stat-card:hover {
-  transform:translateY(-4px);
-  border-color:rgba(100,140,255,.45);
-  box-shadow:0 12px 35px rgba(0,0,0,.2);
+    transform: translateY(-4px);
+    border-color: rgba(66, 133, 255, .35);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, .2);
 }
 
 .stat-card::after {
-  content:"";
-  position:absolute;
-  width:100px;
-  height:100px;
-  right:-40px;
-  top:-45px;
-  border-radius:50%;
-  background:var(--glow);
-  filter:blur(45px);
-  opacity:.3;
+    content: "";
+    position: absolute;
+    width: 110px;
+    height: 110px;
+    right: -35px;
+    bottom: -55px;
+    border-radius: 50%;
+    background: var(--glow, rgba(66, 133, 255, .15));
+    filter: blur(22px);
 }
 
 .stat-top {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:8px;
-}
-
-.stat-label {
-  color:var(--muted);
-  font-size:11px;
-  font-weight:700;
-  letter-spacing:1px;
-  text-transform:uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
 }
 
 .stat-icon {
-  width:36px;
-  height:36px;
-  display:grid;
-  place-items:center;
-  border-radius:11px;
-  background:var(--icon-bg);
-  font-size:17px;
+    width: 31px;
+    height: 31px;
+    display: grid;
+    place-items: center;
+    border-radius: 9px;
+    color: var(--accent, var(--blue));
+    background: color-mix(in srgb, var(--accent, var(--blue)) 13%, transparent);
+    font-size: 15px;
 }
 
 .stat-value {
-  margin-top:15px;
-  font-size:31px;
-  font-weight:800;
-  letter-spacing:-1px;
-  font-variant-numeric:tabular-nums;
+    position: relative;
+    z-index: 1;
+    margin-top: 14px;
+    font-size: 29px;
+    line-height: 1;
+    font-weight: 800;
+    letter-spacing: -1px;
 }
 
-.stat-sub {
-  margin-top:5px;
-  font-size:11px;
-  color:var(--muted);
+.stat-note {
+    position: relative;
+    z-index: 1;
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 10px;
 }
 
-.blue {--glow:#648cff;--icon-bg:rgba(100,140,255,.15);}
-.green {--glow:#20e3a2;--icon-bg:rgba(32,227,162,.13);}
-.red {--glow:#ff5478;--icon-bg:rgba(255,84,120,.13);}
-.cyan {--glow:#35d9ff;--icon-bg:rgba(53,217,255,.13);}
-.purple {--glow:#a477ff;--icon-bg:rgba(164,119,255,.13);}
+/* PANELS */
 
-.green .stat-value {color:var(--green);}
-.red .stat-value {color:var(--red);}
-.cyan .stat-value {color:var(--cyan);}
-
-/* TOOLBAR */
-
-.toolbar {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  flex-wrap:wrap;
-  gap:12px;
-  margin-bottom:20px;
-}
-
-.toolbar-title {
-  font-size:16px;
-  font-weight:700;
-}
-
-.toolbar-actions {
-  display:flex;
-  flex-wrap:wrap;
-  gap:9px;
-}
-
-.btn {
-  border:1px solid var(--border);
-  padding:11px 16px;
-  border-radius:10px;
-  font-size:12px;
-  font-weight:700;
-  color:white;
-  background:rgba(100,140,255,.12);
-  transition:.2s;
-}
-
-.btn:hover {
-  transform:translateY(-2px);
-  filter:brightness(1.2);
-}
-
-.btn-start {
-  color:#80ffd0;
-  border-color:rgba(32,227,162,.25);
-  background:rgba(32,227,162,.10);
-}
-
-.btn-stop {
-  color:#ff91a8;
-  border-color:rgba(255,84,120,.25);
-  background:rgba(255,84,120,.10);
-}
-
-.btn-normal {
-  color:#b4c8ed;
-}
-
-/* CONTENT GRID */
-
-.dashboard-grid {
-  display:grid;
-  grid-template-columns:1.15fr 1fr;
-  gap:18px;
+.main-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.65fr) minmax(300px, .85fr);
+    gap: 17px;
+    align-items: start;
 }
 
 .panel {
-  min-width:0;
-  overflow:hidden;
-  border:1px solid var(--border);
-  border-radius:17px;
-  background:linear-gradient(160deg,rgba(17,27,48,.96),rgba(10,18,34,.96));
-  box-shadow:0 12px 35px rgba(0,0,0,.18);
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 15px;
+    background: rgba(16, 24, 39, .88);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, .12);
+    backdrop-filter: blur(14px);
+}
+
+.panel + .panel {
+    margin-top: 17px;
 }
 
 .panel-header {
-  height:62px;
-  padding:0 19px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  border-bottom:1px solid var(--border);
+    min-height: 58px;
+    padding: 15px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(90deg, rgba(30, 49, 76, .38), transparent);
 }
 
 .panel-title {
-  display:flex;
-  align-items:center;
-  gap:10px;
-  font-size:13px;
-  font-weight:700;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 12px;
+    font-weight: 700;
 }
 
 .panel-title-icon {
-  font-size:17px;
+    color: var(--cyan);
+    font-size: 15px;
 }
 
-.panel-count {
-  padding:5px 10px;
-  border-radius:20px;
-  background:rgba(100,140,255,.12);
-  color:#a9c4ff;
-  font-size:11px;
-  font-family:monospace;
+.panel-meta {
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 10px;
 }
 
 /* TERMINAL */
 
 .terminal {
-  height:520px;
-  overflow-y:auto;
-  padding:17px;
-  background:#050914;
-  font-family:"JetBrains Mono",monospace;
-  font-size:12px;
-  line-height:1.9;
-  scrollbar-width:thin;
-  scrollbar-color:#263653 transparent;
+    height: 420px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 15px 17px;
+    background: #080e18;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.9;
+    scrollbar-width: thin;
+    scrollbar-color: #263b59 transparent;
+    overflow-anchor: none;
+}
+
+.terminal::-webkit-scrollbar {
+    width: 6px;
+}
+
+.terminal::-webkit-scrollbar-thumb {
+    background: #263b59;
+    border-radius: 10px;
 }
 
 .terminal-line {
-  white-space:pre-wrap;
-  word-break:break-word;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    padding: 1px 0;
+    color: #b9c8db;
+    animation: logIn .16s ease-out both;
 }
 
-.ts {color:#586c90;}
-.lvl {font-weight:700;}
-.lvl.INFO {color:#80aaff;}
-.lvl.OK {color:#20e3a2;}
-.lvl.ERROR {color:#ff5478;}
-.lvl.WARN {color:#ffc857;}
-.lvl.API {color:#35d9ff;}
+@keyframes logIn {
+    from { opacity: 0; transform: translateY(3px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.ts {
+    color: #77869b;
+}
+
+.lvl {
+    font-weight: 700;
+}
+
+.lvl.OK, .lvl.SUCCESS {
+    color: var(--green);
+}
+
+.lvl.ERROR, .lvl.FAIL, .lvl.CRITICAL {
+    color: var(--red);
+}
+
+.lvl.WARN, .lvl.WARNING {
+    color: var(--yellow);
+}
+
+.lvl.INFO, .lvl.LOGIN {
+    color: var(--cyan);
+}
+
+.lvl.DEBUG {
+    color: #9b9cfb;
+}
+
+.log-message {
+    color: #c6d3e5;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.inner-ts {
+    color: #7e91a9;
+}
+
+.log-tag {
+    color: var(--green);
+    font-weight: 700;
+}
+
+.bot-tag {
+    color: var(--cyan);
+    font-weight: 600;
+}
+
+.log-check {
+    color: var(--green);
+    font-weight: 700;
+}
+
+.terminal-empty {
+    color: #62748c;
+    text-align: center;
+    padding: 65px 10px;
+    font-size: 11px;
+}
 
 /* BOT TABLE */
 
-.bot-container {
-  height:520px;
-  overflow:auto;
-  scrollbar-width:thin;
-  scrollbar-color:#263653 transparent;
+.table-wrap {
+    width: 100%;
+    overflow-x: auto;
 }
 
 table {
-  width:100%;
-  border-collapse:collapse;
-  font-size:12px;
+    width: 100%;
+    border-collapse: collapse;
+    white-space: nowrap;
+    font-size: 11px;
 }
 
 thead {
-  position:sticky;
-  top:0;
-  z-index:2;
-  background:#111d34;
+    background: rgba(9, 17, 29, .6);
 }
 
 th {
-  padding:15px 12px;
-  color:#8296ba;
-  font-size:10px;
-  text-align:left;
-  text-transform:uppercase;
-  letter-spacing:.6px;
-  white-space:nowrap;
+    color: #8495ad;
+    text-align: left;
+    padding: 13px 15px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
 }
 
 td {
-  padding:14px 12px;
-  border-bottom:1px solid rgba(125,155,255,.07);
+    padding: 13px 15px;
+    color: #c3d0e1;
+    border-top: 1px solid rgba(148, 163, 184, .08);
+}
+
+tbody tr {
+    transition: background .15s;
 }
 
 tbody tr:hover {
-  background:rgba(100,140,255,.055);
+    background: rgba(66, 133, 255, .055);
 }
 
-.nickname {
-  font-weight:700;
-  white-space:nowrap;
+.bot-name {
+    color: #e6efff;
+    font-weight: 700;
 }
 
-.uid {
-  font-family:monospace;
-  color:#8fa9d5;
-  font-size:11px;
+.bot-id {
+    color: #70829a;
+    font-family: var(--mono);
+    font-size: 10px;
+    margin-top: 4px;
 }
 
-.pill {
-  display:inline-flex;
-  align-items:center;
-  gap:5px;
-  padding:5px 9px;
-  border-radius:20px;
-  font-size:10px;
-  font-weight:800;
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 9px;
+    border-radius: 20px;
+    font-size: 9px;
+    font-weight: 700;
 }
 
-.pill.running {
-  color:#42f2ae;
-  background:rgba(32,227,162,.12);
+.status-pill::before {
+    content: "";
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
 }
 
-.pill.idle {
-  color:#a0b0c9;
-  background:rgba(143,163,192,.12);
+.status-running {
+    color: var(--green);
+    background: rgba(32, 214, 154, .09);
 }
 
-.pill.failed {
-  color:#ff829b;
-  background:rgba(255,84,120,.12);
+.status-stopped {
+    color: #93a2b8;
+    background: rgba(148, 163, 184, .1);
 }
 
-.mini {
-  border:0;
-  border-radius:7px;
-  padding:7px 10px;
-  font-size:10px;
-  font-weight:800;
+.status-error {
+    color: var(--red);
+    background: rgba(251, 101, 119, .09);
 }
 
-.mini.start {
-  background:rgba(32,227,162,.13);
-  color:#45f0ae;
+.status-unknown {
+    color: var(--yellow);
+    background: rgba(251, 191, 85, .09);
 }
 
-.mini.stop {
-  background:rgba(255,84,120,.13);
-  color:#ff829b;
+.mini-btn {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 9px;
+    color: #bcd0e8;
+    background: #17243a;
+    font-size: 10px;
+    font-weight: 700;
 }
 
-.empty {
-  padding:40px;
-  text-align:center;
-  color:var(--muted);
+.mini-btn:hover {
+    border-color: var(--blue);
 }
 
-/* FOOTER */
+.empty-row {
+    text-align: center;
+    color: var(--muted);
+    padding: 30px;
+}
+
+/* SYSTEM INFO */
+
+.info-list {
+    padding: 6px 18px 13px;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 13px 0;
+    border-bottom: 1px solid rgba(148, 163, 184, .08);
+    font-size: 11px;
+}
+
+.info-item:last-child {
+    border-bottom: 0;
+}
+
+.info-label {
+    color: var(--muted);
+}
+
+.info-value {
+    color: #dce7f7;
+    font-family: var(--mono);
+    font-size: 10px;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
 
 .footer {
-  display:flex;
-  justify-content:space-between;
-  flex-wrap:wrap;
-  gap:10px;
-  padding:22px 3px;
-  color:#657795;
-  font-size:11px;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 22px;
+    color: #53647b;
+    font-size: 10px;
+}
+
+/* TOAST */
+
+.toast {
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    z-index: 100;
+    max-width: calc(100vw - 44px);
+    padding: 13px 17px;
+    color: #e7f1ff;
+    background: #17263c;
+    border: 1px solid rgba(66, 133, 255, .3);
+    border-radius: 10px;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, .35);
+    font-size: 12px;
+    opacity: 0;
+    transform: translateY(12px);
+    pointer-events: none;
+    transition: .25s;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 /* RESPONSIVE */
 
-@media(max-width:1150px) {
-  .stats {
-    grid-template-columns:repeat(3,1fr);
-  }
+@media (max-width: 1000px) {
+    .main-grid {
+        grid-template-columns: 1fr;
+    }
 
-  .dashboard-grid {
-    grid-template-columns:1fr;
-  }
+    .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
-@media(max-width:650px) {
-  .header {
-    height:62px;
-    padding:0 15px;
-  }
+@media (max-width: 600px) {
+    .app {
+        padding: 18px 13px 30px;
+    }
 
-  .brand-name {font-size:15px;}
-  .logo {width:36px;height:36px;}
-  .header-right {gap:10px;font-size:11px;}
+    .topbar {
+        align-items: flex-start;
+    }
 
-  .container {padding:20px 13px;}
+    .clock {
+        display: none;
+    }
 
-  .welcome h1 {font-size:22px;}
+    .page-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
 
-  .stats {
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    gap:10px;
-  }
+    .actions {
+        width: 100%;
+    }
 
-  .stat-card {padding:15px;}
-  .stat-value {font-size:25px;}
-  .stat-label {font-size:9px;}
+    .actions .btn {
+        flex: 1;
+    }
 
-  .toolbar {
-    align-items:flex-start;
-    flex-direction:column;
-  }
+    .stats-grid {
+        gap: 10px;
+    }
 
-  .toolbar-actions {width:100%;}
-  .btn {padding:10px 12px;}
+    .stat-card {
+        min-height: 115px;
+        padding: 14px;
+    }
 
-  .panel-header {padding:0 13px;}
-  .terminal {height:430px;font-size:11px;padding:12px;}
-  .bot-container {height:430px;}
+    .stat-value {
+        font-size: 25px;
+    }
 
-  table {font-size:11px;}
-  th,td {padding:12px 9px;}
+    .terminal {
+        height: 390px;
+        padding: 12px;
+        font-size: 10px;
+    }
 
-  .footer {font-size:10px;}
+    .login-card {
+        padding: 27px 22px;
+    }
+
+    .footer {
+        flex-direction: column;
+    }
 }
 
-@media(max-width:360px) {
-  .stats {grid-template-columns:1fr;}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: .01ms !important;
+        transition-duration: .01ms !important;
+    }
 }
 </style>
 </head>
 
 <body>
 
-<header class="header">
-  <div class="brand">
-    <div class="logo">⚡</div>
-    <div class="brand-name">Zans<span>PM</span></div>
-  </div>
+<!-- LOGIN -->
+<section class="login-screen" id="login">
+    <div class="login-card">
+        <div class="login-logo">Z</div>
+        <h1>ZansPM Panel</h1>
+        <p>Đăng nhập để truy cập bảng điều khiển quản lý bot.</p>
 
-  <div class="header-right">
-    <div class="online">
-      <span class="dot"></span>
-      <span>Dashboard Online</span>
+        <form id="login-form">
+            <label for="password">MẬT KHẨU QUẢN TRỊ</label>
+            <input
+                type="password"
+                id="password"
+                placeholder="Nhập mật khẩu..."
+                autocomplete="current-password"
+                required
+            >
+            <button class="login-button" type="submit" id="login-button">
+                Đăng nhập →
+            </button>
+            <div class="login-error" id="login-error"></div>
+        </form>
     </div>
-    <span id="clock">--:--:--</span>
-    <a href="/logout" class="logout">Logout ↗</a>
-  </div>
-</header>
+</section>
 
-<main class="container">
+<!-- DASHBOARD -->
+<main class="app hidden" id="dashboard">
 
-  <section class="welcome">
-    <h1>System <span>Overview</span></h1>
-    <p>Real-time bot monitoring and management system.</p>
-  </section>
-
-  <section class="stats">
-
-    <div class="stat-card green">
-      <div class="stat-top">
-        <span class="stat-label">Running Bots</span>
-        <span class="stat-icon">🤖</span>
-      </div>
-      <div class="stat-value" id="stat-running">0</div>
-      <div class="stat-sub">Total: <span id="stat-total">0</span> bots</div>
-    </div>
-
-    <div class="stat-card blue">
-      <div class="stat-top">
-        <span class="stat-label">Joined</span>
-        <span class="stat-icon">✓</span>
-      </div>
-      <div class="stat-value" id="stat-joined">0</div>
-      <div class="stat-sub">Successful operations</div>
-    </div>
-
-    <div class="stat-card red">
-      <div class="stat-top">
-        <span class="stat-label">Failed</span>
-        <span class="stat-icon">✕</span>
-      </div>
-      <div class="stat-value" id="stat-failed">0</div>
-      <div class="stat-sub">Failed operations</div>
-    </div>
-
-    <div class="stat-card cyan">
-      <div class="stat-top">
-        <span class="stat-label">API Latency</span>
-        <span class="stat-icon">⌁</span>
-      </div>
-      <div class="stat-value" id="stat-api">-</div>
-      <div class="stat-sub" id="stat-api-sub">Waiting for ping...</div>
-    </div>
-
-    <div class="stat-card purple">
-      <div class="stat-top">
-        <span class="stat-label">System Uptime</span>
-        <span class="stat-icon">◷</span>
-      </div>
-      <div class="stat-value" id="stat-uptime">0s</div>
-      <div class="stat-sub">Since system started</div>
-    </div>
-
-  </section>
-
-  <section class="toolbar">
-    <div class="toolbar-title">⚙ Bot Management</div>
-
-    <div class="toolbar-actions">
-      <button class="btn btn-start" onclick="startAll()">▶ Start All</button>
-      <button class="btn btn-stop" onclick="stopAll()">■ Stop All</button>
-      <button class="btn btn-normal" onclick="clearTermView()">⌫ Clear Logs</button>
-      <button class="btn btn-normal" onclick="scrollBottom(true)">↓ Auto Scroll</button>
-    </div>
-  </section>
-
-  <section class="dashboard-grid">
-
-    <div class="panel">
-      <div class="panel-header">
-        <div class="panel-title">
-          <span class="panel-title-icon">⌨</span>
-          SYSTEM TERMINAL
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-icon">Z</div>
+            <div>
+                <div class="brand-name">ZansPM</div>
+                <div class="brand-sub">BOT MANAGEMENT SYSTEM</div>
+            </div>
         </div>
-        <span class="panel-count" id="log-count">0 dòng</span>
-      </div>
 
-      <div class="terminal" id="term">
-        <div style="color:#35d9ff">
-          ZansPM Terminal initialized...
+        <div class="topbar-right">
+            <div class="clock" id="clock">--:--:--</div>
+            <div class="connection">
+                <span class="dot" id="connection-dot"></span>
+                <span id="connection-text">Đang kết nối</span>
+            </div>
         </div>
-        <div style="color:#657795">
-          Waiting for system logs...
+    </header>
+
+    <section class="page-heading">
+        <div>
+            <h1>Dashboard Overview</h1>
+            <p>Theo dõi hoạt động và trạng thái hệ thống theo thời gian thực.</p>
         </div>
-      </div>
-    </div>
 
-    <div class="panel">
-      <div class="panel-header">
-        <div class="panel-title">
-          <span class="panel-title-icon">◈</span>
-          BOT CONTROL
+        <div class="actions">
+            <button class="btn primary" onclick="startAll()">▶ Chạy tất cả</button>
+            <button class="btn danger" onclick="stopAll()">■ Dừng tất cả</button>
         </div>
-        <span class="panel-count" id="bot-count">0 bots</span>
-      </div>
+    </section>
 
-      <div class="bot-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Bot</th>
-              <th>UID</th>
-              <th>Status</th>
-              <th>Join</th>
-              <th>Fail</th>
-              <th>Action</th>
-            </tr>
-          </thead>
+    <!-- STATS -->
+    <section class="stats-grid">
 
-          <tbody id="bots-body">
-            <tr>
-              <td colspan="6" class="empty">Loading bots...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+        <article class="stat-card" style="--accent:#20d69a;--glow:rgba(32,214,154,.17)">
+            <div class="stat-top">
+                <span>BOT ĐANG CHẠY</span>
+                <span class="stat-icon">▶</span>
+            </div>
+            <div class="stat-value" id="running">0</div>
+            <div class="stat-note">Tiến trình hoạt động</div>
+        </article>
 
-  </section>
+        <article class="stat-card" style="--accent:#4285ff;--glow:rgba(66,133,255,.17)">
+            <div class="stat-top">
+                <span>TỔNG BOT</span>
+                <span class="stat-icon">◈</span>
+            </div>
+            <div class="stat-value" id="total-bots">0</div>
+            <div class="stat-note">Tổng số tài khoản</div>
+        </article>
 
-  <footer class="footer">
-    <span>⚡ ZansPM Dashboard · Cyber Edition</span>
-    <span>API Monitor: 300s · Auto Refresh: Enabled</span>
-  </footer>
+        <article class="stat-card" style="--accent:#22d3ee;--glow:rgba(34,211,238,.17)">
+            <div class="stat-top">
+                <span>ĐÃ THAM GIA</span>
+                <span class="stat-icon">✓</span>
+            </div>
+            <div class="stat-value" id="joined">0</div>
+            <div class="stat-note">Tổng lượt tham gia</div>
+        </article>
+
+        <article class="stat-card" style="--accent:#fb6577;--glow:rgba(251,101,119,.17)">
+            <div class="stat-top">
+                <span>LỖI</span>
+                <span class="stat-icon">!</span>
+            </div>
+            <div class="stat-value" id="failed">0</div>
+            <div class="stat-note">Tổng lượt lỗi</div>
+        </article>
+
+    </section>
+
+    <section class="main-grid">
+
+        <!-- LEFT -->
+        <div>
+
+            <!-- TERMINAL -->
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <span class="panel-title-icon">⌘</span>
+                        LIVE TERMINAL
+                    </div>
+                    <div class="panel-meta" id="log-count">0 dòng</div>
+                </div>
+
+                <div class="terminal" id="term">
+                    <div class="terminal-empty">Đang chờ log từ máy chủ...</div>
+                </div>
+            </section>
+
+            <!-- BOT TABLE -->
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <span class="panel-title-icon">◈</span>
+                        BOT ACCOUNTS
+                    </div>
+                    <div class="panel-meta" id="bot-count">0 tài khoản</div>
+                </div>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tài khoản</th>
+                                <th>Trạng thái</th>
+                                <th>Joined</th>
+                                <th>Failed</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bot-list">
+                            <tr>
+                                <td colspan="5" class="empty-row">Đang tải dữ liệu...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </div>
+
+        <!-- RIGHT -->
+        <aside>
+
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <span class="panel-title-icon">▤</span>
+                        SYSTEM INFORMATION
+                    </div>
+                </div>
+
+                <div class="info-list">
+                    <div class="info-item">
+                        <span class="info-label">Trạng thái</span>
+                        <span class="info-value" id="system-status">--</span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-label">Uptime</span>
+                        <span class="info-value" id="uptime">--</span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-label">CPU</span>
+                        <span class="info-value" id="cpu">--</span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-label">Memory</span>
+                        <span class="info-value" id="memory">--</span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-label">Tổng log</span>
+                        <span class="info-value" id="total-logs">0</span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-label">API latency</span>
+                        <span class="info-value" id="api-latency">--</span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-label">API status</span>
+                        <span class="info-value" id="api-status">--</span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-label">Khởi động</span>
+                        <span class="info-value" id="started-at">--</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <span class="panel-title-icon">⌁</span>
+                        QUICK ACTIONS
+                    </div>
+                </div>
+
+                <div style="padding:17px;display:grid;gap:10px">
+                    <button class="btn primary" onclick="refreshAll()">↻ Làm mới dữ liệu</button>
+                    <button class="btn" onclick="clearTermView()">⌫ Xóa màn hình log</button>
+                </div>
+            </section>
+
+        </aside>
+
+    </section>
+
+    <footer class="footer">
+        <span>ZansPM Control Panel</span>
+        <span>Auto refresh enabled · <span id="last-update">Chưa cập nhật</span></span>
+    </footer>
 
 </main>
 
+<div class="toast" id="toast"></div>
+
 <script>
+"use strict";
+
+/* =========================================
+   CONFIGURATION
+========================================= */
+
+const API = {
+    login: "/login",
+    stats: "/api/stats",
+    logs: "/api/logs",
+    bots: "/api/bots",
+    startAll: "/api/start_all",
+    stopAll: "/api/stop_all"
+};
+
+const POLL_INTERVAL = 1500;
+const MAX_VISIBLE_LOGS = 2000;
+
 let lastLogCount = 0;
-let autoScroll = true;
 let serverLogTotal = 0;
+let toastTimer = null;
+let isAuthenticated = false;
 
-const term = document.getElementById('term');
+const $ = id => document.getElementById(id);
 
-function esc(s) {
-  return String(s ?? '').replace(/[&<>"']/g, c => ({
-    '&':'&amp;',
-    '<':'&lt;',
-    '>':'&gt;',
-    '"':'&quot;',
-    "'":'&#39;'
-  }[c]));
+const term = $("term");
+
+/* =========================================
+   API HELPER
+========================================= */
+
+async function api(url, options = {}) {
+    const response = await fetch(url, {
+        credentials: "same-origin",
+        ...options,
+        headers: {
+            ...(options.headers || {})
+        }
+    });
+
+    if (response.status === 401) {
+        showLogin();
+        throw new Error("Phiên đăng nhập đã hết hạn.");
+    }
+
+    let data;
+
+    try {
+        data = await response.json();
+    } catch {
+        throw new Error("Máy chủ trả về dữ liệu không hợp lệ.");
+    }
+
+    if (!response.ok) {
+        throw new Error(data.error || data.message || `HTTP ${response.status}`);
+    }
+
+    return data;
 }
+
+/* =========================================
+   LOGIN
+========================================= */
+
+$("login-form").addEventListener("submit", async event => {
+    event.preventDefault();
+
+    const password = $("password").value.trim();
+    const button = $("login-button");
+    const error = $("login-error");
+
+    if (!password) {
+        error.textContent = "Vui lòng nhập mật khẩu.";
+        return;
+    }
+
+    button.disabled = true;
+    button.textContent = "Đang đăng nhập...";
+    error.textContent = "";
+
+    try {
+        const form = new URLSearchParams();
+        form.set("password", password);
+
+        const response = await fetch(API.login, {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: form.toString()
+        });
+
+        let data = {};
+
+        try {
+            data = await response.json();
+        } catch {
+            // Một số backend có thể trả về response không phải JSON.
+        }
+
+        if (!response.ok || data.success === false || data.error) {
+            throw new Error(data.error || data.message || "Mật khẩu không chính xác.");
+        }
+
+        isAuthenticated = true;
+        $("password").value = "";
+
+        showDashboard();
+        await refreshAll();
+
+    } catch (err) {
+        error.textContent = err.message || "Đăng nhập thất bại.";
+    } finally {
+        button.disabled = false;
+        button.textContent = "Đăng nhập →";
+    }
+});
+
+function showDashboard() {
+    $("login").classList.add("hidden");
+    $("dashboard").classList.remove("hidden");
+}
+
+function showLogin() {
+    isAuthenticated = false;
+    $("dashboard").classList.add("hidden");
+    $("login").classList.remove("hidden");
+}
+
+/* =========================================
+   TOAST
+========================================= */
+
+function notify(message) {
+    const toast = $("toast");
+
+    toast.textContent = message;
+    toast.classList.add("show");
+
+    clearTimeout(toastTimer);
+
+    toastTimer = setTimeout(() => {
+        toast.classList.remove("show");
+    }, 2800);
+}
+
+/* =========================================
+   CLOCK
+========================================= */
+
+function updateClock() {
+    $("clock").textContent = new Date().toLocaleTimeString("vi-VN", {
+        hour12: false
+    });
+}
+
+setInterval(updateClock, 1000);
+updateClock();
+
+/* =========================================
+   ANSI CLEANER
+========================================= */
+
+function stripAnsi(value) {
+    return String(value ?? "")
+        // OSC sequences
+        .replace(/\u001B\][^\u0007]*(?:\u0007|\u001B\\)/g, "")
+        // CSI and other escape sequences
+        .replace(/\u001B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, "")
+        // C1 CSI
+        .replace(/\u009B[0-?]*[ -/]*[@-~]/g, "");
+}
+
+/* =========================================
+   HTML ESCAPE
+========================================= */
+
+function esc(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[char]);
+}
+
+/* =========================================
+   LOG RENDERER
+========================================= */
 
 function renderLine(raw) {
-  const m = raw.match(/^\[([^\]]+)\]\s+\[([^\]]+)\]\s*(.*)$/);
-  const div = document.createElement('div');
+    const clean = stripAnsi(raw);
 
-  div.className = 'terminal-line';
+    const div = document.createElement("div");
+    div.className = "terminal-line";
 
-  if (!m) {
-    div.textContent = raw;
+    const match = clean.match(
+        /^\[([^\]]+)\]\s+\[([^\]]+)\]\s*(.*)$/
+    );
+
+    if (!match) {
+        div.textContent = clean;
+        return div;
+    }
+
+    const [, timestamp, level, message] = match;
+    const normalizedLevel = level.toUpperCase();
+
+    let safeMessage = esc(message);
+
+    // Bot tag
+    safeMessage = safeMessage.replace(
+        /\|\s*BOT\s*\[(\d+)\]/gi,
+        '<span class="bot-tag">| BOT [$1]</span>'
+    );
+
+    // Common log tags
+    safeMessage = safeMessage.replace(
+        /\[(LOGIN|BOT|JOIN|ERROR|WARN|INFO|OK|SUCCESS|FAIL)\]/gi,
+        '<span class="log-tag">[$1]</span>'
+    );
+
+    // Inner timestamps
+    safeMessage = safeMessage.replace(
+        /\b(\d{2}:\d{2}:\d{2})\b/g,
+        '<span class="inner-ts">$1</span>'
+    );
+
+    // Success symbol
+    safeMessage = safeMessage.replace(
+        /✓/g,
+        '<span class="log-check">✓</span>'
+    );
+
+    div.innerHTML =
+        `<span class="ts">[${esc(timestamp)}]</span> ` +
+        `<span class="lvl ${esc(normalizedLevel)}">[${esc(normalizedLevel)}]</span> ` +
+        `<span class="log-message">${safeMessage}</span>`;
+
     return div;
-  }
-
-  const ts = m[1];
-  const lvl = m[2].toUpperCase();
-  const rest = m[3];
-
-  div.innerHTML =
-    `<span class="ts">[${esc(ts)}]</span> ` +
-    `<span class="lvl ${esc(lvl)}">[${esc(lvl)}]</span> ` +
-    `${esc(rest)}`;
-
-  return div;
 }
 
-function scrollBottom(force=false) {
-  if (force) autoScroll = true;
+/* =========================================
+   LOG AUTO SCROLL
+========================================= */
 
-  if (autoScroll) {
+function scrollBottom() {
     term.scrollTop = term.scrollHeight;
-  }
 }
 
 function clearTermView() {
-  term.innerHTML = '';
-  lastLogCount = serverLogTotal;
+    term.replaceChildren();
+
+    // Không tải lại những log cũ đã có trên server.
+    lastLogCount = serverLogTotal;
+
+    const empty = document.createElement("div");
+    empty.className = "terminal-empty";
+    empty.textContent = "Màn hình log đã được xóa. Đang chờ log mới...";
+
+    term.appendChild(empty);
 }
 
-function fmtUptime(seconds) {
-  if (!Number.isFinite(seconds) || seconds < 0) return '0s';
-
-  if (seconds < 60) return seconds + 's';
-
-  if (seconds < 3600) {
-    return Math.floor(seconds/60) + 'm ' +
-           (seconds%60) + 's';
-  }
-
-  if (seconds < 86400) {
-    return Math.floor(seconds/3600) + 'h ' +
-           Math.floor((seconds%3600)/60) + 'm';
-  }
-
-  return Math.floor(seconds/86400) + 'd ' +
-         Math.floor((seconds%86400)/3600) + 'h';
-}
-
-async function api(url, options={}) {
-  const response = await fetch(url, {
-    cache:'no-store',
-    ...options
-  });
-
-  if (response.status === 401) {
-    location.href = '/login';
-    throw new Error('Unauthorized');
-  }
-
-  if (!response.ok) {
-    throw new Error('HTTP ' + response.status);
-  }
-
-  return response.json();
-}
+/* =========================================
+   POLL LOGS
+========================================= */
 
 async function pollLogs() {
-  try {
-    const data = await api(
-      '/api/logs?after=' + lastLogCount
-    );
+    try {
+        const data = await api(
+            `${API.logs}?after=${encodeURIComponent(lastLogCount)}`
+        );
 
-    serverLogTotal = data.total || 0;
+        const lines = Array.isArray(data.lines) ? data.lines : [];
 
-    if (data.lines?.length) {
-      const fragment = document.createDocumentFragment();
+        serverLogTotal = Number(
+            data.latest_id ?? data.total ?? lastLogCount
+        );
 
-      for (const line of data.lines) {
-        fragment.appendChild(renderLine(line));
-      }
+        if (lines.length) {
+            // Bỏ placeholder nếu đây là log đầu tiên.
+            const placeholder = term.querySelector(".terminal-empty");
+            if (placeholder) placeholder.remove();
 
-      term.appendChild(fragment);
+            const fragment = document.createDocumentFragment();
 
-      lastLogCount = data.total;
+            for (const line of lines) {
+                fragment.appendChild(renderLine(line));
+            }
 
-      while (term.childNodes.length > 2000) {
-        term.removeChild(term.firstChild);
-      }
+            term.appendChild(fragment);
 
-      scrollBottom();
+            // Giới hạn số dòng hiển thị trên trình duyệt.
+            while (term.childNodes.length > MAX_VISIBLE_LOGS) {
+                term.removeChild(term.firstChild);
+            }
+        }
+
+        lastLogCount = Math.max(lastLogCount, serverLogTotal);
+
+        $("log-count").textContent =
+            `${serverLogTotal.toLocaleString("vi-VN")} dòng`;
+
+        $("total-logs").textContent =
+            serverLogTotal.toLocaleString("vi-VN");
+
+        // Luôn tự động cuộn xuống cuối khi polling.
+        scrollBottom();
+
+    } catch (err) {
+        console.error("Log polling:", err);
+    }
+}
+
+/* =========================================
+   STATS
+========================================= */
+
+function formatUptime(value) {
+    if (value === null || value === undefined || value === "") {
+        return "--";
     }
 
-    document.getElementById('log-count').textContent =
-      serverLogTotal + ' dòng';
-
-    // Phục hồi nếu server đã xoá log cũ do giới hạn deque.
-    if (lastLogCount > serverLogTotal) {
-      lastLogCount = 0;
-      term.innerHTML = '';
+    if (typeof value === "string") {
+        return value;
     }
 
-  } catch(e) {
-    console.error('Log polling:', e);
-  }
+    let seconds = Math.max(0, Number(value) || 0);
+
+    const days = Math.floor(seconds / 86400);
+    seconds %= 86400;
+
+    const hours = Math.floor(seconds / 3600);
+    seconds %= 3600;
+
+    const minutes = Math.floor(seconds / 60);
+    seconds = Math.floor(seconds % 60);
+
+    if (days > 0) {
+        return `${days}d ${hours}h ${minutes}m`;
+    }
+
+    return `${hours}h ${minutes}m ${seconds}s`;
+}
+
+function setText(id, value, fallback = "--") {
+    $(id).textContent =
+        value === null || value === undefined || value === ""
+            ? fallback
+            : value;
 }
 
 async function pollStats() {
-  try {
-    const s = await api('/api/stats');
+    try {
+        const data = await api(API.stats);
 
-    document.getElementById('stat-running').textContent =
-      s.running ?? 0;
+        setText("running", data.running, "0");
+        setText("total-bots", data.total_bots, "0");
+        setText("joined", data.joined, "0");
+        setText("failed", data.failed, "0");
 
-    document.getElementById('stat-total').textContent =
-      s.total_bots ?? 0;
+        setText("uptime", formatUptime(data.uptime));
+        setText("cpu", data.cpu !== undefined ? `${data.cpu}%` : "--");
+        setText("memory", data.memory !== undefined ? `${data.memory}%` : "--");
 
-    document.getElementById('stat-joined').textContent =
-      s.joined ?? 0;
+        setText("api-latency",
+            data.api_last_ms !== undefined
+                ? `${data.api_last_ms} ms`
+                : "--"
+        );
 
-    document.getElementById('stat-failed').textContent =
-      s.failed ?? 0;
+        setText(
+            "api-status",
+            data.api_last_error
+                ? "ERROR"
+                : (data.api_last_ok ? "ONLINE" : "--")
+        );
 
-    document.getElementById('stat-api').textContent =
-      s.api_last_ms != null ? s.api_last_ms + 'ms' : '-';
+        setText("started-at", data.started_at);
 
-    let sub = 'Waiting for ping...';
+        const status = data.running > 0 ? "RUNNING" : "IDLE";
+        setText("system-status", status);
 
-    if (s.api_last_error) {
-      sub = 'Error: ' + s.api_last_error;
-    } else if (s.api_last_ok) {
-      sub = 'Last OK: ' + s.api_last_ok;
+        $("connection-dot").classList.remove("offline");
+        $("connection-text").textContent = "Online";
+
+        $("last-update").textContent =
+            new Date().toLocaleTimeString("vi-VN", { hour12: false });
+
+    } catch (err) {
+        $("connection-dot").classList.add("offline");
+        $("connection-text").textContent = "Offline";
+        console.error("Stats polling:", err);
+    }
+}
+
+/* =========================================
+   BOT TABLE
+========================================= */
+
+function getBotStatus(bot) {
+    const value = String(bot.status ?? "").toLowerCase();
+
+    if (
+        value.includes("run") ||
+        value.includes("online") ||
+        value.includes("active")
+    ) {
+        return {
+            text: "RUNNING",
+            className: "status-running"
+        };
     }
 
-    document.getElementById('stat-api-sub').textContent = sub;
-
-    const start = new Date(s.started_at).getTime();
-
-    if (Number.isFinite(start)) {
-      document.getElementById('stat-uptime').textContent =
-        fmtUptime(Math.floor((Date.now()-start)/1000));
+    if (
+        value.includes("error") ||
+        value.includes("fail")
+    ) {
+        return {
+            text: "ERROR",
+            className: "status-error"
+        };
     }
 
-  } catch(e) {
-    console.error('Stats polling:', e);
-  }
+    if (
+        value.includes("stop") ||
+        value.includes("idle") ||
+        value.includes("off")
+    ) {
+        return {
+            text: "STOPPED",
+            className: "status-stopped"
+        };
+    }
+
+    return {
+        text: bot.status || "UNKNOWN",
+        className: "status-unknown"
+    };
 }
 
 async function pollBots() {
-  try {
-    const bots = await api('/api/bots');
+    try {
+        const data = await api(API.bots);
 
-    const body = document.getElementById('bots-body');
+        const bots = Array.isArray(data)
+            ? data
+            : (Array.isArray(data.bots) ? data.bots : []);
 
-    document.getElementById('bot-count').textContent =
-      bots.length + ' bots';
+        $("bot-count").textContent =
+            `${bots.length} tài khoản`;
 
-    if (!bots.length) {
-      body.innerHTML =
-        '<tr><td colspan="6" class="empty">No bots available</td></tr>';
-      return;
+        const tbody = $("bot-list");
+        const fragment = document.createDocumentFragment();
+
+        if (!bots.length) {
+            const row = document.createElement("tr");
+            row.innerHTML =
+                '<td colspan="5" class="empty-row">Chưa có tài khoản bot.</td>';
+
+            tbody.replaceChildren(row);
+            return;
+        }
+
+        for (const bot of bots) {
+            const uid = String(bot.uid ?? "");
+            const nickname = String(bot.nickname || bot.uid || "Unknown");
+            const status = getBotStatus(bot);
+
+            const row = document.createElement("tr");
+
+            const nameCell = document.createElement("td");
+            nameCell.innerHTML =
+                `<div class="bot-name">${esc(nickname)}</div>` +
+                `<div class="bot-id">${esc(uid)}</div>`;
+
+            const statusCell = document.createElement("td");
+            statusCell.innerHTML =
+                `<span class="status-pill ${status.className}">${esc(status.text)}</span>`;
+
+            const joinedCell = document.createElement("td");
+            joinedCell.textContent = bot.joined ?? 0;
+
+            const failedCell = document.createElement("td");
+            failedCell.textContent = bot.failed ?? 0;
+
+            const actionCell = document.createElement("td");
+
+            const actionButton = document.createElement("button");
+            actionButton.className = "mini-btn";
+
+            const isRunning = status.className === "status-running";
+
+            actionButton.textContent = isRunning ? "Dừng" : "Chạy";
+            actionButton.addEventListener("click", () => {
+                toggleBot(uid, isRunning);
+            });
+
+            actionCell.appendChild(actionButton);
+
+            row.append(
+                nameCell,
+                statusCell,
+                joinedCell,
+                failedCell,
+                actionCell
+            );
+
+            fragment.appendChild(row);
+        }
+
+        tbody.replaceChildren(fragment);
+
+    } catch (err) {
+        console.error("Bot polling:", err);
     }
-
-    const fragment = document.createDocumentFragment();
-
-    for (const b of bots) {
-      const tr = document.createElement('tr');
-
-      const running = b.status === 'running';
-
-      const statusClass = running
-        ? 'running'
-        : b.last_action === 'failed'
-          ? 'failed'
-          : 'idle';
-
-      const statusText = running ? '● RUNNING' : '● IDLE';
-
-      tr.innerHTML = `
-        <td class="nickname">${esc(b.nickname || '-')}</td>
-        <td class="uid">${esc(b.uid)}</td>
-        <td>
-          <span class="pill ${statusClass}">
-            ${statusText}
-          </span>
-        </td>
-        <td>${Number(b.joined)||0}</td>
-        <td style="color:#ff829b">${Number(b.failed)||0}</td>
-        <td>
-          <button
-            class="mini ${running?'stop':'start'}"
-            data-uid="${esc(b.uid)}"
-            data-action="${running?'stop':'start'}">
-            ${running?'Stop':'Start'}
-          </button>
-        </td>
-      `;
-
-      fragment.appendChild(tr);
-    }
-
-    body.replaceChildren(fragment);
-
-  } catch(e) {
-    console.error('Bot polling:', e);
-  }
 }
 
-async function startBot(uid) {
-  try {
-    await api('/api/bot/' + encodeURIComponent(uid) + '/start', {
-      method:'POST'
-    });
+/* =========================================
+   BOT ACTIONS
+========================================= */
 
-    pollBots();
-    pollStats();
-  } catch(e) {
-    console.error(e);
-  }
-}
+async function toggleBot(uid, isRunning) {
+    if (!uid) {
+        notify("Không tìm thấy UID của bot.");
+        return;
+    }
 
-async function stopBot(uid) {
-  try {
-    await api('/api/bot/' + encodeURIComponent(uid) + '/stop', {
-      method:'POST'
-    });
+    const action = isRunning ? "stop" : "start";
 
-    pollBots();
-    pollStats();
-  } catch(e) {
-    console.error(e);
-  }
+    try {
+        await api(`/api/bot/${encodeURIComponent(uid)}/${action}`, {
+            method: "POST"
+        });
+
+        notify(isRunning ? "Đã gửi lệnh dừng bot." : "Đã gửi lệnh chạy bot.");
+
+        await pollBots();
+        await pollStats();
+
+    } catch (err) {
+        notify(err.message || "Không thể thực hiện thao tác.");
+    }
 }
 
 async function startAll() {
-  try {
-    const result = await api('/api/start_all', {
-      method:'POST'
-    });
+    if (!confirm("Bạn có chắc muốn chạy tất cả bot?")) return;
 
-    console.log('Started:', result.started);
+    try {
+        await api(API.startAll, { method: "POST" });
 
-    pollBots();
-    pollStats();
-  } catch(e) {
-    console.error(e);
-  }
+        notify("Đã gửi lệnh chạy tất cả bot.");
+
+        await refreshAll();
+
+    } catch (err) {
+        notify(err.message || "Không thể chạy tất cả bot.");
+    }
 }
 
 async function stopAll() {
-  try {
-    await api('/api/stop_all', {
-      method:'POST'
-    });
+    if (!confirm("Bạn có chắc muốn dừng tất cả bot?")) return;
 
-    pollBots();
-    pollStats();
-  } catch(e) {
-    console.error(e);
-  }
+    try {
+        await api(API.stopAll, { method: "POST" });
+
+        notify("Đã gửi lệnh dừng tất cả bot.");
+
+        await refreshAll();
+
+    } catch (err) {
+        notify(err.message || "Không thể dừng tất cả bot.");
+    }
 }
 
-// Event delegation: tránh chèn UID trực tiếp vào JavaScript.
-document.getElementById('bots-body').addEventListener('click', e => {
-  const button = e.target.closest('button[data-action]');
+/* =========================================
+   REFRESH
+========================================= */
 
-  if (!button) return;
+async function refreshAll() {
+    if (!isAuthenticated) return;
 
-  const uid = button.dataset.uid;
-
-  if (button.dataset.action === 'start') {
-    startBot(uid);
-  } else {
-    stopBot(uid);
-  }
-});
-
-// Auto scroll
-term.addEventListener('scroll', () => {
-  const atBottom =
-    term.scrollHeight - term.scrollTop - term.clientHeight < 30;
-
-  autoScroll = atBottom;
-});
-
-// Clock
-function updateClock() {
-  document.getElementById('clock').textContent =
-    new Date().toLocaleTimeString('vi-VN', {
-      hour12:false
-    });
+    await Promise.allSettled([
+        pollStats(),
+        pollLogs(),
+        pollBots()
+    ]);
 }
 
-updateClock();
-setInterval(updateClock,1000);
+/* =========================================
+   STARTUP
+========================================= */
 
-// Initial loading
-pollStats();
-pollBots();
-pollLogs();
+async function initializeDashboard() {
+    // Xóa log mẫu HTML để tránh trùng với log server.
+    term.replaceChildren();
 
-// Automatic updates
-setInterval(pollStats,2000);
-setInterval(pollBots,3000);
-setInterval(pollLogs,1000);
-setInterval(() => scrollBottom(),500);
+    const placeholder = document.createElement("div");
+    placeholder.className = "terminal-empty";
+    placeholder.textContent = "Đang kết nối tới máy chủ...";
+    term.appendChild(placeholder);
+
+    // Lần đầu lấy dữ liệu.
+    await refreshAll();
+
+    // Tự động cập nhật.
+    setInterval(pollStats, 3000);
+    setInterval(pollLogs, POLL_INTERVAL);
+    setInterval(pollBots, 5000);
+
+    // Luôn cuộn xuống cuối.
+    setInterval(scrollBottom, 500);
+}
+
+// Kiểm tra session hiện có bằng API stats.
+async function checkExistingSession() {
+    try {
+        await api(API.stats);
+
+        isAuthenticated = true;
+        showDashboard();
+
+        await initializeDashboard();
+
+    } catch (err) {
+        showLogin();
+    }
+}
+
+checkExistingSession();
 
 </script>
-
 </body>
 </html>
