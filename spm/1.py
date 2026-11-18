@@ -50,7 +50,6 @@ T_CHAT_SEND = 0.15
 T_EXIT = 0.05
 T_QUIT = 0.03
 
-# Cổng API nội bộ cho web.py gọi
 BOT_API_PORT = 2026
 API_PING_URL = os.environ.get("API_PING_URL", "https://zanspm.onrender.com")
 API_PING_INTERVAL = 300
@@ -108,7 +107,6 @@ class LogTee:
     @property
     def encoding(self): return getattr(self.stream, "encoding", "utf-8")
 
-# ================== HELPERS ==================
 def compute_leader_count(n_acc):
     if n_acc <= 0: return 0
     if n_acc < 50: return 1
