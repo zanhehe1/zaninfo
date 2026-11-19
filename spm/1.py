@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import asyncio
+from collections import deque
 import json
 import os
 import random
+import re
 import sys
 import time
 
@@ -38,6 +40,7 @@ ROTATOR_INTERVAL = 15.0
 LEADER_SUPERVISOR_INTERVAL = 5.0
 MAX_TRIES_PER_GEN = 50
 MAX_FAILED_CACHE = 5000
+MAX_WEB_LOGS = 300
 STATS_INTERVAL = 60.0
 WATCH_INTERVAL = 0.5
 
@@ -83,11 +86,36 @@ class STATE:
     total_spam_sent = 0
     start_time = time.time()
 
+    logs = deque(maxlen=MAX_WEB_LOGS)
+    log_seq = 0
+
 
 stop_flag = None
 file_lock = asyncio.Lock()
 accounts_ref_global = []
 CHAT_LOCK = asyncio.Lock()
+
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def strip_ansi(text: str) -> str:
+    return _ANSI_RE.sub("", text or "")
+
+
+def push_log(tag: str, message: str, level: str = "info"):
+    STATE.log_seq += 1
+    STATE.logs.append({
+        "id": STATE.log_seq,
+        "time": time.strftime("%H:%M:%S"),
+        "tag": tag,
+        "level": level,
+        "message": strip_ansi(message).strip(),
+    })
+
+
+def termux_print(ansi_line: str, tag: str = "SYS", level: str = "info"):
+    print(ansi_line, flush=True)
+    push_log(tag, ansi_line, level)
 
 
 def format_uptime(seconds: float) -> str:
@@ -111,18 +139,30 @@ def ts():
 
 def log_rotator(leader_idx, code):
     suffix = code[-2:] if len(code) >= 2 else code
-    print(f"{C.GRAY}{ts()}{C.RESET} {C.MAGENTA}[L{leader_idx+1}]{C.RESET} "
-          f"→ {C.BOLD}{code}{C.RESET} (giữ 2 số cuối: {C.GREEN}{suffix}{C.RESET})", flush=True)
+    termux_print(
+        f"{C.GRAY}{ts()}{C.RESET} {C.MAGENTA}[L{leader_idx+1}]{C.RESET} "
+        f"→ {C.BOLD}{code}{C.RESET} (giữ 2 số cuối: {C.GREEN}{suffix}{C.RESET})",
+        tag=f"L{leader_idx+1}",
+        level="rotator",
+    )
 
 
 def log_login(uid, ok, nick=""):
     if ok:
         total = len(accounts_ref_global)
-        print(f"{C.GRAY}{ts()}{C.RESET} {C.GREEN}[LOGIN]{C.RESET} {uid} "
-              f"{C.GREEN}✓{C.RESET} {nick} {C.CYAN}| BOT [{total}]{C.RESET}", flush=True)
+        termux_print(
+            f"{C.GRAY}{ts()}{C.RESET} {C.GREEN}[LOGIN]{C.RESET} {uid} "
+            f"{C.GREEN}✓{C.RESET} {nick} {C.CYAN}| BOT [{total}]{C.RESET}",
+            tag="LOGIN",
+            level="ok",
+        )
     else:
-        print(f"{C.GRAY}{ts()}{C.RESET} {C.RED}[LOGIN]{C.RESET} {uid} "
-              f"{C.RED}✗ {nick}{C.RESET}", flush=True)
+        termux_print(
+            f"{C.GRAY}{ts()}{C.RESET} {C.RED}[LOGIN]{C.RESET} {uid} "
+            f"{C.RED}✗ {nick}{C.RESET}",
+            tag="LOGIN",
+            level="err",
+        )
 
 
 def log_join(worker_id, nick, code, ok, detail=""):
@@ -130,8 +170,12 @@ def log_join(worker_id, nick, code, ok, detail=""):
         return
     wtag = f"[W{worker_id:03d}]"
     nk = nick[:10].ljust(10)
-    print(f"{C.GRAY}{ts()}{C.RESET} {C.GREEN}{wtag} {nk} {code}  ✓  "
-          f"{detail}{C.RESET}", flush=True)
+    termux_print(
+        f"{C.GRAY}{ts()}{C.RESET} {C.GREEN}{wtag} {nk} {code}  ✓  "
+        f"{detail}{C.RESET}",
+        tag=f"W{worker_id:03d}",
+        level="ok",
+    )
 
 
 def print_stats():
@@ -155,6 +199,11 @@ def print_stats():
     print(f"{C.CYAN}|{C.RESET} Uptime: {uptime_str}")
     print(f"{C.CYAN}{'='*58}{C.RESET}")
     print()
+    push_log(
+        "STATS",
+        f"BOT={len(accounts_ref_global)} | Join={STATE.total_join_success}/{STATE.total_join_attempts} ({rate:.0f}%) | Fail={STATE.total_join_fail} | Uptime={uptime_str}",
+        level="info",
+    )
 
 
 def load_config():
@@ -567,8 +616,12 @@ async def worker_loop(acc, worker_id, cfg, stop_evt):
             async with acc["lock"]:
                 await spam_cycle(acc, cfg, worker_id)
         except Exception as e:
-            print(f"{C.GRAY}{ts()}{C.RESET} {C.RED}[W{worker_id:03d}] "
-                  f"err: {type(e).__name__}{C.RESET}", flush=True)
+            termux_print(
+                f"{C.GRAY}{ts()}{C.RESET} {C.RED}[W{worker_id:03d}] "
+                f"err: {type(e).__name__}{C.RESET}",
+                tag=f"W{worker_id:03d}",
+                level="err",
+            )
         finally:
             acc["busy"] = False
 
@@ -636,12 +689,20 @@ async def file_watcher(accounts_ref, spawn_worker, login_sem, stop_evt):
             continue
 
         if first_load:
-            print(f"{C.GRAY}{ts()}{C.RESET} {C.CYAN}[WATCH]{C.RESET} "
-                  f"load {len(new_accs)} acc từ {AC_FILENAME} → login song song", flush=True)
+            termux_print(
+                f"{C.GRAY}{ts()}{C.RESET} {C.CYAN}[WATCH]{C.RESET} "
+                f"load {len(new_accs)} acc từ {AC_FILENAME} → login song song",
+                tag="WATCH",
+                level="info",
+            )
             first_load = False
         else:
-            print(f"{C.GRAY}{ts()}{C.RESET} {C.YELLOW}[WATCH]{C.RESET} "
-                  f"+{len(new_accs)} acc mới từ {AC_FILENAME} → login", flush=True)
+            termux_print(
+                f"{C.GRAY}{ts()}{C.RESET} {C.YELLOW}[WATCH]{C.RESET} "
+                f"+{len(new_accs)} acc mới từ {AC_FILENAME} → login",
+                tag="WATCH",
+                level="warn",
+            )
 
         for uid, pwd in new_accs:
             known_uids.add(uid)
@@ -677,7 +738,14 @@ async def handle_stats(request):
         "spam_sent": STATE.total_spam_sent,
         "uptime": format_uptime(elapsed),
         "uptime_sec": int(elapsed),
+        "logs": list(STATE.logs)[-120:],
     })
+
+
+async def handle_logs(request):
+    after_id = int(request.query.get("after", "0") or "0")
+    items = [item for item in STATE.logs if item["id"] > after_id]
+    return web.json_response({"ok": True, "logs": items})
 
 
 async def handle_status(request):
@@ -774,6 +842,13 @@ async def handle_chat(request):
                 if chat_ok:
                     STATE.total_spam_sent += 1
 
+                termux_print(
+                    f"{C.GRAY}{ts()}{C.RESET} {C.CYAN}[CHAT]{C.RESET} TC={tc} → "
+                    f"{'OK' if chat_ok else 'FAIL'} (owner={owner})",
+                    tag="CHAT",
+                    level="ok" if chat_ok else "warn",
+                )
+
                 return web.json_response({
                     "ok": True,
                     "uid": str(acc_id),
@@ -795,6 +870,7 @@ async def start_http_server():
     app.router.add_get("/index.html", handle_index_or_panel)
     app.router.add_get("/panel", handle_index_or_panel)
     app.router.add_get("/stats", handle_stats)
+    app.router.add_get("/logs", handle_logs)
     app.router.add_get("/status", handle_status)
     app.router.add_get("/chat", handle_chat)
     runner = web.AppRunner(app)
@@ -804,15 +880,15 @@ async def start_http_server():
             site = web.TCPSite(runner, HTTP_HOST, port)
             await site.start()
             HTTP_PORT = port
-            print(f"{C.GREEN}[HTTP]{C.RESET} Panel: http://127.0.0.1:{port}/panel", flush=True)
-            print(f"{C.GREEN}[HTTP]{C.RESET} Chat:  http://127.0.0.1:{port}/chat?tc=TEAMCODE", flush=True)
+            termux_print(f"{C.GREEN}[HTTP]{C.RESET} Panel: http://127.0.0.1:{port}/panel", tag="HTTP", level="ok")
+            termux_print(f"{C.GREEN}[HTTP]{C.RESET} Chat:  http://127.0.0.1:{port}/chat?tc=TEAMCODE", tag="HTTP", level="ok")
             return
         except OSError as e:
             if "address already in use" in str(e).lower():
-                print(f"{C.YELLOW}[HTTP] port {port} bận, thử port khác...{C.RESET}", flush=True)
+                termux_print(f"{C.YELLOW}[HTTP] port {port} bận, thử port khác...{C.RESET}", tag="HTTP", level="warn")
                 continue
             raise
-    print(f"{C.RED}[HTTP] Không tìm được port trống{C.RESET}", flush=True)
+    termux_print(f"{C.RED}[HTTP] Không tìm được port trống{C.RESET}", tag="HTTP", level="err")
 
 
 async def main():
@@ -823,18 +899,34 @@ async def main():
     accs = load_accounts()
     n = len(accs)
     if n > 0:
-        print(f"{C.CYAN}[ACC]{C.RESET} {n} acc trong {AC_FILENAME} "
-              f"(max {MAX_ACCOUNTS}, {compute_leader_count(n)} leader)")
+        termux_print(
+            f"{C.CYAN}[ACC]{C.RESET} {n} acc trong {AC_FILENAME} "
+            f"(max {MAX_ACCOUNTS}, {compute_leader_count(n)} leader)",
+            tag="ACC",
+            level="info",
+        )
     else:
-        print(f"{C.CYAN}[ACC]{C.RESET} 0 acc trong {AC_FILENAME} (đang chờ gen.py tạo...)")
+        termux_print(
+            f"{C.CYAN}[ACC]{C.RESET} 0 acc trong {AC_FILENAME} (đang chờ gen.py tạo...)",
+            tag="ACC",
+            level="info",
+        )
 
-    print(f"{C.CYAN}[CFG]{C.RESET} Chat: {cfg['chat'][:80].replace(chr(10), ' | ')}...")
-    print(f"{C.MAGENTA}[SYS]{C.RESET} Logic dò code: xxxxx[suffix] (1/100000)")
-    print(f"{C.MAGENTA}[SYS]{C.RESET} Đổi code mỗi {ROTATOR_INTERVAL}s")
-    print(f"{C.MAGENTA}[SYS]{C.RESET} Timing: leave={T_LEAVE_OLD}s auth={T_AUTH_CHAT}s "
-          f"chat={T_CHAT_SEND}s exit={T_EXIT}s")
-    print(f"{C.MAGENTA}[SYS]{C.RESET} login={MAX_CONCURRENT_LOGIN} song song, "
-          f"retry={LOGIN_RETRY}, tries={MAX_TRIES_PER_GEN}\n")
+    termux_print(f"{C.CYAN}[CFG]{C.RESET} Chat: {cfg['chat'][:80].replace(chr(10), ' | ')}...", tag="CFG", level="info")
+    termux_print(f"{C.MAGENTA}[SYS]{C.RESET} Logic dò code: xxxxx[suffix] (1/100000)", tag="SYS", level="rotator")
+    termux_print(f"{C.MAGENTA}[SYS]{C.RESET} Đổi code mỗi {ROTATOR_INTERVAL}s", tag="SYS", level="rotator")
+    termux_print(
+        f"{C.MAGENTA}[SYS]{C.RESET} Timing: leave={T_LEAVE_OLD}s auth={T_AUTH_CHAT}s "
+        f"chat={T_CHAT_SEND}s exit={T_EXIT}s",
+        tag="SYS",
+        level="info",
+    )
+    termux_print(
+        f"{C.MAGENTA}[SYS]{C.RESET} login={MAX_CONCURRENT_LOGIN} song song, "
+        f"retry={LOGIN_RETRY}, tries={MAX_TRIES_PER_GEN}",
+        tag="SYS",
+        level="info",
+    )
 
     stop_evt = asyncio.Event()
     stop_flag = stop_evt
@@ -857,7 +949,7 @@ async def main():
     try:
         await start_http_server()
     except Exception as e:
-        print(f"{C.RED}[HTTP] Không start được: {e}{C.RESET}", flush=True)
+        termux_print(f"{C.RED}[HTTP] Không start được: {e}{C.RESET}", tag="HTTP", level="err")
 
     try:
         await asyncio.gather(
