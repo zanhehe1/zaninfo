@@ -1,734 +1,340 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#080d1b">
-<title>ZansPM | Cyber Dashboard</title>
-
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-
-:root {
-  --bg:#080d1b;
-  --panel:#101a30;
-  --panel2:#0c1427;
-  --border:rgba(125,155,255,.13);
-  --text:#edf3ff;
-  --muted:#8192b2;
-  --blue:#648cff;
-  --cyan:#35d9ff;
-  --green:#20e3a2;
-  --red:#ff5478;
-  --yellow:#ffc857;
-}
-
-* { margin:0; padding:0; box-sizing:border-box; }
-
-body {
-  min-height:100vh;
-  color:var(--text);
-  background:
-    radial-gradient(ellipse at 10% 0%,rgba(70,90,210,.18),transparent 40%),
-    radial-gradient(ellipse at 100% 20%,rgba(0,190,255,.10),transparent 35%),
-    var(--bg);
-  font-family:Inter,sans-serif;
-}
-
-button { font-family:inherit; cursor:pointer; }
-a { text-decoration:none; color:inherit; }
-
-.header {
-  height:72px;
-  padding:0 28px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  border-bottom:1px solid var(--border);
-  background:rgba(8,13,27,.85);
-  backdrop-filter:blur(18px);
-  position:sticky;
-  top:0;
-  z-index:100;
-}
-
-.brand { display:flex; align-items:center; gap:12px; }
-
-.logo {
-  width:42px; height:42px;
-  display:grid; place-items:center;
-  border-radius:13px; font-size:21px;
-  background:linear-gradient(135deg,#638cff,#8058ff);
-  box-shadow:0 0 25px rgba(100,140,255,.35);
-}
-
-.brand-name { font-size:18px; font-weight:800; letter-spacing:.5px; }
-.brand-name span { color:var(--cyan); }
-
-.header-right {
-  display:flex; align-items:center; gap:20px;
-  color:var(--muted); font-size:13px;
-}
-
-.online { display:flex; align-items:center; gap:8px; }
-
-.dot {
-  width:8px; height:8px;
-  background:var(--green); border-radius:50%;
-  box-shadow:0 0 12px var(--green);
-  animation:pulse 1.5s infinite;
-}
-
-@keyframes pulse { 50% { opacity:.4; } }
-
-.logout {
-  padding:9px 13px; border:1px solid var(--border);
-  border-radius:9px; color:#ff8da5;
-  background:rgba(255,84,120,.07);
-}
-
-.container { max-width:1500px; margin:auto; padding:30px; }
-
-.welcome { margin-bottom:28px; }
-.welcome h1 { font-size:27px; font-weight:800; }
-.welcome h1 span { color:var(--cyan); }
-.welcome p { margin-top:8px; font-size:13px; color:var(--muted); }
-
-.stats {
-  display:grid;
-  grid-template-columns:repeat(5,minmax(0,1fr));
-  gap:16px; margin-bottom:25px;
-}
-
-.stat-card {
-  min-width:0; position:relative; overflow:hidden;
-  padding:21px; border:1px solid var(--border);
-  border-radius:17px;
-  background:linear-gradient(145deg,rgba(20,33,59,.95),rgba(11,20,39,.95));
-  transition:.25s;
-}
-
-.stat-card:hover {
-  transform:translateY(-4px);
-  border-color:rgba(100,140,255,.45);
-  box-shadow:0 12px 35px rgba(0,0,0,.2);
-}
-
-.stat-card::after {
-  content:""; position:absolute;
-  width:100px; height:100px; right:-40px; top:-45px;
-  border-radius:50%; background:var(--glow);
-  filter:blur(45px); opacity:.3;
-}
-
-.stat-top {
-  display:flex; align-items:center;
-  justify-content:space-between; gap:8px;
-}
-
-.stat-label {
-  color:var(--muted); font-size:11px; font-weight:700;
-  letter-spacing:1px; text-transform:uppercase;
-}
-
-.stat-icon {
-  width:36px; height:36px;
-  display:grid; place-items:center;
-  border-radius:11px; background:var(--icon-bg); font-size:17px;
-}
-
-.stat-value {
-  margin-top:15px; font-size:31px; font-weight:800;
-  letter-spacing:-1px; font-variant-numeric:tabular-nums;
-}
-
-.stat-sub { margin-top:5px; font-size:11px; color:var(--muted); }
-
-.blue {--glow:#648cff;--icon-bg:rgba(100,140,255,.15);}
-.green {--glow:#20e3a2;--icon-bg:rgba(32,227,162,.13);}
-.red {--glow:#ff5478;--icon-bg:rgba(255,84,120,.13);}
-.cyan {--glow:#35d9ff;--icon-bg:rgba(53,217,255,.13);}
-.purple {--glow:#a477ff;--icon-bg:rgba(164,119,255,.13);}
-
-.green .stat-value {color:var(--green);}
-.red .stat-value {color:var(--red);}
-.cyan .stat-value {color:var(--cyan);}
-
-.toolbar {
-  display:flex; align-items:center; justify-content:space-between;
-  flex-wrap:wrap; gap:12px; margin-bottom:20px;
-}
-
-.toolbar-title { font-size:16px; font-weight:700; }
-.toolbar-actions { display:flex; flex-wrap:wrap; gap:9px; }
-
-.btn {
-  border:1px solid var(--border);
-  padding:11px 16px; border-radius:10px;
-  font-size:12px; font-weight:700; color:white;
-  background:rgba(100,140,255,.12); transition:.2s;
-}
-
-.btn:hover { transform:translateY(-2px); filter:brightness(1.2); }
-
-.btn-start {
-  color:#80ffd0; border-color:rgba(32,227,162,.25);
-  background:rgba(32,227,162,.10);
-}
-
-.btn-stop {
-  color:#ff91a8; border-color:rgba(255,84,120,.25);
-  background:rgba(255,84,120,.10);
-}
-
-.btn-normal { color:#b4c8ed; }
-
-.dashboard-grid {
-  display:grid; grid-template-columns:1.15fr 1fr; gap:18px;
-}
-
-.panel {
-  min-width:0; overflow:hidden;
-  border:1px solid var(--border); border-radius:17px;
-  background:linear-gradient(160deg,rgba(17,27,48,.96),rgba(10,18,34,.96));
-  box-shadow:0 12px 35px rgba(0,0,0,.18);
-}
-
-.panel-header {
-  height:62px; padding:0 19px;
-  display:flex; align-items:center; justify-content:space-between;
-  border-bottom:1px solid var(--border);
-}
-
-.panel-title {
-  display:flex; align-items:center; gap:10px;
-  font-size:13px; font-weight:700;
-}
-
-.panel-title-icon { font-size:17px; }
-
-.panel-count {
-  padding:5px 10px; border-radius:20px;
-  background:rgba(100,140,255,.12); color:#a9c4ff;
-  font-size:11px; font-family:monospace;
-}
-
-.terminal {
-  height:520px; overflow-y:auto; padding:17px;
-  background:#050914;
-  font-family:"JetBrains Mono",monospace;
-  font-size:12px; line-height:1.9;
-  scrollbar-width:thin; scrollbar-color:#263653 transparent;
-}
-
-.terminal::-webkit-scrollbar { width:8px; }
-.terminal::-webkit-scrollbar-thumb {
-  background:#263653; border-radius:8px;
-}
-
-.terminal-line {
-  display:flex;
-  gap:8px;
-  white-space:pre-wrap;
-  word-break:break-word;
-  padding:2px 0;
-  border-radius:4px;
-}
-
-.terminal-line:hover { background:rgba(100,140,255,.05); }
-
-.terminal-line .ts {
-  color:#586c90;
-  flex:0 0 auto;
-  font-variant-numeric:tabular-nums;
-}
-
-.terminal-line .lvl {
-  flex:0 0 auto;
-  font-weight:700;
-  min-width:62px;
-}
-
-.terminal-line .msg { flex:1 1 auto; color:#c9d6ec; }
-
-.lvl.INFO  { color:#80aaff; }
-.lvl.OK    { color:#20e3a2; }
-.lvl.ERROR { color:#ff5478; }
-.lvl.WARN  { color:#ffc857; }
-.lvl.API   { color:#35d9ff; }
-
-.bot-container {
-  height:520px; overflow:auto;
-  scrollbar-width:thin; scrollbar-color:#263653 transparent;
-}
-
-.bot-container::-webkit-scrollbar { width:8px; }
-.bot-container::-webkit-scrollbar-thumb {
-  background:#263653; border-radius:8px;
-}
-
-table { width:100%; border-collapse:collapse; font-size:12px; }
-
-thead {
-  position:sticky; top:0; z-index:2; background:#111d34;
-}
-
-th {
-  padding:15px 12px; color:#8296ba; font-size:10px;
-  text-align:left; text-transform:uppercase;
-  letter-spacing:.6px; white-space:nowrap;
-}
-
-td { padding:14px 12px; border-bottom:1px solid rgba(125,155,255,.07); }
-
-tbody tr:hover { background:rgba(100,140,255,.055); }
-
-.nickname { font-weight:700; white-space:nowrap; }
-.uid { font-family:monospace; color:#8fa9d5; font-size:11px; }
-
-.pill {
-  display:inline-flex; align-items:center; gap:5px;
-  padding:5px 9px; border-radius:20px;
-  font-size:10px; font-weight:800;
-}
-
-.pill.running { color:#42f2ae; background:rgba(32,227,162,.12); }
-.pill.idle    { color:#a0b0c9; background:rgba(143,163,192,.12); }
-.pill.failed  { color:#ff829b; background:rgba(255,84,120,.12); }
-
-.mini {
-  border:0; border-radius:7px; padding:7px 10px;
-  font-size:10px; font-weight:800;
-}
-
-.mini.start { background:rgba(32,227,162,.13); color:#45f0ae; }
-.mini.stop  { background:rgba(255,84,120,.13); color:#ff829b; }
-
-.empty { padding:40px; text-align:center; color:var(--muted); }
-
-.footer {
-  display:flex; justify-content:space-between;
-  flex-wrap:wrap; gap:10px;
-  padding:22px 3px; color:#657795; font-size:11px;
-}
-
-@media(max-width:1150px) {
-  .stats { grid-template-columns:repeat(3,1fr); }
-  .dashboard-grid { grid-template-columns:1fr; }
-}
-
-@media(max-width:650px) {
-  .header { height:62px; padding:0 15px; }
-  .brand-name {font-size:15px;}
-  .logo {width:36px;height:36px;}
-  .header-right {gap:10px;font-size:11px;}
-  .container {padding:20px 13px;}
-  .welcome h1 {font-size:22px;}
-  .stats { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
-  .stat-card {padding:15px;}
-  .stat-value {font-size:25px;}
-  .stat-label {font-size:9px;}
-  .toolbar {align-items:flex-start; flex-direction:column;}
-  .toolbar-actions {width:100%;}
-  .btn {padding:10px 12px;}
-  .panel-header {padding:0 13px;}
-  .terminal {height:430px;font-size:11px;padding:12px;}
-  .bot-container {height:430px;}
-  table {font-size:11px;}
-  th,td {padding:12px 9px;}
-  .footer {font-size:10px;}
-  .terminal-line .lvl {min-width:52px;}
-}
-
-@media(max-width:360px) {
-  .stats {grid-template-columns:1fr;}
-}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BOT Control Panel — 2026</title>
+  <style>
+    :root {
+      --bg: #090d1a;
+      --surface: #11182c;
+      --surface-2: #17213b;
+      --border: #243256;
+      --text: #eef2ff;
+      --muted: #8b9dc3;
+      --green: #22c55e;
+      --red: #ef4444;
+      --cyan: #38bdf8;
+      --amber: #f59e0b;
+      --violet: #a855f7;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Segoe UI", Inter, Roboto, system-ui, sans-serif;
+      background:
+        radial-gradient(900px 420px at 15% -10%, rgba(56, 189, 248, 0.14), transparent 60%),
+        radial-gradient(800px 420px at 85% -5%, rgba(168, 85, 247, 0.12), transparent 60%),
+        var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 26px 16px 40px;
+    }
+
+    .wrap {
+      max-width: 1020px;
+      margin: 0 auto;
+    }
+
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px 22px;
+      margin-bottom: 20px;
+    }
+
+    .brand h1 {
+      font-size: 21px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+    }
+
+    .brand p {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      color: #86efac;
+    }
+
+    .status-pill.offline {
+      background: rgba(239, 68, 68, 0.14);
+      border-color: rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 10px var(--green);
+      animation: blink 1.5s infinite;
+    }
+
+    .status-pill.offline .dot {
+      background: var(--red);
+      box-shadow: 0 0 10px var(--red);
+      animation: none;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 20px;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: #364b7d;
+    }
+
+    .card-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .card-value {
+      font-size: 32px;
+      font-weight: 800;
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .c-cyan { color: var(--cyan); }
+    .c-green { color: var(--green); }
+    .c-red { color: var(--red); }
+    .c-amber { color: var(--amber); }
+
+    .card-sub {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 20px;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      gap: 10px;
+    }
+
+    .section-title {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .updated-at {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .code-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .code-chip {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      color: #bae6fd;
+    }
+
+    .code-chip strong {
+      color: var(--violet);
+      margin-right: 6px;
+    }
+
+    .empty-text {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .extra-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 22px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .extra-bar span strong {
+      color: var(--text);
+    }
+  </style>
 </head>
-
 <body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <h1>INDEX PANEL — BOT MONITOR</h1>
+        <p>Endpoint: <code>http://localhost:2026/panel</code> • Tự động cập nhật mỗi 1.5s</p>
+      </div>
+      <div class="status-pill" id="status-pill">
+        <span class="dot"></span>
+        <span id="status-text">Đang kết nối...</span>
+      </div>
+    </div>
 
-<header class="header">
-  <div class="brand">
-    <div class="logo">⚡</div>
-    <div class="brand-name">Zans<span>PM</span></div>
+    <div class="stats-grid">
+      <div class="card">
+        <div class="card-label">BOT đang chạy</div>
+        <div class="card-value c-cyan" id="bot-online">0</div>
+        <div class="card-sub">Leaders: <strong id="leaders">0</strong></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Đã join code</div>
+        <div class="card-value c-green" id="join-success">0</div>
+        <div class="card-sub">Tỉ lệ thành công: <strong id="join-rate">0.0%</strong></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Code failed</div>
+        <div class="card-value c-red" id="join-fail">0</div>
+        <div class="card-sub">Tổng lượt thử: <strong id="join-attempts">0</strong></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Thời gian chạy</div>
+        <div class="card-value c-amber" id="uptime">00:00:00</div>
+        <div class="card-sub">Gen hiện tại: <strong id="gen">0</strong></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">Danh sách code đang xoay</div>
+        <div class="updated-at">Cập nhật: <span id="last-sync">--:--:--</span></div>
+      </div>
+
+      <div class="code-list" id="codes-list">
+        <div class="empty-text">Chưa có code nào được tạo</div>
+      </div>
+
+      <div class="extra-bar">
+        <span>Spam đã gửi: <strong id="spam-sent">0</strong></span>
+        <span>Hiệu suất: <strong id="code-per-hour">0</strong> code/giờ</span>
+      </div>
+    </div>
   </div>
 
-  <div class="header-right">
-    <div class="online">
-      <span class="dot"></span>
-      <span>Dashboard Online</span>
-    </div>
-    <span id="clock">--:--:--</span>
-    <a href="/logout" class="logout">Logout ↗</a>
-  </div>
-</header>
+  <script>
+    const pill = document.getElementById("status-pill");
+    const statusText = document.getElementById("status-text");
 
-<main class="container">
+    function formatClock(date) {
+      return date.toTimeString().slice(0, 8);
+    }
 
-  <section class="welcome">
-    <h1>System <span>Overview</span></h1>
-    <p>Real-time bot monitoring and management system.</p>
-  </section>
+    async function fetchStats() {
+      try {
+        const res = await fetch("/stats", { cache: "no-store" });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const data = await res.json();
+        if (!data.ok) throw new Error("Response not ok");
 
-  <section class="stats">
-    <div class="stat-card green">
-      <div class="stat-top">
-        <span class="stat-label">Running Bots</span>
-        <span class="stat-icon">🤖</span>
-      </div>
-      <div class="stat-value" id="stat-running">0</div>
-      <div class="stat-sub">Total: <span id="stat-total">0</span> bots</div>
-    </div>
+        pill.classList.remove("offline");
+        statusText.textContent = "Đang hoạt động";
 
-    <div class="stat-card blue">
-      <div class="stat-top">
-        <span class="stat-label">Joined</span>
-        <span class="stat-icon">✓</span>
-      </div>
-      <div class="stat-value" id="stat-joined">0</div>
-      <div class="stat-sub">Successful operations</div>
-    </div>
+        const botOnline = Number(data.bot_online || 0);
+        const joinSuccess = Number(data.join_success || 0);
+        const joinFail = Number(data.join_fail || 0);
+        const joinAttempts = Number(data.join_attempts || 0);
+        const uptimeSec = Number(data.uptime_sec || 0);
 
-    <div class="stat-card red">
-      <div class="stat-top">
-        <span class="stat-label">Failed</span>
-        <span class="stat-icon">✕</span>
-      </div>
-      <div class="stat-value" id="stat-failed">0</div>
-      <div class="stat-sub">Failed operations</div>
-    </div>
+        document.getElementById("bot-online").textContent = botOnline;
+        document.getElementById("leaders").textContent = Number(data.leaders || 0);
+        document.getElementById("join-success").textContent = joinSuccess;
+        document.getElementById("join-fail").textContent = joinFail;
+        document.getElementById("join-attempts").textContent = joinAttempts;
+        document.getElementById("uptime").textContent = data.uptime || "00:00:00";
+        document.getElementById("gen").textContent = Number(data.gen || 0);
+        document.getElementById("spam-sent").textContent = Number(data.spam_sent || 0);
 
-    <div class="stat-card cyan">
-      <div class="stat-top">
-        <span class="stat-label">API Latency</span>
-        <span class="stat-icon">⌁</span>
-      </div>
-      <div class="stat-value" id="stat-api">-</div>
-      <div class="stat-sub" id="stat-api-sub">Waiting for ping...</div>
-    </div>
+        const rate = joinAttempts > 0 ? ((joinSuccess / joinAttempts) * 100).toFixed(1) + "%" : "0.0%";
+        document.getElementById("join-rate").textContent = rate;
 
-    <div class="stat-card purple">
-      <div class="stat-top">
-        <span class="stat-label">System Uptime</span>
-        <span class="stat-icon">◷</span>
-      </div>
-      <div class="stat-value" id="stat-uptime">0s</div>
-      <div class="stat-sub">Since system started</div>
-    </div>
-  </section>
+        const cph = uptimeSec > 0 ? Math.round((joinSuccess / uptimeSec) * 3600) : 0;
+        document.getElementById("code-per-hour").textContent = cph;
 
-  <section class="toolbar">
-    <div class="toolbar-title">⚙ Bot Management</div>
-    <div class="toolbar-actions">
-      <button class="btn btn-start" onclick="startAll()">▶ Start All</button>
-      <button class="btn btn-stop" onclick="stopAll()">■ Stop All</button>
-      <button class="btn btn-normal" onclick="clearTermView()">⌫ Clear Logs</button>
-      <button class="btn btn-normal" onclick="scrollBottom(true)">↓ Auto Scroll</button>
-    </div>
-  </section>
+        const codesList = document.getElementById("codes-list");
+        const codes = data.codes || {};
+        const entries = Object.entries(codes).sort((a, b) => Number(a[0]) - Number(b[0]));
 
-  <section class="dashboard-grid">
-    <div class="panel">
-      <div class="panel-header">
-        <div class="panel-title">
-          <span class="panel-title-icon">⌨</span>
-          SYSTEM TERMINAL
-        </div>
-        <span class="panel-count" id="log-count">0 dòng</span>
-      </div>
+        if (entries.length === 0) {
+          codesList.innerHTML = '<div class="empty-text">Chưa có code nào được tạo</div>';
+        } else {
+          codesList.innerHTML = entries
+            .map(([leaderIdx, code]) => `<div class="code-chip"><strong>L${Number(leaderIdx) + 1}</strong>${code}</div>`)
+            .join("");
+        }
 
-      <div class="terminal" id="term">
-        <div class="terminal-line">
-          <span class="ts">[--:--:--]</span>
-          <span class="lvl INFO">[INFO]</span>
-          <span class="msg">ZansPM Terminal initialized...</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-header">
-        <div class="panel-title">
-          <span class="panel-title-icon">◈</span>
-          BOT CONTROL
-        </div>
-        <span class="panel-count" id="bot-count">0 bots</span>
-      </div>
-
-      <div class="bot-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Bot</th>
-              <th>UID</th>
-              <th>Status</th>
-              <th>Join</th>
-              <th>Fail</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody id="bots-body">
-            <tr>
-              <td colspan="6" class="empty">Loading bots...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <footer class="footer">
-    <span>⚡ ZansPM Dashboard · Cyber Edition</span>
-    <span>API Monitor: 300s · Auto Refresh: Enabled</span>
-  </footer>
-
-</main>
-
-<script>
-let lastLogCount = 0;
-let autoScroll = true;
-let serverLogTotal = 0;
-let initialLoad = true;
-
-const term = document.getElementById('term');
-const ANSI_RE = /\x1b\[[0-9;]*m/g;
-
-function stripAnsi(s) {
-  return String(s ?? '').replace(ANSI_RE, '');
-}
-
-function esc(s) {
-  return String(s ?? '').replace(/[&<>"']/g, function(c) {
-    return {
-      '&':'&amp;',
-      '<':'&lt;',
-      '>':'&gt;',
-      '"':'&quot;',
-      "'":'&#39;'
-    }[c];
-  });
-}
-
-function renderLine(raw) {
-  const clean = stripAnsi(raw);
-  const m = clean.match(/^\[([^\]]+)\]\s+\[([^\]]+)\]\s*([\s\S]*)$/);
-  const div = document.createElement('div');
-  div.className = 'terminal-line';
-
-  if (!m) {
-    div.innerHTML =
-      '<span class="ts">[--:--:--]</span>' +
-      '<span class="lvl INFO">[INFO]</span>' +
-      '<span class="msg">' + esc(clean) + '</span>';
-    return div;
-  }
-
-  const ts = m[1];
-  const lvl = m[2].toUpperCase();
-  const rest = m[3];
-
-  div.innerHTML =
-    '<span class="ts">[' + esc(ts) + ']</span>' +
-    '<span class="lvl ' + esc(lvl) + '">[' + esc(lvl) + ']</span>' +
-    '<span class="msg">' + esc(rest) + '</span>';
-
-  return div;
-}
-
-function scrollBottom(force) {
-  if (force) autoScroll = true;
-  if (!autoScroll) return;
-  requestAnimationFrame(function() {
-    term.scrollTop = term.scrollHeight;
-  });
-}
-
-function clearTermView() {
-  term.innerHTML = '';
-  lastLogCount = serverLogTotal;
-}
-
-function fmtUptime(seconds) {
-  if (!Number.isFinite(seconds) || seconds < 0) return '0s';
-  if (seconds < 60) return seconds + 's';
-  if (seconds < 3600) {
-    return Math.floor(seconds/60) + 'm ' + (seconds%60) + 's';
-  }
-  if (seconds < 86400) {
-    return Math.floor(seconds/3600) + 'h ' +
-           Math.floor((seconds%3600)/60) + 'm';
-  }
-  return Math.floor(seconds/86400) + 'd ' +
-         Math.floor((seconds%86400)/3600) + 'h';
-}
-
-async function api(url, options) {
-  const response = await fetch(url, { cache:'no-store', ...(options||{}) });
-  if (response.status === 401) {
-    location.href = '/login';
-    throw new Error('Unauthorized');
-  }
-  if (!response.ok) throw new Error('HTTP ' + response.status);
-  return response.json();
-}
-
-async function pollLogs() {
-  try {
-    const data = await api('/api/logs?after=' + lastLogCount);
-    serverLogTotal = data.total || 0;
-
-    if (data.lines && data.lines.length) {
-      const fragment = document.createDocumentFragment();
-      for (let i = 0; i < data.lines.length; i++) {
-        fragment.appendChild(renderLine(data.lines[i]));
+        document.getElementById("last-sync").textContent = formatClock(new Date());
+      } catch (err) {
+        pill.classList.add("offline");
+        statusText.textContent = "Mất kết nối";
       }
-      term.appendChild(fragment);
-      lastLogCount = data.total;
-
-      while (term.children.length > 2000) {
-        term.removeChild(term.firstChild);
-      }
-      scrollBottom();
     }
 
-    document.getElementById('log-count').textContent =
-      serverLogTotal + ' dòng';
-
-    if (lastLogCount > serverLogTotal) {
-      lastLogCount = 0;
-      term.innerHTML = '';
-    }
-
-    if (initialLoad) {
-      initialLoad = false;
-      scrollBottom(true);
-    }
-  } catch(e) {
-    console.error('Log polling:', e);
-  }
-}
-
-async function pollStats() {
-  try {
-    const s = await api('/api/stats');
-    document.getElementById('stat-running').textContent = s.running || 0;
-    document.getElementById('stat-total').textContent = s.total_bots || 0;
-    document.getElementById('stat-joined').textContent = s.joined || 0;
-    document.getElementById('stat-failed').textContent = s.failed || 0;
-
-    document.getElementById('stat-api').textContent =
-      s.api_last_ms != null ? s.api_last_ms + 'ms' : '-';
-
-    let sub = 'Waiting for ping...';
-    if (s.api_last_error) sub = 'Error: ' + s.api_last_error;
-    else if (s.api_last_ok) sub = 'Last OK: ' + s.api_last_ok;
-    document.getElementById('stat-api-sub').textContent = sub;
-
-    const start = new Date(s.started_at).getTime();
-    if (Number.isFinite(start)) {
-      document.getElementById('stat-uptime').textContent =
-        fmtUptime(Math.floor((Date.now()-start)/1000));
-    }
-  } catch(e) {
-    console.error('Stats polling:', e);
-  }
-}
-
-async function pollBots() {
-  try {
-    const bots = await api('/api/bots');
-    const body = document.getElementById('bots-body');
-    document.getElementById('bot-count').textContent = bots.length + ' bots';
-
-    if (!bots.length) {
-      body.innerHTML = '<tr><td colspan="6" class="empty">No bots available</td></tr>';
-      return;
-    }
-
-    const fragment = document.createDocumentFragment();
-    for (let i = 0; i < bots.length; i++) {
-      const b = bots[i];
-      const tr = document.createElement('tr');
-      const running = b.status === 'running';
-      const statusClass = running ? 'running' : (b.last_action === 'failed' ? 'failed' : 'idle');
-      const statusText = running ? '● RUNNING' : '● IDLE';
-
-      tr.innerHTML = 
-        '<td class="nickname">' + esc(b.nickname || '-') + '</td>' +
-        '<td class="uid">' + esc(b.uid) + '</td>' +
-        '<td><span class="pill ' + statusClass + '">' + statusText + '</span></td>' +
-        '<td>' + (Number(b.joined)||0) + '</td>' +
-        '<td style="color:#ff829b">' + (Number(b.failed)||0) + '</td>' +
-        '<td><button class="mini ' + (running?'stop':'start') + '" ' +
-        'data-uid="' + esc(b.uid) + '" ' +
-        'data-action="' + (running?'stop':'start') + '">' +
-        (running?'Stop':'Start') + '</button></td>';
-        
-      fragment.appendChild(tr);
-    }
-    body.replaceChildren(fragment);
-  } catch(e) {
-    console.error('Bot polling:', e);
-  }
-}
-
-async function startBot(uid) {
-  try {
-    await api('/api/bot/' + encodeURIComponent(uid) + '/start', { method:'POST' });
-    pollBots(); pollStats();
-  } catch(e) { console.error(e); }
-}
-
-async function stopBot(uid) {
-  try {
-    await api('/api/bot/' + encodeURIComponent(uid) + '/stop', { method:'POST' });
-    pollBots(); pollStats();
-  } catch(e) { console.error(e); }
-}
-
-async function startAll() {
-  try {
-    await api('/api/start_all', { method:'POST' });
-    pollBots(); pollStats();
-  } catch(e) { console.error(e); }
-}
-
-async function stopAll() {
-  try {
-    await api('/api/stop_all', { method:'POST' });
-    pollBots(); pollStats();
-  } catch(e) { console.error(e); }
-}
-
-document.getElementById('bots-body').addEventListener('click', function(e) {
-  const button = e.target.closest('button[data-action]');
-  if (!button) return;
-  const uid = button.getAttribute('data-uid');
-  if (button.getAttribute('data-action') === 'start') startBot(uid);
-  else stopBot(uid);
-});
-
-term.addEventListener('scroll', function() {
-  const atBottom = term.scrollHeight - term.scrollTop - term.clientHeight < 40;
-  autoScroll = atBottom;
-});
-
-function updateClock() {
-  document.getElementById('clock').textContent =
-    new Date().toLocaleTimeString('vi-VN', { hour12:false });
-}
-updateClock();
-setInterval(updateClock, 1000);
-
-pollStats();
-pollBots();
-pollLogs();
-
-setInterval(pollStats, 2000);
-setInterval(pollBots, 3000);
-setInterval(pollLogs, 1000);
-</script>
-
+    fetchStats();
+    setInterval(fetchStats, 1500);
+  </script>
 </body>
 </html>
