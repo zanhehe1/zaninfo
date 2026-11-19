@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BOT Control Panel — 2026</title>
+  <title>BOT Control Panel — Termux Log</title>
   <style>
     :root {
       --bg: #090d1a;
       --surface: #11182c;
       --surface-2: #17213b;
+      --term-bg: #060911;
       --border: #243256;
       --text: #eef2ff;
       --muted: #8b9dc3;
@@ -16,7 +17,7 @@
       --red: #ef4444;
       --cyan: #38bdf8;
       --amber: #f59e0b;
-      --violet: #a855f7;
+      --violet: #c084fc;
     }
 
     * {
@@ -33,11 +34,11 @@
         var(--bg);
       color: var(--text);
       min-height: 100vh;
-      padding: 26px 16px 40px;
+      padding: 24px 16px 40px;
     }
 
     .wrap {
-      max-width: 1020px;
+      max-width: 1040px;
       margin: 0 auto;
     }
 
@@ -51,7 +52,7 @@
       border: 1px solid var(--border);
       border-radius: 18px;
       padding: 18px 22px;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
     }
 
     .brand h1 {
@@ -108,15 +109,15 @@
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px;
-      margin-bottom: 20px;
+      gap: 14px;
+      margin-bottom: 18px;
     }
 
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 18px;
-      padding: 20px;
+      padding: 18px 20px;
       transition: transform 0.15s ease, border-color 0.15s ease;
     }
 
@@ -131,11 +132,11 @@
       text-transform: uppercase;
       letter-spacing: 0.6px;
       color: var(--muted);
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
     .card-value {
-      font-size: 32px;
+      font-size: 30px;
       font-weight: 800;
       line-height: 1.1;
       font-variant-numeric: tabular-nums;
@@ -147,7 +148,7 @@
     .c-amber { color: var(--amber); }
 
     .card-sub {
-      margin-top: 10px;
+      margin-top: 8px;
       font-size: 12px;
       color: var(--muted);
     }
@@ -156,14 +157,16 @@
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 18px;
-      padding: 20px;
+      padding: 18px 20px;
+      margin-bottom: 18px;
     }
 
     .section-head {
       display: flex;
+      flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       gap: 10px;
     }
 
@@ -181,14 +184,14 @@
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
 
     .code-chip {
       background: var(--surface-2);
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 8px 13px;
+      padding: 7px 12px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       font-size: 13px;
       color: #bae6fd;
@@ -208,7 +211,7 @@
       display: flex;
       flex-wrap: wrap;
       gap: 22px;
-      padding-top: 14px;
+      padding-top: 12px;
       border-top: 1px solid var(--border);
       font-size: 13px;
       color: var(--muted);
@@ -217,6 +220,106 @@
     .extra-bar span strong {
       color: var(--text);
     }
+
+    /* Termux console box */
+    .term-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .btn {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 11px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .btn:hover {
+      color: var(--text);
+      border-color: #3d548a;
+    }
+
+    .btn.active {
+      background: rgba(56, 189, 248, 0.16);
+      border-color: var(--cyan);
+      color: #e0f2fe;
+    }
+
+    .term-window {
+      background: var(--term-bg);
+      border: 1px solid #1c2846;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .term-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #0d1324;
+      border-bottom: 1px solid #1c2846;
+      padding: 9px 14px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .term-dots {
+      display: inline-flex;
+      gap: 6px;
+      margin-right: 8px;
+    }
+
+    .term-dots i {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .d-red { background: #ef4444; }
+    .d-yel { background: #eab308; }
+    .d-grn { background: #22c55e; }
+
+    .term-body {
+      height: 360px;
+      overflow-y: auto;
+      padding: 12px 14px;
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: #dbeafe;
+    }
+
+    .log-line {
+      white-space: pre-wrap;
+      word-break: break-word;
+      padding: 1px 0;
+    }
+
+    .log-time { color: #64748b; margin-right: 6px; }
+    .log-tag { font-weight: 700; margin-right: 6px; }
+    .lvl-ok .log-tag { color: var(--green); }
+    .lvl-err .log-tag { color: var(--red); }
+    .lvl-warn .log-tag { color: var(--amber); }
+    .lvl-rotator .log-tag { color: var(--violet); }
+    .lvl-info .log-tag { color: var(--cyan); }
+    .lvl-err .log-msg { color: #fca5a5; }
   </style>
 </head>
 <body>
@@ -273,15 +376,112 @@
         <span>Hiệu suất: <strong id="code-per-hour">0</strong> code/giờ</span>
       </div>
     </div>
+
+    <div class="section">
+      <div class="term-toolbar">
+        <div class="section-title">Termux Live Log</div>
+        <div class="filter-group">
+          <button class="btn active" data-filter="all">ALL</button>
+          <button class="btn" data-filter="ok">LOGIN / JOIN</button>
+          <button class="btn" data-filter="rotator">ROTATOR</button>
+          <button class="btn" data-filter="err">ERR / WARN</button>
+          <button class="btn active" id="btn-autoscroll">Auto-scroll: ON</button>
+          <button class="btn" id="btn-clear-log">Xóa view</button>
+        </div>
+      </div>
+
+      <div class="term-window">
+        <div class="term-header">
+          <div>
+            <span class="term-dots"><i class="d-red"></i><i class="d-yel"></i><i class="d-grn"></i></span>
+            <span>u0_a192@localhost: ~/bot-1.py</span>
+          </div>
+          <span id="log-count">0 lines</span>
+        </div>
+        <div class="term-body" id="term-body">
+          <div class="log-line"><span class="log-time">[--:--:--]</span><span class="log-tag">[TERMUX]</span>Đang chờ log từ 1.py...</div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
     const pill = document.getElementById("status-pill");
     const statusText = document.getElementById("status-text");
+    const termBody = document.getElementById("term-body");
+    const logCountEl = document.getElementById("log-count");
+    const btnAutoScroll = document.getElementById("btn-autoscroll");
+    const btnClearLog = document.getElementById("btn-clear-log");
+
+    let allLogs = [];
+    let currentFilter = "all";
+    let autoScroll = true;
+    let clearedBeforeId = 0;
 
     function formatClock(date) {
       return date.toTimeString().slice(0, 8);
     }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function matchFilter(item) {
+      if (item.id <= clearedBeforeId) return false;
+      if (currentFilter === "all") return true;
+      if (currentFilter === "ok") return item.level === "ok";
+      if (currentFilter === "rotator") return item.level === "rotator";
+      if (currentFilter === "err") return item.level === "err" || item.level === "warn";
+      return true;
+    }
+
+    function renderLogs() {
+      const filtered = allLogs.filter(matchFilter);
+      logCountEl.textContent = `${filtered.length} lines`;
+
+      if (filtered.length === 0) {
+        termBody.innerHTML = `<div class="log-line"><span class="log-time">[${formatClock(new Date())}]</span><span class="log-tag">[TERMUX]</span>Không có dòng log phù hợp</div>`;
+        return;
+      }
+
+      termBody.innerHTML = filtered
+        .map((item) => {
+          const lvlClass = `lvl-${item.level || "info"}`;
+          return `<div class="log-line ${lvlClass}"><span class="log-time">[${escapeHtml(item.time)}]</span><span class="log-tag">[${escapeHtml(item.tag)}]</span><span class="log-msg">${escapeHtml(item.message)}</span></div>`;
+        })
+        .join("");
+
+      if (autoScroll) {
+        termBody.scrollTop = termBody.scrollHeight;
+      }
+    }
+
+    document.querySelectorAll(".filter-group .btn[data-filter]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".filter-group .btn[data-filter]").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentFilter = btn.dataset.filter;
+        renderLogs();
+      });
+    });
+
+    btnAutoScroll.addEventListener("click", () => {
+      autoScroll = !autoScroll;
+      btnAutoScroll.textContent = `Auto-scroll: ${autoScroll ? "ON" : "OFF"}`;
+      btnAutoScroll.classList.toggle("active", autoScroll);
+      if (autoScroll) termBody.scrollTop = termBody.scrollHeight;
+    });
+
+    btnClearLog.addEventListener("click", () => {
+      if (allLogs.length > 0) {
+        clearedBeforeId = allLogs[allLogs.length - 1].id;
+      }
+      renderLogs();
+    });
 
     async function fetchStats() {
       try {
@@ -324,6 +524,11 @@
           codesList.innerHTML = entries
             .map(([leaderIdx, code]) => `<div class="code-chip"><strong>L${Number(leaderIdx) + 1}</strong>${code}</div>`)
             .join("");
+        }
+
+        if (Array.isArray(data.logs)) {
+          allLogs = data.logs;
+          renderLogs();
         }
 
         document.getElementById("last-sync").textContent = formatClock(new Date());
