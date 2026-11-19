@@ -9,10 +9,10 @@ import sys
 import time
 
 try:
-    from aiohttp import web
+    from aiohttp import web, ClientSession, ClientTimeout
 except ImportError:
     os.system("pip install aiohttp -q")
-    from aiohttp import web
+    from aiohttp import web, ClientSession, ClientTimeout
 
 if sys.platform == "win32":
     try:
@@ -43,6 +43,10 @@ MAX_FAILED_CACHE = 5000
 MAX_WEB_LOGS = 2000  # Tăng bộ nhớ đệm lên 2000 dòng
 STATS_INTERVAL = 60.0
 WATCH_INTERVAL = 0.5
+
+# API gọi mỗi 5 phút
+API_PING_URL = "https://zanspm.onrender.com/stats"
+API_PING_INTERVAL = 300.0  # 5 phút
 
 T_LEAVE_OLD = 0.2
 T_AUTH_CHAT = 0.1
@@ -474,6 +478,40 @@ async def stats_loop(stop_evt):
             return
         except asyncio.TimeoutError: print_stats()
 
+async def api_ping_loop(stop_evt):
+    """Gọi API zanspm.onrender.com/stats mỗi 5 phút."""
+    timeout = ClientTimeout(total=20.0)
+    async with ClientSession(timeout=timeout) as session:
+        while not stop_evt.is_set():
+            try:
+                async with session.get(API_PING_URL) as resp:
+                    status = resp.status
+                    body = await resp.text()
+                    preview = body[:180].replace("\n", " ")
+                    if 200 <= status < 300:
+                        termux_print(
+                            f"{C.GRAY}{ts()}{C.RESET} {C.CYAN}[API]{C.RESET} GET {API_PING_URL} → {C.GREEN}{status}{C.RESET} {preview}",
+                            tag="API", level="ok"
+                        )
+                    else:
+                        termux_print(
+                            f"{C.GRAY}{ts()}{C.RESET} {C.YELLOW}[API]{C.RESET} GET {API_PING_URL} → {C.YELLOW}{status}{C.RESET}",
+                            tag="API", level="warn"
+                        )
+            except asyncio.CancelledError:
+                return
+            except Exception as e:
+                termux_print(
+                    f"{C.GRAY}{ts()}{C.RESET} {C.RED}[API]{C.RESET} GET {API_PING_URL} err: {type(e).__name__}: {e}",
+                    tag="API", level="err"
+                )
+
+            try:
+                await asyncio.wait_for(stop_evt.wait(), timeout=API_PING_INTERVAL)
+                return
+            except asyncio.TimeoutError:
+                pass
+
 async def file_watcher(accounts_ref, spawn_worker, login_sem, stop_evt):
     known_uids = set()
     last_mtime = 0
@@ -575,6 +613,7 @@ async def main():
 
     termux_print(f"{C.MAGENTA}[SYS]{C.RESET} Logic dò code: xxxxx[suffix] (1/100000)", tag="SYS", level="rotator")
     termux_print(f"{C.MAGENTA}[SYS]{C.RESET} Đổi code mỗi {ROTATOR_INTERVAL}s", tag="SYS", level="rotator")
+    termux_print(f"{C.MAGENTA}[SYS]{C.RESET} API ping: {API_PING_URL} mỗi {int(API_PING_INTERVAL)}s", tag="SYS", level="info")
 
     stop_evt = asyncio.Event()
     stop_flag = stop_evt
@@ -591,6 +630,7 @@ async def main():
     supervisor_task = asyncio.create_task(leader_supervisor(accounts_ref, stop_evt))
     hb_task = asyncio.create_task(heartbeat_loop(accounts_ref, stop_evt))
     stats_task = asyncio.create_task(stats_loop(stop_evt))
+    api_task = asyncio.create_task(api_ping_loop(stop_evt))
 
     try:
         await start_http_server()
@@ -598,11 +638,11 @@ async def main():
         termux_print(f"{C.RED}[HTTP] Không start được: {e}{C.RESET}", tag="HTTP", level="err")
 
     try:
-        await asyncio.gather(watcher_task, supervisor_task, hb_task, stats_task, return_exceptions=True)
+        await asyncio.gather(watcher_task, supervisor_task, hb_task, stats_task, api_task, return_exceptions=True)
     except asyncio.CancelledError: pass
     finally:
         stop_evt.set()
-        for t in [watcher_task, supervisor_task, hb_task, stats_task] + worker_tasks:
+        for t in [watcher_task, supervisor_task, hb_task, stats_task, api_task] + worker_tasks:
             if not t.done(): t.cancel()
         for acc in accounts_ref: close_acc_sync(acc)
         print_stats()
