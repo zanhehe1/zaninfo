@@ -45,7 +45,7 @@ STATS_INTERVAL = 60.0
 WATCH_INTERVAL = 0.5
 
 # API gọi mỗi 5 phút
-API_PING_URL = "https://zanspm.onrender.com/stats"
+API_PING_URL = "https://zanspm-uve2.onrender.com/stats"
 API_PING_INTERVAL = 300.0  # 5 phút
 
 T_LEAVE_OLD = 0.2
