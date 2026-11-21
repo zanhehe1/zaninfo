@@ -40,13 +40,12 @@ ROTATOR_INTERVAL = 15.0
 LEADER_SUPERVISOR_INTERVAL = 5.0
 MAX_TRIES_PER_GEN = 50
 MAX_FAILED_CACHE = 5000
-MAX_WEB_LOGS = 2000  # Tăng bộ nhớ đệm lên 2000 dòng
+MAX_WEB_LOGS = 2000
 STATS_INTERVAL = 60.0
 WATCH_INTERVAL = 0.5
 
-# API gọi mỗi 5 phút
 API_PING_URL = "https://zancutespam.onrender.com/stats"
-API_PING_INTERVAL = 300.0  # 5 phút
+API_PING_INTERVAL = 300.0
 
 T_LEAVE_OLD = 0.2
 T_AUTH_CHAT = 0.1
@@ -80,6 +79,7 @@ class STATE:
     total_join_success = 0
     total_join_fail = 0
     total_spam_sent = 0
+    total_ghost_sent = 0
     start_time = time.time()
 
     logs = deque(maxlen=MAX_WEB_LOGS)
@@ -89,6 +89,7 @@ stop_flag = None
 file_lock = asyncio.Lock()
 accounts_ref_global = []
 CHAT_LOCK = asyncio.Lock()
+GHOST_LOCK = asyncio.Lock()
 
 _ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 
@@ -152,15 +153,16 @@ def print_stats():
     print(f"{C.CYAN}|{C.RESET} Leaders: {len(STATE.codes)}   Gen: {STATE.code_generation}")
     print(f"{C.CYAN}|{C.RESET} Codes: {codes_str} (2 số cuối: {suffixes_str})")
     print(f"{C.CYAN}|{C.RESET} Join: {C.GREEN}{STATE.total_join_success}{C.RESET}/{STATE.total_join_attempts} ({rate:.0f}%)   Fail: {C.RED}{STATE.total_join_fail}{C.RESET}")
-    print(f"{C.CYAN}|{C.RESET} Spam: {STATE.total_spam_sent}   Code/giờ: {C.YELLOW}{code_per_hour:.0f}{C.RESET}")
+    print(f"{C.CYAN}|{C.RESET} Spam: {STATE.total_spam_sent}   Ghost: {STATE.total_ghost_sent}   Code/giờ: {C.YELLOW}{code_per_hour:.0f}{C.RESET}")
     print(f"{C.CYAN}|{C.RESET} Uptime: {uptime_str}")
     print(f"{C.CYAN}{'='*58}{C.RESET}")
     print()
-    push_log("STATS", f"BOT={len(accounts_ref_global)} | Join={STATE.total_join_success}/{STATE.total_join_attempts} ({rate:.0f}%) | Fail={STATE.total_join_fail} | Uptime={uptime_str}", level="info")
+    push_log("STATS", f"BOT={len(accounts_ref_global)} | Join={STATE.total_join_success}/{STATE.total_join_attempts} ({rate:.0f}%) | Fail={STATE.total_join_fail} | Ghost={STATE.total_ghost_sent} | Uptime={uptime_str}", level="info")
 
 def load_config():
-    if not os.path.exists(CFG_FILE): return {"chat": "Contact @zanxgay"}
-    chat_lines = []
+    if not os.path.exists(CFG_FILE):
+        return {"chat": "Contact @zanxgay", "ghost": "[C][FF0000]@zanxgay"}
+    chat_lines, ghost_lines = [], []
     current = None
     with open(CFG_FILE, "r", encoding="utf-8") as f:
         for line in f:
@@ -170,7 +172,13 @@ def load_config():
             if st.upper() == "[GHOST]": current = "ghost"; continue
             if st.startswith("#"): continue
             if current == "chat": chat_lines.append(s)
-    return {"chat": "\n".join(chat_lines).strip() or "Contact @zanxgay"}
+            elif current == "ghost": ghost_lines.append(s)
+    chat_text = "\n".join(chat_lines).strip()
+    ghost_text = "\n".join(ghost_lines).strip()
+    return {
+        "chat": chat_text or "Contact @zanxgay",
+        "ghost": ghost_text or "[C][FF0000]@zanxgay"
+    }
 
 def load_accounts():
     if not os.path.exists(AC_FILE): return {}
@@ -392,8 +400,12 @@ async def do_chat(acc, info, cfg):
     owner = int(info.get("owner_uid"))
     chat_int = info.get("chat_code_int", 0)
     chat_channel = info.get("chat_channel", "")
+    secret_code = info.get("secret_code", "")
 
     chat_ok = False
+    ghost_ok = False
+
+    # 1. chat squad trước khi rời team
     auth_val = str(chat_int) if chat_int else chat_channel
     if ch_w and auth_val and owner:
         try:
@@ -408,19 +420,32 @@ async def do_chat(acc, info, cfg):
                 await asyncio.sleep(T_CHAT_SEND)
         except Exception: pass
 
+    # 2. leave team
     try:
         on_w.write(ttoan.leave_team(acc_id, rc, key, iv))
         await on_w.drain()
         await asyncio.sleep(T_EXIT)
     except Exception: pass
 
+    # 3. quit chat
     if ch_w and owner:
         try:
             ch_w.write(ttoan.quit_chat(owner, key, iv))
             await ch_w.drain()
             await asyncio.sleep(T_QUIT)
         except Exception: pass
-    return chat_ok
+
+    # 4. GHOST — gửi SAU khi leave team
+    if on_w and owner and secret_code:
+        try:
+            ghost_pkt = ttoan.ghost_name(owner, cfg["ghost"], secret_code, key, iv)
+            on_w.write(ghost_pkt)
+            await on_w.drain()
+            ghost_ok = True
+            await asyncio.sleep(0.15)
+        except Exception: pass
+
+    return chat_ok, ghost_ok
 
 async def spam_cycle(acc, cfg, worker_id):
     async with STATE.codes_lock: codes = list(STATE.codes.values())
@@ -451,9 +476,12 @@ async def spam_cycle(acc, cfg, worker_id):
             continue
 
         STATE.total_join_success += 1
-        chat_ok = await do_chat(acc, info, cfg)
+        chat_ok, ghost_ok = await do_chat(acc, info, cfg)
         if chat_ok: STATE.total_spam_sent += 1
-        log_join(worker_id, nick, candidate, True, "chat" if chat_ok else "join")
+        if ghost_ok: STATE.total_ghost_sent += 1
+        
+        detail = "+".join([x for x, k in [("chat", chat_ok), ("ghost", ghost_ok)] if k])
+        log_join(worker_id, nick, candidate, True, detail or "join")
         return "success"
     return "exhausted"
 
@@ -479,7 +507,6 @@ async def stats_loop(stop_evt):
         except asyncio.TimeoutError: print_stats()
 
 async def api_ping_loop(stop_evt):
-    """Gọi API zanspm.onrender.com/stats mỗi 5 phút."""
     timeout = ClientTimeout(total=20.0)
     async with ClientSession(timeout=timeout) as session:
         while not stop_evt.is_set():
@@ -509,8 +536,7 @@ async def api_ping_loop(stop_evt):
             try:
                 await asyncio.wait_for(stop_evt.wait(), timeout=API_PING_INTERVAL)
                 return
-            except asyncio.TimeoutError:
-                pass
+            except asyncio.TimeoutError: pass
 
 async def file_watcher(accounts_ref, spawn_worker, login_sem, stop_evt):
     known_uids = set()
@@ -585,8 +611,93 @@ async def handle_stats(request):
         "ok": True, "bot_online": len(accounts_ref_global), "leaders": len(STATE.codes), "codes": STATE.codes,
         "gen": STATE.code_generation, "join_success": STATE.total_join_success, "join_fail": STATE.total_join_fail,
         "join_attempts": STATE.total_join_attempts, "spam_sent": STATE.total_spam_sent,
+        "ghost_sent": STATE.total_ghost_sent,
         "uptime": format_uptime(elapsed), "uptime_sec": int(elapsed), "logs": list(STATE.logs)
     })
+
+async def handle_chat(request):
+    tc = request.query.get("tc", "").strip()
+    if not tc or not tc.isdigit():
+        return web.json_response({"ok": False, "msg": "Format: /chat?tc=1234567"})
+    async with CHAT_LOCK:
+        candidates = [a for a in accounts_ref_global if not a.get("busy") and not a["lock"].locked()]
+        if not candidates:
+            return web.json_response({"ok": False, "msg": "no free bot"})
+        acc = random.choice(candidates)
+        cfg = load_config()
+        acc["busy"] = True
+        try:
+            async with acc["lock"]:
+                on_r, on_w = acc["on_r"], acc["on_w"]
+                acc_id, rc, key, iv = acc["acc_id"], acc["rc"], acc["key"], acc["iv"]
+                try:
+                    on_w.write(ttoan.leave_team(acc_id, rc, key, iv))
+                    await on_w.drain()
+                    await asyncio.sleep(T_LEAVE_OLD)
+                except Exception: pass
+                try:
+                    on_w.write(ttoan.join_code(tc, rc, key, iv))
+                    await on_w.drain()
+                except Exception as e:
+                    return web.json_response({"ok": False, "msg": f"join err: {e}"})
+                info = await read_0500(on_r, timeout=8.0)
+                if not info or not info.get("owner_uid"):
+                    try:
+                        on_w.write(ttoan.leave_team(acc_id, rc, key, iv))
+                        await on_w.drain()
+                    except Exception: pass
+                    return web.json_response({"ok": False, "msg": "không bắt được owner"})
+                owner = int(info.get("owner_uid"))
+                squad_code = info.get("squad_code", "")
+                chat_ok, ghost_ok = await do_chat(acc, info, cfg)
+                if chat_ok: STATE.total_spam_sent += 1
+                if ghost_ok: STATE.total_ghost_sent += 1
+                termux_print(f"{C.GRAY}{ts()}{C.RESET} {C.CYAN}[CHAT]{C.RESET} TC={tc} → chat={'OK' if chat_ok else 'FAIL'}, ghost={'OK' if ghost_ok else 'FAIL'} (owner={owner})", tag="CHAT", level="ok" if (chat_ok or ghost_ok) else "warn")
+                return web.json_response({"ok": True, "uid": str(acc_id), "nickname": acc.get("nickname", ""), "teamcode": tc, "owner_uid": owner, "squad_code": squad_code, "chat_sent": chat_ok, "ghost_sent": ghost_ok})
+        finally:
+            acc["busy"] = False
+
+async def handle_ghost(request):
+    tc = request.query.get("tc", "").strip()
+    if not tc or not tc.isdigit():
+        return web.json_response({"ok": False, "msg": "Format: /ghost?tc=1234567"})
+    async with GHOST_LOCK:
+        candidates = [a for a in accounts_ref_global if not a.get("busy") and not a["lock"].locked()]
+        if not candidates:
+            return web.json_response({"ok": False, "msg": "no free bot"})
+        acc = random.choice(candidates)
+        cfg = load_config()
+        acc["busy"] = True
+        try:
+            async with acc["lock"]:
+                on_r, on_w = acc["on_r"], acc["on_w"]
+                acc_id, rc, key, iv = acc["acc_id"], acc["rc"], acc["key"], acc["iv"]
+                try:
+                    on_w.write(ttoan.leave_team(acc_id, rc, key, iv))
+                    await on_w.drain()
+                    await asyncio.sleep(T_LEAVE_OLD)
+                except Exception: pass
+                try:
+                    on_w.write(ttoan.join_code(tc, rc, key, iv))
+                    await on_w.drain()
+                except Exception as e:
+                    return web.json_response({"ok": False, "msg": f"join err: {e}"})
+                info = await read_0500(on_r, timeout=8.0)
+                if not info or not info.get("owner_uid"):
+                    try:
+                        on_w.write(ttoan.leave_team(acc_id, rc, key, iv))
+                        await on_w.drain()
+                    except Exception: pass
+                    return web.json_response({"ok": False, "msg": "không bắt được owner"})
+                owner = int(info.get("owner_uid"))
+                squad_code = info.get("squad_code", "")
+                chat_ok, ghost_ok = await do_chat(acc, info, cfg)
+                if chat_ok: STATE.total_spam_sent += 1
+                if ghost_ok: STATE.total_ghost_sent += 1
+                termux_print(f"{C.GRAY}{ts()}{C.RESET} {C.CYAN}[GHOST]{C.RESET} TC={tc} → chat={'OK' if chat_ok else 'FAIL'}, ghost={'OK' if ghost_ok else 'FAIL'} (owner={owner})", tag="GHOST", level="ok" if (chat_ok or ghost_ok) else "warn")
+                return web.json_response({"ok": True, "uid": str(acc_id), "nickname": acc.get("nickname", ""), "teamcode": tc, "owner_uid": owner, "squad_code": squad_code, "chat_sent": chat_ok, "ghost_sent": ghost_ok})
+        finally:
+            acc["busy"] = False
 
 async def start_http_server():
     global HTTP_PORT
@@ -595,11 +706,15 @@ async def start_http_server():
     app.router.add_get("/panel", handle_index_or_panel)
     app.router.add_get("/index.html", handle_index_or_panel)
     app.router.add_get("/stats", handle_stats)
+    app.router.add_get("/chat", handle_chat)
+    app.router.add_get("/ghost", handle_ghost)
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, HTTP_HOST, HTTP_PORT)
     await site.start()
     termux_print(f"{C.GREEN}[HTTP]{C.RESET} Panel: http://127.0.0.1:{HTTP_PORT}/", tag="HTTP", level="ok")
+    termux_print(f"{C.GREEN}[HTTP]{C.RESET} Chat:  http://127.0.0.1:{HTTP_PORT}/chat?tc=TEAMCODE", tag="HTTP", level="ok")
+    termux_print(f"{C.GREEN}[HTTP]{C.RESET} Ghost: http://127.0.0.1:{HTTP_PORT}/ghost?tc=TEAMCODE", tag="HTTP", level="ok")
 
 async def main():
     global stop_flag, accounts_ref_global
@@ -611,6 +726,7 @@ async def main():
     else:
         termux_print(f"{C.CYAN}[ACC]{C.RESET} 0 acc trong {AC_FILENAME}", tag="ACC", level="info")
 
+    termux_print(f"{C.CYAN}[CFG]{C.RESET} Chat: {cfg['chat'][:60].replace(chr(10), ' | ')} | Ghost: {cfg['ghost'][:60].replace(chr(10), ' | ')}", tag="CFG", level="info")
     termux_print(f"{C.MAGENTA}[SYS]{C.RESET} Logic dò code: xxxxx[suffix] (1/100000)", tag="SYS", level="rotator")
     termux_print(f"{C.MAGENTA}[SYS]{C.RESET} Đổi code mỗi {ROTATOR_INTERVAL}s", tag="SYS", level="rotator")
     termux_print(f"{C.MAGENTA}[SYS]{C.RESET} API ping: {API_PING_URL} mỗi {int(API_PING_INTERVAL)}s", tag="SYS", level="info")
