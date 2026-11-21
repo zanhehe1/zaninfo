@@ -89,6 +89,7 @@ stop_flag = None
 file_lock = asyncio.Lock()
 accounts_ref_global = []
 CHAT_LOCK = asyncio.Lock()
+GHOST_LOCK = asyncio.Lock()
 
 _ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 
@@ -614,6 +615,90 @@ async def handle_stats(request):
         "uptime": format_uptime(elapsed), "uptime_sec": int(elapsed), "logs": list(STATE.logs)
     })
 
+async def handle_chat(request):
+    tc = request.query.get("tc", "").strip()
+    if not tc or not tc.isdigit():
+        return web.json_response({"ok": False, "msg": "Format: /chat?tc=1234567"})
+    async with CHAT_LOCK:
+        candidates = [a for a in accounts_ref_global if not a.get("busy") and not a["lock"].locked()]
+        if not candidates:
+            return web.json_response({"ok": False, "msg": "no free bot"})
+        acc = random.choice(candidates)
+        cfg = load_config()
+        acc["busy"] = True
+        try:
+            async with acc["lock"]:
+                on_r, on_w = acc["on_r"], acc["on_w"]
+                acc_id, rc, key, iv = acc["acc_id"], acc["rc"], acc["key"], acc["iv"]
+                try:
+                    on_w.write(ttoan.leave_team(acc_id, rc, key, iv))
+                    await on_w.drain()
+                    await asyncio.sleep(T_LEAVE_OLD)
+                except Exception: pass
+                try:
+                    on_w.write(ttoan.join_code(tc, rc, key, iv))
+                    await on_w.drain()
+                except Exception as e:
+                    return web.json_response({"ok": False, "msg": f"join err: {e}"})
+                info = await read_0500(on_r, timeout=8.0)
+                if not info or not info.get("owner_uid"):
+                    try:
+                        on_w.write(ttoan.leave_team(acc_id, rc, key, iv))
+                        await on_w.drain()
+                    except Exception: pass
+                    return web.json_response({"ok": False, "msg": "không bắt được owner"})
+                owner = int(info.get("owner_uid"))
+                squad_code = info.get("squad_code", "")
+                chat_ok, ghost_ok = await do_chat(acc, info, cfg)
+                if chat_ok: STATE.total_spam_sent += 1
+                if ghost_ok: STATE.total_ghost_sent += 1
+                termux_print(f"{C.GRAY}{ts()}{C.RESET} {C.CYAN}[CHAT]{C.RESET} TC={tc} → chat={'OK' if chat_ok else 'FAIL'}, ghost={'OK' if ghost_ok else 'FAIL'} (owner={owner})", tag="CHAT", level="ok" if (chat_ok or ghost_ok) else "warn")
+                return web.json_response({"ok": True, "uid": str(acc_id), "nickname": acc.get("nickname", ""), "teamcode": tc, "owner_uid": owner, "squad_code": squad_code, "chat_sent": chat_ok, "ghost_sent": ghost_ok})
+        finally:
+            acc["busy"] = False
+
+async def handle_ghost(request):
+    tc = request.query.get("tc", "").strip()
+    if not tc or not tc.isdigit():
+        return web.json_response({"ok": False, "msg": "Format: /ghost?tc=1234567"})
+    async with GHOST_LOCK:
+        candidates = [a for a in accounts_ref_global if not a.get("busy") and not a["lock"].locked()]
+        if not candidates:
+            return web.json_response({"ok": False, "msg": "no free bot"})
+        acc = random.choice(candidates)
+        cfg = load_config()
+        acc["busy"] = True
+        try:
+            async with acc["lock"]:
+                on_r, on_w = acc["on_r"], acc["on_w"]
+                acc_id, rc, key, iv = acc["acc_id"], acc["rc"], acc["key"], acc["iv"]
+                try:
+                    on_w.write(ttoan.leave_team(acc_id, rc, key, iv))
+                    await on_w.drain()
+                    await asyncio.sleep(T_LEAVE_OLD)
+                except Exception: pass
+                try:
+                    on_w.write(ttoan.join_code(tc, rc, key, iv))
+                    await on_w.drain()
+                except Exception as e:
+                    return web.json_response({"ok": False, "msg": f"join err: {e}"})
+                info = await read_0500(on_r, timeout=8.0)
+                if not info or not info.get("owner_uid"):
+                    try:
+                        on_w.write(ttoan.leave_team(acc_id, rc, key, iv))
+                        await on_w.drain()
+                    except Exception: pass
+                    return web.json_response({"ok": False, "msg": "không bắt được owner"})
+                owner = int(info.get("owner_uid"))
+                squad_code = info.get("squad_code", "")
+                chat_ok, ghost_ok = await do_chat(acc, info, cfg)
+                if chat_ok: STATE.total_spam_sent += 1
+                if ghost_ok: STATE.total_ghost_sent += 1
+                termux_print(f"{C.GRAY}{ts()}{C.RESET} {C.CYAN}[GHOST]{C.RESET} TC={tc} → chat={'OK' if chat_ok else 'FAIL'}, ghost={'OK' if ghost_ok else 'FAIL'} (owner={owner})", tag="GHOST", level="ok" if (chat_ok or ghost_ok) else "warn")
+                return web.json_response({"ok": True, "uid": str(acc_id), "nickname": acc.get("nickname", ""), "teamcode": tc, "owner_uid": owner, "squad_code": squad_code, "chat_sent": chat_ok, "ghost_sent": ghost_ok})
+        finally:
+            acc["busy"] = False
+
 async def start_http_server():
     global HTTP_PORT
     app = web.Application()
@@ -621,11 +706,15 @@ async def start_http_server():
     app.router.add_get("/panel", handle_index_or_panel)
     app.router.add_get("/index.html", handle_index_or_panel)
     app.router.add_get("/stats", handle_stats)
+    app.router.add_get("/chat", handle_chat)
+    app.router.add_get("/ghost", handle_ghost)
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, HTTP_HOST, HTTP_PORT)
     await site.start()
     termux_print(f"{C.GREEN}[HTTP]{C.RESET} Panel: http://127.0.0.1:{HTTP_PORT}/", tag="HTTP", level="ok")
+    termux_print(f"{C.GREEN}[HTTP]{C.RESET} Chat:  http://127.0.0.1:{HTTP_PORT}/chat?tc=TEAMCODE", tag="HTTP", level="ok")
+    termux_print(f"{C.GREEN}[HTTP]{C.RESET} Ghost: http://127.0.0.1:{HTTP_PORT}/ghost?tc=TEAMCODE", tag="HTTP", level="ok")
 
 async def main():
     global stop_flag, accounts_ref_global
