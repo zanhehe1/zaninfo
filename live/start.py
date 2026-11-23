@@ -1,4 +1,4 @@
-try:.
+try:
     import panel as _panel_early  # bắt log console từ lúc khởi động cho web panel
 except Exception:
     pass
