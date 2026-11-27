@@ -44,7 +44,7 @@ MAX_WEB_LOGS = 2000
 STATS_INTERVAL = 60.0
 WATCH_INTERVAL = 0.5
 
-API_PING_URL = "https://zancutespam1.onrender.com/stats"
+API_PING_URL = "https://spamtcode.onrender.com/stats"
 API_PING_INTERVAL = 300.0
 
 T_LEAVE_OLD = 0.2
